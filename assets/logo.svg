@@ -1,0 +1,83 @@
+<svg width="220" height="220" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+
+    <defs>
+
+        <linearGradient id="atlasGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+
+            <stop offset="0%" stop-color="#38BDF8"/>
+
+            <stop offset="100%" stop-color="#2563EB"/>
+
+        </linearGradient>
+
+        <filter id="glow">
+
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+
+            <feMerge>
+
+                <feMergeNode in="blur"/>
+
+                <feMergeNode in="SourceGraphic"/>
+
+            </feMerge>
+
+        </filter>
+
+    </defs>
+
+    <!-- Cercle -->
+
+    <circle
+
+        cx="110"
+
+        cy="110"
+
+        r="92"
+
+        fill="none"
+
+        stroke="url(#atlasGradient)"
+
+        stroke-width="4"
+
+        filter="url(#glow)"
+
+    />
+
+    <!-- Colonne -->
+
+    <line
+
+        x1="110"
+
+        y1="55"
+
+        x2="110"
+
+        y2="165"
+
+        stroke="white"
+
+        stroke-width="4"
+
+        stroke-linecap="round"
+
+    />
+
+    <!-- Vertèbres -->
+
+    <circle class="vertebra" cx="110" cy="70" r="6" fill="#38BDF8"/>
+
+    <circle class="vertebra" cx="110" cy="88" r="6" fill="#38BDF8"/>
+
+    <circle class="vertebra" cx="110" cy="106" r="6" fill="#38BDF8"/>
+
+    <circle class="vertebra" cx="110" cy="124" r="6" fill="#38BDF8"/>
+
+    <circle class="vertebra" cx="110" cy="142" r="6" fill="#38BDF8"/>
+
+    <circle class="vertebra" cx="110" cy="160" r="6" fill="#38BDF8"/>
+
+</svg>
