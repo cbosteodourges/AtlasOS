@@ -1,229 +1,123 @@
-/* ==========================================================
-   ATLAS OS v0.3
-   Application principale
-========================================================== */
+/*=====================================================
+ ATLAS OS V1.0
+ app.js
+=====================================================*/
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    // ======================================
-    // Splash Screen
-    // ======================================
+const intro = document.getElementById("intro");
+const sync = document.getElementById("sync");
+const assistant = document.getElementById("assistant");
+const dashboard = document.getElementById("dashboard");
 
-    const splash = document.getElementById("splash");
-    const app = document.getElementById("app");
-
-    setTimeout(() => {
-
-        splash.style.display = "none";
-
-        app.style.opacity = "1";
-
-    }, 3500);
+const enterButton = document.getElementById("enterButton");
+const continueButton = document.getElementById("continueButton");
+const analyseBtn = document.getElementById("analyseBtn");
 
 
-    // ======================================
-    // Animation du texte
-    // ======================================
+//========================================
+// Apparition de l'intro
+//========================================
 
-    const typing = document.getElementById("typing");
-
-    const message = "Racontez-moi votre histoire.";
-
-    typing.textContent = "";
-
-    let index = 0;
-
-    function writeText() {
-
-        if (index < message.length) {
-
-            typing.textContent += message.charAt(index);
-
-            index++;
-
-            setTimeout(writeText, 40);
-
-        }
-
-    }
-
-    writeText();
+intro.classList.add("fade-in");
 
 
-    // ======================================
-    // Bouton principal
-    // ======================================
+//========================================
+// Créer mon jumeau
+//========================================
 
-    const startButton = document.getElementById("startButton");
+enterButton.addEventListener("click", () => {
 
-    startButton.addEventListener("click", () => {
+intro.style.opacity="0";
+intro.style.transform="scale(.95)";
 
-        startConversation();
+setTimeout(()=>{
 
-    });
+intro.classList.add("hidden");
+
+sync.classList.remove("hidden");
+
+sync.classList.add("fade-in");
+
+window.scrollTo(0,0);
+
+},700);
 
 });
 
 
-/* ==========================================================
-   Première conversation Atlas
-========================================================== */
+//========================================
+// Continuer
+//========================================
 
-function startConversation() {
+continueButton.addEventListener("click",()=>{
 
-    const hero = document.querySelector(".hero");
+sync.style.opacity="0";
 
-    hero.innerHTML = `
+setTimeout(()=>{
 
-        <h1>Bonjour.</h1>
+sync.classList.add("hidden");
 
-        <h2>Je suis Atlas.</h2>
+assistant.classList.remove("hidden");
 
-        <p>
+assistant.classList.add("fade-in");
 
-        Je vais apprendre à connaître votre corps.
+window.scrollTo(0,0);
 
-        <br><br>
+},600);
 
-        Chaque douleur possède une histoire.
+});
 
-        <br><br>
 
-        Commençons simplement.
+//========================================
+// Analyse
+//========================================
 
-        </p>
+analyseBtn.addEventListener("click",()=>{
 
-        <button id="nextQuestion">
+const histoire=document.getElementById("story").value;
 
-            Commencer
+if(histoire.trim()===""){
 
-        </button>
+alert("Commencez par raconter votre histoire 🙂");
 
-    `;
-
-    document
-        .getElementById("nextQuestion")
-        .addEventListener("click", firstQuestion);
+return;
 
 }
 
+assistant.style.opacity="0";
 
-/* ==========================================================
-   Première question
-========================================================== */
+setTimeout(()=>{
 
-function firstQuestion() {
+assistant.classList.add("hidden");
 
-    const hero = document.querySelector(".hero");
+dashboard.classList.remove("hidden");
 
-    hero.innerHTML = `
+dashboard.classList.add("fade-in");
 
-        <h1>Première étape</h1>
+window.scrollTo(0,0);
 
-        <h2>Je vous écoute.</h2>
+},700);
 
-        <p>
-
-        Racontez-moi votre histoire.
-
-        <br><br>
-
-        Depuis quand avez-vous mal ?
-
-        </p>
-
-        <textarea
-
-            id="patientStory"
-
-            placeholder="Expliquez librement ce qui vous amène aujourd'hui..."
-
-        ></textarea>
-
-        <button id="continueButton">
-
-            Continuer
-
-        </button>
-
-    `;
-
-    document
-        .getElementById("continueButton")
-        .addEventListener("click", saveStory);
-
-}
+});
 
 
-/* ==========================================================
-   Sauvegarde temporaire
-========================================================== */
+//========================================
+// Navigation basse
+//========================================
 
-function saveStory() {
+const navButtons=document.querySelectorAll("#bottomNav button");
 
-    const text = document
-        .getElementById("patientStory")
-        .value;
+navButtons.forEach(button=>{
 
-    localStorage.setItem("atlas_story", text);
+button.addEventListener("click",()=>{
 
-    showSummary();
+navButtons.forEach(b=>b.classList.remove("active"));
 
-}
+button.classList.add("active");
 
+});
 
-/* ==========================================================
-   Résumé
-========================================================== */
+});
 
-function showSummary() {
-
-    const story = localStorage.getItem("atlas_story");
-
-    const hero = document.querySelector(".hero");
-
-    hero.innerHTML = `
-
-        <h1>Merci.</h1>
-
-        <h2>Votre histoire est enregistrée.</h2>
-
-        <p>
-
-        ${story}
-
-        <br><br>
-
-        Dans les prochaines versions,
-
-        Atlas analysera automatiquement
-
-        votre récit,
-
-        vos douleurs,
-
-        votre historique,
-
-        vos données Garmin,
-
-        votre sommeil,
-
-        votre VFC,
-
-        votre biomécanique
-
-        et construira votre
-
-        Jumeau Biomécanique Numérique.
-
-        </p>
-
-        <button onclick="location.reload()">
-
-            Recommencer
-
-        </button>
-
-    `;
-
-}
+});
