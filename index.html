@@ -102,3 +102,378 @@
     </p>
 
     <div class="sync-grid">
+        <!-- Garmin -->
+
+        <div class="sync-card">
+
+            <div class="sync-icon">⌚</div>
+
+            <div class="sync-info">
+
+                <h3>Garmin Connect</h3>
+
+                <p>VFC • Sommeil • Fréquence cardiaque • Activités</p>
+
+            </div>
+
+            <button class="connect-btn">
+                Connecter
+            </button>
+
+        </div>
+
+        <!-- Apple Santé -->
+
+        <div class="sync-card">
+
+            <div class="sync-icon">🍎</div>
+
+            <div class="sync-info">
+
+                <h3>Apple Santé</h3>
+
+                <p>Données de santé</p>
+
+            </div>
+
+            <button class="connect-btn">
+                Connecter
+            </button>
+
+        </div>
+
+        <!-- Coros -->
+
+        <div class="sync-card">
+
+            <div class="sync-icon">🏃</div>
+
+            <div class="sync-info">
+
+                <h3>Coros</h3>
+
+                <p>Entraînements et récupération</p>
+
+            </div>
+
+            <button class="connect-btn">
+                Connecter
+            </button>
+
+        </div>
+
+        <!-- Polar -->
+
+        <div class="sync-card">
+
+            <div class="sync-icon">❤️</div>
+
+            <div class="sync-info">
+
+                <h3>Polar</h3>
+
+                <p>Charge d'entraînement</p>
+
+            </div>
+
+            <button class="connect-btn">
+                Connecter
+            </button>
+
+        </div>
+
+        <!-- Strava -->
+
+        <div class="sync-card">
+
+            <div class="sync-icon">🚴</div>
+
+            <div class="sync-info">
+
+                <h3>Strava</h3>
+
+                <p>Historique sportif</p>
+
+            </div>
+
+            <button class="connect-btn">
+                Connecter
+            </button>
+
+        </div>
+
+    </div>
+
+    <button id="continueButton">
+
+        Continuer
+
+    </button>
+
+</section>
+
+<!-- ==========================================================
+     ATLAS IA
+=========================================================== -->
+
+<section id="assistant" class="hidden">
+
+    <div class="assistant-header">
+
+        <div class="assistant-avatar">
+
+            A
+
+        </div>
+
+        <div>
+
+            <h2>
+
+                Bonjour.
+
+            </h2>
+
+            <p>
+
+                Je suis Atlas.
+
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="assistant-card">
+
+        <h3>
+
+            Racontez-moi votre histoire.
+
+        </h3>
+
+        <p>
+
+            Je vais apprendre à connaître votre corps.
+
+            Commencez simplement avec vos mots.
+
+        </p>
+
+        <textarea
+            id="story"
+            rows="8"
+            placeholder="Depuis quand avez-vous mal ? Comment cela a commencé ? Où ressentez-vous votre douleur ?">
+        </textarea>
+
+        <div class="assistant-actions">
+
+            <button id="voiceBtn">
+
+                🎤 Parler
+
+            </button>
+
+            <button id="analyseBtn">
+
+                Analyser mon histoire
+
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- ==========================================================
+     TABLEAU DE BORD
+=========================================================== -->
+
+<section id="dashboard" class="hidden">
+
+    <header class="dashboard-header">
+
+        <div>
+
+            <h1>Atlas OS</h1>
+
+            <p>Votre jumeau biomécanique</p>
+
+        </div>
+
+        <span class="material-symbols-rounded">
+
+            account_circle
+
+        </span>
+
+    </header>
+
+    <div class="dashboard-grid">
+
+            <!-- Score biomécanique -->
+
+        <div class="dashboard-card">
+
+            <h3>Score biomécanique</h3>
+
+            <span class="value">92</span>
+
+            <small>Excellent équilibre</small>
+
+        </div>
+
+        <!-- Sommeil -->
+
+        <div class="dashboard-card">
+
+            <h3>Sommeil</h3>
+
+            <span class="value">7 h 48</span>
+
+            <small>Bonne récupération</small>
+
+        </div>
+
+        <!-- VFC -->
+
+        <div class="dashboard-card">
+
+            <h3>VFC</h3>
+
+            <span class="value">62 ms</span>
+
+            <small>Très bon état de forme</small>
+
+        </div>
+
+        <!-- Charge -->
+
+        <div class="dashboard-card">
+
+            <h3>Charge</h3>
+
+            <span class="value">81 %</span>
+
+            <small>Charge optimale</small>
+
+        </div>
+
+        <!-- Mobilité -->
+
+        <div class="dashboard-card wide">
+
+            <h3>Mobilité articulaire</h3>
+
+            <p>
+
+                Le jumeau biomécanique analysera progressivement votre
+                mobilité, vos amplitudes articulaires, vos douleurs
+                et vos limitations fonctionnelles.
+
+            </p>
+
+        </div>
+
+        <!-- Historique -->
+
+        <div class="dashboard-card wide">
+
+            <h3>Historique clinique</h3>
+
+            <p>
+
+                Toutes vos consultations seront enregistrées afin de
+                suivre l'évolution de votre état au fil des mois.
+
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- ==========================================================
+     MENU BAS
+========================================================== -->
+
+<nav id="bottomNav">
+
+    <button class="active">
+
+        <span class="material-symbols-rounded">
+
+            home
+
+        </span>
+
+        <small>Accueil</small>
+
+    </button>
+
+    <button>
+
+        <span class="material-symbols-rounded">
+
+            chat
+
+        </span>
+
+        <small>Atlas</small>
+
+    </button>
+
+    <button>
+
+        <span class="material-symbols-rounded">
+
+            accessibility_new
+
+        </span>
+
+        <small>Jumeau</small>
+
+    </button>
+
+    <button>
+
+        <span class="material-symbols-rounded">
+
+            monitoring
+
+        </span>
+
+        <small>Analyse</small>
+
+    </button>
+
+    <button>
+
+        <span class="material-symbols-rounded">
+
+            settings
+
+        </span>
+
+        <small>Réglages</small>
+
+    </button>
+
+</nav>
+
+<!-- ==========================================================
+     JAVASCRIPT
+========================================================== -->
+
+<script src="js/particles.js"></script>
+
+<script src="js/body3d.js"></script>
+
+<script src="js/app.js"></script>
+
+</body>
+
+</html>
+    
