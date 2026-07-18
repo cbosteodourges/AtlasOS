@@ -1,44 +1,41 @@
-/*======================================================
- ATLAS OS V1.0
- Style Premium
-======================================================*/
+/*==================================================
+  ATLAS OS V2
+  Premium UI
+==================================================*/
 
-/*-------------------------
- Variables
---------------------------*/
+/*=========================
+  Variables
+==========================*/
 
 :root{
 
---background:#040B18;
---background2:#081425;
+    --bg:#040B18;
+    --bg2:#071425;
+    --bg3:#0C1C33;
 
---primary:#38BDF8;
---secondary:#2563EB;
+    --atlas:#38BDF8;
+    --atlas2:#2563EB;
+    --atlas3:#60A5FA;
 
---white:#FFFFFF;
+    --text:#FFFFFF;
+    --text2:#CBD5E1;
+    --text3:#94A3B8;
 
---text:#F8FAFC;
---text2:#CBD5E1;
---text3:#94A3B8;
+    --glass:rgba(255,255,255,.06);
+    --glassBorder:rgba(255,255,255,.08);
 
---glass:rgba(255,255,255,.06);
-
---border:rgba(255,255,255,.08);
-
---radius:28px;
+    --radius:28px;
 
 }
 
-/*-------------------------
+/*=========================
  Reset
---------------------------*/
+==========================*/
 
 *{
 
 margin:0;
-
 padding:0;
-
 box-sizing:border-box;
 
 }
@@ -51,11 +48,11 @@ scroll-behavior:smooth;
 
 body{
 
+background:var(--bg);
+
 font-family:'Inter',sans-serif;
 
-background:var(--background);
-
-color:var(--text);
+color:white;
 
 overflow-x:hidden;
 
@@ -63,7 +60,7 @@ min-height:100vh;
 
 }
 
-/*==========================
+/*=========================
  Background
 ==========================*/
 
@@ -75,137 +72,109 @@ inset:0;
 
 overflow:hidden;
 
-z-index:-100;
+z-index:-20;
 
 background:
+
 linear-gradient(
+
 180deg,
-#081425 0%,
-#050A14 40%,
-#03060E 100%
+
+#040B18,
+
+#071425,
+
+#0C1C33
+
 );
 
 }
 
-/* Halo principal */
+/* Halo 1 */
 
-.gradient{
+.gradient-one{
 
 position:absolute;
-
-top:-300px;
-
-left:50%;
-
-transform:translateX(-50%);
 
 width:900px;
 
 height:900px;
+
+left:-250px;
+
+top:-300px;
 
 border-radius:50%;
 
 background:
 
 radial-gradient(circle,
-rgba(56,189,248,.22),
+
+rgba(56,189,248,.25),
+
 transparent 70%);
 
-filter:blur(70px);
+filter:blur(80px);
 
-animation:gradientPulse 10s infinite ease-in-out;
+animation:floatOne 12s ease-in-out infinite;
 
 }
 
-/* Canvas particules */
+/* Halo 2 */
 
-#particles{
+.gradient-two{
 
 position:absolute;
 
-inset:0;
+width:800px;
 
-width:100%;
+height:800px;
 
-height:100%;
+right:-250px;
 
-}
-
-/*==========================
- Intro
-==========================*/
-
-#intro{
-
-position:relative;
-
-display:flex;
-
-flex-direction:column;
-
-justify-content:center;
-
-align-items:center;
-
-height:100vh;
-
-padding:40px;
-
-text-align:center;
-
-overflow:hidden;
-
-}
-
-/* Overlay */
-
-.intro-overlay{
-
-position:absolute;
-
-inset:0;
-
-background:
-
-linear-gradient(
-
-180deg,
-
-rgba(4,11,24,.15),
-
-rgba(4,11,24,.75)
-
-);
-
-}
-
-/*==========================
- Corps 3D
-==========================*/
-
-#viewer3D{
-
-position:relative;
-
-width:360px;
-
-height:360px;
-
-margin-bottom:50px;
+bottom:-250px;
 
 border-radius:50%;
 
 background:
 
-radial-gradient(
+radial-gradient(circle,
 
-circle,
+rgba(37,99,235,.20),
 
-rgba(56,189,248,.08),
+transparent 70%);
 
-transparent 70%
+filter:blur(80px);
 
-);
+animation:floatTwo 16s ease-in-out infinite;
+
+}
+
+/* Léger bruit */
+
+.noise{
+
+position:absolute;
+
+inset:0;
+
+opacity:.05;
+
+background-image:
+
+radial-gradient(circle,white 1px,transparent 1px);
+
+background-size:18px 18px;
+
+}
+
+/*=========================
+ INTRO
+==========================*/
+
+#intro{
+
+height:100vh;
 
 display:flex;
 
@@ -213,9 +182,45 @@ justify-content:center;
 
 align-items:center;
 
+padding:40px;
+
+position:relative;
+
 }
 
-/* Cercle lumineux */
+.intro-content{
+
+display:flex;
+
+align-items:center;
+
+justify-content:space-between;
+
+gap:80px;
+
+width:min(1400px,100%);
+
+}
+
+/*=========================
+ Zone 3D
+==========================*/
+
+#viewer3D{
+
+width:520px;
+
+height:700px;
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+position:relative;
+
+}
 
 #viewer3D::before{
 
@@ -223,9 +228,9 @@ content:"";
 
 position:absolute;
 
-width:340px;
+width:500px;
 
-height:340px;
+height:500px;
 
 border-radius:50%;
 
@@ -241,9 +246,9 @@ content:"";
 
 position:absolute;
 
-width:250px;
+width:360px;
 
-height:250px;
+height:360px;
 
 border-radius:50%;
 
@@ -253,23 +258,19 @@ animation:rotateReverse 18s linear infinite;
 
 }
 
-/*==========================
- Texte
+/*=========================
+ Logo
 ==========================*/
 
-.intro-text{
+.logo-zone{
 
-position:relative;
-
-z-index:20;
-
-max-width:700px;
+max-width:520px;
 
 }
 
-.logo-title{
+.logo-zone h1{
 
-font-size:72px;
+font-size:88px;
 
 font-weight:800;
 
@@ -278,10 +279,15 @@ letter-spacing:8px;
 background:
 
 linear-gradient(
+
 135deg,
-#7DD3FC,
+
+#A5F3FC,
+
 #38BDF8,
+
 #2563EB
+
 );
 
 -webkit-background-clip:text;
@@ -292,19 +298,19 @@ margin-bottom:20px;
 
 }
 
-.intro-text h2{
+.logo-zone h2{
 
 font-size:34px;
 
 font-weight:600;
 
-margin-bottom:30px;
+margin-bottom:25px;
 
 }
 
-.intro-text p{
+.logo-zone p{
 
-font-size:19px;
+font-size:18px;
 
 line-height:1.9;
 
@@ -314,11 +320,23 @@ margin-bottom:45px;
 
 }
 
-/*==========================
+/*==================================================
+  ATLAS OS V2
+  PARTIE 2
+  Boutons - Glass - Animations
+==================================================*/
+
+/*=========================
  Bouton principal
 ==========================*/
 
 #enterButton{
+
+display:inline-flex;
+
+align-items:center;
+
+justify-content:center;
 
 padding:18px 42px;
 
@@ -326,27 +344,53 @@ border:none;
 
 border-radius:18px;
 
+cursor:pointer;
+
 font-size:18px;
 
 font-weight:700;
 
-cursor:pointer;
-
 color:white;
 
-background:
-
-linear-gradient(
+background:linear-gradient(
 135deg,
-#38BDF8,
-#2563EB
+var(--atlas),
+var(--atlas2)
 );
 
 box-shadow:
-
 0 15px 40px rgba(37,99,235,.35);
 
-transition:.35s;
+transition:all .35s ease;
+
+position:relative;
+
+overflow:hidden;
+
+}
+
+#enterButton::before{
+
+content:"";
+
+position:absolute;
+
+left:-120%;
+
+top:0;
+
+width:80%;
+
+height:100%;
+
+background:linear-gradient(
+90deg,
+transparent,
+rgba(255,255,255,.35),
+transparent
+);
+
+transition:.7s;
 
 }
 
@@ -356,31 +400,321 @@ transform:translateY(-4px);
 
 box-shadow:
 
-0 20px 55px rgba(56,189,248,.55);
+0 20px 55px rgba(56,189,248,.45);
 
 }
 
-/*==========================
+#enterButton:hover::before{
+
+left:150%;
+
+}
+
+/*=========================
+ Scroll indicator
+==========================*/
+
+.scroll-indicator{
+
+position:absolute;
+
+bottom:40px;
+
+left:50%;
+
+transform:translateX(-50%);
+
+display:flex;
+
+flex-direction:column;
+
+align-items:center;
+
+gap:8px;
+
+font-size:14px;
+
+color:var(--text3);
+
+animation:bounce 2s infinite;
+
+}
+
+.scroll-indicator span{
+
+font-size:32px;
+
+color:var(--atlas);
+
+}
+
+/*=========================
+ Glassmorphism
+==========================*/
+
+.glass{
+
+background:rgba(255,255,255,.05);
+
+border:1px solid rgba(255,255,255,.08);
+
+backdrop-filter:blur(18px);
+
+-webkit-backdrop-filter:blur(18px);
+
+border-radius:28px;
+
+}
+
+/*=========================
+ Synchronisation
+==========================*/
+
+.screen{
+
+min-height:100vh;
+
+padding:80px 40px;
+
+display:flex;
+
+flex-direction:column;
+
+justify-content:center;
+
+}
+
+.screen-header{
+
+max-width:800px;
+
+margin:auto;
+
+text-align:center;
+
+margin-bottom:60px;
+
+}
+
+.screen-header h2{
+
+font-size:48px;
+
+margin-bottom:18px;
+
+}
+
+.screen-header p{
+
+font-size:19px;
+
+line-height:1.8;
+
+color:var(--text2);
+
+}
+
+.cards-grid{
+
+display:grid;
+
+grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+
+gap:24px;
+
+}
+
+.device-card{
+
+padding:30px;
+
+border-radius:28px;
+
+background:rgba(255,255,255,.05);
+
+border:1px solid rgba(255,255,255,.08);
+
+backdrop-filter:blur(20px);
+
+transition:.35s;
+
+position:relative;
+
+overflow:hidden;
+
+}
+
+.device-card::before{
+
+content:"";
+
+position:absolute;
+
+right:-70px;
+
+top:-70px;
+
+width:180px;
+
+height:180px;
+
+border-radius:50%;
+
+background:
+
+radial-gradient(circle,
+
+rgba(56,189,248,.18),
+
+transparent 70%);
+
+transition:.5s;
+
+}
+
+.device-card:hover{
+
+transform:translateY(-10px);
+
+border-color:rgba(56,189,248,.25);
+
+box-shadow:
+
+0 20px 50px rgba(0,0,0,.35);
+
+}
+
+.device-card:hover::before{
+
+transform:scale(1.4);
+
+}
+
+.device-logo{
+
+width:72px;
+
+height:72px;
+
+border-radius:50%;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+font-size:34px;
+
+margin-bottom:20px;
+
+background:linear-gradient(
+135deg,
+rgba(56,189,248,.18),
+rgba(37,99,235,.12)
+);
+
+}
+
+.device-card h3{
+
+font-size:24px;
+
+margin-bottom:15px;
+
+}
+
+.device-card p{
+
+line-height:1.8;
+
+color:var(--text3);
+
+margin-bottom:24px;
+
+}
+
+.device-card button{
+
+width:100%;
+
+padding:15px;
+
+border:none;
+
+border-radius:16px;
+
+cursor:pointer;
+
+font-weight:700;
+
+font-size:16px;
+
+color:white;
+
+background:linear-gradient(
+135deg,
+var(--atlas),
+var(--atlas2)
+);
+
+transition:.3s;
+
+}
+
+.device-card button:hover{
+
+transform:translateY(-3px);
+
+}
+
+/*=========================
  Animations
 ==========================*/
 
-@keyframes gradientPulse{
+@keyframes bounce{
 
-0%{
+0%,100%{
 
-transform:translateX(-50%) scale(1);
+transform:translate(-50%,0);
 
 }
 
 50%{
 
-transform:translateX(-50%) scale(1.12);
+transform:translate(-50%,8px);
 
 }
 
-100%{
+}
 
-transform:translateX(-50%) scale(1);
+@keyframes floatOne{
+
+0%,100%{
+
+transform:translateY(0);
+
+}
+
+50%{
+
+transform:translateY(35px);
+
+}
+
+}
+
+@keyframes floatTwo{
+
+0%,100%{
+
+transform:translateY(0);
+
+}
+
+50%{
+
+transform:translateY(-35px);
 
 }
 
@@ -418,149 +752,23 @@ transform:rotate(0deg);
 
 }
 
-/*======================================================
- SYNCHRONISATION
-======================================================*/
+/*==================================================
+  ATLAS OS V2
+  PARTIE 3
+  Assistant IA + Dashboard
+==================================================*/
 
-.hidden{
-display:none;
-}
+/*=========================
+ Assistant IA
+==========================*/
 
-#sync{
-
-width:100%;
+#assistant{
 
 max-width:1200px;
 
 margin:auto;
 
-padding:80px 25px;
-
-}
-
-#sync h1{
-
-font-size:46px;
-
-font-weight:800;
-
-margin-bottom:15px;
-
-text-align:center;
-
-}
-
-#sync p{
-
-text-align:center;
-
-font-size:18px;
-
-color:var(--text2);
-
-margin-bottom:50px;
-
-line-height:1.8;
-
-}
-
-.sync-grid{
-
-display:grid;
-
-grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-
-gap:24px;
-
-}
-
-/************************************************
- Carte de synchronisation
-************************************************/
-
-.sync-card{
-
-display:flex;
-
-align-items:center;
-
-justify-content:space-between;
-
-gap:20px;
-
-padding:28px;
-
-border-radius:28px;
-
-background:rgba(255,255,255,.05);
-
-backdrop-filter:blur(18px);
-
--webkit-backdrop-filter:blur(18px);
-
-border:1px solid rgba(255,255,255,.08);
-
-transition:.35s;
-
-position:relative;
-
-overflow:hidden;
-
-}
-
-/* Halo bleu */
-
-.sync-card::before{
-
-content:"";
-
-position:absolute;
-
-width:180px;
-
-height:180px;
-
-right:-80px;
-
-top:-80px;
-
-background:
-
-radial-gradient(circle,
-
-rgba(56,189,248,.20),
-
-transparent 70%);
-
-transition:.5s;
-
-}
-
-.sync-card:hover{
-
-transform:translateY(-8px);
-
-border:1px solid rgba(56,189,248,.35);
-
-box-shadow:
-
-0 20px 45px rgba(0,0,0,.30);
-
-}
-
-.sync-card:hover::before{
-
-transform:scale(1.4);
-
-}
-
-.sync-icon{
-
-width:72px;
-
-height:72px;
-
-border-radius:50%;
+padding:100px 30px;
 
 display:flex;
 
@@ -568,175 +776,41 @@ justify-content:center;
 
 align-items:center;
 
-font-size:34px;
+}
 
-background:
+.assistant-container{
 
-linear-gradient(
+width:100%;
 
-135deg,
+max-width:900px;
 
-rgba(56,189,248,.25),
+padding:45px;
 
-rgba(37,99,235,.15)
+border-radius:32px;
 
-);
+background:rgba(255,255,255,.05);
+
+border:1px solid rgba(255,255,255,.08);
+
+backdrop-filter:blur(22px);
+
+text-align:center;
 
 box-shadow:
 
-0 0 25px rgba(56,189,248,.15);
-
-}
-
-.sync-info{
-
-flex:1;
-
-}
-
-.sync-info h3{
-
-font-size:22px;
-
-margin-bottom:8px;
-
-}
-
-.sync-info p{
-
-font-size:15px;
-
-margin:0;
-
-text-align:left;
-
-color:var(--text3);
-
-line-height:1.6;
-
-}
-
-/************************************************
- Boutons
-************************************************/
-
-.connect-btn{
-
-padding:12px 24px;
-
-border:none;
-
-border-radius:14px;
-
-cursor:pointer;
-
-font-weight:700;
-
-color:white;
-
-background:
-
-linear-gradient(
-
-135deg,
-
-#38BDF8,
-
-#2563EB
-
-);
-
-transition:.3s;
-
-}
-
-.connect-btn:hover{
-
-transform:scale(1.05);
-
-box-shadow:
-
-0 10px 25px rgba(56,189,248,.35);
-
-}
-
-#continueButton{
-
-display:block;
-
-margin:60px auto 0;
-
-padding:18px 42px;
-
-border:none;
-
-border-radius:18px;
-
-cursor:pointer;
-
-font-size:18px;
-
-font-weight:700;
-
-color:white;
-
-background:
-
-linear-gradient(
-
-135deg,
-
-#38BDF8,
-
-#2563EB
-
-);
-
-transition:.35s;
-
-}
-
-#continueButton:hover{
-
-transform:translateY(-4px);
-
-box-shadow:
-
-0 20px 40px rgba(37,99,235,.35);
-
-}
-
-/*======================================================
- ASSISTANT IA
-======================================================*/
-
-#assistant{
-
-max-width:1100px;
-
-margin:auto;
-
-padding:70px 25px;
-
-}
-
-.assistant-header{
-
-display:flex;
-
-align-items:center;
-
-gap:25px;
-
-margin-bottom:35px;
+0 20px 60px rgba(0,0,0,.35);
 
 }
 
 .assistant-avatar{
 
-width:90px;
+width:120px;
 
-height:90px;
+height:120px;
+
+margin:auto;
+
+margin-bottom:35px;
 
 border-radius:50%;
 
@@ -746,77 +820,59 @@ justify-content:center;
 
 align-items:center;
 
-font-size:34px;
+font-size:48px;
 
 font-weight:800;
 
-color:white;
-
-background:
-
-linear-gradient(
-
+background:linear-gradient(
 135deg,
-
-#38BDF8,
-
-#2563EB
-
+var(--atlas),
+var(--atlas2)
 );
 
 box-shadow:
 
-0 0 35px rgba(56,189,248,.35);
+0 0 40px rgba(56,189,248,.35);
 
-animation:pulseAvatar 4s infinite;
-
-}
-
-.assistant-header h2{
-
-font-size:38px;
-
-margin-bottom:6px;
+animation:pulseAvatar 5s infinite;
 
 }
 
-.assistant-header p{
+.assistant-container h2{
+
+font-size:42px;
+
+margin-bottom:10px;
+
+}
+
+.assistant-container h3{
+
+font-size:28px;
+
+font-weight:500;
+
+margin-bottom:25px;
 
 color:var(--text2);
 
 }
 
-.assistant-card{
+.assistant-container p{
 
-background:rgba(255,255,255,.05);
+font-size:18px;
 
-border:1px solid rgba(255,255,255,.08);
+line-height:1.9;
 
-border-radius:32px;
+color:var(--text3);
 
-padding:35px;
-
-backdrop-filter:blur(20px);
+margin-bottom:35px;
 
 }
 
-.assistant-card h3{
-
-font-size:32px;
-
-margin-bottom:18px;
-
-}
-
-.assistant-card p{
-
-line-height:1.8;
-
-color:var(--text2);
-
-margin-bottom:30px;
-
-}
+/*=========================
+ Zone de saisie
+==========================*/
 
 textarea{
 
@@ -834,37 +890,27 @@ resize:none;
 
 border-radius:22px;
 
-font-size:17px;
-
-background:rgba(255,255,255,.05);
+background:rgba(255,255,255,.04);
 
 color:white;
 
-margin-bottom:25px;
+font-size:17px;
+
+line-height:1.7;
+
+margin-bottom:30px;
 
 }
 
 textarea::placeholder{
 
-color:#8FA5BF;
+color:#8CA4C4;
 
 }
 
-.assistant-actions{
+#analyseBtn{
 
-display:flex;
-
-gap:20px;
-
-flex-wrap:wrap;
-
-}
-
-.assistant-actions button{
-
-flex:1;
-
-padding:18px;
+padding:18px 40px;
 
 border:none;
 
@@ -872,60 +918,43 @@ border-radius:18px;
 
 cursor:pointer;
 
-font-size:17px;
+font-size:18px;
 
 font-weight:700;
 
 color:white;
 
-background:
-
-linear-gradient(
-
+background:linear-gradient(
 135deg,
-
-#38BDF8,
-
-#2563EB
-
+var(--atlas),
+var(--atlas2)
 );
 
-transition:.3s;
+transition:.35s;
 
 }
 
-.assistant-actions button:hover{
+#analyseBtn:hover{
 
 transform:translateY(-4px);
 
-}
+box-shadow:
 
-@keyframes pulseAvatar{
-
-0%,100%{
-
-transform:scale(1);
+0 20px 45px rgba(56,189,248,.35);
 
 }
 
-50%{
-
-transform:scale(1.08);
-
-}
-
-   }
-/*======================================================
- DASHBOARD PREMIUM
-======================================================*/
+/*=========================
+ Dashboard
+==========================*/
 
 #dashboard{
 
-max-width:1400px;
+padding:60px 30px 140px;
+
+max-width:1500px;
 
 margin:auto;
-
-padding:70px 25px 140px;
 
 }
 
@@ -943,7 +972,7 @@ margin-bottom:40px;
 
 .dashboard-header h1{
 
-font-size:44px;
+font-size:48px;
 
 font-weight:800;
 
@@ -957,200 +986,169 @@ color:var(--text3);
 
 }
 
-.dashboard-header span{
+.profile-button{
 
-font-size:54px;
+width:60px;
 
-color:var(--primary);
+height:60px;
 
-}
-
-/************************************************
- Carte principale
-************************************************/
-
-.heroCard{
-
-position:relative;
-
-overflow:hidden;
-
-padding:40px;
-
-border-radius:32px;
-
-background:
-
-linear-gradient(
-
-135deg,
-
-rgba(56,189,248,.12),
-
-rgba(37,99,235,.05)
-
-);
-
-border:1px solid rgba(255,255,255,.08);
-
-backdrop-filter:blur(25px);
-
-margin-bottom:35px;
-
-}
-
-.heroCard::before{
-
-content:"";
-
-position:absolute;
-
-width:450px;
-
-height:450px;
-
-right:-180px;
-
-top:-180px;
+border:none;
 
 border-radius:50%;
 
-background:
-
-radial-gradient(circle,
-
-rgba(56,189,248,.25),
-
-transparent 70%);
-
-}
-
-.heroCard h2{
-
-font-size:38px;
-
-margin-bottom:12px;
-
-}
-
-.heroCard p{
-
-font-size:18px;
-
-line-height:1.8;
-
-color:var(--text2);
-
-}
-
-/************************************************
- Grille Dashboard
-************************************************/
-
-.dashboard-grid{
-
-display:grid;
-
-grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-
-gap:25px;
-
-}
-
-/************************************************
- Cartes
-************************************************/
-
-.dashboard-card{
-
-position:relative;
-
-overflow:hidden;
-
-padding:30px;
-
-border-radius:28px;
+cursor:pointer;
 
 background:rgba(255,255,255,.05);
 
 border:1px solid rgba(255,255,255,.08);
 
+color:white;
+
+font-size:28px;
+
+}
+
+/*=========================
+ Layout
+==========================*/
+
+.dashboard-layout{
+
+display:grid;
+
+grid-template-columns:2fr 1fr;
+
+gap:35px;
+
+align-items:start;
+
+}
+
+/*=========================
+ Corps 3D
+==========================*/
+
+.body-panel{
+
+background:rgba(255,255,255,.05);
+
+border-radius:32px;
+
+padding:30px;
+
+border:1px solid rgba(255,255,255,.08);
+
 backdrop-filter:blur(18px);
+
+min-height:760px;
+
+position:relative;
+
+overflow:hidden;
+
+}
+
+.panel-title{
+
+margin-bottom:30px;
+
+}
+
+.panel-title h2{
+
+font-size:32px;
+
+margin-bottom:10px;
+
+}
+
+.panel-title p{
+
+color:var(--text3);
+
+line-height:1.8;
+
+}
+
+#body3dContainer{
+
+height:600px;
+
+border-radius:24px;
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+background:linear-gradient(
+180deg,
+rgba(56,189,248,.04),
+transparent
+);
+
+}
+
+/*=========================
+ Cartes statistiques
+==========================*/
+
+.stats-panel{
+
+display:flex;
+
+flex-direction:column;
+
+gap:20px;
+
+}
+
+.stat-card{
+
+padding:24px;
+
+border-radius:24px;
+
+background:rgba(255,255,255,.05);
+
+border:1px solid rgba(255,255,255,.08);
 
 transition:.35s;
 
 }
 
-.dashboard-card:hover{
+.stat-card:hover{
 
-transform:translateY(-10px);
+transform:translateY(-6px);
 
-box-shadow:
-
-0 25px 45px rgba(0,0,0,.30);
-
-border-color:rgba(56,189,248,.30);
+border-color:rgba(56,189,248,.25);
 
 }
 
-.dashboard-card::before{
+.stat-card h3{
 
-content:"";
+font-size:17px;
 
-position:absolute;
-
-right:-80px;
-
-top:-80px;
-
-width:180px;
-
-height:180px;
-
-border-radius:50%;
-
-background:
-
-radial-gradient(circle,
-
-rgba(56,189,248,.15),
-
-transparent 70%);
-
-}
-
-.dashboard-card h3{
-
-font-size:18px;
+margin-bottom:15px;
 
 color:var(--text2);
 
-margin-bottom:18px;
-
 }
 
-.value{
+.stat-card strong{
 
 display:block;
 
-font-size:48px;
-
-font-weight:800;
+font-size:34px;
 
 margin-bottom:10px;
 
-background:
-
-linear-gradient(
-
+background:linear-gradient(
 135deg,
-
-#7DD3FC,
-
+#A5F3FC,
 #38BDF8,
-
 #2563EB
-
 );
 
 -webkit-background-clip:text;
@@ -1159,165 +1157,198 @@ linear-gradient(
 
 }
 
-.dashboard-card small{
+.stat-card small{
 
-font-size:15px;
+color:var(--text3);
 
-color:#67E8F9;
-
-}
-
-.dashboard-card p{
-
-line-height:1.8;
-
-color:var(--text2);
+line-height:1.6;
 
 }
 
-.wide{
+/*=========================
+ Avatar respiration
+==========================*/
 
-grid-column:span 2;
+@keyframes pulseAvatar{
 
-}
+0%,100%{
 
-@media(max-width:900px){
-
-.wide{
-
-grid-column:span 1;
-
-}
-
-}
-
-/************************************************
- Barre de navigation
-************************************************/
-
-#bottomNav{
-
-position:fixed;
-
-bottom:18px;
-
-left:50%;
-
-transform:translateX(-50%);
-
-width:min(95%,650px);
-
-display:flex;
-
-justify-content:space-around;
-
-padding:14px;
-
-border-radius:28px;
-
-background:rgba(10,18,35,.75);
-
-backdrop
-
-   /*======================================================
- ATLAS OS V1.0
- ANIMATIONS & RESPONSIVE
-======================================================*/
-
-/* Apparition douce des sections */
-.fade-in{
-    opacity:0;
-    transform:translateY(40px);
-    animation:fadeIn .8s ease forwards;
-}
-
-@keyframes fadeIn{
-    from{
-        opacity:0;
-        transform:translateY(40px);
-    }
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
-}
-
-/************************************************
- Effet Glass
-************************************************/
-
-.glass{
-    background:rgba(255,255,255,.05);
-    backdrop-filter:blur(18px);
-    -webkit-backdrop-filter:blur(18px);
-    border:1px solid rgba(255,255,255,.08);
-}
-
-/************************************************
- Halo lumineux animé
-************************************************/
-
-.glow{
-
-    animation:glow 5s ease-in-out infinite;
-
-}
-
-@keyframes glow{
-
-0%{
-
-box-shadow:0 0 10px rgba(56,189,248,.20);
+transform:scale(1);
 
 }
 
 50%{
 
+transform:scale(1.06);
+
+}
+
+}
+/*==================================================
+  ATLAS OS V2
+  PARTIE 4
+  Navigation - Responsive - Transitions
+==================================================*/
+
+/*=========================
+ Navigation flottante
+==========================*/
+
+#bottomNav{
+
+position:fixed;
+
+bottom:22px;
+
+left:50%;
+
+transform:translateX(-50%);
+
+width:min(96%,720px);
+
+padding:12px;
+
+display:flex;
+
+justify-content:space-around;
+
+align-items:center;
+
+border-radius:30px;
+
+background:rgba(8,18,35,.72);
+
+backdrop-filter:blur(25px);
+
+-webkit-backdrop-filter:blur(25px);
+
+border:1px solid rgba(255,255,255,.08);
+
 box-shadow:
 
-0 0 35px rgba(56,189,248,.45),
+0 20px 60px rgba(0,0,0,.45);
 
-0 0 80px rgba(37,99,235,.25);
-
-}
-
-100%{
-
-box-shadow:0 0 10px rgba(56,189,248,.20);
+z-index:999;
 
 }
 
+#bottomNav button{
+
+flex:1;
+
+display:flex;
+
+flex-direction:column;
+
+align-items:center;
+
+justify-content:center;
+
+gap:6px;
+
+padding:12px;
+
+background:none;
+
+border:none;
+
+border-radius:18px;
+
+cursor:pointer;
+
+color:var(--text3);
+
+transition:.35s;
+
 }
 
-/************************************************
- Rotation lente du corps
-************************************************/
+#bottomNav button span:first-child{
 
-.bodyRotation{
-
-animation:bodyRotation 30s linear infinite;
+font-size:28px;
 
 }
 
-@keyframes bodyRotation{
+#bottomNav button span:last-child{
 
-from{
-
-transform:rotateY(0deg);
+font-size:13px;
 
 }
+
+#bottomNav button:hover{
+
+background:rgba(56,189,248,.12);
+
+color:white;
+
+}
+
+#bottomNav button.active{
+
+background:linear-gradient(
+
+135deg,
+
+rgba(56,189,248,.22),
+
+rgba(37,99,235,.12)
+
+);
+
+color:white;
+
+}
+
+/*=========================
+ Apparitions
+==========================*/
+
+.fade-up{
+
+opacity:0;
+
+transform:translateY(40px);
+
+animation:fadeUp .8s forwards;
+
+}
+
+.fade-scale{
+
+opacity:0;
+
+transform:scale(.94);
+
+animation:fadeScale .8s forwards;
+
+}
+
+@keyframes fadeUp{
 
 to{
 
-transform:rotateY(360deg);
+opacity:1;
+
+transform:translateY(0);
 
 }
 
 }
 
-/************************************************
+@keyframes fadeScale{
+
+to{
+
+opacity:1;
+
+transform:scale(1);
+
+}
+
+}
+
+/*=========================
  Respiration
-************************************************/
+==========================*/
 
 .breath{
 
@@ -1335,7 +1366,7 @@ transform:scale(1);
 
 50%{
 
-transform:scale(1.03);
+transform:scale(1.025);
 
 }
 
@@ -1347,79 +1378,125 @@ transform:scale(1);
 
 }
 
-/************************************************
- Apparition du bouton
-************************************************/
+/*=========================
+ Glow
+==========================*/
 
-button{
+.glow{
 
-transition:
-
-transform .3s,
-
-box-shadow .3s,
-
-background .3s;
+animation:glow 4s infinite;
 
 }
 
-button:hover{
+@keyframes glow{
 
-transform:translateY(-4px);
+0%{
 
-}
-
-button:active{
-
-transform:scale(.97);
+box-shadow:0 0 10px rgba(56,189,248,.18);
 
 }
 
-/************************************************
- Scrollbar
-************************************************/
+50%{
 
-::-webkit-scrollbar{
+box-shadow:
 
-width:8px;
+0 0 35px rgba(56,189,248,.45),
 
-}
-
-::-webkit-scrollbar-track{
-
-background:#07111F;
+0 0 80px rgba(37,99,235,.18);
 
 }
 
-::-webkit-scrollbar-thumb{
+100%{
 
-background:#38BDF8;
-
-border-radius:30px;
+box-shadow:0 0 10px rgba(56,189,248,.18);
 
 }
 
-::-webkit-scrollbar-thumb:hover{
+}
 
-background:#60D6FF;
+/*=========================
+ Hidden
+==========================*/
+
+.hidden{
+
+display:none!important;
 
 }
 
-/************************************************
- Responsive tablette
-************************************************/
+/*=========================
+ Responsive
+==========================*/
 
-@media(max-width:992px){
+@media(max-width:1100px){
 
-.logo-title{
+.intro-content{
 
-font-size:58px;
+flex-direction:column;
+
+text-align:center;
 
 }
 
-.intro-text h2{
+#viewer3D{
 
-font-size:28px;
+width:100%;
+
+height:520px;
+
+}
+
+.dashboard-layout{
+
+grid-template-columns:1fr;
+
+}
+
+.body-panel{
+
+min-height:650px;
+
+}
+
+}
+
+@media(max-width:768px){
+
+.logo-zone h1{
+
+font-size:60px;
+
+letter-spacing:4px;
+
+}
+
+.logo-zone h2{
+
+font-size:24px;
+
+}
+
+.logo-zone p{
+
+font-size:16px;
+
+}
+
+.screen{
+
+padding:60px 20px;
+
+}
+
+.screen-header h2{
+
+font-size:34px;
+
+}
+
+.assistant-container{
+
+padding:30px;
 
 }
 
@@ -1433,117 +1510,35 @@ gap:20px;
 
 }
 
-.sync-grid{
+#bottomNav{
 
-grid-template-columns:1fr;
+bottom:10px;
 
-}
-
-}
-
-/************************************************
- Responsive téléphone
-************************************************/
-
-@media(max-width:768px){
-
-#intro{
-
-padding:25px;
+width:98%;
 
 }
 
-#viewer3D{
-
-width:280px;
-
-height:280px;
-
-}
-
-.logo-title{
-
-font-size:44px;
-
-letter-spacing:4px;
-
-}
-
-.intro-text h2{
+#bottomNav button span:first-child{
 
 font-size:22px;
 
 }
 
-.intro-text p{
+#bottomNav button span:last-child{
 
-font-size:16px;
-
-}
-
-.sync-card{
-
-flex-direction:column;
-
-text-align:center;
-
-}
-
-.sync-info p{
-
-text-align:center;
-
-}
-
-.assistant-header{
-
-flex-direction:column;
-
-text-align:center;
-
-}
-
-.assistant-actions{
-
-flex-direction:column;
-
-}
-
-.dashboard-grid{
-
-grid-template-columns:1fr;
-
-}
-
-#bottomNav{
-
-width:96%;
-
-bottom:10px;
-
-padding:10px;
-
-}
-
-#bottomNav span{
-
-font-size:24px;
+font-size:11px;
 
 }
 
 }
-
-/************************************************
- Animation de démarrage
-************************************************/
 
 body{
 
-animation:startup .8s ease;
+animation:start .7s ease;
 
 }
 
-@keyframes startup{
+@keyframes start{
 
 from{
 
