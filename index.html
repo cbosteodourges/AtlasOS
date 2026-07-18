@@ -2,309 +2,103 @@
 <html lang="fr">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta charset="UTF-8">
+    <title>Atlas OS - Votre jumeau biomécanique numérique</title>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#040B18">
 
-<title>Atlas OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-<meta name="theme-color" content="#050816">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet">
 
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Three.js -->
+    <script src="https://unpkg.com/three@0.166.1/build/three.min.js"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet">
-
-<link rel="stylesheet" href="css/style.css">
-
+    <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
 
-<!-- ========================= -->
-<!-- FOND ANIMÉ -->
-<!-- ========================= -->
+<!-- ==========================================================
+     FOND ANIMÉ
+=========================================================== -->
 
-<div class="background">
+<div id="background">
 
-<div class="gradient"></div>
+    <div class="gradient"></div>
 
-<div class="grid"></div>
-
-<div class="particles"></div>
+    <canvas id="particles"></canvas>
 
 </div>
 
-<!-- ========================= -->
-<!-- SPLASH -->
-<!-- ========================= -->
+<!-- ==========================================================
+     ÉCRAN D'OUVERTURE
+=========================================================== -->
 
-<section id="splash">
+<section id="intro">
 
-<div class="logo">
+    <div class="intro-overlay"></div>
 
-<div class="logo-ring"></div>
+    <div id="viewer3D">
 
-<div class="logo-core">
+        <!-- Le corps 3D sera affiché ici -->
 
-A
+    </div>
 
-</div>
+    <div class="intro-text">
 
-</div>
+        <h1 class="logo-title">
 
-<h1>
+            ATLAS
 
-Atlas OS
+        </h1>
 
-</h1>
+        <h2>
 
-<p>
+            Votre jumeau biomécanique numérique
 
-Chaque corps raconte une histoire.
+        </h2>
 
-<br>
+        <p>
 
-Atlas veille à ce qu'elle ne soit jamais oubliée.
+            Chaque corps raconte une histoire.<br>
 
-</p>
+            Atlas veille à ce qu'elle ne soit jamais oubliée.
+
+        </p>
+
+        <button id="enterButton">
+
+            Créer mon jumeau
+
+        </button>
+
+    </div>
 
 </section>
 
-<!-- ========================= -->
-<!-- APPLICATION -->
-<!-- ========================= -->
+<!-- ==========================================================
+     SYNCHRONISATION
+=========================================================== -->
 
-<main id="app">
+<section id="sync" class="hidden">
 
-<header>
+    <h1>
 
-<div>
+        Synchronisez vos appareils
 
-<small>
+    </h1>
 
-Bienvenue
+    <p>
 
-</small>
+        Atlas apprend à connaître votre corps
+        grâce à vos données.
 
-<h2>
+    </p>
 
-Atlas OS
-
-</h2>
-
-</div>
-
-<div class="avatar">
-
-<span class="material-symbols-rounded">
-
-account_circle
-
-</span>
-
-</div>
-
-</header>
-
-<section class="hero">
-
-<div class="hero-glow"></div>
-
-<h1>
-
-Bonjour.
-
-</h1>
-
-<h2 id="typing">
-
-Racontez-moi votre histoire.
-
-</h2>
-
-<p>
-
-Je vais apprendre à connaître votre corps.
-
-Chaque douleur possède une histoire.
-
-Ensemble retrouvons son origine.
-
-</p>
-
-<button id="startButton">
-
-Commencer l'anamnèse
-
-</button>
-
-</section>
-
-<section class="dashboard">
-
-<div class="card">
-
-<h3>
-
-Score biomécanique
-
-</h3>
-
-<span>
-
-92
-
-</span>
-
-<small>
-
-+4 cette semaine
-
-</small>
-
-</div>
-
-<div class="card">
-
-<h3>
-
-Récupération
-
-</h3>
-
-<span>
-
-81%
-
-</span>
-
-<small>
-
-Bonne
-
-</small>
-
-</div>
-
-<div class="card">
-
-<h3>
-
-Sommeil
-
-</h3>
-
-<span>
-
-7h48
-
-</span>
-
-<small>
-
-Correct
-
-</small>
-
-</div>
-
-<div class="card">
-
-<h3>
-
-VFC
-
-</h3>
-
-<span>
-
-62
-
-</span>
-
-<small>
-
-Très bonne
-
-</small>
-
-</div>
-
-</section>
-
-</main>
-
-<nav>
-
-<button>
-
-<span class="material-symbols-rounded">
-
-home
-
-</span>
-
-Accueil
-
-</button>
-
-<button>
-
-<span class="material-symbols-rounded">
-
-chat
-
-</span>
-
-Atlas
-
-</button>
-
-<button>
-
-<span class="material-symbols-rounded">
-
-accessibility_new
-
-</span>
-
-Mon Corps
-
-</button>
-
-<button>
-
-<span class="material-symbols-rounded">
-
-analytics
-
-</span>
-
-Analyse
-
-</button>
-
-<button>
-
-<span class="material-symbols-rounded">
-
-settings
-
-</span>
-
-Plus
-
-</button>
-
-</nav>
-
-<script src="js/app.js"></script>
-
-</body>
-
-</html>
+    <div class="sync-grid">
