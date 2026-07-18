@@ -4022,3 +4022,64 @@ a:focus-visible {
     }
 
 }
+
+/* ==========================================================
+   LOGO ATLAS DANS LE VISUALISEUR 3D
+========================================================== */
+
+.atlas-viewer-logo {
+
+    position: relative;
+    z-index: 4;
+
+}
+
+.viewer-atlas-logo {
+
+    width: min(230px, 48%);
+    height: auto;
+
+    object-fit: contain;
+
+    border-radius: 28px;
+
+    mix-blend-mode: screen;
+
+    filter:
+        drop-shadow(
+            0 0 18px
+            rgba(var(--atlas-rgb), 0.55)
+        )
+        drop-shadow(
+            0 0 45px
+            rgba(var(--atlas-rgb), 0.28)
+        );
+
+    animation:
+        atlasViewerLogoPulse
+        4s
+        ease-in-out
+        infinite;
+
+}
+
+@keyframes atlasViewerLogoPulse {
+
+    0%,
+    100% {
+
+        opacity: 0.82;
+
+        transform: scale(0.98);
+
+    }
+
+    50% {
+
+        opacity: 1;
+
+        transform: scale(1.035);
+
+    }
+
+}
