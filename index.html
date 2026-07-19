@@ -1,1910 +1,209 @@
 <!DOCTYPE html>
-
 <html lang="fr">
-
 <head>
-
-    <!-- =====================================================
-         INFORMATIONS GÉNÉRALES
-    ====================================================== -->
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#020713">
+    <meta name="description" content="Atlas OS — jumeau biomécanique numérique.">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-    >
+    <title>Atlas OS</title>
 
-    <title>
-        Atlas OS — Votre jumeau biomécanique numérique
-    </title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0&display=swap" rel="stylesheet">
 
-    <meta
-        name="description"
-        content="Atlas OS crée votre jumeau biomécanique numérique grâce à l’intelligence artificielle, à la 3D et à vos données de santé."
-    >
-
-    <meta
-        name="theme-color"
-        content="#040b18"
-    >
-
-    <meta
-        name="color-scheme"
-        content="dark"
-    >
-
-    <!-- =====================================================
-         POLICES
-    ====================================================== -->
-
-    <link
-        rel="preconnect"
-        href="https://fonts.googleapis.com"
-    >
-
-    <link
-        rel="preconnect"
-        href="https://fonts.gstatic.com"
-        crossorigin
-    >
-
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet"
-    >
-
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded"
-        rel="stylesheet"
-    >
-
-    <!-- =====================================================
-         FEUILLE DE STYLE
-    ====================================================== -->
-
-    <link
-        rel="stylesheet"
-        href="css/style.css"
-    >
-
-    <!-- =====================================================
-         THREE.JS
-    ====================================================== -->
-
-    <script
-        src="https://unpkg.com/three@0.166.1/build/three.min.js"
-        defer
-    ></script>
-
-    <!-- =====================================================
-         SCRIPTS ATLAS OS
-    ====================================================== -->
-
-    <script
-        src="js/particles.js"
-        defer
-    ></script>
-
-    <script
-        src="js/body3d.js"
-        defer
-    ></script>
-
-    <script
-        src="js/app.js"
-        defer
-    ></script>
-
+    <link rel="stylesheet" href="./css/style.css?v=4">
 </head>
-
 <body data-atlas-theme="male">
 
-    <!-- =====================================================
-         LIEN D’ACCESSIBILITÉ
-    ====================================================== -->
+    <a class="skip-link" href="#mainContent">Aller au contenu</a>
 
-    <a
-        class="skip-link"
-        href="#mainContent"
-    >
-        Aller au contenu principal
-    </a>
-
-    <!-- =====================================================
-         ARRIÈRE-PLAN GLOBAL
-    ====================================================== -->
-
-    <div
-        id="background"
-        aria-hidden="true"
-    >
-
+    <div id="background" aria-hidden="true">
         <canvas id="particles"></canvas>
-
         <div class="gradient-one"></div>
-
         <div class="gradient-two"></div>
-
         <div class="noise"></div>
-
     </div>
 
-    <!-- =====================================================
-         ÉCRAN D’OUVERTURE
-    ====================================================== -->
-
-    <section
-        id="splashScreen"
-        class="splash-screen"
-        aria-label="Ouverture d’Atlas OS"
-    >
-
-        <div
-            class="splash-background"
-            aria-hidden="true"
-        ></div>
-
-        <div
-            class="splash-glow"
-            aria-hidden="true"
-        ></div>
-
+    <section id="splashScreen" class="splash-screen" aria-label="Initialisation d’Atlas OS">
+        <div class="splash-background"></div>
+        <div class="splash-glow"></div>
         <div class="splash-content">
-
-            <img
-                src="assets/images/atlas-opening.jpg"
-                alt="Atlas OS, votre jumeau biomécanique numérique"
-                class="splash-logo"
-            >
-
-            <div
-                class="splash-loader"
-                role="status"
-                aria-label="Chargement d’Atlas OS"
-            >
-
-                <span></span>
-
-                <span></span>
-
-                <span></span>
-
-            </div>
-
-            <p class="splash-status">
-                Initialisation du système biomécanique
-            </p>
-
+            <img class="splash-logo" src="./assets/images/atlas-opening.jpg" alt="Atlas OS">
+            <div class="splash-loader" aria-hidden="true"><span></span><span></span><span></span></div>
+            <p class="splash-status">ATLAS OS INITIALISATION</p>
         </div>
-
     </section>
-
-    <!-- =====================================================
-         CONTENU PRINCIPAL
-    ====================================================== -->
 
     <main id="mainContent">
 
-        <!-- =================================================
-             CHOIX DU JUMEAU
-        ================================================== -->
-
-        <section
-            id="genderSelection"
-            class="screen gender-screen hidden"
-            aria-labelledby="genderTitle"
-        >
-
-            <div class="gender-background">
-
-                <div
-                    class="gender-halo gender-halo--one"
-                    aria-hidden="true"
-                ></div>
-
-                <div
-                    class="gender-halo gender-halo--two"
-                    aria-hidden="true"
-                ></div>
-
+        <section id="genderSelection" class="gender-screen hidden" aria-hidden="true">
+            <div class="gender-background" aria-hidden="true">
+                <div class="gender-halo gender-halo--one"></div>
+                <div class="gender-halo gender-halo--two"></div>
             </div>
 
             <div class="gender-container">
-
                 <header class="gender-header">
-
-                    <img
-                        src="assets/images/atlas-logo.jpg"
-                        alt="Logo Atlas OS"
-                        class="gender-logo"
-                    >
-
-                    <span class="section-label">
-                        INITIALISATION
-                    </span>
-
-                    <h1 id="genderTitle">
-                        Choisissez votre jumeau
-                    </h1>
-
-                    <p>
-                        Sélectionnez l’apparence initiale de votre avatar
-                        biomécanique. Ce choix pourra être modifié plus tard
-                        dans les réglages de votre profil.
-                    </p>
-
+                    <img class="gender-logo" src="./assets/images/atlas-logo.jpg" alt="Logo Atlas OS">
+                    <span class="atlas-eyebrow">Création du jumeau numérique</span>
+                    <h1>Choisissez votre représentation</h1>
+                    <p>Le même symbole Atlas accompagne les deux profils. Seule son identité lumineuse change.</p>
                 </header>
 
-                <div
-                    class="gender-grid"
-                    role="radiogroup"
-                    aria-label="Choix du jumeau biomécanique"
-                >
+                <div class="gender-grid" role="radiogroup" aria-label="Choix du profil">
+                    <button class="gender-card gender-card--male" type="button" data-gender="male" role="radio" aria-checked="false">
+                        <span class="gender-card-glow" aria-hidden="true"></span>
+                        <span class="gender-check material-symbols-rounded" aria-hidden="true">check_circle</span>
 
-                    <!-- =====================================
-                         JUMEAU HOMME
-                    ====================================== -->
-
-                    <button
-                        class="gender-card gender-card--male"
-                        type="button"
-                        data-gender="male"
-                        role="radio"
-                        aria-checked="false"
-                    >
-
-                        <div class="gender-card-glow"></div>
-
-                        <div class="gender-visual">
-
-                            <div
-                                class="gender-orbit"
-                                aria-hidden="true"
-                            >
-
-                                <span class="orbit-dot orbit-dot--one"></span>
-
-                                <span class="orbit-dot orbit-dot--two"></span>
-
-                                <span class="orbit-dot orbit-dot--three"></span>
-
-                            </div>
-
-                            <div
-                                class="human-silhouette human-silhouette--male"
-                                aria-hidden="true"
-                            >
-
-                                <span class="material-symbols-rounded">
-                                    accessibility_new
-                                </span>
-
-                            </div>
-
-                        </div>
-
-                        <div class="gender-information">
-
-                            <span class="gender-type">
-                                Jumeau biomécanique
-                            </span>
-
-                            <h2>
-                                Homme
-                            </h2>
-
-                            <p>
-                                Interface cyan et bleue.
-                            </p>
-
-                        </div>
-
-                        <span
-                            class="gender-check material-symbols-rounded"
-                            aria-hidden="true"
-                        >
-                            check_circle
+                        <span class="gender-visual gender-visual--male" aria-hidden="true">
+                            <span class="gender-orbit"><i class="orbit-dot orbit-dot--one"></i><i class="orbit-dot orbit-dot--two"></i><i class="orbit-dot orbit-dot--three"></i></span>
+                            <img class="gender-atlas-symbol gender-atlas-symbol--male" src="./assets/images/atlas-logo.jpg" alt="">
                         </span>
 
+                        <span class="gender-information">
+                            <span class="gender-type">Profil biomécanique</span>
+                            <strong>Homme</strong>
+                            <span>Identité Atlas cyan et bleu électrique.</span>
+                        </span>
                     </button>
 
-                    <!-- =====================================
-                         JUMEAU FEMME
-                    ====================================== -->
+                    <button class="gender-card gender-card--female" type="button" data-gender="female" role="radio" aria-checked="false">
+                        <span class="gender-card-glow" aria-hidden="true"></span>
+                        <span class="gender-check material-symbols-rounded" aria-hidden="true">check_circle</span>
 
-                    <button
-                        class="gender-card gender-card--female"
-                        type="button"
-                        data-gender="female"
-                        role="radio"
-                        aria-checked="false"
-                    >
-
-                        <div class="gender-card-glow"></div>
-
-                        <div class="gender-visual">
-
-                            <div
-                                class="gender-orbit"
-                                aria-hidden="true"
-                            >
-
-                                <span class="orbit-dot orbit-dot--one"></span>
-
-                                <span class="orbit-dot orbit-dot--two"></span>
-
-                                <span class="orbit-dot orbit-dot--three"></span>
-
-                            </div>
-
-                            <div
-                                class="human-silhouette human-silhouette--female"
-                                aria-hidden="true"
-                            >
-
-                                <span class="material-symbols-rounded">
-                                    accessibility_new
-                                </span>
-
-                            </div>
-
-                        </div>
-
-                        <div class="gender-information">
-
-                            <span class="gender-type">
-                                Jumeau biomécanique
-                            </span>
-
-                            <h2>
-                                Femme
-                            </h2>
-
-                            <p>
-                                Interface violette et magenta.
-                            </p>
-
-                        </div>
-
-                        <span
-                            class="gender-check material-symbols-rounded"
-                            aria-hidden="true"
-                        >
-                            check_circle
+                        <span class="gender-visual gender-visual--female" aria-hidden="true">
+                            <span class="gender-orbit"><i class="orbit-dot orbit-dot--one"></i><i class="orbit-dot orbit-dot--two"></i><i class="orbit-dot orbit-dot--three"></i></span>
+                            <img class="gender-atlas-symbol gender-atlas-symbol--female" src="./assets/images/atlas-logo.jpg" alt="">
                         </span>
 
+                        <span class="gender-information">
+                            <span class="gender-type">Profil biomécanique</span>
+                            <strong>Femme</strong>
+                            <span>Identité Atlas magenta et violet lumineux.</span>
+                        </span>
                     </button>
-
                 </div>
 
                 <div class="gender-actions">
-
-                    <button
-                        id="confirmGenderButton"
-                        class="atlas-primary-button"
-                        type="button"
-                        disabled
-                    >
-
-                        <span>
-                            Initialiser mon jumeau
-                        </span>
-
-                        <span
-                            class="material-symbols-rounded"
-                            aria-hidden="true"
-                        >
-                            arrow_forward
-                        </span>
-
+                    <button id="confirmGenderButton" class="atlas-primary-button" type="button" disabled>
+                        Continuer
+                        <span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span>
                     </button>
-
-                    <button
-                        id="skipGenderButton"
-                        class="atlas-secondary-button"
-                        type="button"
-                    >
-                        Choisir plus tard
-                    </button>
-
+                    <button id="skipGenderButton" class="atlas-secondary-button" type="button">Utiliser le profil par défaut</button>
                 </div>
-
             </div>
-
         </section>
 
-        <!-- =================================================
-             INTRODUCTION
-        ================================================== -->
-
-        <section
-            id="intro"
-            class="intro-screen hidden"
-            aria-labelledby="introTitle"
-        >
-
+        <section id="intro" class="intro-screen hidden" aria-hidden="true">
             <div class="intro-content">
-
-                <!-- =========================================
-                     VISUALISATION 3D
-                ========================================== -->
-
                 <div class="intro-visual">
-
-                    <div
-                        id="viewer3D"
-                        aria-label="Visualisation 3D Atlas"
-                    >
-
+                    <div id="viewer3D">
                         <div class="viewer-placeholder atlas-viewer-logo">
-    <img
-        src="assets/images/atlas-logo.jpg"
-        alt="Logo Atlas OS"
-        class="viewer-atlas-logo"
-    >
-
-    <p>Initialisation du jumeau</p>
-</div>
-
+                            <img src="./assets/images/atlas-logo.jpg" alt="Logo Atlas OS" class="viewer-atlas-logo">
+                            <p>Initialisation du jumeau</p>
+                        </div>
+                        <div class="viewer-information" aria-hidden="true"><span>DIGITAL TWIN</span><span>SYSTEM ONLINE</span></div>
                     </div>
-
-                    <div
-                        class="viewer-information"
-                        aria-hidden="true"
-                    >
-
-                        <span>
-                            DIGITAL TWIN
-                        </span>
-
-                        <span>
-                            SYSTEM ONLINE
-                        </span>
-
-                    </div>
-
                 </div>
-
-                <!-- =========================================
-                     PRÉSENTATION
-                ========================================== -->
 
                 <div class="logo-zone">
-
-                    <span class="atlas-eyebrow">
-                        DIGITAL BIOMECHANICAL TWIN
-                    </span>
-
-                    <h1 id="introTitle">
-                        ATLAS
-                    </h1>
-
-                    <h2>
-                        Votre jumeau biomécanique numérique
-                    </h2>
-
-                    <p>
-                        Chaque corps raconte une histoire.
-                        <br>
-                        Atlas veille à ce qu’elle ne soit jamais oubliée.
-                    </p>
-
-                    <button
-                        id="enterButton"
-                        class="atlas-primary-button"
-                        type="button"
-                    >
-
-                        <span>
-                            Commencer
-                        </span>
-
-                        <span
-                            class="material-symbols-rounded"
-                            aria-hidden="true"
-                        >
-                            arrow_forward
-                        </span>
-
-                    </button>
-
+                    <span class="atlas-eyebrow">Digital biomechanical twin</span>
+                    <h1>ATLAS</h1>
+                    <h2>Votre jumeau biomécanique numérique</h2>
+                    <p>Chaque corps raconte une histoire. Atlas veille à ce qu’elle ne soit jamais oubliée.</p>
+                    <button id="enterButton" class="atlas-primary-button" type="button">Commencer <span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span></button>
                 </div>
-
             </div>
-
-            <div
-                class="scroll-indicator"
-                aria-hidden="true"
-            >
-
-                <span>
-                    Faire glisser
-                </span>
-
-                <span class="material-symbols-rounded">
-                    expand_more
-                </span>
-
-            </div>
-
+            <div class="scroll-indicator" aria-hidden="true"><span>Faire glisser</span><span class="material-symbols-rounded">keyboard_arrow_down</span></div>
         </section>
 
-        <!-- =================================================
-             SYNCHRONISATION
-        ================================================== -->
-
-        <section
-            id="sync"
-            class="screen sync-screen hidden"
-            aria-labelledby="syncTitle"
-        >
-
+        <section id="sync" class="screen sync-screen hidden" aria-hidden="true">
             <div class="screen-container">
-
                 <header class="screen-header">
-
-                    <span class="section-label">
-                        ÉTAPE 02
-                    </span>
-
-                    <h2 id="syncTitle">
-                        Connectez votre écosystème
-                    </h2>
-
-                    <p>
-                        Atlas apprend de votre corps en analysant vos
-                        données de santé, d’entraînement et de récupération.
-                    </p>
-
+                    <span class="atlas-eyebrow">Synchronisation</span>
+                    <h2>Connectez vos données</h2>
+                    <p>Choisissez une ou plusieurs sources. Cette version simule les connexions.</p>
                 </header>
 
                 <div class="cards-grid">
-
-                    <!-- Garmin -->
-
-                    <article class="device-card">
-
-                        <div class="device-card-top">
-
-                            <div
-                                class="device-logo"
-                                aria-hidden="true"
-                            >
-                                ⌚
-                            </div>
-
-                            <span class="device-status">
-                                Disponible prochainement
-                            </span>
-
-                        </div>
-
-                        <h3>
-                            Garmin Connect
-                        </h3>
-
-                        <ul>
-
-                            <li>
-                                Fréquence cardiaque
-                            </li>
-
-                            <li>
-                                Variabilité cardiaque
-                            </li>
-
-                            <li>
-                                Sommeil
-                            </li>
-
-                            <li>
-                                Running Dynamics
-                            </li>
-
-                        </ul>
-
-                        <button
-                            class="device-connect-button"
-                            type="button"
-                            data-device="Garmin Connect"
-                        >
-                            Connecter
-                        </button>
-
-                    </article>
-
-                    <!-- Apple Santé -->
-
-                    <article class="device-card">
-
-                        <div class="device-card-top">
-
-                            <div
-                                class="device-logo"
-                                aria-hidden="true"
-                            >
-                                🍎
-                            </div>
-
-                            <span class="device-status">
-                                Disponible prochainement
-                            </span>
-
-                        </div>
-
-                        <h3>
-                            Apple Santé
-                        </h3>
-
-                        <ul>
-
-                            <li>
-                                Activité quotidienne
-                            </li>
-
-                            <li>
-                                Données de santé
-                            </li>
-
-                            <li>
-                                Poids
-                            </li>
-
-                            <li>
-                                Sommeil
-                            </li>
-
-                        </ul>
-
-                        <button
-                            class="device-connect-button"
-                            type="button"
-                            data-device="Apple Santé"
-                        >
-                            Connecter
-                        </button>
-
-                    </article>
-
-                    <!-- COROS -->
-
-                    <article class="device-card">
-
-                        <div class="device-card-top">
-
-                            <div
-                                class="device-logo"
-                                aria-hidden="true"
-                            >
-                                🏃
-                            </div>
-
-                            <span class="device-status">
-                                Disponible prochainement
-                            </span>
-
-                        </div>
-
-                        <h3>
-                            COROS
-                        </h3>
-
-                        <ul>
-
-                            <li>
-                                Charge d’entraînement
-                            </li>
-
-                            <li>
-                                Performance
-                            </li>
-
-                            <li>
-                                Fatigue
-                            </li>
-
-                            <li>
-                                Récupération
-                            </li>
-
-                        </ul>
-
-                        <button
-                            class="device-connect-button"
-                            type="button"
-                            data-device="COROS"
-                        >
-                            Connecter
-                        </button>
-
-                    </article>
-
-                    <!-- Polar -->
-
-                    <article class="device-card">
-
-                        <div class="device-card-top">
-
-                            <div
-                                class="device-logo"
-                                aria-hidden="true"
-                            >
-                                ❤
-                            </div>
-
-                            <span class="device-status">
-                                Disponible prochainement
-                            </span>
-
-                        </div>
-
-                        <h3>
-                            Polar
-                        </h3>
-
-                        <ul>
-
-                            <li>
-                                Données cardio
-                            </li>
-
-                            <li>
-                                Recovery Pro
-                            </li>
-
-                            <li>
-                                Tests physiques
-                            </li>
-
-                            <li>
-                                Sommeil
-                            </li>
-
-                        </ul>
-
-                        <button
-                            class="device-connect-button"
-                            type="button"
-                            data-device="Polar"
-                        >
-                            Connecter
-                        </button>
-
-                    </article>
-
-                    <!-- Strava -->
-
-                    <article class="device-card">
-
-                        <div class="device-card-top">
-
-                            <div
-                                class="device-logo"
-                                aria-hidden="true"
-                            >
-                                🚴
-                            </div>
-
-                            <span class="device-status">
-                                Disponible prochainement
-                            </span>
-
-                        </div>
-
-                        <h3>
-                            Strava
-                        </h3>
-
-                        <ul>
-
-                            <li>
-                                Historique sportif
-                            </li>
-
-                            <li>
-                                Parcours
-                            </li>
-
-                            <li>
-                                Charges
-                            </li>
-
-                            <li>
-                                Performances
-                            </li>
-
-                        </ul>
-
-                        <button
-                            class="device-connect-button"
-                            type="button"
-                            data-device="Strava"
-                        >
-                            Connecter
-                        </button>
-
-                    </article>
-
-                    <!-- Saisie manuelle -->
-
-                    <article class="device-card device-card--manual">
-
-                        <div class="device-card-top">
-
-                            <div
-                                class="device-logo"
-                                aria-hidden="true"
-                            >
-
-                                <span class="material-symbols-rounded">
-                                    edit_note
-                                </span>
-
-                            </div>
-
-                            <span class="device-status device-status--ready">
-                                Disponible
-                            </span>
-
-                        </div>
-
-                        <h3>
-                            Saisie manuelle
-                        </h3>
-
-                        <ul>
-
-                            <li>
-                                Douleurs
-                            </li>
-
-                            <li>
-                                Antécédents
-                            </li>
-
-                            <li>
-                                Objectifs
-                            </li>
-
-                            <li>
-                                Activité physique
-                            </li>
-
-                        </ul>
-
-                        <button
-                            class="device-connect-button"
-                            type="button"
-                            data-device="Saisie manuelle"
-                        >
-                            Utiliser
-                        </button>
-
-                    </article>
-
+                    <article class="device-card"><div class="device-card-top"><div class="device-logo"><span class="material-symbols-rounded">watch</span></div><span class="device-status">Disponible</span></div><h3>Garmin</h3><ul><li>Charge d’entraînement</li><li>Sommeil et récupération</li><li>Fréquence cardiaque</li></ul><button class="device-connect-button" type="button" data-device="Garmin">Connecter</button></article>
+                    <article class="device-card"><div class="device-card-top"><div class="device-logo"><span class="material-symbols-rounded">favorite</span></div><span class="device-status">Disponible</span></div><h3>Apple Santé</h3><ul><li>Activité quotidienne</li><li>Mobilité</li><li>Données de santé</li></ul><button class="device-connect-button" type="button" data-device="Apple Santé">Connecter</button></article>
+                    <article class="device-card"><div class="device-card-top"><div class="device-logo"><span class="material-symbols-rounded">monitor_heart</span></div><span class="device-status">Disponible</span></div><h3>Polar</h3><ul><li>Récupération</li><li>Charge cardiovasculaire</li><li>Sessions sportives</li></ul><button class="device-connect-button" type="button" data-device="Polar">Connecter</button></article>
+                    <article class="device-card"><div class="device-card-top"><div class="device-logo"><span class="material-symbols-rounded">directions_run</span></div><span class="device-status">Disponible</span></div><h3>COROS</h3><ul><li>Course et puissance</li><li>Fatigue</li><li>Progression</li></ul><button class="device-connect-button" type="button" data-device="COROS">Connecter</button></article>
+                    <article class="device-card"><div class="device-card-top"><div class="device-logo"><span class="material-symbols-rounded">route</span></div><span class="device-status">Disponible</span></div><h3>Strava</h3><ul><li>Historique sportif</li><li>Volume d’activité</li><li>Segments</li></ul><button class="device-connect-button" type="button" data-device="Strava">Connecter</button></article>
+                    <article class="device-card"><div class="device-card-top"><div class="device-logo"><span class="material-symbols-rounded">edit_note</span></div><span class="device-status device-status--ready">Toujours disponible</span></div><h3>Saisie manuelle</h3><ul><li>Douleurs</li><li>Fatigue ressentie</li><li>Antécédents</li></ul><button class="device-connect-button" type="button" data-device="Saisie manuelle">Utiliser</button></article>
                 </div>
 
-                <div class="next-zone">
-
-                    <p
-                        id="deviceSelectionStatus"
-                        class="device-selection-status"
-                    >
-                        La connexion des appareils est facultative pour
-                        cette démonstration.
-                    </p>
-
-                    <button
-                        id="continueButton"
-                        class="atlas-primary-button"
-                        type="button"
-                    >
-
-                        <span>
-                            Continuer
-                        </span>
-
-                        <span
-                            class="material-symbols-rounded"
-                            aria-hidden="true"
-                        >
-                            arrow_forward
-                        </span>
-
-                    </button>
-
-                </div>
-
+                <div class="next-zone"><p id="deviceSelectionStatus" class="device-selection-status">La connexion des appareils est facultative pour cette démonstration.</p><button id="continueButton" class="atlas-primary-button" type="button">Continuer <span class="material-symbols-rounded">arrow_forward</span></button></div>
             </div>
-
         </section>
 
-        <!-- =================================================
-             ASSISTANT ATLAS
-        ================================================== -->
-
-        <section
-            id="assistant"
-            class="screen assistant-screen hidden"
-            aria-labelledby="assistantTitle"
-        >
-
+        <section id="assistant" class="screen assistant-screen hidden" aria-hidden="true">
             <div class="assistant-container">
-
-                <div class="assistant-visual">
-
-                    <div
-                        class="assistant-orbit"
-                        aria-hidden="true"
-                    ></div>
-
-                    <div
-                        class="assistant-avatar"
-                        aria-hidden="true"
-                    >
-                        A
-                    </div>
-
-                </div>
-
-                <span class="section-label">
-                    ÉTAPE 03
-                </span>
-
-                <h2 id="assistantTitle">
-                    Bonjour.
-                </h2>
-
-                <h3>
-                    Je suis Atlas.
-                </h3>
-
-                <p>
-                    Racontez-moi votre histoire. Je vais utiliser ces
-                    informations pour créer la première version de votre
-                    jumeau biomécanique.
-                </p>
-
+                <div class="assistant-visual" aria-hidden="true"><div class="assistant-orbit"></div><div class="assistant-avatar">A</div></div>
+                <span class="atlas-eyebrow">Atlas AI</span>
+                <h2>Parlez-moi de votre corps</h2>
+                <h3>Votre histoire compte.</h3>
+                <p>Décrivez vos activités, vos douleurs, vos blessures, vos opérations et vos objectifs.</p>
                 <form id="atlasStoryForm">
-
-                    <label
-                        class="visually-hidden"
-                        for="story"
-                    >
-                        Votre histoire biomécanique
-                    </label>
-
-                    <textarea
-                        id="story"
-                        name="story"
-                        placeholder="Décrivez vos douleurs, vos objectifs, votre activité physique, vos antécédents ou tout élément important…"
-                        minlength="10"
-                        maxlength="3000"
-                        required
-                    ></textarea>
-
-                    <div class="story-footer">
-
-                        <span id="storyCounter">
-                            0 / 3000
-                        </span>
-
-                        <span>
-                            Ces informations restent modifiables.
-                        </span>
-
-                    </div>
-
-                    <button
-                        id="analyseBtn"
-                        class="atlas-primary-button"
-                        type="submit"
-                    >
-
-                        <span
-                            class="material-symbols-rounded"
-                            aria-hidden="true"
-                        >
-                            neurology
-                        </span>
-
-                        <span>
-                            Créer mon jumeau biomécanique
-                        </span>
-
-                    </button>
-
+                    <textarea id="story" maxlength="3000" placeholder="Exemple : je cours trois fois par semaine et je ressens parfois une gêne au genou droit…"></textarea>
+                    <div class="story-footer"><span>Ces informations restent dans cette démonstration locale.</span><span id="storyCounter">0 / 3000</span></div>
+                    <button id="analyseBtn" class="atlas-primary-button" type="submit">Créer mon jumeau <span class="material-symbols-rounded">neurology</span></button>
+                    <p id="assistantMessage" class="assistant-message" aria-live="polite"></p>
                 </form>
-
-                <p
-                    id="assistantMessage"
-                    class="assistant-message"
-                    role="status"
-                    aria-live="polite"
-                ></p>
-
             </div>
-
         </section>
 
-        <!-- =================================================
-             CRÉATION DU JUMEAU
-        ================================================== -->
-
-        <section
-            id="twinCreation"
-            class="screen twin-creation hidden"
-            aria-labelledby="creationTitle"
-        >
-
+        <section id="twinCreation" class="screen twin-creation hidden" aria-hidden="true">
             <div class="creation-container">
-
-                <div
-                    class="creation-scanner"
-                    aria-hidden="true"
-                >
-
-                    <div class="creation-orbit creation-orbit--one"></div>
-
-                    <div class="creation-orbit creation-orbit--two"></div>
-
-                    <div class="creation-core">
-
-                        <span class="material-symbols-rounded">
-                            accessibility_new
-                        </span>
-
-                    </div>
-
-                </div>
-
-                <span class="section-label">
-                    ANALYSE ATLAS
-                </span>
-
-                <h2 id="creationTitle">
-                    Construction de votre jumeau
-                </h2>
-
-                <p id="creationStatus">
-                    Analyse de votre profil biomécanique…
-                </p>
-
-                <div
-                    class="creation-progress"
-                    role="progressbar"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    aria-valuenow="0"
-                >
-
-                    <div
-                        id="creationProgressBar"
-                        class="creation-progress-bar"
-                    ></div>
-
-                </div>
-
-                <span id="creationProgressText">
-                    0 %
-                </span>
-
+                <div class="creation-scanner" aria-hidden="true"><div class="creation-orbit creation-orbit--one"></div><div class="creation-orbit creation-orbit--two"></div><div class="creation-core"><span class="material-symbols-rounded">accessibility_new</span></div></div>
+                <span class="atlas-eyebrow">Création numérique</span>
+                <h2>Construction de votre jumeau</h2>
+                <p id="creationStatus">Analyse de votre profil biomécanique…</p>
+                <div class="creation-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="creationProgressBar" class="creation-progress-bar"></div></div>
+                <span id="creationProgressText">0 %</span>
             </div>
-
         </section>
 
-        <!-- =================================================
-             TABLEAU DE BORD
-        ================================================== -->
-
-        <section
-            id="dashboard"
-            class="screen dashboard-screen hidden"
-            aria-labelledby="dashboardTitle"
-        >
-
+        <section id="dashboard" class="screen dashboard-screen hidden" aria-hidden="true">
             <div class="dashboard-container">
-
-                <header class="dashboard-header">
-
-                    <div>
-
-                        <span class="section-label">
-                            ATLAS OS
-                        </span>
-
-                        <h1 id="dashboardTitle">
-                            Votre tableau de bord
-                        </h1>
-
-                        <p>
-                            Votre jumeau biomécanique numérique
-                        </p>
-
-                    </div>
-
-                    <button
-                        id="profileButton"
-                        class="profile-button"
-                        type="button"
-                        aria-label="Ouvrir le profil"
-                    >
-
-                        <span class="material-symbols-rounded">
-                            account_circle
-                        </span>
-
-                    </button>
-
-                </header>
-
+                <header class="dashboard-header"><div><span class="atlas-eyebrow">Atlas OS</span><h1>Votre état biomécanique</h1><p>Vue synthétique de votre jumeau numérique.</p></div><button id="profileButton" class="profile-button" type="button" aria-label="Ouvrir le profil"><span class="material-symbols-rounded">person</span></button></header>
                 <div class="dashboard-layout">
-
-                    <!-- =====================================
-                         CORPS 3D
-                    ====================================== -->
-
-                    <section class="body-panel">
-
-                        <div class="panel-title">
-
-                            <div>
-
-                                <span class="section-label">
-                                    DIGITAL TWIN
-                                </span>
-
-                                <h2>
-                                    Votre jumeau biomécanique
-                                </h2>
-
-                                <p>
-                                    Sélectionnez une région anatomique pour
-                                    explorer son état et son historique.
-                                </p>
-
-                            </div>
-
-                            <button
-                                id="resetBodyViewButton"
-                                class="icon-button"
-                                type="button"
-                                aria-label="Recentrer le jumeau"
-                            >
-
-                                <span class="material-symbols-rounded">
-                                    center_focus_strong
-                                </span>
-
-                            </button>
-
-                        </div>
-
-                        <div
-                            id="body3dContainer"
-                            aria-label="Jumeau biomécanique interactif"
-                        >
-
-                            <div class="body-placeholder">
-
-                                <span class="material-symbols-rounded">
-                                    accessibility_new
-                                </span>
-
-                                <p>
-                                    Votre modèle 3D apparaîtra ici
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                        <div class="body-controls">
-
-                            <button
-                                type="button"
-                                data-body-layer="skin"
-                                class="body-control active"
-                            >
-                                Peau
-                            </button>
-
-                            <button
-                                type="button"
-                                data-body-layer="muscles"
-                                class="body-control"
-                            >
-                                Muscles
-                            </button>
-
-                            <button
-                                type="button"
-                                data-body-layer="skeleton"
-                                class="body-control"
-                            >
-                                Squelette
-                            </button>
-
-                            <button
-                                type="button"
-                                data-body-layer="risks"
-                                class="body-control"
-                            >
-                                Zones sensibles
-                            </button>
-
-                        </div>
-
-                    </section>
-
-                    <!-- =====================================
-                         STATISTIQUES
-                    ====================================== -->
-
-                    <aside
-                        class="stats-panel"
-                        aria-label="Indicateurs biomécaniques"
-                    >
-
-                        <article class="stat-card">
-
-                            <div class="stat-card-header">
-
-                                <span class="material-symbols-rounded">
-                                    favorite
-                                </span>
-
-                                <h3>
-                                    Fréquence cardiaque
-                                </h3>
-
-                            </div>
-
-                            <strong>
-                                54 bpm
-                            </strong>
-
-                            <small>
-                                Valeur de repos
-                            </small>
-
-                        </article>
-
-                        <article class="stat-card">
-
-                            <div class="stat-card-header">
-
-                                <span class="material-symbols-rounded">
-                                    ecg_heart
-                                </span>
-
-                                <h3>
-                                    Variabilité cardiaque
-                                </h3>
-
-                            </div>
-
-                            <strong>
-                                62 ms
-                            </strong>
-
-                            <small>
-                                Très bon état de récupération
-                            </small>
-
-                        </article>
-
-                        <article class="stat-card">
-
-                            <div class="stat-card-header">
-
-                                <span class="material-symbols-rounded">
-                                    bedtime
-                                </span>
-
-                                <h3>
-                                    Sommeil
-                                </h3>
-
-                            </div>
-
-                            <strong>
-                                7 h 42
-                            </strong>
-
-                            <small>
-                                Bonne qualité de récupération
-                            </small>
-
-                        </article>
-
-                        <article class="stat-card">
-
-                            <div class="stat-card-header">
-
-                                <span class="material-symbols-rounded">
-                                    sprint
-                                </span>
-
-                                <h3>
-                                    Charge
-                                </h3>
-
-                            </div>
-
-                            <strong>
-                                81 %
-                            </strong>
-
-                            <small>
-                                Charge actuellement optimale
-                            </small>
-
-                        </article>
-
-                        <article class="stat-card">
-
-                            <div class="stat-card-header">
-
-                                <span class="material-symbols-rounded">
-                                    skeleton
-                                </span>
-
-                                <h3>
-                                    Score biomécanique
-                                </h3>
-
-                            </div>
-
-                            <strong>
-                                92 / 100
-                            </strong>
-
-                            <small>
-                                Excellent équilibre général
-                            </small>
-
-                        </article>
-
-                        <article class="stat-card stat-card--analysis">
-
-                            <div class="stat-card-header">
-
-                                <span class="material-symbols-rounded">
-                                    auto_awesome
-                                </span>
-
-                                <h3>
-                                    Analyse Atlas
-                                </h3>
-
-                            </div>
-
-                            <p>
-                                Votre récupération est favorable.
-                                Votre charge peut rester stable aujourd’hui.
-                            </p>
-
-                            <small>
-                                Dernière synchronisation : aujourd’hui
-                            </small>
-
-                        </article>
-
-                    </aside>
-
+                    <section class="body-panel"><div class="panel-title"><div><span class="atlas-eyebrow">Digital Twin</span><h2>Cartographie corporelle</h2><p>Faites glisser le modèle, zoomez et changez de couche.</p></div><button id="resetBodyViewButton" class="icon-button" type="button" aria-label="Recentrer le jumeau"><span class="material-symbols-rounded">center_focus_strong</span></button></div><div id="body3dContainer"><div class="body-placeholder"><img src="./assets/images/atlas-logo.jpg" alt="" class="viewer-atlas-logo"><p>Chargement du jumeau 3D</p></div></div><div class="body-controls"><button class="body-control active" type="button" data-body-layer="skin">Peau</button><button class="body-control" type="button" data-body-layer="muscles">Muscles</button><button class="body-control" type="button" data-body-layer="skeleton">Squelette</button><button class="body-control" type="button" data-body-layer="risks">Zones sensibles</button></div></section>
+                    <aside class="stats-panel"><article class="stat-card"><div class="stat-card-header"><span class="material-symbols-rounded">battery_very_low</span><h3>Récupération</h3></div><strong>82 %</strong><small>État simulé favorable</small></article><article class="stat-card"><div class="stat-card-header"><span class="material-symbols-rounded">fitness_center</span><h3>Charge</h3></div><strong>Modérée</strong><small>Compatible avec une activité contrôlée</small></article><article class="stat-card"><div class="stat-card-header"><span class="material-symbols-rounded">monitoring</span><h3>Équilibre</h3></div><strong>94 %</strong><small>Symétrie globale simulée</small></article><article class="stat-card stat-card--analysis"><div class="stat-card-header"><span class="material-symbols-rounded">neurology</span><h3>Analyse Atlas</h3></div><p>Votre profil ne présente pas d’alerte majeure dans cette démonstration.</p><small>Les résultats ne constituent pas un diagnostic médical.</small></article></aside>
                 </div>
-
             </div>
-
         </section>
 
-        <!-- =================================================
-             ATLAS AI
-        ================================================== -->
+        <section id="aiScreen" class="screen application-screen hidden" aria-hidden="true"><div class="application-container"><header class="application-screen-header"><span class="atlas-eyebrow">Atlas AI</span><h2>Dialogue biomécanique</h2><p>Posez une question sur votre activité, votre récupération ou une zone corporelle.</p></header><div class="chat-panel"><div id="chatMessages" class="chat-messages" aria-live="polite"><article class="chat-message chat-message--atlas"><div class="chat-avatar">A</div><p>Bonjour. Quelle partie de votre corps ou de votre entraînement souhaitez-vous explorer ?</p></article></div><form id="chatForm" class="chat-form"><input id="chatInput" type="text" autocomplete="off" placeholder="Écrivez votre message…" aria-label="Message pour Atlas AI"><button type="submit" aria-label="Envoyer"><span class="material-symbols-rounded">send</span></button></form></div></div></section>
 
-        <section
-            id="aiScreen"
-            class="screen application-screen hidden"
-            aria-labelledby="aiScreenTitle"
-        >
+        <section id="historyScreen" class="screen application-screen hidden" aria-hidden="true"><div class="application-container"><header class="application-screen-header"><span class="atlas-eyebrow">Historique</span><h2>Évolution du jumeau</h2><p>Chronologie simulée de vos données et analyses.</p></header><div class="history-list"><article class="history-item"><div class="history-icon"><span class="material-symbols-rounded">check_circle</span></div><div><time>Aujourd’hui</time><h3>Jumeau initialisé</h3><p>Votre profil Atlas a été créé avec les informations fournies.</p></div></article><article class="history-item"><div class="history-icon"><span class="material-symbols-rounded">sync</span></div><div><time>Aujourd’hui</time><h3>Données synchronisées</h3><p>Les sources sélectionnées ont été ajoutées à la démonstration.</p></div></article></div></div></section>
 
-            <div class="application-container">
-
-                <header class="application-screen-header">
-
-                    <span class="section-label">
-                        ATLAS AI
-                    </span>
-
-                    <h2 id="aiScreenTitle">
-                        Votre assistant biomécanique
-                    </h2>
-
-                    <p>
-                        Posez une question à Atlas concernant votre
-                        activité, votre récupération ou votre jumeau.
-                    </p>
-
-                </header>
-
-                <div class="chat-panel">
-
-                    <div
-                        id="chatMessages"
-                        class="chat-messages"
-                        aria-live="polite"
-                    >
-
-                        <article class="chat-message chat-message--atlas">
-
-                            <div
-                                class="chat-avatar"
-                                aria-hidden="true"
-                            >
-                                A
-                            </div>
-
-                            <p>
-                                Bonjour. Comment vous sentez-vous aujourd’hui ?
-                            </p>
-
-                        </article>
-
-                    </div>
-
-                    <form
-                        id="chatForm"
-                        class="chat-form"
-                    >
-
-                        <label
-                            for="chatInput"
-                            class="visually-hidden"
-                        >
-                            Votre message pour Atlas
-                        </label>
-
-                        <input
-                            id="chatInput"
-                            type="text"
-                            placeholder="Écrivez votre message…"
-                            autocomplete="off"
-                        >
-
-                        <button
-                            type="submit"
-                            aria-label="Envoyer le message"
-                        >
-
-                            <span class="material-symbols-rounded">
-                                send
-                            </span>
-
-                        </button>
-
-                    </form>
-
-                </div>
-
-            </div>
-
-        </section>
-
-        <!-- =================================================
-             HISTORIQUE
-        ================================================== -->
-
-        <section
-            id="historyScreen"
-            class="screen application-screen hidden"
-            aria-labelledby="historyTitle"
-        >
-
-            <div class="application-container">
-
-                <header class="application-screen-header">
-
-                    <span class="section-label">
-                        HISTORIQUE
-                    </span>
-
-                    <h2 id="historyTitle">
-                        Évolution de votre corps
-                    </h2>
-
-                    <p>
-                        Retrouvez vos analyses, douleurs, entraînements
-                        et changements biomécaniques.
-                    </p>
-
-                </header>
-
-                <div class="history-list">
-
-                    <article class="history-item">
-
-                        <span
-                            class="history-icon material-symbols-rounded"
-                            aria-hidden="true"
-                        >
-                            analytics
-                        </span>
-
-                        <div>
-
-                            <time>
-                                Aujourd’hui
-                            </time>
-
-                            <h3>
-                                Analyse biomécanique créée
-                            </h3>
-
-                            <p>
-                                Votre première évaluation Atlas a été enregistrée.
-                            </p>
-
-                        </div>
-
-                    </article>
-
-                    <article class="history-item">
-
-                        <span
-                            class="history-icon material-symbols-rounded"
-                            aria-hidden="true"
-                        >
-                            sync
-                        </span>
-
-                        <div>
-
-                            <time>
-                                Aujourd’hui
-                            </time>
-
-                            <h3>
-                                Synchronisation terminée
-                            </h3>
-
-                            <p>
-                                Les premières données de démonstration
-                                ont été ajoutées.
-                            </p>
-
-                        </div>
-
-                    </article>
-
-                </div>
-
-            </div>
-
-        </section>
-
-        <!-- =================================================
-             PROFIL
-        ================================================== -->
-
-        <section
-            id="profileScreen"
-            class="screen application-screen hidden"
-            aria-labelledby="profileTitle"
-        >
-
-            <div class="application-container">
-
-                <header class="application-screen-header">
-
-                    <span class="section-label">
-                        PROFIL
-                    </span>
-
-                    <h2 id="profileTitle">
-                        Votre identité Atlas
-                    </h2>
-
-                    <p>
-                        Gérez les informations utilisées pour personnaliser
-                        votre jumeau biomécanique.
-                    </p>
-
-                </header>
-
-                <div class="profile-grid">
-
-                    <article class="profile-card">
-
-                        <span
-                            class="material-symbols-rounded"
-                            aria-hidden="true"
-                        >
-                            accessibility_new
-                        </span>
-
-                        <h3>
-                            Apparence du jumeau
-                        </h3>
-
-                        <p id="selectedTwinLabel">
-                            Jumeau masculin
-                        </p>
-
-                        <button
-                            id="changeGenderButton"
-                            type="button"
-                        >
-                            Modifier
-                        </button>
-
-                    </article>
-
-                    <article class="profile-card">
-
-                        <span
-                            class="material-symbols-rounded"
-                            aria-hidden="true"
-                        >
-                            devices
-                        </span>
-
-                        <h3>
-                            Appareils connectés
-                        </h3>
-
-                        <p id="connectedDevicesLabel">
-                            Aucun appareil connecté
-                        </p>
-
-                        <button
-                            id="manageDevicesButton"
-                            type="button"
-                        >
-                            Gérer
-                        </button>
-
-                    </article>
-
-                    <article class="profile-card">
-
-                        <span
-                            class="material-symbols-rounded"
-                            aria-hidden="true"
-                        >
-                            shield_lock
-                        </span>
-
-                        <h3>
-                            Confidentialité
-                        </h3>
-
-                        <p>
-                            Contrôlez les informations enregistrées par Atlas.
-                        </p>
-
-                        <button
-                            type="button"
-                            disabled
-                        >
-                            Prochainement
-                        </button>
-
-                    </article>
-
-                    <article class="profile-card">
-
-                        <span
-                            class="material-symbols-rounded"
-                            aria-hidden="true"
-                        >
-                            restart_alt
-                        </span>
-
-                        <h3>
-                            Réinitialiser la démonstration
-                        </h3>
-
-                        <p>
-                            Revenir au choix initial du jumeau.
-                        </p>
-
-                        <button
-                            id="resetApplicationButton"
-                            type="button"
-                        >
-                            Réinitialiser
-                        </button>
-
-                    </article>
-
-                </div>
-
-            </div>
-
-        </section>
+        <section id="profileScreen" class="screen application-screen hidden" aria-hidden="true"><div class="application-container"><header class="application-screen-header"><span class="atlas-eyebrow">Profil</span><h2>Paramètres Atlas</h2><p>Gérez l’apparence de votre jumeau et les données de démonstration.</p></header><div class="profile-grid"><article class="profile-card"><span class="material-symbols-rounded">accessibility_new</span><h3>Représentation</h3><p id="selectedTwinLabel">Jumeau masculin</p><button id="changeGenderButton" type="button">Modifier</button></article><article class="profile-card"><span class="material-symbols-rounded">watch</span><h3>Sources de données</h3><p id="connectedDevicesLabel">Aucun appareil connecté</p><button id="manageDevicesButton" type="button">Gérer</button></article><article class="profile-card"><span class="material-symbols-rounded">shield</span><h3>Confidentialité</h3><p>Les données sont enregistrées localement dans votre navigateur.</p><button type="button" disabled>Paramètres</button></article><article class="profile-card"><span class="material-symbols-rounded">restart_alt</span><h3>Réinitialisation</h3><p>Effacez les choix enregistrés et recommencez l’expérience.</p><button id="resetApplicationButton" type="button">Réinitialiser</button></article></div></div></section>
 
     </main>
 
-    <!-- =====================================================
-         NAVIGATION INFÉRIEURE
-    ====================================================== -->
-
-    <nav
-        id="bottomNav"
-        class="bottom-navigation hidden"
-        aria-label="Navigation principale"
-    >
-
-        <button
-            type="button"
-            class="nav-button active"
-            data-screen="dashboard"
-            aria-label="Ouvrir l’accueil"
-        >
-
-            <span class="material-symbols-rounded">
-                home
-            </span>
-
-            <span>
-                Accueil
-            </span>
-
-        </button>
-
-        <button
-            type="button"
-            class="nav-button"
-            data-screen="dashboard"
-            data-focus="body3dContainer"
-            aria-label="Ouvrir le jumeau"
-        >
-
-            <span class="material-symbols-rounded">
-                accessibility_new
-            </span>
-
-            <span>
-                Jumeau
-            </span>
-
-        </button>
-
-        <button
-            type="button"
-            class="nav-button nav-button--atlas"
-            data-screen="aiScreen"
-            aria-label="Ouvrir Atlas AI"
-        >
-
-            <span class="nav-atlas-icon">
-                A
-            </span>
-
-            <span>
-                Atlas AI
-            </span>
-
-        </button>
-
-        <button
-            type="button"
-            class="nav-button"
-            data-screen="historyScreen"
-            aria-label="Ouvrir l’historique"
-        >
-
-            <span class="material-symbols-rounded">
-                timeline
-            </span>
-
-            <span>
-                Historique
-            </span>
-
-        </button>
-
-        <button
-            type="button"
-            class="nav-button"
-            data-screen="profileScreen"
-            aria-label="Ouvrir le profil"
-        >
-
-            <span class="material-symbols-rounded">
-                person
-            </span>
-
-            <span>
-                Profil
-            </span>
-
-        </button>
-
+    <nav id="bottomNav" class="bottom-navigation hidden" aria-label="Navigation principale">
+        <button class="nav-button active" type="button" data-screen="dashboard"><span class="material-symbols-rounded">home</span><span>Accueil</span></button>
+        <button class="nav-button" type="button" data-screen="dashboard" data-focus="body3dContainer"><span class="material-symbols-rounded">accessibility_new</span><span>Jumeau</span></button>
+        <button class="nav-button" type="button" data-screen="aiScreen"><span class="nav-atlas-icon">A</span><span>Atlas AI</span></button>
+        <button class="nav-button" type="button" data-screen="historyScreen"><span class="material-symbols-rounded">history</span><span>Historique</span></button>
+        <button class="nav-button" type="button" data-screen="profileScreen"><span class="material-symbols-rounded">person</span><span>Profil</span></button>
     </nav>
 
-    <!-- =====================================================
-         NOTIFICATION
-    ====================================================== -->
+    <div id="atlasToast" class="atlas-toast" role="status" aria-live="polite"><span id="atlasToastIcon" class="material-symbols-rounded">info</span><span id="atlasToastMessage"></span></div>
 
-    <div
-        id="atlasToast"
-        class="atlas-toast"
-        role="status"
-        aria-live="polite"
-    >
-
-        <span
-            id="atlasToastIcon"
-            class="material-symbols-rounded"
-            aria-hidden="true"
-        >
-            info
-        </span>
-
-        <p id="atlasToastMessage"></p>
-
+    <div id="atlasModal" class="atlas-modal hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="atlasModalTitle">
+        <div class="atlas-modal-backdrop" data-close-modal></div>
+        <div class="atlas-modal-content"><button id="closeModalButton" class="atlas-modal-close" type="button" aria-label="Fermer"><span class="material-symbols-rounded">close</span></button><h2 id="atlasModalTitle">Atlas OS</h2><div id="atlasModalBody"></div></div>
     </div>
 
-    <!-- =====================================================
-         MODALE
-    ====================================================== -->
+    <noscript><div class="noscript-message">Atlas OS nécessite JavaScript.</div></noscript>
 
-    <div
-        id="atlasModal"
-        class="atlas-modal hidden"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="atlasModalTitle"
-    >
-
-        <div
-            class="atlas-modal-backdrop"
-            data-close-modal
-        ></div>
-
-        <div class="atlas-modal-content">
-
-            <button
-                id="closeModalButton"
-                class="atlas-modal-close"
-                type="button"
-                aria-label="Fermer la fenêtre"
-            >
-
-                <span class="material-symbols-rounded">
-                    close
-                </span>
-
-            </button>
-
-            <h2 id="atlasModalTitle">
-                Atlas OS
-            </h2>
-
-            <div id="atlasModalBody"></div>
-
-        </div>
-
-    </div>
-
-    <!-- =====================================================
-         MESSAGE SANS JAVASCRIPT
-    ====================================================== -->
-
-    <noscript>
-
-        <div class="noscript-message">
-
-            Atlas OS nécessite JavaScript pour afficher le jumeau
-            biomécanique et les interfaces interactives.
-
-        </div>
-
-    </noscript>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="./js/particles.js?v=4"></script>
+    <script src="./js/body3d.js?v=4"></script>
+    <script src="./js/app.js?v=4"></script>
 </body>
-
 </html>
