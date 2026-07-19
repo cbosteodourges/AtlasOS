@@ -1,2378 +1,428 @@
-/* ==========================================================
-   ATLAS OS V2
-   CONTRÔLEUR PRINCIPAL DE L’APPLICATION
-========================================================== */
-
 "use strict";
 
 (() => {
-
-    /* ======================================================
-       1. CONFIGURATION
-    ====================================================== */
-
-    const CONFIG = {
-
-        splashDuration: 2800,
-
-        creationDuration: 6200,
-
-        storageKeys: {
-
-            gender: "atlasOS.gender",
-
-            connectedDevices: "atlasOS.connectedDevices",
-
-            story: "atlasOS.story",
-
-            onboardingComplete: "atlasOS.onboardingComplete"
-
-        }
-
-    };
-
-
-    /* ======================================================
-       2. ÉTAT DE L’APPLICATION
-    ====================================================== */
-
-    const state = {
-
-        selectedGender: null,
-
-        connectedDevices: [],
-
-        currentScreen: null,
-
-        creationInterval: null,
-
-        toastTimeout: null,
-
-        atlasIsReplying: false
-
-    };
-
-
-    /* ======================================================
-       3. ÉLÉMENTS DE L’INTERFACE
-    ====================================================== */
-
-    const elements = {
-
-        body: document.body,
-
-        splashScreen: document.getElementById("splashScreen"),
-
-        genderSelection: document.getElementById("genderSelection"),
-
-        intro: document.getElementById("intro"),
-
-        sync: document.getElementById("sync"),
-
-        assistant: document.getElementById("assistant"),
-
-        twinCreation: document.getElementById("twinCreation"),
-
-        dashboard: document.getElementById("dashboard"),
-
-        aiScreen: document.getElementById("aiScreen"),
-
-        historyScreen: document.getElementById("historyScreen"),
-
-        profileScreen: document.getElementById("profileScreen"),
-
-        genderCards: Array.from(
-            document.querySelectorAll(".gender-card")
-        ),
-
-        confirmGenderButton:
-            document.getElementById("confirmGenderButton"),
-
-        skipGenderButton:
-            document.getElementById("skipGenderButton"),
-
-        enterButton:
-            document.getElementById("enterButton"),
-
-        deviceButtons: Array.from(
-            document.querySelectorAll(".device-connect-button")
-        ),
-
-        deviceSelectionStatus:
-            document.getElementById("deviceSelectionStatus"),
-
-        continueButton:
-            document.getElementById("continueButton"),
-
-        atlasStoryForm:
-            document.getElementById("atlasStoryForm"),
-
-        story:
-            document.getElementById("story"),
-
-        storyCounter:
-            document.getElementById("storyCounter"),
-
-        assistantMessage:
-            document.getElementById("assistantMessage"),
-
-        analyseBtn:
-            document.getElementById("analyseBtn"),
-
-        creationStatus:
-            document.getElementById("creationStatus"),
-
-        creationProgress:
-            document.querySelector(".creation-progress"),
-
-        creationProgressBar:
-            document.getElementById("creationProgressBar"),
-
-        creationProgressText:
-            document.getElementById("creationProgressText"),
-
-        bottomNav:
-            document.getElementById("bottomNav"),
-
-        navButtons: Array.from(
-            document.querySelectorAll(".nav-button")
-        ),
-
-        profileButton:
-            document.getElementById("profileButton"),
-
-        resetBodyViewButton:
-            document.getElementById("resetBodyViewButton"),
-
-        bodyControls: Array.from(
-            document.querySelectorAll(".body-control")
-        ),
-
-        chatForm:
-            document.getElementById("chatForm"),
-
-        chatInput:
-            document.getElementById("chatInput"),
-
-        chatMessages:
-            document.getElementById("chatMessages"),
-
-        selectedTwinLabel:
-            document.getElementById("selectedTwinLabel"),
-
-        connectedDevicesLabel:
-            document.getElementById("connectedDevicesLabel"),
-
-        changeGenderButton:
-            document.getElementById("changeGenderButton"),
-
-        manageDevicesButton:
-            document.getElementById("manageDevicesButton"),
-
-        resetApplicationButton:
-            document.getElementById("resetApplicationButton"),
-
-        atlasToast:
-            document.getElementById("atlasToast"),
-
-        atlasToastIcon:
-            document.getElementById("atlasToastIcon"),
-
-        atlasToastMessage:
-            document.getElementById("atlasToastMessage"),
-
-        atlasModal:
-            document.getElementById("atlasModal"),
-
-        atlasModalTitle:
-            document.getElementById("atlasModalTitle"),
-
-        atlasModalBody:
-            document.getElementById("atlasModalBody"),
-
-        closeModalButton:
-            document.getElementById("closeModalButton"),
-
-        modalBackdrop:
-            document.querySelector("[data-close-modal]")
-
-    };
-
-
-    /* ======================================================
-       4. LISTE DES ÉCRANS
-    ====================================================== */
-
-    const screens = [
-
-        elements.genderSelection,
-
-        elements.intro,
-
-        elements.sync,
-
-        elements.assistant,
-
-        elements.twinCreation,
-
-        elements.dashboard,
-
-        elements.aiScreen,
-
-        elements.historyScreen,
-
-        elements.profileScreen
-
-    ].filter(Boolean);
-
-
-    /* ======================================================
-       5. STOCKAGE LOCAL SÉCURISÉ
-    ====================================================== */
-
-    const storage = {
-
-        get(key, fallback = null) {
-
-            try {
-
-                const value = localStorage.getItem(key);
-
-                if (value === null) {
-
-                    return fallback;
-
-                }
-
-                return JSON.parse(value);
-
-            } catch (error) {
-
-                console.warn(
-                    "Atlas OS : lecture du stockage impossible.",
-                    error
-                );
-
-                return fallback;
-
-            }
-
-        },
-
-        set(key, value) {
-
-            try {
-
-                localStorage.setItem(
-                    key,
-                    JSON.stringify(value)
-                );
-
-            } catch (error) {
-
-                console.warn(
-                    "Atlas OS : sauvegarde impossible.",
-                    error
-                );
-
-            }
-
-        },
-
-        remove(key) {
-
-            try {
-
-                localStorage.removeItem(key);
-
-            } catch (error) {
-
-                console.warn(
-                    "Atlas OS : suppression impossible.",
-                    error
-                );
-
-            }
-
-        },
-
-        clearAtlasData() {
-
-            Object.values(CONFIG.storageKeys).forEach((key) => {
-
-                this.remove(key);
-
-            });
-
-        }
-
-    };
-
-
-    /* ======================================================
-       6. INITIALISATION
-    ====================================================== */
-
-    function initializeApplication() {
-
-        restoreSavedState();
-
-        bindEvents();
-
-        updateStoryCounter();
-
-        updateProfileInformation();
-
-        startSplashSequence();
-
+  const CONFIG = {
+    splashDuration: 2400,
+    creationDuration: 5200,
+    storageKeys: {
+      gender: "atlasOS.gender",
+      connectedDevices: "atlasOS.connectedDevices",
+      story: "atlasOS.story",
+      onboardingComplete: "atlasOS.onboardingComplete"
     }
+  };
 
+  const state = {
+    selectedGender: null,
+    connectedDevices: [],
+    currentScreen: null,
+    creationInterval: null,
+    toastTimeout: null,
+    atlasIsReplying: false
+  };
 
-    /* ======================================================
-       7. RESTAURATION DE L’ÉTAT
-    ====================================================== */
+  const $ = (id) => document.getElementById(id);
+  const elements = {
+    body: document.body,
+    splashScreen: $("splashScreen"),
+    genderSelection: $("genderSelection"),
+    intro: $("intro"),
+    sync: $("sync"),
+    assistant: $("assistant"),
+    twinCreation: $("twinCreation"),
+    dashboard: $("dashboard"),
+    aiScreen: $("aiScreen"),
+    historyScreen: $("historyScreen"),
+    profileScreen: $("profileScreen"),
+    genderCards: [...document.querySelectorAll(".gender-card")],
+    confirmGenderButton: $("confirmGenderButton"),
+    skipGenderButton: $("skipGenderButton"),
+    enterButton: $("enterButton"),
+    deviceButtons: [...document.querySelectorAll(".device-connect-button")],
+    deviceSelectionStatus: $("deviceSelectionStatus"),
+    continueButton: $("continueButton"),
+    atlasStoryForm: $("atlasStoryForm"),
+    story: $("story"),
+    storyCounter: $("storyCounter"),
+    assistantMessage: $("assistantMessage"),
+    creationStatus: $("creationStatus"),
+    creationProgress: document.querySelector(".creation-progress"),
+    creationProgressBar: $("creationProgressBar"),
+    creationProgressText: $("creationProgressText"),
+    bottomNav: $("bottomNav"),
+    navButtons: [...document.querySelectorAll(".nav-button")],
+    profileButton: $("profileButton"),
+    resetBodyViewButton: $("resetBodyViewButton"),
+    bodyControls: [...document.querySelectorAll(".body-control")],
+    chatForm: $("chatForm"),
+    chatInput: $("chatInput"),
+    chatMessages: $("chatMessages"),
+    selectedTwinLabel: $("selectedTwinLabel"),
+    connectedDevicesLabel: $("connectedDevicesLabel"),
+    changeGenderButton: $("changeGenderButton"),
+    manageDevicesButton: $("manageDevicesButton"),
+    resetApplicationButton: $("resetApplicationButton"),
+    atlasToast: $("atlasToast"),
+    atlasToastIcon: $("atlasToastIcon"),
+    atlasToastMessage: $("atlasToastMessage"),
+    atlasModal: $("atlasModal"),
+    atlasModalTitle: $("atlasModalTitle"),
+    atlasModalBody: $("atlasModalBody"),
+    closeModalButton: $("closeModalButton"),
+    modalBackdrop: document.querySelector("[data-close-modal]")
+  };
 
-    function restoreSavedState() {
+  const screens = [
+    elements.genderSelection,
+    elements.intro,
+    elements.sync,
+    elements.assistant,
+    elements.twinCreation,
+    elements.dashboard,
+    elements.aiScreen,
+    elements.historyScreen,
+    elements.profileScreen
+  ].filter(Boolean);
 
-        const savedGender = storage.get(
-            CONFIG.storageKeys.gender,
-            null
-        );
-
-        const savedDevices = storage.get(
-            CONFIG.storageKeys.connectedDevices,
-            []
-        );
-
-        const savedStory = storage.get(
-            CONFIG.storageKeys.story,
-            ""
-        );
-
-        if (
-            savedGender === "male" ||
-            savedGender === "female"
-        ) {
-
-            state.selectedGender = savedGender;
-
-            applyGenderTheme(savedGender);
-
-            updateGenderSelection(savedGender);
-
-        }
-
-        if (Array.isArray(savedDevices)) {
-
-            state.connectedDevices = savedDevices;
-
-        }
-
-        if (
-            elements.story &&
-            typeof savedStory === "string"
-        ) {
-
-            elements.story.value = savedStory;
-
-        }
-
-        updateDeviceButtons();
-
+  const storage = {
+    get(key, fallback = null) {
+      try {
+        const value = localStorage.getItem(key);
+        return value === null ? fallback : JSON.parse(value);
+      } catch {
+        return fallback;
+      }
+    },
+    set(key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+    },
+    clearAtlasData() {
+      Object.values(CONFIG.storageKeys).forEach((key) => localStorage.removeItem(key));
     }
+  };
 
+  function initializeApplication() {
+    restoreSavedState();
+    bindEvents();
+    updateStoryCounter();
+    updateProfileInformation();
+    startSplashSequence();
+  }
 
-    /* ======================================================
-       8. SÉQUENCE D’OUVERTURE
-    ====================================================== */
+  function restoreSavedState() {
+    const gender = storage.get(CONFIG.storageKeys.gender, null);
+    const devices = storage.get(CONFIG.storageKeys.connectedDevices, []);
+    const story = storage.get(CONFIG.storageKeys.story, "");
 
-    function startSplashSequence() {
-
-        window.setTimeout(() => {
-
-            if (!elements.splashScreen) {
-
-                openInitialScreen();
-
-                return;
-
-            }
-
-            elements.splashScreen.classList.add("is-leaving");
-
-            window.setTimeout(() => {
-
-                elements.splashScreen.classList.add("hidden");
-
-                elements.splashScreen.setAttribute(
-                    "aria-hidden",
-                    "true"
-                );
-
-                openInitialScreen();
-
-            }, 900);
-
-        }, CONFIG.splashDuration);
-
+    if (gender === "male" || gender === "female") {
+      state.selectedGender = gender;
+      applyGenderTheme(gender);
+      updateGenderSelection(gender);
     }
+    if (Array.isArray(devices)) state.connectedDevices = devices;
+    if (elements.story && typeof story === "string") elements.story.value = story;
+    updateDeviceButtons();
+  }
 
+  function startSplashSequence() {
+    window.setTimeout(() => {
+      if (!elements.splashScreen) {
+        openInitialScreen();
+        return;
+      }
+      elements.splashScreen.classList.add("is-leaving");
+      window.setTimeout(() => {
+        elements.splashScreen.classList.add("hidden");
+        elements.splashScreen.setAttribute("aria-hidden", "true");
+        openInitialScreen();
+      }, 850);
+    }, CONFIG.splashDuration);
+  }
 
-    function openInitialScreen() {
-
-        const onboardingComplete = storage.get(
-            CONFIG.storageKeys.onboardingComplete,
-            false
-        );
-
-        if (onboardingComplete === true) {
-
-            showScreen("dashboard");
-
-            showBottomNavigation();
-
-            initializeBody3D();
-
-            return;
-
-        }
-
-        if (state.selectedGender) {
-
-            showScreen("intro");
-
-            initializeIntroBody3D();
-
-            return;
-
-        }
-
-        showScreen("genderSelection");
-
+  /* Toujours revenir au choix Homme/Femme au lancement. */
+  function openInitialScreen() {
+    showScreen("genderSelection", { animation: "fade-scale", instant: true });
+    if (state.selectedGender) {
+      updateGenderSelection(state.selectedGender);
+      showToast("Votre choix précédent est présélectionné. Vous pouvez le modifier.", "info");
     }
+  }
 
+  function showScreen(screenId, options = {}) {
+    const target = $(screenId);
+    if (!target) return;
 
-    /* ======================================================
-       9. GESTION DES ÉCRANS
-    ====================================================== */
+    screens.forEach((screen) => {
+      screen.classList.add("hidden");
+      screen.classList.remove("fade-in", "fade-up", "fade-scale");
+      screen.setAttribute("aria-hidden", "true");
+    });
 
-    function showScreen(screenId, options = {}) {
+    target.classList.remove("hidden");
+    target.setAttribute("aria-hidden", "false");
+    void target.offsetWidth;
+    target.classList.add(options.animation || "fade-in");
+    state.currentScreen = screenId;
 
-        const targetScreen = document.getElementById(screenId);
+    const appScreens = ["dashboard", "aiScreen", "historyScreen", "profileScreen"];
+    elements.bottomNav?.classList.toggle("hidden", !appScreens.includes(screenId));
+    updateNavigationState(screenId);
+    window.scrollTo({ top: 0, behavior: options.instant ? "auto" : "smooth" });
 
-        if (!targetScreen) {
+    if (screenId === "intro") window.setTimeout(initializeIntroBody3D, 80);
+    if (screenId === "dashboard") window.setTimeout(initializeBody3D, 80);
+  }
 
-            console.warn(
-                `Atlas OS : écran introuvable : ${screenId}`
-            );
+  function selectGender(gender) {
+    if (!['male', 'female'].includes(gender)) return;
+    state.selectedGender = gender;
+    applyGenderTheme(gender);
+    updateGenderSelection(gender);
+    if (elements.confirmGenderButton) elements.confirmGenderButton.disabled = false;
+  }
 
-            return;
+  function applyGenderTheme(gender) {
+    elements.body.dataset.atlasTheme = gender;
+    storage.set(CONFIG.storageKeys.gender, gender);
+    window.AtlasBody3D?.setTheme?.(gender);
+    window.AtlasParticles?.setTheme?.(gender);
+  }
 
-        }
+  function updateGenderSelection(gender) {
+    elements.genderCards.forEach((card) => {
+      const selected = card.dataset.gender === gender;
+      card.classList.toggle("selected", selected);
+      card.setAttribute("aria-checked", String(selected));
+    });
+    if (elements.confirmGenderButton) elements.confirmGenderButton.disabled = !gender;
+  }
 
-        screens.forEach((screen) => {
-
-            screen.classList.add("hidden");
-
-            screen.classList.remove(
-                "fade-in",
-                "fade-up",
-                "fade-scale"
-            );
-
-            screen.setAttribute(
-                "aria-hidden",
-                "true"
-            );
-
-        });
-
-        targetScreen.classList.remove("hidden");
-
-        targetScreen.setAttribute(
-            "aria-hidden",
-            "false"
-        );
-
-        void targetScreen.offsetWidth;
-
-        targetScreen.classList.add(
-            options.animation || "fade-in"
-        );
-
-        state.currentScreen = screenId;
-
-        const applicationScreens = [
-
-            "dashboard",
-
-            "aiScreen",
-
-            "historyScreen",
-
-            "profileScreen"
-
-        ];
-
-        if (applicationScreens.includes(screenId)) {
-
-            showBottomNavigation();
-
-        } else {
-
-            hideBottomNavigation();
-
-        }
-
-        window.scrollTo({
-
-            top: 0,
-
-            behavior: options.instant
-                ? "auto"
-                : "smooth"
-
-        });
-
-        updateNavigationState(screenId);
-
-        if (screenId === "dashboard") {
-
-            window.setTimeout(() => {
-
-                initializeBody3D();
-
-                resizeBody3D();
-
-            }, 100);
-
-        }
-
+  function confirmGenderSelection() {
+    if (!state.selectedGender) {
+      showToast("Sélectionnez Homme ou Femme avant de continuer.", "warning");
+      return;
     }
+    storage.set(CONFIG.storageKeys.gender, state.selectedGender);
+    updateProfileInformation();
+    showScreen("intro", { animation: "fade-scale" });
+  }
 
+  function skipGenderSelection() {
+    selectGender(state.selectedGender || "male");
+    confirmGenderSelection();
+  }
 
-    /* ======================================================
-       10. CHOIX DU JUMEAU
-    ====================================================== */
+  function handleDeviceButton(button) {
+    const device = button.dataset.device;
+    if (!device) return;
+    const index = state.connectedDevices.indexOf(device);
+    if (index >= 0) state.connectedDevices.splice(index, 1);
+    else state.connectedDevices.push(device);
+    storage.set(CONFIG.storageKeys.connectedDevices, state.connectedDevices);
+    updateDeviceButtons();
+    updateProfileInformation();
+    showToast(index >= 0 ? `${device} déconnecté.` : `${device} connecté.`, index >= 0 ? "info" : "success");
+  }
 
-    function selectGender(gender) {
-
-        if (
-            gender !== "male" &&
-            gender !== "female"
-        ) {
-
-            return;
-
-        }
-
-        state.selectedGender = gender;
-
-        applyGenderTheme(gender);
-
-        updateGenderSelection(gender);
-
-        if (elements.confirmGenderButton) {
-
-            elements.confirmGenderButton.disabled = false;
-
-        }
-
+  function updateDeviceButtons() {
+    elements.deviceButtons.forEach((button) => {
+      const device = button.dataset.device;
+      const connected = state.connectedDevices.includes(device);
+      button.classList.toggle("connected", connected);
+      button.textContent = connected ? "Connecté" : (device === "Saisie manuelle" ? "Utiliser" : "Connecter");
+      button.setAttribute("aria-pressed", String(connected));
+    });
+    if (elements.deviceSelectionStatus) {
+      const count = state.connectedDevices.length;
+      elements.deviceSelectionStatus.textContent = count === 0
+        ? "La connexion des appareils est facultative pour cette démonstration."
+        : `${count} source${count > 1 ? "s" : ""} de données active${count > 1 ? "s" : ""}.`;
     }
+  }
 
+  function updateStoryCounter() {
+    if (!elements.story || !elements.storyCounter) return;
+    elements.storyCounter.textContent = `${elements.story.value.length} / 3000`;
+  }
 
-    function applyGenderTheme(gender) {
-
-        elements.body.dataset.atlasTheme = gender;
-
-        storage.set(
-            CONFIG.storageKeys.gender,
-            gender
-        );
-
-        if (
-            window.AtlasBody3D &&
-            typeof window.AtlasBody3D.setTheme === "function"
-        ) {
-
-            window.AtlasBody3D.setTheme(gender);
-
-        }
-
+  function handleStorySubmission(event) {
+    event.preventDefault();
+    const story = elements.story?.value.trim() || "";
+    if (story.length < 10) {
+      if (elements.assistantMessage) elements.assistantMessage.textContent = "Décrivez votre situation en au moins 10 caractères.";
+      return;
     }
+    storage.set(CONFIG.storageKeys.story, story);
+    if (elements.assistantMessage) elements.assistantMessage.textContent = "";
+    startTwinCreation();
+  }
 
+  function startTwinCreation() {
+    showScreen("twinCreation", { animation: "fade-scale" });
+    let progress = 0;
+    const statuses = [
+      [0, "Analyse de votre profil biomécanique…"],
+      [25, "Lecture de votre histoire corporelle…"],
+      [50, "Création de votre modèle Atlas…"],
+      [75, "Synchronisation des données…"],
+      [94, "Finalisation de votre jumeau…"]
+    ];
+    clearInterval(state.creationInterval);
+    state.creationInterval = setInterval(() => {
+      progress = Math.min(100, progress + 2);
+      if (elements.creationProgressBar) elements.creationProgressBar.style.width = `${progress}%`;
+      if (elements.creationProgressText) elements.creationProgressText.textContent = `${progress} %`;
+      elements.creationProgress?.setAttribute("aria-valuenow", String(progress));
+      const status = [...statuses].reverse().find(([threshold]) => progress >= threshold);
+      if (status && elements.creationStatus) elements.creationStatus.textContent = status[1];
+      if (progress >= 100) {
+        clearInterval(state.creationInterval);
+        storage.set(CONFIG.storageKeys.onboardingComplete, true);
+        showScreen("dashboard", { animation: "fade-up" });
+        showToast("Votre jumeau biomécanique est prêt.", "success");
+      }
+    }, CONFIG.creationDuration / 50);
+  }
 
-    function updateGenderSelection(gender) {
+  function initializeIntroBody3D() {
+    window.AtlasBody3D?.initializeIntro?.("viewer3D");
+  }
 
-        elements.genderCards.forEach((card) => {
+  function initializeBody3D() {
+    window.AtlasBody3D?.initializeDashboard?.("body3dContainer");
+  }
 
-            const isSelected =
-                card.dataset.gender === gender;
+  function updateNavigationState(screenId) {
+    elements.navButtons.forEach((button) => {
+      button.classList.toggle("active", button.dataset.screen === screenId && !button.dataset.focus);
+    });
+  }
 
-            card.classList.toggle(
-                "selected",
-                isSelected
-            );
+  function handleNavigation(button) {
+    const screen = button.dataset.screen;
+    if (!screen) return;
+    showScreen(screen, { animation: "fade-in" });
+  }
 
-            card.setAttribute(
-                "aria-checked",
-                String(isSelected)
-            );
+  function appendChatMessage(message, sender) {
+    if (!elements.chatMessages) return;
+    const article = document.createElement("article");
+    article.className = `chat-message chat-message--${sender}`;
+    const avatar = document.createElement("div");
+    avatar.className = "chat-avatar";
+    avatar.textContent = sender === "atlas" ? "A" : "V";
+    const paragraph = document.createElement("p");
+    paragraph.textContent = message;
+    article.append(avatar, paragraph);
+    elements.chatMessages.appendChild(article);
+    elements.chatMessages.scrollTo({ top: elements.chatMessages.scrollHeight, behavior: "smooth" });
+  }
 
-        });
+  function handleChatSubmission(event) {
+    event.preventDefault();
+    const message = elements.chatInput?.value.trim();
+    if (!message || state.atlasIsReplying) return;
+    appendChatMessage(message, "user");
+    elements.chatInput.value = "";
+    state.atlasIsReplying = true;
+    setTimeout(() => {
+      appendChatMessage("J’ai enregistré votre message. Cette démonstration prépare l’analyse biomécanique personnalisée d’Atlas.", "atlas");
+      state.atlasIsReplying = false;
+    }, 900);
+  }
 
-        if (elements.confirmGenderButton) {
-
-            elements.confirmGenderButton.disabled = !gender;
-
-        }
-
+  function updateProfileInformation() {
+    if (elements.selectedTwinLabel) {
+      elements.selectedTwinLabel.textContent = state.selectedGender === "female" ? "Jumeau féminin" : "Jumeau masculin";
     }
-
-
-    function confirmGenderSelection() {
-
-        if (!state.selectedGender) {
-
-            showToast(
-                "Sélectionnez un jumeau avant de continuer.",
-                "warning"
-            );
-
-            return;
-
-        }
-
-        storage.set(
-            CONFIG.storageKeys.gender,
-            state.selectedGender
-        );
-
-        updateProfileInformation();
-
-        showScreen(
-            "intro",
-            {
-                animation: "fade-scale"
-            }
-        );
-
-        initializeIntroBody3D();
-
+    if (elements.connectedDevicesLabel) {
+      const count = state.connectedDevices.length;
+      elements.connectedDevicesLabel.textContent = count === 0 ? "Aucun appareil connecté" : `${count} source${count > 1 ? "s" : ""} active${count > 1 ? "s" : ""}`;
     }
+  }
 
+  function showToast(message, type = "info") {
+    if (!elements.atlasToast || !elements.atlasToastMessage) return;
+    const icons = { info: "info", success: "check_circle", warning: "warning", error: "error" };
+    clearTimeout(state.toastTimeout);
+    elements.atlasToastMessage.textContent = message;
+    if (elements.atlasToastIcon) elements.atlasToastIcon.textContent = icons[type] || icons.info;
+    elements.atlasToast.classList.add("visible");
+    state.toastTimeout = setTimeout(() => elements.atlasToast.classList.remove("visible"), 3300);
+  }
 
-    function skipGenderSelection() {
-
-        if (!state.selectedGender) {
-
-            state.selectedGender = "male";
-
-        }
-
-        applyGenderTheme(
-            state.selectedGender
-        );
-
-        updateGenderSelection(
-            state.selectedGender
-        );
-
-        updateProfileInformation();
-
-        showScreen(
-            "intro",
-            {
-                animation: "fade-scale"
-            }
-        );
-
-        initializeIntroBody3D();
-
+  function openModal(title, content) {
+    if (!elements.atlasModal) return;
+    if (elements.atlasModalTitle) elements.atlasModalTitle.textContent = title;
+    if (elements.atlasModalBody) {
+      elements.atlasModalBody.replaceChildren();
+      if (content instanceof Node) elements.atlasModalBody.appendChild(content);
+      else elements.atlasModalBody.textContent = String(content);
     }
-
-
-    /* ======================================================
-       11. INTRODUCTION
-    ====================================================== */
-
-    function enterAtlasExperience() {
-
-        showScreen(
-            "sync",
-            {
-                animation: "fade-up"
-            }
-        );
-
-    }
-
-
-    /* ======================================================
-       12. APPAREILS CONNECTÉS
-    ====================================================== */
-
-    function handleDeviceButton(button) {
-
-        const deviceName = button.dataset.device;
-
-        if (!deviceName) {
-
-            return;
-
-        }
-
-        const isManual =
-            deviceName === "Saisie manuelle";
-
-        if (isManual) {
-
-            toggleDevice(deviceName);
-
-            return;
-
-        }
-
-        openDeviceModal(deviceName);
-
-    }
-
-
-    function openDeviceModal(deviceName) {
-
-        const alreadyConnected =
-            state.connectedDevices.includes(deviceName);
-
-        const actionLabel = alreadyConnected
-            ? "Déconnecter l’appareil"
-            : "Activer la démonstration";
-
-        const modalContent = document.createElement("div");
-
-        modalContent.className = "device-modal-information";
-
-        const description = document.createElement("p");
-
-        description.textContent =
-            `${deviceName} n’est pas encore relié à une API réelle. ` +
-            "Vous pouvez néanmoins simuler sa connexion dans cette démonstration.";
-
-        description.style.marginBottom = "22px";
-
-        const actionButton = document.createElement("button");
-
-        actionButton.type = "button";
-
-        actionButton.className = "atlas-primary-button";
-
-        actionButton.textContent = actionLabel;
-
-        actionButton.addEventListener("click", () => {
-
-            toggleDevice(deviceName);
-
-            closeModal();
-
-        });
-
-        modalContent.append(
-            description,
-            actionButton
-        );
-
-        openModal(
-            deviceName,
-            modalContent
-        );
-
-    }
-
-
-    function toggleDevice(deviceName) {
-
-        const deviceIndex =
-            state.connectedDevices.indexOf(deviceName);
-
-        if (deviceIndex >= 0) {
-
-            state.connectedDevices.splice(
-                deviceIndex,
-                1
-            );
-
-            showToast(
-                `${deviceName} a été déconnecté.`,
-                "info"
-            );
-
-        } else {
-
-            state.connectedDevices.push(deviceName);
-
-            showToast(
-                `${deviceName} est maintenant actif.`,
-                "success"
-            );
-
-        }
-
-        storage.set(
-            CONFIG.storageKeys.connectedDevices,
-            state.connectedDevices
-        );
-
-        updateDeviceButtons();
-
-        updateProfileInformation();
-
-    }
-
-
-    function updateDeviceButtons() {
-
-        elements.deviceButtons.forEach((button) => {
-
-            const deviceName = button.dataset.device;
-
-            const isConnected =
-                state.connectedDevices.includes(deviceName);
-
-            button.classList.toggle(
-                "connected",
-                isConnected
-            );
-
-            if (deviceName === "Saisie manuelle") {
-
-                button.textContent = isConnected
-                    ? "Activée"
-                    : "Utiliser";
-
-            } else {
-
-                button.textContent = isConnected
-                    ? "Connecté"
-                    : "Connecter";
-
-            }
-
-            button.setAttribute(
-                "aria-pressed",
-                String(isConnected)
-            );
-
-        });
-
-        updateDeviceSelectionStatus();
-
-    }
-
-
-    function updateDeviceSelectionStatus() {
-
-        if (!elements.deviceSelectionStatus) {
-
-            return;
-
-        }
-
-        const count = state.connectedDevices.length;
-
-        if (count === 0) {
-
-            elements.deviceSelectionStatus.textContent =
-                "La connexion des appareils est facultative pour cette démonstration.";
-
-            return;
-
-        }
-
-        if (count === 1) {
-
-            elements.deviceSelectionStatus.textContent =
-                `1 source de données est active : ${state.connectedDevices[0]}.`;
-
-            return;
-
-        }
-
-        elements.deviceSelectionStatus.textContent =
-            `${count} sources de données sont actuellement actives.`;
-
-    }
-
-
-    function continueAfterSynchronization() {
-
-        showScreen(
-            "assistant",
-            {
-                animation: "fade-up"
-            }
-        );
-
-        window.setTimeout(() => {
-
-            elements.story?.focus();
-
-        }, 500);
-
-    }
-
-
-    /* ======================================================
-       13. HISTOIRE BIOMÉCANIQUE
-    ====================================================== */
-
-    function updateStoryCounter() {
-
-        if (
-            !elements.story ||
-            !elements.storyCounter
-        ) {
-
-            return;
-
-        }
-
-        const currentLength =
-            elements.story.value.length;
-
-        elements.storyCounter.textContent =
-            `${currentLength} / 3000`;
-
-        if (currentLength >= 2800) {
-
-            elements.storyCounter.style.color =
-                "var(--warning)";
-
-        } else {
-
-            elements.storyCounter.style.color = "";
-
-        }
-
-    }
-
-
-    function handleStorySubmission(event) {
-
-        event.preventDefault();
-
-        if (!elements.story) {
-
-            return;
-
-        }
-
-        const story = elements.story.value.trim();
-
-        if (story.length < 10) {
-
-            setAssistantMessage(
-                "Décrivez votre situation en au moins 10 caractères."
-            );
-
-            elements.story.focus();
-
-            return;
-
-        }
-
-        setAssistantMessage("");
-
-        storage.set(
-            CONFIG.storageKeys.story,
-            story
-        );
-
-        startTwinCreation();
-
-    }
-
-
-    function setAssistantMessage(message) {
-
-        if (elements.assistantMessage) {
-
-            elements.assistantMessage.textContent = message;
-
-        }
-
-    }
-
-
-    /* ======================================================
-       14. CRÉATION DU JUMEAU
-    ====================================================== */
-
-    function startTwinCreation() {
-
-        if (state.creationInterval) {
-
-            window.clearInterval(
-                state.creationInterval
-            );
-
-        }
-
-        showScreen(
-            "twinCreation",
-            {
-                animation: "fade-scale"
-            }
-        );
-
-        resetCreationProgress();
-
-        const startTime = performance.now();
-
-        const statuses = [
-
-            {
-                progress: 0,
-                text: "Analyse de votre profil biomécanique…"
-            },
-
-            {
-                progress: 18,
-                text: "Lecture de votre histoire corporelle…"
-            },
-
-            {
-                progress: 36,
-                text: "Création de votre structure numérique…"
-            },
-
-            {
-                progress: 55,
-                text: "Analyse des chaînes musculaires…"
-            },
-
-            {
-                progress: 73,
-                text: "Évaluation des zones de vigilance…"
-            },
-
-            {
-                progress: 88,
-                text: "Synchronisation du modèle Atlas…"
-            },
-
-            {
-                progress: 97,
-                text: "Finalisation de votre jumeau…"
-            }
-
-        ];
-
-        state.creationInterval = window.setInterval(() => {
-
-            const elapsed =
-                performance.now() - startTime;
-
-            const progress = Math.min(
-                100,
-                Math.round(
-                    (
-                        elapsed /
-                        CONFIG.creationDuration
-                    ) * 100
-                )
-            );
-
-            updateCreationProgress(
-                progress,
-                statuses
-            );
-
-            if (progress >= 100) {
-
-                window.clearInterval(
-                    state.creationInterval
-                );
-
-                state.creationInterval = null;
-
-                completeTwinCreation();
-
-            }
-
-        }, 80);
-
-    }
-
-
-    function resetCreationProgress() {
-
-        if (elements.creationProgressBar) {
-
-            elements.creationProgressBar.style.width = "0%";
-
-        }
-
-        if (elements.creationProgressText) {
-
-            elements.creationProgressText.textContent = "0 %";
-
-        }
-
-        if (elements.creationProgress) {
-
-            elements.creationProgress.setAttribute(
-                "aria-valuenow",
-                "0"
-            );
-
-        }
-
-        if (elements.creationStatus) {
-
-            elements.creationStatus.textContent =
-                "Analyse de votre profil biomécanique…";
-
-        }
-
-    }
-
-
-    function updateCreationProgress(
-        progress,
-        statuses
-    ) {
-
-        if (elements.creationProgressBar) {
-
-            elements.creationProgressBar.style.width =
-                `${progress}%`;
-
-        }
-
-        if (elements.creationProgressText) {
-
-            elements.creationProgressText.textContent =
-                `${progress} %`;
-
-        }
-
-        if (elements.creationProgress) {
-
-            elements.creationProgress.setAttribute(
-                "aria-valuenow",
-                String(progress)
-            );
-
-        }
-
-        const activeStatus = [...statuses]
-            .reverse()
-            .find((status) => {
-
-                return progress >= status.progress;
-
-            });
-
-        if (
-            activeStatus &&
-            elements.creationStatus
-        ) {
-
-            elements.creationStatus.textContent =
-                activeStatus.text;
-
-        }
-
-    }
-
-
-    function completeTwinCreation() {
-
-        storage.set(
-            CONFIG.storageKeys.onboardingComplete,
-            true
-        );
-
-        updateProfileInformation();
-
-        showScreen(
-            "dashboard",
-            {
-                animation: "fade-up"
-            }
-        );
-
-        showBottomNavigation();
-
-        showToast(
-            "Votre jumeau biomécanique est prêt.",
-            "success"
-        );
-
-        initializeBody3D();
-
-    }
-
-
-    /* ======================================================
-       15. NAVIGATION PRINCIPALE
-    ====================================================== */
-
-    function handleNavigation(button) {
-
-        const targetScreen =
-            button.dataset.screen;
-
-        const focusTarget =
-            button.dataset.focus;
-
-        if (!targetScreen) {
-
-            return;
-
-        }
-
-        showScreen(
-            targetScreen,
-            {
-                animation: "fade-in"
-            }
-        );
-
-        setActiveNavigationButton(button);
-
-        if (focusTarget) {
-
-            window.setTimeout(() => {
-
-                const target =
-                    document.getElementById(focusTarget);
-
-                target?.scrollIntoView({
-
-                    behavior: "smooth",
-
-                    block: "center"
-
-                });
-
-            }, 180);
-
-        }
-
-    }
-
-
-    function showBottomNavigation() {
-
-        elements.bottomNav?.classList.remove("hidden");
-
-    }
-
-
-    function hideBottomNavigation() {
-
-        elements.bottomNav?.classList.add("hidden");
-
-    }
-
-
-    function updateNavigationState(screenId) {
-
-        let navigationScreen = screenId;
-
-        if (screenId === "profileScreen") {
-
-            navigationScreen = "profileScreen";
-
-        }
-
-        elements.navButtons.forEach((button) => {
-
-            const isActive =
-                button.dataset.screen === navigationScreen &&
-                !button.dataset.focus;
-
-            button.classList.toggle(
-                "active",
-                isActive
-            );
-
-        });
-
-    }
-
-
-    function setActiveNavigationButton(activeButton) {
-
-        elements.navButtons.forEach((button) => {
-
-            button.classList.toggle(
-                "active",
-                button === activeButton
-            );
-
-        });
-
-    }
-
-
-    /* ======================================================
-       16. CONTRÔLES DU JUMEAU 3D
-    ====================================================== */
-
-    function initializeIntroBody3D() {
-
-        if (
-            window.AtlasBody3D &&
-            typeof window.AtlasBody3D.initializeIntro === "function"
-        ) {
-
-            window.AtlasBody3D.initializeIntro(
-                "viewer3D"
-            );
-
-        }
-
-    }
-
-
-    function initializeBody3D() {
-
-        if (
-            window.AtlasBody3D &&
-            typeof window.AtlasBody3D.initializeDashboard === "function"
-        ) {
-
-            window.AtlasBody3D.initializeDashboard(
-                "body3dContainer"
-            );
-
-        }
-
-    }
-
-
-    function resizeBody3D() {
-
-        if (
-            window.AtlasBody3D &&
-            typeof window.AtlasBody3D.resize === "function"
-        ) {
-
-            window.AtlasBody3D.resize();
-
-        }
-
-    }
-
-
-    function resetBodyView() {
-
-        if (
-            window.AtlasBody3D &&
-            typeof window.AtlasBody3D.resetView === "function"
-        ) {
-
-            window.AtlasBody3D.resetView();
-
-            showToast(
-                "Vue du jumeau recentrée.",
-                "info"
-            );
-
-            return;
-
-        }
-
-        showToast(
-            "Le moteur 3D sera disponible après l’installation de body3d.js.",
-            "info"
-        );
-
-    }
-
-
-    function changeBodyLayer(button) {
-
-        const layer =
-            button.dataset.bodyLayer;
-
-        if (!layer) {
-
-            return;
-
-        }
-
-        elements.bodyControls.forEach((control) => {
-
-            control.classList.toggle(
-                "active",
-                control === button
-            );
-
-        });
-
-        if (
-            window.AtlasBody3D &&
-            typeof window.AtlasBody3D.setLayer === "function"
-        ) {
-
-            window.AtlasBody3D.setLayer(layer);
-
-        }
-
-        const layerNames = {
-
-            skin: "Peau",
-
-            muscles: "Muscles",
-
-            skeleton: "Squelette",
-
-            risks: "Zones sensibles"
-
-        };
-
-        showToast(
-            `Couche affichée : ${layerNames[layer] || layer}.`,
-            "info"
-        );
-
-    }
-
-
-    /* ======================================================
-       17. ATLAS AI
-    ====================================================== */
-
-    function handleChatSubmission(event) {
-
-        event.preventDefault();
-
-        if (
-            !elements.chatInput ||
-            !elements.chatMessages
-        ) {
-
-            return;
-
-        }
-
-        const message =
-            elements.chatInput.value.trim();
-
-        if (
-            message.length === 0 ||
-            state.atlasIsReplying
-        ) {
-
-            return;
-
-        }
-
-        appendChatMessage(
-            message,
-            "user"
-        );
-
-        elements.chatInput.value = "";
-
-        state.atlasIsReplying = true;
-
-        showAtlasTypingIndicator();
-
-        const delay =
-            800 + Math.random() * 700;
-
-        window.setTimeout(() => {
-
-            removeAtlasTypingIndicator();
-
-            const response =
-                generateAtlasResponse(message);
-
-            appendChatMessage(
-                response,
-                "atlas"
-            );
-
-            state.atlasIsReplying = false;
-
-        }, delay);
-
-    }
-
-
-    function appendChatMessage(
-        message,
-        sender
-    ) {
-
-        const article =
-            document.createElement("article");
-
-        article.className =
-            `chat-message chat-message--${sender}`;
-
-        const avatar =
-            document.createElement("div");
-
-        avatar.className = "chat-avatar";
-
-        avatar.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-
-        avatar.textContent =
-            sender === "atlas"
-                ? "A"
-                : "V";
-
-        const paragraph =
-            document.createElement("p");
-
-        paragraph.textContent = message;
-
-        article.append(
-            avatar,
-            paragraph
-        );
-
-        elements.chatMessages.appendChild(article);
-
-        scrollChatToBottom();
-
-    }
-
-
-    function showAtlasTypingIndicator() {
-
-        const indicator =
-            document.createElement("article");
-
-        indicator.id = "atlasTypingIndicator";
-
-        indicator.className =
-            "chat-message chat-message--atlas";
-
-        const avatar =
-            document.createElement("div");
-
-        avatar.className = "chat-avatar";
-
-        avatar.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-
-        avatar.textContent = "A";
-
-        const paragraph =
-            document.createElement("p");
-
-        paragraph.textContent = "Atlas analyse votre message…";
-
-        indicator.append(
-            avatar,
-            paragraph
-        );
-
-        elements.chatMessages.appendChild(indicator);
-
-        scrollChatToBottom();
-
-    }
-
-
-    function removeAtlasTypingIndicator() {
-
-        document
-            .getElementById("atlasTypingIndicator")
-            ?.remove();
-
-    }
-
-
-    function scrollChatToBottom() {
-
-        if (!elements.chatMessages) {
-
-            return;
-
-        }
-
-        elements.chatMessages.scrollTo({
-
-            top: elements.chatMessages.scrollHeight,
-
-            behavior: "smooth"
-
-        });
-
-    }
-
-
-    function generateAtlasResponse(message) {
-
-        const normalizedMessage =
-            message
-                .toLocaleLowerCase("fr-FR")
-                .normalize("NFD")
-                .replace(
-                    /[\u0300-\u036f]/g,
-                    ""
-                );
-
-        if (
-            normalizedMessage.includes("douleur") ||
-            normalizedMessage.includes("mal")
-        ) {
-
-            return (
-                "Je prends en compte cette douleur. " +
-                "Précisez sa localisation, son intensité sur 10, " +
-                "sa durée et les mouvements qui l’aggravent. " +
-                "En cas de douleur intense, soudaine ou persistante, " +
-                "consultez un professionnel de santé."
-            );
-
-        }
-
-        if (
-            normalizedMessage.includes("sommeil") ||
-            normalizedMessage.includes("dormi") ||
-            normalizedMessage.includes("fatigue")
-        ) {
-
-            return (
-                "Votre récupération dépend notamment de la durée du sommeil, " +
-                "de sa régularité et de votre niveau de fatigue au réveil. " +
-                "Atlas pourra comparer ces données à votre charge physique."
-            );
-
-        }
-
-        if (
-            normalizedMessage.includes("courir") ||
-            normalizedMessage.includes("course") ||
-            normalizedMessage.includes("running")
-        ) {
-
-            return (
-                "Pour analyser votre course, Atlas utilisera progressivement " +
-                "la cadence, le temps de contact au sol, l’équilibre gauche-droite, " +
-                "la charge d’entraînement et vos sensations."
-            );
-
-        }
-
-        if (
-            normalizedMessage.includes("recuperation") ||
-            normalizedMessage.includes("repos")
-        ) {
-
-            return (
-                "Votre récupération simulée est actuellement favorable. " +
-                "Conservez une charge modérée et surveillez l’apparition " +
-                "de fatigue inhabituelle ou de douleurs persistantes."
-            );
-
-        }
-
-        if (
-            normalizedMessage.includes("genou")
-        ) {
-
-            return (
-                "Pour le genou, indiquez si la gêne se situe devant, derrière, " +
-                "à l’intérieur ou à l’extérieur de l’articulation. " +
-                "Précisez également les mouvements concernés."
-            );
-
-        }
-
-        if (
-            normalizedMessage.includes("dos") ||
-            normalizedMessage.includes("lombaire")
-        ) {
-
-            return (
-                "Pour mieux comprendre votre dos, Atlas doit connaître " +
-                "la zone exacte, les positions aggravantes, la présence éventuelle " +
-                "d’irradiations et l’évolution de la gêne."
-            );
-
-        }
-
-        if (
-            normalizedMessage.includes("bonjour") ||
-            normalizedMessage.includes("salut")
-        ) {
-
-            return (
-                "Bonjour. Je suis prêt à explorer votre activité, " +
-                "votre récupération ou une région de votre corps."
-            );
-
-        }
-
-        if (
-            normalizedMessage.includes("merci")
-        ) {
-
-            return (
-                "Avec plaisir. Votre jumeau évoluera progressivement " +
-                "avec les informations que vous lui transmettrez."
-            );
-
-        }
-
-        return (
-            "J’ai enregistré votre message. Dans cette version de démonstration, " +
-            "mes réponses sont simulées. La future version d’Atlas analysera " +
-            "vos données biomécaniques, votre historique et vos objectifs."
-        );
-
-    }
-
-
-    /* ======================================================
-       18. PROFIL
-    ====================================================== */
-
-    function updateProfileInformation() {
-
-        if (elements.selectedTwinLabel) {
-
-            elements.selectedTwinLabel.textContent =
-                state.selectedGender === "female"
-                    ? "Jumeau féminin"
-                    : "Jumeau masculin";
-
-        }
-
-        if (elements.connectedDevicesLabel) {
-
-            const count =
-                state.connectedDevices.length;
-
-            if (count === 0) {
-
-                elements.connectedDevicesLabel.textContent =
-                    "Aucun appareil connecté";
-
-            } else if (count === 1) {
-
-                elements.connectedDevicesLabel.textContent =
-                    state.connectedDevices[0];
-
-            } else {
-
-                elements.connectedDevicesLabel.textContent =
-                    `${count} sources de données actives`;
-
-            }
-
-        }
-
-    }
-
-
-    function openProfileScreen() {
-
-        showScreen(
-            "profileScreen",
-            {
-                animation: "fade-up"
-            }
-        );
-
-    }
-
-
-    function openGenderSettings() {
-
-        showScreen(
-            "genderSelection",
-            {
-                animation: "fade-up"
-            }
-        );
-
-        showToast(
-            "Choisissez une nouvelle apparence pour votre jumeau.",
-            "info"
-        );
-
-    }
-
-
-    function openDeviceManager() {
-
-        const container =
-            document.createElement("div");
-
-        const introduction =
-            document.createElement("p");
-
-        introduction.textContent =
-            "Gérez les sources de données utilisées dans cette démonstration.";
-
-        introduction.style.marginBottom = "22px";
-
-        const list =
-            document.createElement("div");
-
-        list.style.display = "grid";
-
-        list.style.gap = "12px";
-
-        elements.deviceButtons.forEach((deviceButton) => {
-
-            const deviceName =
-                deviceButton.dataset.device;
-
-            if (!deviceName) {
-
-                return;
-
-            }
-
-            const row =
-                document.createElement("button");
-
-            row.type = "button";
-
-            row.style.width = "100%";
-
-            row.style.padding = "14px 16px";
-
-            row.style.color = "white";
-
-            row.style.textAlign = "left";
-
-            row.style.border =
-                "1px solid rgba(255, 255, 255, 0.1)";
-
-            row.style.borderRadius = "14px";
-
-            row.style.background =
-                "rgba(255, 255, 255, 0.05)";
-
-            row.style.cursor = "pointer";
-
-            const connected =
-                state.connectedDevices.includes(deviceName);
-
-            row.textContent =
-                `${connected ? "✓" : "○"} ${deviceName}`;
-
-            row.addEventListener("click", () => {
-
-                toggleDevice(deviceName);
-
-                openDeviceManager();
-
-            });
-
-            list.appendChild(row);
-
-        });
-
-        container.append(
-            introduction,
-            list
-        );
-
-        openModal(
-            "Appareils et données",
-            container
-        );
-
-    }
-
-
-    function confirmApplicationReset() {
-
-        const container =
-            document.createElement("div");
-
-        const warning =
-            document.createElement("p");
-
-        warning.textContent =
-            "Cette action supprimera les choix enregistrés dans cette démonstration et relancera Atlas OS.";
-
-        warning.style.marginBottom = "22px";
-
-        const actions =
-            document.createElement("div");
-
-        actions.style.display = "flex";
-
-        actions.style.flexWrap = "wrap";
-
-        actions.style.gap = "12px";
-
-        const cancelButton =
-            document.createElement("button");
-
-        cancelButton.type = "button";
-
-        cancelButton.className =
-            "atlas-secondary-button";
-
-        cancelButton.textContent = "Annuler";
-
-        cancelButton.addEventListener(
-            "click",
-            closeModal
-        );
-
-        const confirmButton =
-            document.createElement("button");
-
-        confirmButton.type = "button";
-
-        confirmButton.className =
-            "atlas-primary-button";
-
-        confirmButton.textContent =
-            "Réinitialiser Atlas";
-
-        confirmButton.addEventListener(
-            "click",
-            resetApplication
-        );
-
-        actions.append(
-            cancelButton,
-            confirmButton
-        );
-
-        container.append(
-            warning,
-            actions
-        );
-
-        openModal(
-            "Réinitialiser la démonstration",
-            container
-        );
-
-    }
-
-
-    function resetApplication() {
-
-        storage.clearAtlasData();
-
-        state.selectedGender = null;
-
-        state.connectedDevices = [];
-
-        closeModal();
-
-        window.location.reload();
-
-    }
-
-
-    /* ======================================================
-       19. NOTIFICATIONS
-    ====================================================== */
-
-    function showToast(
-        message,
-        type = "info"
-    ) {
-
-        if (
-            !elements.atlasToast ||
-            !elements.atlasToastMessage
-        ) {
-
-            return;
-
-        }
-
-        const icons = {
-
-            info: "info",
-
-            success: "check_circle",
-
-            warning: "warning",
-
-            error: "error"
-
-        };
-
-        if (state.toastTimeout) {
-
-            window.clearTimeout(
-                state.toastTimeout
-            );
-
-        }
-
-        elements.atlasToastMessage.textContent =
-            message;
-
-        if (elements.atlasToastIcon) {
-
-            elements.atlasToastIcon.textContent =
-                icons[type] || icons.info;
-
-        }
-
-        elements.atlasToast.classList.add(
-            "visible"
-        );
-
-        state.toastTimeout =
-            window.setTimeout(() => {
-
-                elements.atlasToast.classList.remove(
-                    "visible"
-                );
-
-            }, 3400);
-
-    }
-
-
-    /* ======================================================
-       20. MODALE
-    ====================================================== */
-
-    function openModal(
-        title,
-        content
-    ) {
-
-        if (!elements.atlasModal) {
-
-            return;
-
-        }
-
-        if (elements.atlasModalTitle) {
-
-            elements.atlasModalTitle.textContent =
-                title;
-
-        }
-
-        if (elements.atlasModalBody) {
-
-            elements.atlasModalBody.replaceChildren();
-
-            if (content instanceof Node) {
-
-                elements.atlasModalBody.appendChild(
-                    content
-                );
-
-            } else {
-
-                const paragraph =
-                    document.createElement("p");
-
-                paragraph.textContent =
-                    String(content);
-
-                elements.atlasModalBody.appendChild(
-                    paragraph
-                );
-
-            }
-
-        }
-
-        elements.atlasModal.classList.remove(
-            "hidden"
-        );
-
-        elements.atlasModal.setAttribute(
-            "aria-hidden",
-            "false"
-        );
-
-        elements.closeModalButton?.focus();
-
-    }
-
-
-    function closeModal() {
-
-        if (!elements.atlasModal) {
-
-            return;
-
-        }
-
-        elements.atlasModal.classList.add(
-            "hidden"
-        );
-
-        elements.atlasModal.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-
-    }
-
-
-    /* ======================================================
-       21. CLAVIER
-    ====================================================== */
-
-    function handleKeyboard(event) {
-
-        if (
-            event.key === "Escape" &&
-            !elements.atlasModal?.classList.contains("hidden")
-        ) {
-
-            closeModal();
-
-        }
-
-    }
-
-
-    /* ======================================================
-       22. ÉVÉNEMENTS
-    ====================================================== */
-
-    function bindEvents() {
-
-        elements.genderCards.forEach((card) => {
-
-            card.addEventListener("click", () => {
-
-                selectGender(
-                    card.dataset.gender
-                );
-
-            });
-
-        });
-
-        elements.confirmGenderButton?.addEventListener(
-            "click",
-            confirmGenderSelection
-        );
-
-        elements.skipGenderButton?.addEventListener(
-            "click",
-            skipGenderSelection
-        );
-
-        elements.enterButton?.addEventListener(
-            "click",
-            enterAtlasExperience
-        );
-
-        elements.deviceButtons.forEach((button) => {
-
-            button.addEventListener("click", () => {
-
-                handleDeviceButton(button);
-
-            });
-
-        });
-
-        elements.continueButton?.addEventListener(
-            "click",
-            continueAfterSynchronization
-        );
-
-        elements.story?.addEventListener(
-            "input",
-            updateStoryCounter
-        );
-
-        elements.atlasStoryForm?.addEventListener(
-            "submit",
-            handleStorySubmission
-        );
-
-        elements.navButtons.forEach((button) => {
-
-            button.addEventListener("click", () => {
-
-                handleNavigation(button);
-
-            });
-
-        });
-
-        elements.profileButton?.addEventListener(
-            "click",
-            openProfileScreen
-        );
-
-        elements.resetBodyViewButton?.addEventListener(
-            "click",
-            resetBodyView
-        );
-
-        elements.bodyControls.forEach((button) => {
-
-            button.addEventListener("click", () => {
-
-                changeBodyLayer(button);
-
-            });
-
-        });
-
-        elements.chatForm?.addEventListener(
-            "submit",
-            handleChatSubmission
-        );
-
-        elements.changeGenderButton?.addEventListener(
-            "click",
-            openGenderSettings
-        );
-
-        elements.manageDevicesButton?.addEventListener(
-            "click",
-            openDeviceManager
-        );
-
-        elements.resetApplicationButton?.addEventListener(
-            "click",
-            confirmApplicationReset
-        );
-
-        elements.closeModalButton?.addEventListener(
-            "click",
-            closeModal
-        );
-
-        elements.modalBackdrop?.addEventListener(
-            "click",
-            closeModal
-        );
-
-        document.addEventListener(
-            "keydown",
-            handleKeyboard
-        );
-
-        window.addEventListener(
-            "resize",
-            debounce(
-                resizeBody3D,
-                150
-            )
-        );
-
-        window.addEventListener(
-            "orientationchange",
-            () => {
-
-                window.setTimeout(
-                    resizeBody3D,
-                    300
-                );
-
-            }
-        );
-
-    }
-
-
-    /* ======================================================
-       23. UTILITAIRES
-    ====================================================== */
-
-    function debounce(
-        callback,
-        delay
-    ) {
-
-        let timeoutId = null;
-
-        return (...argumentsList) => {
-
-            if (timeoutId) {
-
-                window.clearTimeout(
-                    timeoutId
-                );
-
-            }
-
-            timeoutId = window.setTimeout(() => {
-
-                callback(...argumentsList);
-
-            }, delay);
-
-        };
-
-    }
-
-
-    /* ======================================================
-       24. API PUBLIQUE ATLAS
-    ====================================================== */
-
-    window.AtlasOS = {
-
-        showScreen,
-
-        showToast,
-
-        openModal,
-
-        closeModal,
-
-        getState() {
-
-            return {
-
-                selectedGender:
-                    state.selectedGender,
-
-                connectedDevices:
-                    [...state.connectedDevices],
-
-                currentScreen:
-                    state.currentScreen
-
-            };
-
-        }
-
-    };
-
-
-    /* ======================================================
-       25. DÉMARRAGE
-    ====================================================== */
-
-    if (document.readyState === "loading") {
-
-        document.addEventListener(
-            "DOMContentLoaded",
-            initializeApplication,
-            {
-                once: true
-            }
-        );
-
-    } else {
-
-        initializeApplication();
-
-    }
-
+    elements.atlasModal.classList.remove("hidden");
+    elements.atlasModal.setAttribute("aria-hidden", "false");
+  }
+
+  function closeModal() {
+    elements.atlasModal?.classList.add("hidden");
+    elements.atlasModal?.setAttribute("aria-hidden", "true");
+  }
+
+  function resetApplication() {
+    storage.clearAtlasData();
+    window.location.reload();
+  }
+
+  function confirmReset() {
+    const wrapper = document.createElement("div");
+    const p = document.createElement("p");
+    p.textContent = "Cette action effacera les choix enregistrés et relancera Atlas OS.";
+    p.style.marginBottom = "20px";
+    const button = document.createElement("button");
+    button.className = "atlas-primary-button";
+    button.textContent = "Réinitialiser Atlas";
+    button.addEventListener("click", resetApplication);
+    wrapper.append(p, button);
+    openModal("Réinitialiser la démonstration", wrapper);
+  }
+
+  function bindEvents() {
+    elements.genderCards.forEach((card) => card.addEventListener("click", () => selectGender(card.dataset.gender)));
+    elements.confirmGenderButton?.addEventListener("click", confirmGenderSelection);
+    elements.skipGenderButton?.addEventListener("click", skipGenderSelection);
+    elements.enterButton?.addEventListener("click", () => showScreen("sync", { animation: "fade-up" }));
+    elements.deviceButtons.forEach((button) => button.addEventListener("click", () => handleDeviceButton(button)));
+    elements.continueButton?.addEventListener("click", () => showScreen("assistant", { animation: "fade-up" }));
+    elements.story?.addEventListener("input", updateStoryCounter);
+    elements.atlasStoryForm?.addEventListener("submit", handleStorySubmission);
+    elements.navButtons.forEach((button) => button.addEventListener("click", () => handleNavigation(button)));
+    elements.profileButton?.addEventListener("click", () => showScreen("profileScreen", { animation: "fade-up" }));
+    elements.resetBodyViewButton?.addEventListener("click", () => window.AtlasBody3D?.resetView?.());
+    elements.bodyControls.forEach((button) => button.addEventListener("click", () => {
+      elements.bodyControls.forEach((control) => control.classList.toggle("active", control === button));
+      window.AtlasBody3D?.setLayer?.(button.dataset.bodyLayer);
+    }));
+    elements.chatForm?.addEventListener("submit", handleChatSubmission);
+    elements.changeGenderButton?.addEventListener("click", () => showScreen("genderSelection", { animation: "fade-up" }));
+    elements.manageDevicesButton?.addEventListener("click", () => showScreen("sync", { animation: "fade-up" }));
+    elements.resetApplicationButton?.addEventListener("click", confirmReset);
+    elements.closeModalButton?.addEventListener("click", closeModal);
+    elements.modalBackdrop?.addEventListener("click", closeModal);
+    document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeModal(); });
+    window.addEventListener("resize", () => window.AtlasBody3D?.resize?.());
+  }
+
+  window.AtlasOS = {
+    showScreen,
+    showToast,
+    openModal,
+    closeModal,
+    getState: () => ({ ...state, connectedDevices: [...state.connectedDevices] })
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeApplication, { once: true });
+  } else {
+    initializeApplication();
+  }
 })();
