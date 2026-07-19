@@ -1,3 +1,21 @@
+const atlasStorage = new AtlasTwinStorage({
+    storageKey: "atlas.digital.twin",
+    backupKey: "atlas.digital.twin.backup",
+    debug: true
+});
+
+window.atlasStorage = atlasStorage;
+
+console.log(
+    "Atlas Twin Storage chargé :",
+    AtlasTwinStorage.VERSION
+);
+
+console.log(
+    "Diagnostic Atlas :",
+    atlasStorage.diagnose()
+);
+
 /* ==========================================================
    ATLAS OS V6
    CONTRÔLEUR PRINCIPAL DE L’APPLICATION
