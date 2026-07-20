@@ -1,19 +1,16 @@
 # Changelog — Atlas OS
 
-## Genesis 0.6.0
+## Genesis 0.8.0
 
-- reconstruction complète du prototype Hub Body ;
-- rapprochement visuel avec l'interface de référence ;
-- nouvelle composition horizontale ;
-- hub orbital autour de l'avatar ;
-- panneaux État actuel, Équilibre biologique, Atlas Observe et Douleurs récentes ;
-- chronologie horizontale ;
-- cartes de performance et récupération ;
-- réduction du défilement vertical ;
-- conservation des interactions sur l'avatar et les modules.
+- adoption de l'image validée comme couche visuelle de référence ;
+- rendu visuel quasi identique à la maquette ;
+- mise à l'échelle automatique sans déformation ;
+- ajout de zones interactives sur les modules et le corps ;
+- correction du découpage et du chevauchement de l'avatar ;
+- ajout d'une architecture permettant de remplacer progressivement l'image par des composants dynamiques.
 
-## Genesis 0.5.0
+## Genesis 0.7.0
 
-- fusion du hub numérique et de la cartographie corporelle ;
-- ajout de multiples systèmes anatomiques ;
-- ajout de nombreuses zones cliquables.
+- reconstruction CSS détaillée du Hub Body ;
+- avatar SVG enrichi ;
+- réorganisation des panneaux.
