@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Atlas OS — Hub Body 0.6.0</title>
+    <link rel="stylesheet" href="./css/atlas-hub-body.css">
+</head>
+<body>
+    <div class="atlas-dashboard">
+
+        <header class="atlas-topbar">
+            <div class="atlas-brand">
+                <div class="atlas-brand-symbol">A</div>
+                <div>
+                    <strong>ATLAS OS</strong>
+                    <span>Human Digital Twin</span>
+                </div>
+            </div>
+
+            <div class="atlas-welcome">
+                <div class="atlas-avatar-mini">CB</div>
+                <div>
+                    <strong>Bonjour Christophe 👋</strong>
+                    <span>Mercredi 16 juillet 2025 · 23:07</span>
+                </div>
+            </div>
+
+            <div class="atlas-top-actions">
+                <button class="atlas-mode-button">
+                    <span>Mode</span>
+                    <strong>Standard⌄</strong>
+                </button>
+                <button aria-label="Notifications">♢</button>
+                <button aria-label="Profil">◉</button>
+                <button aria-label="Réglages">⚙</button>
+                <button aria-label="Ajouter">＋</button>
+                <div class="atlas-radar"></div>
+            </div>
+        </header>
+
+        <aside class="atlas-sidebar">
+            <section>
+                <p class="atlas-nav-title">TABLEAU DE BORD</p>
+                <button class="atlas-nav-item active">◉ Vue d'ensemble</button>
+                <button class="atlas-nav-item">▣ Synthèse du jour</button>
+                <button class="atlas-nav-item">◎ Recommandations</button>
+            </section>
+
+            <section>
+                <p class="atlas-nav-title">EXPLORATION CORPS</p>
+                <button class="atlas-nav-item active">♙ Body 3D <small>Carte de la douleur</small></button>
+                <button class="atlas-nav-item" data-system="articular">⚙ Squelette / Articulations</button>
+                <button class="atlas-nav-item" data-system="muscular">◒ Muscles</button>
+                <button class="atlas-nav-item" data-system="tendon">⌁ Tendons & Ligaments</button>
+                <button class="atlas-nav-item" data-system="nervous">✦ Système nerveux</button>
+                <button class="atlas-nav-item" data-system="visceral">♧ Organes & Viscères</button>
+                <button class="atlas-nav-item" data-system="skin">✣ Peau & Tissus</button>
+            </section>
+
+            <section>
+                <p class="atlas-nav-title">SANTÉ GLOBALE</p>
+                <button class="atlas-nav-item">♡ Symptômes & Bien-être</button>
+                <button class="atlas-nav-item">☀ Sommeil</button>
+                <button class="atlas-nav-item">ϟ Énergie & Fatigue</button>
+                <button class="atlas-nav-item">◒ Stress & Humeur</button>
+                <button class="atlas-nav-item">⌁ Digestion</button>
+                <button class="atlas-nav-item">◉ Douleurs & Sensibilités</button>
+                <button class="atlas-nav-item">⊙ Sensibilité lumière, bruit…</button>
+                <button class="atlas-nav-item">♡ Récupération cardio.</button>
+            </section>
+
+            <button class="atlas-settings">⚙ Paramètres & Préférences</button>
+        </aside>
+
+        <main class="atlas-main">
+
+            <section class="atlas-left-column">
+                <article class="atlas-panel atlas-state-panel">
+                    <div class="atlas-panel-head">
+                        <h2>ÉTAT ACTUEL</h2>
+                        <button>×</button>
+                    </div>
+
+                    <div class="atlas-state-row"><span>◉ RÉCUPÉRATION</span><i><b style="width:78%"></b></i><strong>78%</strong></div>
+                    <div class="atlas-state-row"><span>◉ SOMMEIL</span><i><b style="width:85%"></b></i><strong>85%</strong></div>
+                    <div class="atlas-state-row"><span>◉ CHARGE D'ENTRAÎNEMENT</span><i><b style="width:62%"></b></i><strong>62%</strong></div>
+                    <div class="atlas-state-row"><span>◉ STRESS</span><i><b style="width:38%"></b></i><strong>38%</strong></div>
+                    <div class="atlas-state-row"><span>◉ DOULEUR GLOBALE</span><i><b style="width:40%"></b></i><strong>4/10</strong></div>
+                    <div class="atlas-state-row"><span>◉ ÉNERGIE</span><i><b style="width:62%"></b></i><strong>62%</strong></div>
+                    <div class="atlas-state-row"><span>◉ VARIABILITÉ (VFC)</span><i><b style="width:73%"></b></i><strong>73 ms</strong></div>
+                    <div class="atlas-state-row"><span>◉ HYDRATATION</span><i><b style="width:71%"></b></i><strong>71%</strong></div>
+                    <div class="atlas-state-row"><span>◉ TEMPÉRATURE</span><i><b style="width:66%"></b></i><strong>36.6 °C</strong></div>
+
+                    <button class="atlas-secondary">Voir tous les indicateurs →</button>
+                </article>
+
+                <article class="atlas-panel atlas-balance-panel">
+                    <div class="atlas-panel-head">
+                        <div>
+                            <h2>ÉQUILIBRE BIOLOGIQUE</h2>
+                            <p>Objectif : équilibre global</p>
+                        </div>
+                    </div>
+
+                    <div class="atlas-balance-wheel">
+                        <div class="atlas-balance-core">
+                            <strong>72%</strong>
+                            <span>Équilibre</span>
+                        </div>
+                        <span class="w1">Mouvement</span>
+                        <span class="w2">Force</span>
+                        <span class="w3">Mobilité</span>
+                        <span class="w4">Endurance</span>
+                        <span class="w5">Sommeil</span>
+                        <span class="w6">Stress</span>
+                        <span class="w7">Récupération</span>
+                        <span class="w8">Santé mentale</span>
+                    </div>
+
+                    <button class="atlas-secondary">Voir le détail</button>
+                </article>
+            </section>
+
+            <section class="atlas-center-column">
+                <div class="atlas-hub">
+
+                    <div class="atlas-orbit orbit-1"></div>
+                    <div class="atlas-orbit orbit-2"></div>
+                    <div class="atlas-orbit orbit-3"></div>
+
+                    <button class="hub-node node-health" data-module="Santé"><span>♥</span><b>SANTÉ</b></button>
+                    <button class="hub-node node-strength" data-module="Renforcement"><span>▮▮</span><b>RENFORCEMENT</b></button>
+                    <button class="hub-node node-mobility" data-module="Mobilité"><span>↗</span><b>MOBILITÉ</b></button>
+                    <button class="hub-node node-sleep" data-module="Sommeil"><span>☾</span><b>SOMMEIL</b></button>
+                    <button class="hub-node node-nutrition" data-module="Nutrition"><span>●</span><b>NUTRITION</b></button>
+                    <button class="hub-node node-analysis" data-module="Analyse IA"><span>◉</span><b>ANALYSE IA</b></button>
+                    <button class="hub-node node-progress" data-module="Progression"><span>▥</span><b>PROGRESSION</b></button>
+                    <button class="hub-node node-lab" data-module="Laboratoire"><span>⌬</span><b>LABORATOIRE</b></button>
+                    <button class="hub-node node-goals" data-module="Objectifs"><span>◎</span><b>OBJECTIFS</b></button>
+                    <button class="hub-node node-training" data-module="Entraînement"><span>↝</span><b>ENTRAÎNEMENT</b></button>
+
+                    <div class="atlas-body-wrap">
+                        <div class="atlas-body-beam"></div>
+
+                        <svg class="atlas-body" viewBox="0 0 340 680" aria-label="Avatar Atlas interactif">
+                            <defs>
+                                <linearGradient id="bodyFill" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0%" stop-color="#8df5ff"/>
+                                    <stop offset="48%" stop-color="#4aa8ff"/>
+                                    <stop offset="100%" stop-color="#7f67ff"/>
+                                </linearGradient>
+                            </defs>
+
+                            <g class="body-silhouette" fill="url(#bodyFill)" stroke="#d8ffff" stroke-width="1.2">
+                                <circle cx="170" cy="54" r="34"/>
+                                <path d="M132 100 C145 86 195 86 208 100 L227 224 L205 350 L199 616 L171 616 L168 375 L165 616 L137 616 L131 350 L109 224 Z"/>
+                                <path d="M113 124 L62 292 L79 303 L139 158 Z"/>
+                                <path d="M227 124 L278 292 L261 303 L201 158 Z"/>
+                            </g>
+
+                            <g id="bodyPoints" class="body-points"></g>
+                        </svg>
+
+                        <div class="atlas-platform">
+                            <i></i><i></i><i></i>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="atlas-right-column">
+                <article class="atlas-panel atlas-observe-panel">
+                    <div class="atlas-panel-head">
+                        <h2>ATLAS OBSERVE</h2>
+                        <span class="atlas-eye">◉</span>
+                    </div>
+
+                    <p>Je remarque que :</p>
+                    <ul>
+                        <li>votre sommeil diminue depuis 4 jours</li>
+                        <li>la charge augmente (+18% vs semaine dernière)</li>
+                        <li>tension accrue au niveau du droit antérieur</li>
+                        <li>météo chaude prévue demain (32°C)</li>
+                    </ul>
+
+                    <p>→ Je vous conseille de :</p>
+                    <ul>
+                        <li>déplacer la séance intensive à jeudi</li>
+                        <li>ajouter une séance mobilité hanches</li>
+                        <li>bien vous hydrater</li>
+                    </ul>
+
+                    <button class="atlas-secondary">Voir le détail de l'analyse</button>
+                </article>
+
+                <article class="atlas-panel atlas-pain-panel">
+                    <div class="atlas-panel-head">
+                        <h2>DOULEURS RÉCENTES</h2>
+                        <button>Voir la carte →</button>
+                    </div>
+
+                    <div class="atlas-pain-content">
+                        <svg viewBox="0 0 120 250" class="atlas-mini-body">
+                            <circle cx="60" cy="24" r="14"/>
+                            <path d="M46 44 L74 44 L82 103 L70 140 L68 230 L60 230 L58 145 L56 230 L48 230 L46 140 L38 103 Z"/>
+                            <path d="M42 54 L18 120 L25 124 L50 72 Z"/>
+                            <path d="M78 54 L102 120 L95 124 L70 72 Z"/>
+                            <circle cx="82" cy="62" r="5" class="pain-red"/>
+                            <circle cx="60" cy="107" r="5" class="pain-orange"/>
+                            <circle cx="67" cy="161" r="5" class="pain-yellow"/>
+                            <circle cx="50" cy="220" r="5" class="pain-green"/>
+                        </svg>
+
+                        <div class="atlas-pain-list">
+                            <div><span class="dot red"></span>Épaule droite <strong>6/10</strong></div>
+                            <div><span class="dot orange"></span>Lombaires <strong>4/10</strong></div>
+                            <div><span class="dot yellow"></span>Genou droit <strong>3/10</strong></div>
+                            <div><span class="dot green"></span>Cheville gauche <strong>2/10</strong></div>
+                            <div><span class="dot green"></span>Côté droit (côtes) <strong>2/10</strong></div>
+                            <div><span class="dot orange"></span>Cervicales <strong>3/10</strong></div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="atlas-panel atlas-ask-panel">
+                    <div>
+                        <h2>DEMANDER À ATLAS</h2>
+                        <p>Posez une question ou décrivez un symptôme</p>
+                    </div>
+                    <button id="askAtlasButton">◉</button>
+                </article>
+            </section>
+
+            <section class="atlas-timeline">
+                <div class="timeline-title">CHRONOLOGIE DE VIE</div>
+                <button>‹</button>
+                <div class="timeline-track">
+                    <div><span>2015</span><i></i><p>Études</p></div>
+                    <div><span>2016</span><i></i><p>Première course<br>10 km</p></div>
+                    <div><span>2017</span><i></i><p>Semi-marathon</p></div>
+                    <div><span>2018</span><i></i><p>Tendinite<br>rotulienne</p></div>
+                    <div><span>2019</span><i></i><p>Renforcement<br>+12 kg</p></div>
+                    <div><span>2020</span><i></i><p>Marathon</p></div>
+                    <div><span>2021</span><i></i><p>Lombalgie aiguë</p></div>
+                    <div><span>2022</span><i></i><p>Reprise<br>progressive</p></div>
+                    <div><span>2023</span><i></i><p>Opération<br>ménisque G</p></div>
+                    <div><span>2024</span><i></i><p>Trail 42 km</p></div>
+                    <div><span>2025</span><i></i><p>Aujourd'hui</p></div>
+                </div>
+                <button>›</button>
+            </section>
+
+            <section class="atlas-stats">
+                <article><span>VO₂ MAX</span><strong>52</strong><small>ml/kg/min</small><b>Bon</b><i class="sparkline"></i></article>
+                <article><span>CHARGE AIGUË / CHRONIQUE</span><strong>1.18</strong><small>Optimale</small><b>Optimale</b><i class="sparkline"></i></article>
+                <article><span>TOLÉRANCE À LA CHARGE</span><strong>Bonne</strong><small>En progression</small><b>Bonne</b><i class="sparkline green"></i></article>
+                <article><span>RISQUE BLESSURE (IA)</span><strong>Faible</strong><small>Score : 18/100</small><b>Faible</b><i class="sparkline green"></i></article>
+                <article><span>RÉCUPÉRATION PRÉVUE</span><strong>Excellente</strong><small>Demain</small><b>Excellente</b><i class="sparkline green"></i></article>
+                <article><span>CONDITION MÉTÉO</span><strong>32°C</strong><small>Ensoleillé</small><b>☀</b></article>
+            </section>
+        </main>
+
+        <footer class="atlas-footer">
+            <button>♧ Chronologie</button>
+            <button>▥ Évolution</button>
+            <button>⌬ Laboratoire (Simuler)</button>
+            <button>◎ Objectifs</button>
+            <button>▣ Documents</button>
+            <button>▢ Examens</button>
+            <button>☷ Notes</button>
+        </footer>
+    </div>
+
+    <dialog id="atlasDialog" class="atlas-dialog">
+        <form method="dialog"><button aria-label="Fermer">×</button></form>
+        <p id="dialogKicker">ATLAS</p>
+        <h2 id="dialogTitle">Module</h2>
+        <p id="dialogText"></p>
+    </dialog>
+
+    <script src="./js/atlas-hub-body.js"></script>
+</body>
+</html>
