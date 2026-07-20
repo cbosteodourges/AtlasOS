@@ -4,8 +4,8 @@
 // ║ Fichier : src/twin/atlas-twin.js                              ║
 // ║ Module  : Digital Twin Engine                                 ║
 // ║ Cycle   : Genesis                                             ║
-// ║ Version : 0.1.0                                               ║
-// ║ Statut  : Fondation                                           ║
+// ║ Version : 0.2.0                                               ║
+// ║ Statut  : Développement                                       ║
 // ╚════════════════════════════════════════════════════════════════╝
 
 "use strict";
@@ -13,10 +13,21 @@
 (() => {
 
     // ████████████████████████████████████████████████████████████
-    // 🟦 PARTIE A — A01 — CONFIGURATION ET STRUCTURE DU JUMEAU
+    // 🟦 PARTIE A — A01 — CONFIGURATION GÉNÉRALE
     // ████████████████████████████████████████████████████████████
 
-    const ATLAS_TWIN_VERSION = "0.1.0";
+    const VERSION = "0.2.0";
+
+    const EVENT_TYPES = Object.freeze([
+        "general",
+        "health",
+        "injury",
+        "surgery",
+        "sport",
+        "profession",
+        "environment",
+        "goal"
+    ]);
 
     function createIdentifier() {
         if (
@@ -33,15 +44,28 @@
         ].join("-");
     }
 
+    function nowIso() {
+        return new Date().toISOString();
+    }
+
+    // ████████████████████████████████████████████████████████████
+    // 🟦 FIN PARTIE A — A01
+    // ████████████████████████████████████████████████████████████
+
+
+    // ████████████████████████████████████████████████████████████
+    // 🟦 PARTIE A — A02 — STRUCTURE DU DIGITAL TWIN
+    // ████████████████████████████████████████████████████████████
+
     function createEmptyTwin() {
-        const now = new Date().toISOString();
+        const timestamp = nowIso();
 
         return {
             meta: {
                 id: createIdentifier(),
-                version: ATLAS_TWIN_VERSION,
-                createdAt: now,
-                updatedAt: now
+                version: VERSION,
+                createdAt: timestamp,
+                updatedAt: timestamp
             },
 
             identity: {
@@ -88,34 +112,78 @@
     }
 
     // ████████████████████████████████████████████████████████████
-    // 🟦 FIN PARTIE A — A01
+    // 🟦 FIN PARTIE A — A02
     // ████████████████████████████████████████████████████████████
 
 
     // ████████████████████████████████████████████████████████████
-    // 🟩 PARTIE B — B01 — INITIALISATION
+    // 🟩 PARTIE B — B01 — INITIALISATION ET COPIE
     // ████████████████████████████████████████████████████████████
 
-    function initializeTwin(initialData = null) {
-        const twin = createEmptyTwin();
+    function cloneValue(value) {
+        if (typeof structuredClone === "function") {
+            return structuredClone(value);
+        }
 
-        if (
+        return JSON.parse(JSON.stringify(value));
+    }
+
+    function mergeTwin(baseTwin, initialData) {
+        const source = (
             initialData &&
             typeof initialData === "object" &&
             !Array.isArray(initialData)
-        ) {
-            return {
-                ...twin,
-                ...initialData,
-                meta: {
-                    ...twin.meta,
-                    ...(initialData.meta || {}),
-                    updatedAt: new Date().toISOString()
-                }
-            };
-        }
+        )
+            ? initialData
+            : {};
 
-        return twin;
+        return {
+            ...baseTwin,
+            ...cloneValue(source),
+
+            meta: {
+                ...baseTwin.meta,
+                ...(source.meta || {}),
+                version: VERSION,
+                updatedAt: nowIso()
+            },
+
+            identity: {
+                ...baseTwin.identity,
+                ...(source.identity || {})
+            },
+
+            body: {
+                ...baseTwin.body,
+                ...(source.body || {})
+            },
+
+            activity: {
+                ...baseTwin.activity,
+                ...(source.activity || {})
+            },
+
+            context: {
+                ...baseTwin.context,
+                ...(source.context || {})
+            },
+
+            intelligence: {
+                ...baseTwin.intelligence,
+                ...(source.intelligence || {})
+            },
+
+            timeline: Array.isArray(source.timeline)
+                ? cloneValue(source.timeline)
+                : []
+        };
+    }
+
+    function create(initialData = null) {
+        return mergeTwin(
+            createEmptyTwin(),
+            initialData
+        );
     }
 
     // ████████████████████████████████████████████████████████████
@@ -124,31 +192,30 @@
 
 
     // ████████████████████████████████████████████████████████████
-    // 🟨 PARTIE C — C01 — ÉVÉNEMENTS DE VIE
+    // 🟨 PARTIE C — C01 — IDENTITÉ
     // ████████████████████████████████████████████████████████████
 
-    function addTimelineEvent(twin, event) {
-        if (!isValidTwin(twin)) {
-            throw new TypeError("Atlas Twin : jumeau invalide.");
+    function updateIdentity(twin, changes) {
+        assertValidTwin(twin);
+
+        if (
+            !changes ||
+            typeof changes !== "object" ||
+            Array.isArray(changes)
+        ) {
+            throw new TypeError(
+                "Atlas Twin : modifications d'identité invalides."
+            );
         }
 
-        if (!event || typeof event !== "object") {
-            throw new TypeError("Atlas Twin : événement invalide.");
-        }
-
-        const normalizedEvent = {
-            id: createIdentifier(),
-            date: event.date || new Date().toISOString(),
-            type: String(event.type || "general"),
-            title: String(event.title || "Événement"),
-            description: String(event.description || ""),
-            source: String(event.source || "manual")
+        twin.identity = {
+            ...twin.identity,
+            ...cloneValue(changes)
         };
 
-        twin.timeline.push(normalizedEvent);
-        twin.meta.updatedAt = new Date().toISOString();
+        touch(twin);
 
-        return normalizedEvent;
+        return cloneValue(twin.identity);
     }
 
     // ████████████████████████████████████████████████████████████
@@ -157,18 +224,155 @@
 
 
     // ████████████████████████████████████████████████████████████
-    // 🟥 PARTIE F — F01 — VALIDATION
+    // 🟨 PARTIE C — C02 — ÉVÉNEMENTS DE VIE
     // ████████████████████████████████████████████████████████████
 
-    function isValidTwin(twin) {
+    function addTimelineEvent(twin, event) {
+        assertValidTwin(twin);
+
+        if (
+            !event ||
+            typeof event !== "object" ||
+            Array.isArray(event)
+        ) {
+            throw new TypeError(
+                "Atlas Twin : événement invalide."
+            );
+        }
+
+        const requestedType = String(
+            event.type || "general"
+        );
+
+        const normalizedEvent = {
+            id: createIdentifier(),
+            date: event.date || nowIso(),
+            type: EVENT_TYPES.includes(requestedType)
+                ? requestedType
+                : "general",
+            title: String(
+                event.title || "Événement"
+            ).trim(),
+            description: String(
+                event.description || ""
+            ).trim(),
+            source: String(
+                event.source || "manual"
+            ).trim()
+        };
+
+        twin.timeline.push(normalizedEvent);
+
+        twin.timeline.sort((first, second) => {
+            return (
+                new Date(first.date).getTime() -
+                new Date(second.date).getTime()
+            );
+        });
+
+        touch(twin);
+
+        return cloneValue(normalizedEvent);
+    }
+
+    function removeTimelineEvent(twin, eventId) {
+        assertValidTwin(twin);
+
+        const index = twin.timeline.findIndex(
+            (event) => event.id === eventId
+        );
+
+        if (index < 0) {
+            return false;
+        }
+
+        twin.timeline.splice(index, 1);
+        touch(twin);
+
+        return true;
+    }
+
+    function getTimeline(twin, options = {}) {
+        assertValidTwin(twin);
+
+        const requestedType = options.type || null;
+
+        const events = requestedType
+            ? twin.timeline.filter(
+                (event) => event.type === requestedType
+            )
+            : twin.timeline;
+
+        return cloneValue(events);
+    }
+
+    // ████████████████████████████████████████████████████████████
+    // 🟨 FIN PARTIE C — C02
+    // ████████████████████████████████████████████████████████████
+
+
+    // ████████████████████████████████████████████████████████████
+    // 🟧 PARTIE D — D01 — SYNTHÈSE DU JUMEAU
+    // ████████████████████████████████████████████████████████████
+
+    function getSummary(twin) {
+        assertValidTwin(twin);
+
+        return {
+            id: twin.meta.id,
+            version: twin.meta.version,
+            displayName: [
+                twin.identity.firstName,
+                twin.identity.lastName
+            ]
+                .filter(Boolean)
+                .join(" ")
+                .trim() || "Utilisateur Atlas",
+            eventCount: twin.timeline.length,
+            injuryCount: twin.body.injuries.length,
+            surgeryCount: twin.body.surgeries.length,
+            sportCount: twin.activity.sports.length,
+            goalCount: twin.activity.goals.length,
+            updatedAt: twin.meta.updatedAt
+        };
+    }
+
+    // ████████████████████████████████████████████████████████████
+    // 🟧 FIN PARTIE D — D01
+    // ████████████████████████████████████████████████████████████
+
+
+    // ████████████████████████████████████████████████████████████
+    // 🟥 PARTIE F — F01 — VALIDATION ET SÉCURITÉ
+    // ████████████████████████████████████████████████████████████
+
+    function isValid(twin) {
         return Boolean(
             twin &&
             typeof twin === "object" &&
             !Array.isArray(twin) &&
             twin.meta &&
             typeof twin.meta.id === "string" &&
+            twin.identity &&
+            twin.body &&
+            twin.activity &&
+            twin.context &&
+            twin.intelligence &&
             Array.isArray(twin.timeline)
         );
+    }
+
+    function assertValidTwin(twin) {
+        if (!isValid(twin)) {
+            throw new TypeError(
+                "Atlas Twin : jumeau invalide."
+            );
+        }
+    }
+
+    function touch(twin) {
+        twin.meta.version = VERSION;
+        twin.meta.updatedAt = nowIso();
     }
 
     // ████████████████████████████████████████████████████████████
@@ -177,23 +381,64 @@
 
 
     // ████████████████████████████████████████████████████████████
-    // ⬜ PARTIE G — G01 — API PUBLIQUE
+    // ⬜ PARTIE G — G01 — IMPORT ET EXPORT
     // ████████████████████████████████████████████████████████████
 
-    window.AtlasTwin = Object.freeze({
-        VERSION: ATLAS_TWIN_VERSION,
-        create: initializeTwin,
-        createEmpty: createEmptyTwin,
-        addTimelineEvent,
-        isValid: isValidTwin
-    });
+    function exportJson(twin, spacing = 2) {
+        assertValidTwin(twin);
 
-    console.info(
-        `Atlas Twin Engine ${ATLAS_TWIN_VERSION} chargé.`
-    );
+        return JSON.stringify(
+            twin,
+            null,
+            spacing
+        );
+    }
+
+    function importJson(jsonText) {
+        if (typeof jsonText !== "string") {
+            throw new TypeError(
+                "Atlas Twin : le contenu importé doit être du texte JSON."
+            );
+        }
+
+        const parsed = JSON.parse(jsonText);
+        const twin = create(parsed);
+
+        assertValidTwin(twin);
+
+        return twin;
+    }
 
     // ████████████████████████████████████████████████████████████
     // ⬜ FIN PARTIE G — G01
+    // ████████████████████████████████████████████████████████████
+
+
+    // ████████████████████████████████████████████████████████████
+    // ⬜ PARTIE G — G02 — API PUBLIQUE
+    // ████████████████████████████████████████████████████████████
+
+    window.AtlasTwin = Object.freeze({
+        VERSION,
+        EVENT_TYPES,
+        create,
+        createEmpty: createEmptyTwin,
+        updateIdentity,
+        addTimelineEvent,
+        removeTimelineEvent,
+        getTimeline,
+        getSummary,
+        exportJson,
+        importJson,
+        isValid
+    });
+
+    console.info(
+        `Atlas Twin Engine ${VERSION} chargé.`
+    );
+
+    // ████████████████████████████████████████████████████████████
+    // ⬜ FIN PARTIE G — G02
     // ████████████████████████████████████████████████████████████
 
 })();

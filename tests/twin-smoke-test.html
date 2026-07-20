@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Test Atlas Twin 0.2.0</title>
+    <style>
+        body {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            font-family: system-ui, sans-serif;
+            line-height: 1.5;
+        }
+
+        pre {
+            padding: 18px;
+            border: 1px solid #cccccc;
+            border-radius: 12px;
+            overflow: auto;
+            white-space: pre-wrap;
+        }
+
+        .success {
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test local — Atlas Twin 0.2.0</h1>
+    <p id="status">Test en cours…</p>
+    <pre id="result"></pre>
+
+    <script src="../src/twin/atlas-twin.js"></script>
+    <script>
+        const status = document.getElementById("status");
+        const result = document.getElementById("result");
+
+        try {
+            const twin = AtlasTwin.create();
+
+            AtlasTwin.updateIdentity(twin, {
+                firstName: "Test",
+                lastName: "Atlas",
+                currentProfession: "Démonstration"
+            });
+
+            AtlasTwin.addTimelineEvent(twin, {
+                type: "sport",
+                title: "Première séance",
+                description: "Événement de démonstration."
+            });
+
+            const summary = AtlasTwin.getSummary(twin);
+
+            status.textContent =
+                "✅ Tous les tests de base ont réussi.";
+            status.className = "success";
+
+            result.textContent = JSON.stringify(
+                {
+                    version: AtlasTwin.VERSION,
+                    valid: AtlasTwin.isValid(twin),
+                    summary,
+                    twin
+                },
+                null,
+                2
+            );
+        } catch (error) {
+            status.textContent =
+                "❌ Le test a échoué.";
+            result.textContent =
+                error.stack || String(error);
+        }
+    </script>
+</body>
+</html>
