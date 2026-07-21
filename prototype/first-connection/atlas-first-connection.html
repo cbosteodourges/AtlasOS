@@ -60,24 +60,58 @@
     </header>
 
     <div class="avatar-grid">
-      <button class="avatar-card male" data-avatar="male" type="button">
-        <div class="avatar-card-visual">
-          <img src="./assets/avatar-male-hologram.jpg" alt="Avatar holographique masculin">
-          <div class="avatar-card-scanlines"></div>
-          <div class="avatar-card-selection">✓</div>
-        </div>
+      <button class="avatar-card male" data-avatar="male">
+        <div class="avatar-energy"></div>
+        <svg viewBox="0 0 260 560" aria-label="Avatar masculin">
+          <defs>
+            <linearGradient id="maleGradient" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#b4fbff"/>
+              <stop offset="45%" stop-color="#55c9ff"/>
+              <stop offset="100%" stop-color="#2876ff"/>
+            </linearGradient>
+          </defs>
+          <g fill="url(#maleGradient)" stroke="#e9ffff">
+            <circle cx="130" cy="48" r="32"/>
+            <path d="M90 94 C104 76 156 76 170 94 L190 196 L167 300 L161 522 L133 522 L130 324 L127 522 L99 522 L93 300 L70 196 Z"/>
+            <path d="M74 112 L28 265 L45 275 L104 145 Z"/>
+            <path d="M186 112 L232 265 L215 275 L156 145 Z"/>
+          </g>
+          <g class="avatar-lines">
+            <path d="M130 82V322"/>
+            <path d="M94 145Q130 168 166 145"/>
+            <path d="M88 195Q130 218 172 195"/>
+            <path d="M96 294Q130 310 164 294"/>
+          </g>
+        </svg>
         <div class="avatar-card-label">
           <strong>Avatar masculin</strong>
           <span>Cyan profond · Bleu électrique</span>
         </div>
       </button>
 
-      <button class="avatar-card female" data-avatar="female" type="button">
-        <div class="avatar-card-visual">
-          <img src="./assets/avatar-female-hologram.jpg" alt="Avatar holographique féminin">
-          <div class="avatar-card-scanlines"></div>
-          <div class="avatar-card-selection">✓</div>
-        </div>
+      <button class="avatar-card female" data-avatar="female">
+        <div class="avatar-energy"></div>
+        <svg viewBox="0 0 260 560" aria-label="Avatar féminin">
+          <defs>
+            <linearGradient id="femaleGradient" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#d7f9ff"/>
+              <stop offset="48%" stop-color="#9f7cff"/>
+              <stop offset="100%" stop-color="#5e4dff"/>
+            </linearGradient>
+          </defs>
+          <g fill="url(#femaleGradient)" stroke="#f7f0ff">
+            <circle cx="130" cy="48" r="31"/>
+            <path d="M98 94 C108 80 152 80 162 94 L178 178 L163 262 L177 318 L158 522 L133 522 L130 330 L127 522 L102 522 L83 318 L97 262 L82 178 Z"/>
+            <path d="M86 112 L40 264 L55 274 L108 145 Z"/>
+            <path d="M174 112 L220 264 L205 274 L152 145 Z"/>
+          </g>
+          <g class="avatar-lines">
+            <path d="M130 82V328"/>
+            <path d="M100 144Q130 162 160 144"/>
+            <path d="M95 197Q130 214 165 197"/>
+            <path d="M91 302Q130 320 169 302"/>
+          </g>
+        </svg>
         <div class="avatar-card-label">
           <strong>Avatar féminin</strong>
           <span>Cyan violet · Reflets améthyste</span>
@@ -85,13 +119,7 @@
       </button>
     </div>
 
-    <div class="avatar-action-bar">
-      <p id="avatarSelectionHint">Sélectionnez un avatar pour continuer.</p>
-      <button class="continue-button" id="avatarContinue" type="button" disabled>
-        Continuer
-        <span>→</span>
-      </button>
-    </div>
+    <button class="continue-button" id="avatarContinue" disabled>Continuer</button>
   </section>
 
   <!-- ████████████████████████████████████████████████████████████

@@ -17,7 +17,6 @@
   const atlasLogo = document.getElementById("atlasLogo");
   const atlasTitle = document.getElementById("atlasTitle");
   const avatarContinue = document.getElementById("avatarContinue");
-  const avatarSelectionHint = document.getElementById("avatarSelectionHint");
   const profileForm = document.getElementById("profileForm");
   const creationAvatar = document.getElementById("creationAvatar");
   const creationMessage = document.getElementById("creationMessage");
@@ -169,42 +168,19 @@
   document.querySelectorAll("[data-avatar]").forEach(card => {
     card.addEventListener("click", () => {
       state.selectedAvatar = card.dataset.avatar;
-
       document.querySelectorAll("[data-avatar]").forEach(item => {
-        const selected = item === card;
-        item.classList.toggle("selected", selected);
-        item.setAttribute("aria-pressed", String(selected));
+        item.classList.toggle("selected", item === card);
       });
-
       avatarContinue.disabled = false;
-      avatarSelectionHint.textContent =
-        state.selectedAvatar === "female"
-          ? "Avatar féminin sélectionné."
-          : "Avatar masculin sélectionné.";
-      avatarSelectionHint.classList.add("ready");
     });
   });
 
-  avatarContinue.addEventListener("click", () => {
-    if (!state.selectedAvatar) {
-      avatarSelectionHint.textContent = "Choisissez d’abord un avatar.";
-      return;
-    }
-
-    showScene("profile");
-  });
+  avatarContinue.addEventListener("click", () => showScene("profile"));
 
   profileForm.addEventListener("submit", event => {
     event.preventDefault();
     state.profile = Object.fromEntries(new FormData(profileForm).entries());
-    creationAvatar.innerHTML = `
-      <img
-        src="./assets/${state.selectedAvatar === "female"
-          ? "avatar-female-hologram.jpg"
-          : "avatar-male-hologram.jpg"}"
-        alt="Digital Twin holographique"
-        style="width:100%;height:100%;object-fit:cover;border-radius:28px;"
-      >`;
+    creationAvatar.innerHTML = avatarSvg(state.selectedAvatar);
     showScene("creation");
     runCreation();
   });
