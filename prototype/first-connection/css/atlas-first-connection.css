@@ -1,0 +1,148 @@
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║ ATLAS OS — Première connexion — Genesis 1.0.0               ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+:root{
+  --cyan:#63e4ff;
+  --blue:#2c82ff;
+  --violet:#8e6dff;
+  --text:#f2fbff;
+  --muted:#9bb5c5;
+  --bg:#01050b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text)}
+button,input,select{font:inherit}
+.hidden{display:none!important}
+.scene{position:absolute;inset:0;display:none;overflow:hidden;background:#01050b}
+.scene.active{display:block}
+
+/* 🟦 PARTIE A — OUVERTURE */
+.opening{background:radial-gradient(circle at center,rgba(35,112,186,.16),transparent 34%),#000}
+#particleCanvas,.vignette{position:absolute;inset:0}
+.vignette{background:radial-gradient(circle,transparent 38%,rgba(0,0,0,.88) 100%);pointer-events:none}
+.enter-button{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  display:grid;justify-items:center;gap:6px;min-width:350px;padding:22px 36px;
+  color:var(--text);border:1px solid rgba(99,228,255,.44);border-radius:999px;
+  background:rgba(4,17,31,.78);box-shadow:0 0 55px rgba(45,148,255,.2);cursor:pointer
+}
+.enter-button small{color:var(--muted)}
+.pulse-ring{position:absolute;inset:-9px;border:1px solid rgba(99,228,255,.25);border-radius:inherit;animation:pulse 2.4s ease-out infinite}
+.opening-sequence{position:absolute;inset:0}
+.heartbeat,.atlas-logo,.atlas-title{position:absolute;left:50%;top:50%;opacity:0;transform:translate(-50%,-50%)}
+.heartbeat{width:min(520px,72vw)}
+.heartbeat svg{width:100%}
+.heartbeat polyline{fill:none;stroke:var(--cyan);stroke-width:2.4;stroke-dasharray:1000;stroke-dashoffset:1000;filter:drop-shadow(0 0 10px var(--cyan))}
+.heartbeat.active{opacity:1}
+.heartbeat.active polyline{animation:drawBeat 3.4s ease forwards}
+.atlas-logo{width:190px;height:190px;color:var(--cyan);filter:drop-shadow(0 0 20px rgba(99,228,255,.7))}
+.atlas-logo.visible,.atlas-title.visible{opacity:1}
+.atlas-logo svg{width:100%;height:100%}
+.atlas-logo svg>*{fill:none;stroke:currentColor;stroke-width:1.8}
+.logo-orbit{position:absolute;border:1px solid rgba(99,228,255,.25);border-radius:50%}
+.logo-orbit.one{inset:-10px;animation:spin 9s linear infinite}
+.logo-orbit.two{inset:7px;border-style:dashed;animation:spinBack 7s linear infinite}
+.atlas-title{top:67%;width:100%;text-align:center}
+.atlas-title h1{margin:0;font-size:clamp(3rem,7vw,6rem);font-weight:300;letter-spacing:.22em;text-indent:.22em}
+.atlas-title p{margin:10px 0 0;color:var(--cyan);letter-spacing:.42em;text-indent:.42em}
+.skip{position:absolute;right:24px;bottom:20px;color:var(--muted);border:0;background:transparent}
+
+/* 🟩 PARTIE B — CHOIX AVATAR */
+.avatar-choice,.profile-scene,.creation-scene{
+  background:
+    radial-gradient(circle at 50% 45%,rgba(34,105,178,.19),transparent 36%),
+    linear-gradient(180deg,#06111f,#01050b)
+}
+.scene-header{text-align:center;padding-top:46px}
+.scene-header p{margin:0;color:var(--cyan);font-size:.72rem;letter-spacing:.15em}
+.scene-header h2{margin:10px 0 8px;font-size:2rem;font-weight:400}
+.scene-header span{color:var(--muted)}
+.avatar-grid{display:grid;grid-template-columns:repeat(2,minmax(300px,420px));justify-content:center;gap:42px;margin-top:34px}
+.avatar-card{
+  position:relative;min-height:610px;padding:18px;color:var(--text);
+  border:1px solid rgba(99,228,255,.18);border-radius:26px;
+  background:linear-gradient(160deg,rgba(9,29,55,.8),rgba(2,10,20,.94));
+  cursor:pointer;overflow:hidden;transition:.25s ease
+}
+.avatar-card:hover,.avatar-card.selected{transform:translateY(-8px);border-color:var(--cyan);box-shadow:0 24px 80px rgba(28,128,232,.28)}
+.avatar-card.female.selected{border-color:#ae8cff;box-shadow:0 24px 80px rgba(119,80,255,.28)}
+.avatar-energy{position:absolute;inset:12% 8% 15%;border-radius:50%;background:radial-gradient(circle,rgba(65,175,255,.32),transparent 70%);filter:blur(24px)}
+.avatar-card.female .avatar-energy{background:radial-gradient(circle,rgba(142,109,255,.32),transparent 70%)}
+.avatar-card svg{position:relative;width:100%;height:500px;filter:drop-shadow(0 0 24px rgba(91,195,255,.55))}
+.avatar-lines{fill:none;stroke:#dffcff;stroke-width:.8;opacity:.7}
+.avatar-card-label{display:grid;gap:5px}
+.avatar-card-label span{color:var(--muted)}
+.continue-button{
+  display:block;margin:24px auto 0;padding:13px 28px;color:#03101b;font-weight:700;
+  border:0;border-radius:999px;background:linear-gradient(90deg,var(--cyan),#b7f6ff);cursor:pointer
+}
+.continue-button:disabled{opacity:.35;cursor:not-allowed}
+
+/* 🟨 PARTIE C — PROFIL */
+.profile-form{
+  display:grid;grid-template-columns:repeat(2,minmax(240px,340px));gap:18px 22px;
+  justify-content:center;margin-top:52px
+}
+.profile-form label{display:grid;gap:8px}
+.profile-form label>span{color:#c7dbe6}
+.profile-form input,.profile-form select{
+  width:100%;padding:14px 16px;color:var(--text);
+  border:1px solid rgba(99,228,255,.22);border-radius:14px;
+  background:rgba(5,19,35,.82);outline:none
+}
+.profile-form input:focus,.profile-form select:focus{border-color:var(--cyan);box-shadow:0 0 18px rgba(99,228,255,.15)}
+.profile-form .wide{grid-column:1/-1}
+.unit-field{position:relative}
+.unit-field em{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-style:normal}
+.profile-form .continue-button{grid-column:1/-1;margin-top:12px}
+
+/* 🟧 PARTIE D — CRÉATION */
+.creation-scene canvas{position:absolute;inset:0}
+.creation-core{position:absolute;left:50%;top:50%;width:520px;height:700px;transform:translate(-50%,-50%)}
+.creation-rings i{position:absolute;left:50%;top:50%;aspect-ratio:1;border:1px solid rgba(99,228,255,.22);border-radius:50%;transform:translate(-50%,-50%)}
+.creation-rings i:nth-child(1){width:100%}.creation-rings i:nth-child(2){width:78%}.creation-rings i:nth-child(3){width:56%}.creation-rings i:nth-child(4){width:34%}
+.creation-avatar{position:absolute;left:50%;bottom:86px;width:300px;height:520px;transform:translateX(-50%);filter:drop-shadow(0 0 28px rgba(91,195,255,.65))}
+.creation-avatar svg{width:100%;height:100%}
+.creation-scan-line{position:absolute;left:50%;top:70px;width:360px;height:2px;transform:translateX(-50%);background:linear-gradient(90deg,transparent,var(--cyan),transparent);box-shadow:0 0 18px var(--cyan);animation:scan 2.8s ease-in-out infinite}
+.creation-message{position:absolute;left:50%;bottom:12px;width:420px;transform:translateX(-50%);text-align:center;color:var(--muted)}
+.creation-progress{height:5px;margin-top:12px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+.creation-progress span{display:block;width:0;height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));box-shadow:0 0 14px var(--cyan);transition:width .7s ease}
+
+/* 🟪 PARTIE E — HUB */
+.hub-scene{background:#01060d}
+.hub-canvas{position:absolute;left:50%;top:50%;width:1536px;height:1024px;transform:translate(-50%,-50%) scale(var(--hub-scale,1));transform-origin:center}
+.hub-canvas img{position:absolute;inset:0;width:1536px;height:1024px;object-fit:fill;pointer-events:none}
+.hub-welcome{
+  position:absolute;left:50%;top:50%;z-index:20;display:grid;justify-items:center;gap:6px;
+  min-width:470px;padding:24px 32px;opacity:0;transform:translate(-50%,-50%) scale(.92);
+  border:1px solid rgba(99,228,255,.4);border-radius:22px;background:rgba(2,14,27,.88);
+  box-shadow:0 0 70px rgba(40,136,240,.32);transition:.8s ease
+}
+.hub-welcome.visible{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.hub-welcome p{margin:0;color:var(--cyan)}
+.hub-welcome strong{font-size:1.35rem}
+.hub-welcome span{color:var(--muted)}
+.hotspot{position:absolute;z-index:12;border:0;background:transparent;cursor:pointer}
+.hotspot::after{content:"";position:absolute;inset:-4px;border:1px solid transparent;border-radius:inherit;transition:.16s ease}
+.hotspot:hover::after{border-color:var(--cyan);background:rgba(99,228,255,.08);box-shadow:0 0 20px rgba(99,228,255,.8)}
+.hotspot.body{left:665px;top:162px;width:220px;height:500px;border-radius:90px}
+.hotspot.health{left:738px;top:85px;width:76px;height:76px;border-radius:50%}
+.hotspot.training{left:582px;top:112px;width:76px;height:76px;border-radius:50%}
+.hotspot.sleep{left:990px;top:383px;width:76px;height:76px;border-radius:50%}
+.hotspot.analysis{left:738px;top:610px;width:76px;height:76px;border-radius:50%}
+.hotspot.ask{left:1090px;top:660px;width:430px;height:77px;border-radius:16px}
+
+/* DIALOGUE */
+.atlas-dialog{width:min(520px,calc(100% - 32px));color:var(--text);border:1px solid rgba(99,228,255,.38);border-radius:22px;background:#071729}
+.atlas-dialog::backdrop{background:rgba(0,5,12,.82);backdrop-filter:blur(7px)}
+.dialog-close{float:right;color:var(--text);font-size:1.7rem;border:0;background:transparent}
+.dialog-kicker{margin:0;color:var(--cyan);font-size:.72rem;letter-spacing:.16em}
+.atlas-dialog p{color:var(--muted);line-height:1.6}
+.dialog-action{padding:11px 20px;color:#03101b;font-weight:700;border:0;border-radius:999px;background:linear-gradient(90deg,var(--cyan),#b7f5ff)}
+
+@keyframes pulse{from{opacity:.8;transform:scale(.98)}to{opacity:0;transform:scale(1.12)}}
+@keyframes drawBeat{to{stroke-dashoffset:0}}
+@keyframes spin{to{transform:rotate(360deg)}}@keyframes spinBack{to{transform:rotate(-360deg)}}
+@keyframes scan{0%,100%{top:70px;opacity:.35}50%{top:560px;opacity:1}}

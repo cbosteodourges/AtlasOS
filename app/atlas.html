@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Atlas OS — Human Digital Twin</title>
+  <link rel="stylesheet" href="./css/atlas.css">
+</head>
+<body>
+<main id="atlasApp">
+
+  <!-- ████████████████████████████████████████████████████████
+       🟦 PARTIE A — A01 — CHOIX AVATAR
+       ████████████████████████████████████████████████████████ -->
+  <section class="scene active" data-scene="avatar">
+    <div class="brand">
+      <div class="brand-mark">A</div>
+      <strong>ATLAS OS</strong>
+    </div>
+
+    <header class="step-head">
+      <div class="step-index"><span>1</span> ÉTAPE 1 SUR 5</div>
+      <h1>Choisissez votre avatar</h1>
+      <p>Vous pourrez le personnaliser plus tard.</p>
+    </header>
+
+    <div class="avatar-choice-grid">
+      <button class="avatar-choice" data-avatar="male" type="button">
+        <div class="avatar-frame male-frame">
+          <img src="./assets/avatar-male.jpg" alt="Avatar holographique homme">
+          <div class="avatar-glass"></div>
+          <div class="avatar-check">✓</div>
+        </div>
+        <div class="avatar-radio"><span></span> HOMME</div>
+      </button>
+
+      <button class="avatar-choice" data-avatar="female" type="button">
+        <div class="avatar-frame female-frame">
+          <img src="./assets/avatar-female.jpg" alt="Avatar holographique femme">
+          <div class="avatar-glass"></div>
+          <div class="avatar-check">✓</div>
+        </div>
+        <div class="avatar-radio"><span></span> FEMME</div>
+      </button>
+    </div>
+
+    <div class="bottom-action">
+      <p id="avatarMessage">Sélectionnez un avatar pour continuer.</p>
+      <button class="primary" id="avatarNext" type="button" disabled>
+        Continuer <span>→</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ████████████████████████████████████████████████████████
+       🟩 PARTIE B — B01 — PROFIL
+       ████████████████████████████████████████████████████████ -->
+  <section class="scene" data-scene="profile">
+    <div class="brand">
+      <div class="brand-mark">A</div>
+      <strong>ATLAS OS</strong>
+    </div>
+
+    <header class="step-head">
+      <div class="step-index"><span>2</span> ÉTAPE 2 SUR 5</div>
+      <h1>Parlez-nous de vous</h1>
+      <p>Ces informations nous permettent de construire votre Digital Twin.</p>
+    </header>
+
+    <div class="profile-layout">
+      <div class="profile-avatar" id="profileAvatar"></div>
+
+      <form class="profile-form" id="profileForm">
+        <label>
+          <span>PRÉNOM</span>
+          <input name="firstName" value="Christophe" required>
+        </label>
+
+        <label>
+          <span>ÂGE</span>
+          <select name="age">
+            <option>35 ans</option>
+            <option selected>45 ans</option>
+            <option>55 ans</option>
+            <option>65 ans</option>
+          </select>
+        </label>
+
+        <label>
+          <span>TAILLE</span>
+          <select name="height">
+            <option>168 cm</option>
+            <option selected>178 cm</option>
+            <option>188 cm</option>
+          </select>
+        </label>
+
+        <label>
+          <span>POIDS</span>
+          <select name="weight">
+            <option>62 kg</option>
+            <option selected>78 kg</option>
+            <option>92 kg</option>
+          </select>
+        </label>
+
+        <label>
+          <span>NIVEAU D’ACTIVITÉ</span>
+          <select name="activity">
+            <option>Sédentaire</option>
+            <option>Modéré (1 à 2 fois / semaine)</option>
+            <option selected>Actif (3 à 5 fois / semaine)</option>
+            <option>Très actif</option>
+          </select>
+        </label>
+
+        <label>
+          <span>OBJECTIF PRINCIPAL</span>
+          <select name="goal">
+            <option selected>Améliorer ma condition physique</option>
+            <option>Améliorer ma santé globale</option>
+            <option>Prévenir les blessures</option>
+            <option>Reprendre après une blessure</option>
+          </select>
+        </label>
+
+        <div class="form-actions">
+          <button class="secondary" type="button" data-back="avatar">Retour</button>
+          <button class="primary" type="submit">Continuer <span>→</span></button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ████████████████████████████████████████████████████████
+       🟨 PARTIE C — C01 — CRÉATION
+       ████████████████████████████████████████████████████████ -->
+  <section class="scene creation-scene" data-scene="creation">
+    <canvas id="creationParticles"></canvas>
+
+    <div class="brand">
+      <div class="brand-mark">A</div>
+      <strong>ATLAS OS</strong>
+    </div>
+
+    <header class="step-head compact">
+      <div class="step-index"><span>3</span> ÉTAPE 3 SUR 5</div>
+      <h1>Création de votre Digital Twin</h1>
+      <p>Votre avatar prend vie...</p>
+    </header>
+
+    <div class="creation-layout">
+      <div class="creation-avatar-wrap">
+        <div class="energy-column"></div>
+        <div class="orbit o1"></div>
+        <div class="orbit o2"></div>
+        <div class="orbit o3"></div>
+        <div class="orbit o4"></div>
+        <div class="scan-line"></div>
+        <div class="creation-avatar" id="creationAvatar"></div>
+      </div>
+
+      <div class="creation-status">
+        <div class="status-row"><span class="status-icon">⌁</span><strong>Analyse morphologique</strong><em>✓</em></div>
+        <div class="status-row"><span class="status-icon">◎</span><strong>Cartographie corporelle</strong><em>✓</em></div>
+        <div class="status-row"><span class="status-icon">◫</span><strong>Paramètres biomécaniques</strong><em>✓</em></div>
+        <div class="status-row"><span class="status-icon">◉</span><strong>Synchronisation biométrique</strong><em>✓</em></div>
+        <div class="status-row pending"><span class="status-icon">▣</span><strong id="currentStep">Initialisation en cours...</strong><em>•••</em></div>
+
+        <div class="progress-line">
+          <span id="progressBar"></span>
+        </div>
+        <strong class="progress-value" id="progressValue">0%</strong>
+      </div>
+    </div>
+  </section>
+
+  <!-- ████████████████████████████████████████████████████████
+       🟧 PARTIE D — D01 — READY
+       ████████████████████████████████████████████████████████ -->
+  <section class="scene ready-scene" data-scene="ready">
+    <canvas id="readyParticles"></canvas>
+
+    <div class="brand">
+      <div class="brand-mark">A</div>
+      <strong>ATLAS OS</strong>
+    </div>
+
+    <div class="ready-layout">
+      <div class="ready-copy">
+        <div class="step-index"><span>4</span> ÉTAPE 4 SUR 5</div>
+        <h1>Votre Digital Twin<br>est <em>prêt</em></h1>
+        <p>Votre jumeau numérique a été créé avec succès.</p>
+        <p>Vous pouvez maintenant découvrir votre espace Atlas.</p>
+        <button class="primary" id="readyNext" type="button">Démarrer Atlas <span>→</span></button>
+      </div>
+
+      <div class="ready-avatar" id="readyAvatar"></div>
+    </div>
+  </section>
+
+  <!-- ████████████████████████████████████████████████████████
+       🟥 PARTIE F — F01 — ACCESS
+       ████████████████████████████████████████████████████████ -->
+  <section class="scene access-scene" data-scene="access">
+    <canvas id="accessParticles"></canvas>
+
+    <div class="brand centered">
+      <div class="brand-mark large">A</div>
+      <strong>ATLAS OS</strong>
+    </div>
+
+    <div class="access-center">
+      <div class="step-index"><span>5</span> ÉTAPE 5 SUR 5</div>
+      <h1>Accès à Atlas OS</h1>
+      <p>Connexion à votre Digital Twin...</p>
+
+      <div class="access-loader">
+        <span id="accessPercent">0%</span>
+      </div>
+
+      <div class="access-platform"></div>
+    </div>
+  </section>
+
+  <!-- ████████████████████████████████████████████████████████
+       🟪 PARTIE E — E01 — DASHBOARD
+       ████████████████████████████████████████████████████████ -->
+  <section class="scene dashboard-scene" data-scene="dashboard">
+    <canvas id="dashboardParticles"></canvas>
+
+    <aside class="sidebar">
+      <div class="brand small-brand">
+        <div class="brand-mark">A</div>
+        <strong>ATLAS OS</strong>
+      </div>
+
+      <button class="nav active">⌂ Accueil</button>
+      <button class="nav">♙ Corps</button>
+      <button class="nav">♡ Santé</button>
+      <button class="nav">⚒ Entraînement</button>
+      <button class="nav">▣ Nutrition</button>
+      <button class="nav">☾ Sommeil</button>
+      <button class="nav">↝ Mobilité</button>
+      <button class="nav">◎ Analyse IA</button>
+      <button class="nav">◉ Objectifs</button>
+    </aside>
+
+    <main class="dashboard-main">
+      <header class="dashboard-header">
+        <div>
+          <h2 id="dashboardWelcome">Bonjour, Christophe</h2>
+          <p>Votre corps. Vos données. Votre meilleure version.</p>
+        </div>
+        <div class="header-icons">♧ ⚙ ⛶</div>
+      </header>
+
+      <div class="dashboard-center">
+        <div class="dashboard-avatar" id="dashboardAvatar"></div>
+        <p>ⓘ Cliquez sur une zone du corps pour explorer</p>
+      </div>
+
+      <aside class="dashboard-stats">
+        <article>
+          <span>ÉTAT GLOBAL</span>
+          <div class="score">82</div>
+          <strong>Très bon</strong>
+          <small>Continuez comme ça !</small>
+          <svg viewBox="0 0 120 38"><polyline points="0,30 15,26 28,29 40,20 54,23 68,15 84,18 100,8 120,4"/></svg>
+        </article>
+
+        <article>
+          <span>FRÉQUENCE CARDIAQUE</span>
+          <strong>62 bpm</strong>
+          <small>Repos</small>
+          <svg viewBox="0 0 120 38"><polyline points="0,28 18,26 30,30 45,16 56,25 72,27 84,10 96,24 120,22"/></svg>
+        </article>
+
+        <article>
+          <span>CHARGE D’ENTRAÎNEMENT</span>
+          <strong>Modérée</strong>
+          <small>Optimale</small>
+          <div class="load-bar"><i></i></div>
+        </article>
+
+        <article>
+          <span>SOMMEIL</span>
+          <strong>7h 24m</strong>
+          <small>Qualité : Bonne</small>
+          <svg class="purple" viewBox="0 0 120 38"><polyline points="0,19 15,23 27,14 39,24 51,17 65,22 80,15 96,21 120,9"/></svg>
+        </article>
+      </aside>
+    </main>
+  </section>
+
+</main>
+
+<script src="./js/atlas.js"></script>
+</body>
+</html>

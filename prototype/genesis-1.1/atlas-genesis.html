@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Atlas OS — Genesis 1.1.0</title>
+    <link rel="stylesheet" href="./css/atlas-genesis.css">
+</head>
+<body>
+
+<main class="atlas-app" id="atlasApp">
+
+    <!-- ████████████████████████████████████████████████████████
+         🟦 PARTIE A — A01 — OPENING EXPERIENCE
+         ████████████████████████████████████████████████████████ -->
+
+    <section class="atlas-scene atlas-opening is-active" data-scene="opening">
+        <canvas class="atlas-particles" id="openingParticles"></canvas>
+        <div class="atlas-vignette"></div>
+
+        <button class="atlas-enter" id="enterAtlasButton">
+            <span class="atlas-enter-ring"></span>
+            <strong>ENTRER DANS ATLAS</strong>
+            <small>Activer votre Human Digital Twin</small>
+        </button>
+
+        <div class="atlas-opening-sequence is-hidden" id="openingSequence">
+            <div class="atlas-heartbeat" id="heartbeatVisual">
+                <svg viewBox="0 0 620 150" aria-hidden="true">
+                    <polyline points="
+                        0,80 70,80 95,80 116,48 136,111 164,23 194,80
+                        245,80 270,80 291,48 311,111 339,23 369,80
+                        420,80 445,80 466,48 486,111 514,23 544,80 620,80
+                    "/>
+                </svg>
+            </div>
+
+            <div class="atlas-logo-stage" id="logoStage">
+                <div class="atlas-logo-ring atlas-logo-ring--outer"></div>
+                <div class="atlas-logo-ring atlas-logo-ring--inner"></div>
+
+                <svg class="atlas-logo" viewBox="0 0 180 180" aria-label="Logo Atlas">
+                    <circle cx="90" cy="90" r="62"></circle>
+                    <path d="M90 22 L132 124 L90 154 L48 124 Z"></path>
+                    <circle cx="90" cy="86" r="13"></circle>
+                    <path d="M90 99 L90 138"></path>
+                </svg>
+            </div>
+
+            <div class="atlas-opening-title" id="openingTitle">
+                <h1>ATLAS OS</h1>
+                <p>HUMAN DIGITAL TWIN</p>
+            </div>
+
+            <p class="atlas-opening-status" id="openingStatus">
+                Synchronisation de l’environnement Atlas…
+            </p>
+        </div>
+
+        <button class="atlas-skip is-hidden" id="skipOpeningButton">
+            Passer l’introduction
+        </button>
+    </section>
+
+    <!-- ████████████████████████████████████████████████████████
+         🟩 PARTIE B — B01 — CHOIX DE L’AVATAR
+         ████████████████████████████████████████████████████████ -->
+
+    <section class="atlas-scene atlas-onboarding" data-scene="avatar">
+        <header class="atlas-step-header">
+            <p>ÉTAPE 1 SUR 4</p>
+            <h2>Choisissez votre avatar</h2>
+            <span>Votre sélection déterminera l’apparence initiale du Digital Twin.</span>
+        </header>
+
+        <div class="atlas-avatar-grid">
+            <button class="atlas-avatar-card" data-avatar="male" type="button">
+                <div class="atlas-avatar-visual">
+                    <img src="./assets/avatar-male.jpg" alt="Avatar holographique masculin">
+                    <div class="atlas-scan-overlay"></div>
+                    <div class="atlas-selection-check">✓</div>
+                </div>
+                <strong>Homme</strong>
+            </button>
+
+            <button class="atlas-avatar-card" data-avatar="female" type="button">
+                <div class="atlas-avatar-visual">
+                    <img src="./assets/avatar-female.jpg" alt="Avatar holographique féminin">
+                    <div class="atlas-scan-overlay"></div>
+                    <div class="atlas-selection-check">✓</div>
+                </div>
+                <strong>Femme</strong>
+            </button>
+        </div>
+
+        <div class="atlas-action-bar">
+            <p id="avatarHint">Sélectionnez un avatar pour continuer.</p>
+            <button class="atlas-primary" id="avatarContinueButton" type="button" disabled>
+                Continuer <span>→</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- ████████████████████████████████████████████████████████
+         🟨 PARTIE C — C01 — PROFIL ESSENTIEL
+         ████████████████████████████████████████████████████████ -->
+
+    <section class="atlas-scene atlas-onboarding" data-scene="profile">
+        <header class="atlas-step-header">
+            <p>ÉTAPE 2 SUR 4</p>
+            <h2>Construisons votre profil</h2>
+            <span>Quelques informations suffisent pour créer la première version de votre jumeau.</span>
+        </header>
+
+        <form class="atlas-profile-form" id="profileForm">
+            <label>
+                <span>Prénom</span>
+                <input name="firstName" type="text" value="Christophe" required>
+            </label>
+
+            <label>
+                <span>Âge</span>
+                <input name="age" type="number" min="12" max="110" value="45" required>
+            </label>
+
+            <label>
+                <span>Taille</span>
+                <div class="atlas-unit-field">
+                    <input name="heightCm" type="number" min="120" max="230" value="178" required>
+                    <em>cm</em>
+                </div>
+            </label>
+
+            <label>
+                <span>Poids</span>
+                <div class="atlas-unit-field">
+                    <input name="weightKg" type="number" min="35" max="250" value="78" required>
+                    <em>kg</em>
+                </div>
+            </label>
+
+            <label class="atlas-wide">
+                <span>Profession actuelle</span>
+                <input name="profession" type="text" placeholder="Ex. kinésithérapeute, enseignant, artisan…">
+            </label>
+
+            <label class="atlas-wide">
+                <span>Objectif principal</span>
+                <select name="goal">
+                    <option>Améliorer ma santé globale</option>
+                    <option>Débuter une activité physique</option>
+                    <option>Prévenir les blessures</option>
+                    <option>Reprendre après une blessure</option>
+                    <option>Améliorer mes performances</option>
+                </select>
+            </label>
+
+            <div class="atlas-form-actions atlas-wide">
+                <button class="atlas-secondary" type="button" data-back="avatar">Retour</button>
+                <button class="atlas-primary" type="submit">Créer mon Digital Twin</button>
+            </div>
+        </form>
+    </section>
+
+    <!-- ████████████████████████████████████████████████████████
+         🟧 PARTIE D — D01 — MATÉRIALISATION DU DIGITAL TWIN
+         ████████████████████████████████████████████████████████ -->
+
+    <section class="atlas-scene atlas-creation" data-scene="creation">
+        <canvas class="atlas-particles" id="creationParticles"></canvas>
+
+        <div class="atlas-creation-core">
+            <div class="atlas-creation-orbit orbit-1"></div>
+            <div class="atlas-creation-orbit orbit-2"></div>
+            <div class="atlas-creation-orbit orbit-3"></div>
+            <div class="atlas-creation-orbit orbit-4"></div>
+
+            <div class="atlas-energy-column"></div>
+
+            <div class="atlas-created-avatar" id="createdAvatar"></div>
+
+            <div class="atlas-creation-scan"></div>
+            <div class="atlas-creation-pulse"></div>
+
+            <div class="atlas-creation-copy">
+                <p id="creationMessage">Initialisation de votre Digital Twin…</p>
+                <div class="atlas-progress">
+                    <span id="creationProgress"></span>
+                </div>
+                <strong id="creationPercent">0%</strong>
+            </div>
+        </div>
+    </section>
+
+    <!-- ████████████████████████████████████████████████████████
+         🟥 PARTIE F — F01 — VALIDATION
+         ████████████████████████████████████████████████████████ -->
+
+    <section class="atlas-scene atlas-ready" data-scene="ready">
+        <canvas class="atlas-particles" id="readyParticles"></canvas>
+
+        <div class="atlas-ready-card">
+            <div class="atlas-ready-avatar" id="readyAvatar"></div>
+
+            <div class="atlas-ready-check">✓</div>
+            <p class="atlas-ready-kicker">ATLAS OS</p>
+            <h2>Votre Digital Twin est prêt</h2>
+            <p id="readySummary">Votre profil initial a été créé avec succès.</p>
+
+            <button class="atlas-primary" id="openHubButton" type="button">
+                Accéder à Atlas OS <span>→</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- ████████████████████████████████████████████████████████
+         🟪 PARTIE E — E01 — HUB 2.0 SIMPLIFIÉ
+         ████████████████████████████████████████████████████████ -->
+
+    <section class="atlas-scene atlas-hub" data-scene="hub">
+        <canvas class="atlas-particles" id="hubParticles"></canvas>
+        <div class="atlas-hub-grid"></div>
+
+        <header class="atlas-hub-header">
+            <div class="atlas-brand">
+                <svg viewBox="0 0 80 80" aria-hidden="true">
+                    <circle cx="40" cy="40" r="27"></circle>
+                    <path d="M40 11 L58 56 L40 69 L22 56 Z"></path>
+                    <circle cx="40" cy="39" r="6"></circle>
+                </svg>
+                <div>
+                    <strong>ATLAS OS</strong>
+                    <span>Human Digital Twin</span>
+                </div>
+            </div>
+
+            <div class="atlas-hub-user">
+                <strong id="hubUserName">Bonjour Christophe</strong>
+                <span>Votre état global est stable aujourd’hui.</span>
+            </div>
+
+            <button class="atlas-profile-button" type="button">CB</button>
+        </header>
+
+        <div class="atlas-hub-stage">
+            <div class="atlas-hub-orbit hub-orbit-1"></div>
+            <div class="atlas-hub-orbit hub-orbit-2"></div>
+
+            <button class="atlas-hub-module module-health" data-module="Santé">
+                <span>♥</span><strong>Santé</strong>
+            </button>
+
+            <button class="atlas-hub-module module-body" data-module="Corps">
+                <span>◉</span><strong>Corps</strong>
+            </button>
+
+            <button class="atlas-hub-module module-training" data-module="Entraînement">
+                <span>↝</span><strong>Entraînement</strong>
+            </button>
+
+            <button class="atlas-hub-module module-sleep" data-module="Sommeil">
+                <span>☾</span><strong>Sommeil</strong>
+            </button>
+
+            <button class="atlas-hub-module module-nutrition" data-module="Nutrition">
+                <span>●</span><strong>Nutrition</strong>
+            </button>
+
+            <button class="atlas-hub-module module-ai" data-module="Atlas IA">
+                <span>✦</span><strong>Atlas IA</strong>
+            </button>
+
+            <div class="atlas-hub-avatar" id="hubAvatar"></div>
+
+            <button class="atlas-ask" data-module="Demander à Atlas" type="button">
+                <span>◉</span>
+                <div>
+                    <strong>Demander à Atlas</strong>
+                    <small>Décrivez un symptôme ou posez une question</small>
+                </div>
+            </button>
+        </div>
+
+        <aside class="atlas-daily-brief">
+            <p>BRIEFING DU JOUR</p>
+            <h2>Bonjour, <span id="briefFirstName">Christophe</span>.</h2>
+            <ul>
+                <li>Récupération satisfaisante.</li>
+                <li>Sommeil stable.</li>
+                <li>Charge d’activité modérée.</li>
+            </ul>
+            <strong>Priorité : mobilité et hydratation.</strong>
+        </aside>
+
+        <nav class="atlas-hub-bottom">
+            <button type="button">Chronologie</button>
+            <button type="button">Progression</button>
+            <button type="button">Objectifs</button>
+            <button type="button">Documents</button>
+        </nav>
+    </section>
+
+</main>
+
+<dialog class="atlas-dialog" id="atlasDialog">
+    <form method="dialog">
+        <button class="atlas-dialog-close" aria-label="Fermer">×</button>
+    </form>
+
+    <p class="atlas-dialog-kicker">ATLAS OS</p>
+    <h2 id="dialogTitle">Module Atlas</h2>
+    <p id="dialogText"></p>
+
+    <button class="atlas-dialog-action" id="dialogAction" type="button">
+        Explorer
+    </button>
+</dialog>
+
+<script src="./js/atlas-genesis.js"></script>
+</body>
+</html>
