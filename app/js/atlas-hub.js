@@ -1,0 +1,1 @@
+"use strict";const buttons=document.querySelectorAll("[data-tab]"),views=document.querySelectorAll("[data-view]");function activate(name){views.forEach(v=>v.classList.toggle("active",v.dataset.view===name));buttons.forEach(b=>b.classList.toggle("active",b.dataset.tab===name));}buttons.forEach(b=>b.addEventListener("click",()=>activate(b.dataset.tab)));
