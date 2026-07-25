@@ -158,6 +158,16 @@
     showScene("dashboard");
   });
 
+  const preselectedAvatar = localStorage.getItem("atlasPreselectedAvatar");
+  if (preselectedAvatar === "male" || preselectedAvatar === "female") {
+    state.avatar = preselectedAvatar;
+    localStorage.removeItem("atlasPreselectedAvatar");
+    if (profileAvatar) {
+      profileAvatar.innerHTML = avatarImage("Avatar sélectionné");
+    }
+    showScene("profile");
+  }
+
   initParticles("creationParticles");
   initParticles("readyParticles");
   initParticles("accessParticles");

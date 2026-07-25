@@ -1,12 +1,12 @@
 # Changelog — Atlas OS
 
-## Genesis 1.2.0
+## Genesis 2.0.0
+- premier moteur Performance & Running ;
+- calcul des zones FC et VMA ;
+- affichage des BPM ;
+- estimation ou saisie de SV1 et SV2 ;
+- plan daté jusqu’à l’événement ;
+- intégration du module au Hub.
 
-- codage du parcours visuel validé ;
-- choix Homme/Femme ;
-- profil interactif ;
-- création animée du Digital Twin ;
-- écran de validation ;
-- chargement Atlas OS à 100 % ;
-- tableau de bord de présentation ;
-- lanceur START_ATLAS.html.
+## Genesis 1.6.0
+- ouverture, choix avatar et Hub officiels.
