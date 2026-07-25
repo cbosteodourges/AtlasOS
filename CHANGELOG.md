@@ -1,13 +1,13 @@
 # Changelog — Atlas OS
 
-## Genesis 1.5.0
-- intégration du Hub Atlas officiel comme troisième page ;
-- parcours ouverture → avatar → Hub ;
-- conservation exacte des images validées ;
-- ajout de zones cliquables sur les principaux modules du Hub ;
-- prise en charge du choix Homme / Femme ;
-- adaptation ordinateur, tablette et smartphone.
+## Genesis 1.6.0
+- suppression de la barre de téléphone incorporée au premier visuel ;
+- remplacement de l’ouverture par la version propre validée ;
+- utilisation de l’image exacte Homme / Femme ;
+- utilisation de l’image exacte du Hub ;
+- conservation de toutes les interactions ;
+- amélioration de l’affichage smartphone.
 
-## Genesis 1.4.0
-- intégration de la page d’ouverture officielle ;
-- intégration du choix Homme / Femme.
+## Genesis 1.5.0
+- parcours ouverture → avatar → Hub ;
+- zones cliquables du Hub.
