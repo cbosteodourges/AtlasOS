@@ -1,0 +1,303 @@
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║ ATLAS OS — Genesis 1.4.0                                   ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+/* ████████████████████████████████████████████████████████████
+   🟦 PARTIE A — A01 — BASE
+   ████████████████████████████████████████████████████████████ */
+:root {
+  --atlas-bg: #020713;
+  --atlas-cyan: #35ccff;
+  --atlas-violet: #9c58ff;
+  --atlas-text: #f5fbff;
+  --atlas-muted: #a7bac8;
+}
+
+* { box-sizing: border-box; }
+html, body { width: 100%; min-height: 100%; margin: 0; background: var(--atlas-bg); }
+body { color: var(--atlas-text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+button { font: inherit; }
+
+.atlas-opening-app { min-height: 100dvh; background: radial-gradient(circle at 50% 35%, rgba(26,108,190,.17), transparent 42%), #020713; }
+.atlas-page { display: none; min-height: 100dvh; position: relative; overflow: hidden; }
+.atlas-page.is-active { display: grid; }
+
+.atlas-image-stage { position: relative; overflow: hidden; background: #020713; }
+.atlas-image-stage img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center; }
+
+/* ████████████████████████████████████████████████████████████
+   🟦 PARTIE A — A02 — PAGE D’OUVERTURE
+   ████████████████████████████████████████████████████████████ */
+.atlas-page--welcome { place-items: center; padding: max(16px, env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom)); }
+.atlas-image-stage--portrait { width: min(690px, 100%); height: calc(100dvh - 120px); border-radius: 28px; }
+.atlas-image-stage--portrait img { object-fit: contain; }
+
+.atlas-breathing-light { position: absolute; inset: 7% 5% 17%; border-radius: 28px; pointer-events: none; box-shadow: inset 0 0 44px rgba(53,204,255,.14), 0 0 40px rgba(53,204,255,.08); animation: atlasBreath 4.8s ease-in-out infinite; }
+
+.atlas-enter-button { position: fixed; z-index: 10; left: 50%; bottom: max(22px, env(safe-area-inset-bottom)); display: flex; align-items: center; justify-content: center; gap: 20px; width: min(390px, calc(100% - 36px)); padding: 15px 22px; transform: translateX(-50%); color: var(--atlas-cyan); letter-spacing: .09em; border: 1px solid var(--atlas-cyan); border-radius: 12px; background: rgba(2, 13, 28, .86); box-shadow: 0 0 28px rgba(53,204,255,.16); backdrop-filter: blur(12px); }
+.atlas-enter-button:active { transform: translateX(-50%) scale(.98); }
+
+/* ████████████████████████████████████████████████████████████
+   🟩 PARTIE B — B02 — PAGE AVATAR À PARTIR DE L’IMAGE VALIDÉE
+   ████████████████████████████████████████████████████████████ */
+.atlas-page--avatar { place-items: center; padding: 12px; }
+.atlas-image-stage--landscape { width: min(1536px, 100%); aspect-ratio: 3 / 2; border-radius: 18px; }
+.atlas-image-stage--landscape img { object-fit: contain; }
+
+.atlas-hotspot { position: absolute; z-index: 4; padding: 0; border: 0; background: transparent; border-radius: 14px; }
+.atlas-hotspot:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+.atlas-hotspot--male { left: 25.9%; top: 78.4%; width: 19.7%; height: 7.1%; }
+.atlas-hotspot--female { left: 64.5%; top: 78.4%; width: 18.9%; height: 7.1%; }
+.atlas-hotspot--continue { left: 39.4%; top: 88.8%; width: 27.4%; height: 7.2%; }
+.atlas-hotspot--continue:disabled { cursor: not-allowed; }
+
+.atlas-selection-ring { position: absolute; z-index: 3; display: none; pointer-events: none; border: 3px solid currentColor; border-radius: 14px; box-shadow: 0 0 28px currentColor; }
+.atlas-selection-ring--male { left: 25.9%; top: 78.4%; width: 19.7%; height: 7.1%; color: var(--atlas-cyan); }
+.atlas-selection-ring--female { left: 64.5%; top: 78.4%; width: 18.9%; height: 7.1%; color: var(--atlas-violet); }
+.atlas-image-stage--landscape[data-selected="male"] .atlas-selection-ring--male,
+.atlas-image-stage--landscape[data-selected="female"] .atlas-selection-ring--female { display: block; }
+
+.atlas-selection-status { position: fixed; z-index: 8; left: 50%; bottom: max(10px, env(safe-area-inset-bottom)); transform: translateX(-50%); padding: 9px 15px; color: var(--atlas-muted); border: 1px solid rgba(53,204,255,.18); border-radius: 999px; background: rgba(2,13,28,.88); backdrop-filter: blur(10px); font-size: .82rem; }
+.atlas-selection-status.is-ready { color: var(--atlas-cyan); }
+.atlas-landscape-hint { display: none; }
+
+@keyframes atlasBreath { 0%,100% { opacity: .35; transform: scale(.995); } 50% { opacity: .9; transform: scale(1.01); } }
+
+/* ████████████████████████████████████████████████████████████
+   🟪 PARTIE E — E01 — RESPONSIVE SMARTPHONE
+   ████████████████████████████████████████████████████████████ */
+@media (orientation: portrait) and (max-width: 900px) {
+  .atlas-page--avatar { align-content: center; padding: 64px 8px 52px; overflow: auto; }
+  .atlas-landscape-hint { display: block; position: fixed; z-index: 12; top: max(10px, env(safe-area-inset-top)); left: 50%; width: calc(100% - 24px); transform: translateX(-50%); padding: 10px 14px; text-align: center; color: var(--atlas-cyan); border: 1px solid rgba(53,204,255,.28); border-radius: 12px; background: rgba(2,13,28,.92); font-size: .8rem; }
+  .atlas-image-stage--landscape { width: 100%; min-width: 0; }
+  .atlas-selection-status { bottom: max(8px, env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 520px) {
+  .atlas-page--welcome { padding-left: 6px; padding-right: 6px; }
+  .atlas-image-stage--portrait { width: 100%; height: calc(100dvh - 104px); border-radius: 0; }
+  .atlas-enter-button { width: calc(100% - 28px); font-size: .88rem; }
+}
+
+
+/* ████████████████████████████████████████████████████████████
+   🟪 PARTIE E — E01 — HUB ATLAS OFFICIEL
+   ████████████████████████████████████████████████████████████ */
+
+.atlas-page--hub {
+  place-items: center;
+  padding: 62px 12px 18px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(26,108,190,.16), transparent 44%),
+    #020713;
+}
+
+.atlas-hub-toolbar {
+  position: fixed;
+  z-index: 20;
+  top: max(10px, env(safe-area-inset-top));
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.atlas-back-button,
+.atlas-hub-user {
+  pointer-events: auto;
+  color: var(--atlas-text);
+  border: 1px solid rgba(53,204,255,.22);
+  border-radius: 999px;
+  background: rgba(2,13,28,.88);
+  backdrop-filter: blur(12px);
+}
+
+.atlas-back-button {
+  padding: 9px 15px;
+}
+
+.atlas-hub-user {
+  display: grid;
+  padding: 8px 15px;
+  text-align: right;
+}
+
+.atlas-hub-user strong,
+.atlas-hub-user span {
+  display: block;
+}
+
+.atlas-hub-user strong {
+  color: var(--atlas-cyan);
+  font-size: .75rem;
+  letter-spacing: .12em;
+}
+
+.atlas-hub-user span {
+  margin-top: 2px;
+  color: var(--atlas-muted);
+  font-size: .7rem;
+}
+
+.atlas-image-stage--hub {
+  width: min(1536px, 100%);
+  aspect-ratio: 3 / 2;
+  border-radius: 18px;
+  box-shadow:
+    0 0 0 1px rgba(53,204,255,.12),
+    0 30px 90px rgba(0,0,0,.36);
+}
+
+.atlas-image-stage--hub img {
+  object-fit: contain;
+}
+
+.atlas-hub-hotspot {
+  position: absolute;
+  z-index: 4;
+  padding: 0;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+}
+
+.atlas-hub-hotspot:hover,
+.atlas-hub-hotspot:focus-visible {
+  outline: 2px solid rgba(53,204,255,.9);
+  outline-offset: -2px;
+  background: rgba(53,204,255,.05);
+  box-shadow: inset 0 0 22px rgba(53,204,255,.15);
+}
+
+/* Emplacements calibrés sur l'image 1536 × 1024 */
+.hub-hotspot--body {
+  left: 0.7%;
+  top: 17.5%;
+  width: 14%;
+  height: 8%;
+}
+
+.hub-hotspot--health {
+  left: 44.7%;
+  top: 8.5%;
+  width: 10%;
+  height: 12%;
+}
+
+.hub-hotspot--training {
+  left: 36%;
+  top: 14%;
+  width: 10%;
+  height: 14%;
+}
+
+.hub-hotspot--mobility {
+  left: 57.5%;
+  top: 19%;
+  width: 9%;
+  height: 16%;
+}
+
+.hub-hotspot--nutrition {
+  left: 55%;
+  top: 47%;
+  width: 10%;
+  height: 14%;
+}
+
+.hub-hotspot--sleep {
+  left: 60%;
+  top: 37%;
+  width: 9%;
+  height: 14%;
+}
+
+.hub-hotspot--analysis {
+  left: 45%;
+  top: 56%;
+  width: 11%;
+  height: 13%;
+}
+
+.hub-hotspot--timeline {
+  left: 16%;
+  top: 75%;
+  width: 80%;
+  height: 10%;
+}
+
+.hub-hotspot--ask {
+  left: 70%;
+  top: 66%;
+  width: 28%;
+  height: 10%;
+}
+
+.atlas-module-toast {
+  position: fixed;
+  z-index: 30;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  width: min(520px, calc(100% - 28px));
+  padding: 12px 18px;
+  opacity: 0;
+  transform: translate(-50%, 18px);
+  color: var(--atlas-cyan);
+  text-align: center;
+  border: 1px solid rgba(53,204,255,.28);
+  border-radius: 999px;
+  background: rgba(2,13,28,.94);
+  backdrop-filter: blur(14px);
+  pointer-events: none;
+  transition:
+    opacity .22s ease,
+    transform .22s ease;
+}
+
+.atlas-module-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.atlas-landscape-hint--hub {
+  display: none;
+}
+
+/* ████████████████████████████████████████████████████████████
+   🟪 FIN PARTIE E — E01
+   ████████████████████████████████████████████████████████████ */
+
+@media (orientation: portrait) and (max-width: 900px) {
+  .atlas-page--hub {
+    align-content: center;
+    padding: 70px 7px 52px;
+    overflow: auto;
+  }
+
+  .atlas-landscape-hint--hub {
+    display: block;
+    position: fixed;
+    z-index: 18;
+    top: max(58px, calc(env(safe-area-inset-top) + 48px));
+    left: 50%;
+    width: calc(100% - 24px);
+    transform: translateX(-50%);
+    padding: 9px 13px;
+    text-align: center;
+    color: var(--atlas-cyan);
+    border: 1px solid rgba(53,204,255,.25);
+    border-radius: 12px;
+    background: rgba(2,13,28,.92);
+    font-size: .76rem;
+  }
+
+  .atlas-image-stage--hub {
+    width: 100%;
+  }
+
+  .atlas-hub-user {
+    display: none;
+  }
+}

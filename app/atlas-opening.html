@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#020713">
+  <title>Atlas OS — Ouverture</title>
+  <link rel="stylesheet" href="./css/atlas-opening.css">
+</head>
+<body>
+<main class="atlas-opening-app" id="atlasOpeningApp">
+
+  <!-- ████████████████████████████████████████████████████████
+       🟦 PARTIE A — A01 — PAGE D’OUVERTURE OFFICIELLE
+       ████████████████████████████████████████████████████████ -->
+  <section class="atlas-page atlas-page--welcome is-active" data-page="welcome" aria-label="Présentation d’Atlas OS">
+    <div class="atlas-image-stage atlas-image-stage--portrait">
+      <img src="./assets/atlas-opening-page.png" alt="Atlas, votre jumeau biomécanique numérique">
+      <div class="atlas-breathing-light" aria-hidden="true"></div>
+    </div>
+
+    <button class="atlas-enter-button" id="atlasEnterButton" type="button">
+      <span>ENTRER DANS ATLAS</span>
+      <b aria-hidden="true">→</b>
+    </button>
+  </section>
+
+  <!-- ████████████████████████████████████████████████████████
+       🟩 PARTIE B — B01 — CHOIX HOMME / FEMME
+       ████████████████████████████████████████████████████████ -->
+  <section class="atlas-page atlas-page--avatar" data-page="avatar" aria-label="Choix de l’avatar">
+    <div class="atlas-landscape-hint" id="landscapeHint">
+      Tournez votre téléphone horizontalement pour profiter du visuel complet.
+    </div>
+
+    <div class="atlas-image-stage atlas-image-stage--landscape" id="avatarStage">
+      <img src="./assets/atlas-avatar-choice-page.png" alt="Choisissez un avatar homme ou femme">
+
+      <button class="atlas-hotspot atlas-hotspot--male" data-avatar="male" type="button" aria-label="Choisir l’avatar homme"></button>
+      <button class="atlas-hotspot atlas-hotspot--female" data-avatar="female" type="button" aria-label="Choisir l’avatar femme"></button>
+      <button class="atlas-hotspot atlas-hotspot--continue" id="avatarContinue" type="button" aria-label="Continuer" disabled></button>
+
+      <div class="atlas-selection-ring atlas-selection-ring--male" aria-hidden="true"></div>
+      <div class="atlas-selection-ring atlas-selection-ring--female" aria-hidden="true"></div>
+    </div>
+
+    <div class="atlas-selection-status" id="avatarStatus" aria-live="polite">
+      Sélectionnez Homme ou Femme.
+    </div>
+  </section>
+
+
+  <!-- ████████████████████████████████████████████████████████
+       🟪 PARTIE E — E01 — HUB ATLAS OFFICIEL
+       ████████████████████████████████████████████████████████ -->
+  <section class="atlas-page atlas-page--hub" data-page="hub" aria-label="Hub Atlas OS">
+    <div class="atlas-hub-toolbar">
+      <button class="atlas-back-button" id="hubBackButton" type="button">
+        ← Retour au choix
+      </button>
+
+      <div class="atlas-hub-user">
+        <strong>ATLAS OS</strong>
+        <span id="hubAvatarLabel">Digital Twin actif</span>
+      </div>
+    </div>
+
+    <div class="atlas-landscape-hint atlas-landscape-hint--hub">
+      Tournez votre téléphone horizontalement pour profiter pleinement du Hub Atlas.
+    </div>
+
+    <div class="atlas-image-stage atlas-image-stage--hub" id="hubStage">
+      <img
+        src="./assets/atlas-hub-official.png"
+        alt="Hub Atlas OS avec Digital Twin central, données physiologiques, douleurs et chronologie"
+      >
+
+      <!-- Zones préparées pour les futurs modules -->
+      <button class="atlas-hub-hotspot hub-hotspot--body" data-hub-module="Body 3D" type="button" aria-label="Ouvrir Body 3D"></button>
+      <button class="atlas-hub-hotspot hub-hotspot--health" data-hub-module="Santé" type="button" aria-label="Ouvrir Santé"></button>
+      <button class="atlas-hub-hotspot hub-hotspot--training" data-hub-module="Entraînement" type="button" aria-label="Ouvrir Entraînement"></button>
+      <button class="atlas-hub-hotspot hub-hotspot--mobility" data-hub-module="Mobilité" type="button" aria-label="Ouvrir Mobilité"></button>
+      <button class="atlas-hub-hotspot hub-hotspot--nutrition" data-hub-module="Nutrition" type="button" aria-label="Ouvrir Nutrition"></button>
+      <button class="atlas-hub-hotspot hub-hotspot--sleep" data-hub-module="Sommeil" type="button" aria-label="Ouvrir Sommeil"></button>
+      <button class="atlas-hub-hotspot hub-hotspot--analysis" data-hub-module="Analyse IA" type="button" aria-label="Ouvrir Analyse IA"></button>
+      <button class="atlas-hub-hotspot hub-hotspot--timeline" data-hub-module="Chronologie" type="button" aria-label="Ouvrir Chronologie"></button>
+      <button class="atlas-hub-hotspot hub-hotspot--ask" data-hub-module="Demander à Atlas" type="button" aria-label="Demander à Atlas"></button>
+    </div>
+
+    <div class="atlas-module-toast" id="moduleToast" aria-live="polite"></div>
+  </section>
+
+</main>
+<script src="./js/atlas-opening.js"></script>
+</body>
+</html>
