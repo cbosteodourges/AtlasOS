@@ -648,3 +648,141 @@ button { font: inherit; }
 /* ████████████████████████████████████████████████████████████
    🟪 FIN PARTIE E — E03
    ████████████████████████████████████████████████████████████ */
+
+
+/* ████████████████████████████████████████████████████████████
+   🟪 PARTIE E — E04 — HOTSPOTS HUB DÉFINITIFS
+   ████████████████████████████████████████████████████████████ */
+
+.atlas-hub-hotspot {
+  position: absolute;
+  z-index: 8;
+  display: block;
+  padding: 0;
+  margin: 0;
+  border: 0 !important;
+  border-radius: 50%;
+  background: transparent !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  cursor: pointer;
+  transform: none !important;
+  overflow: visible;
+}
+
+.atlas-hub-hotspot:hover,
+.atlas-hub-hotspot:focus-visible,
+.atlas-hub-hotspot.is-active {
+  outline: none;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.atlas-hotspot-ring {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border: 2px solid transparent;
+  border-radius: inherit;
+  background: transparent;
+  box-shadow: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(.90);
+  transition:
+    opacity .16s ease,
+    transform .16s ease,
+    border-color .16s ease,
+    background .16s ease,
+    box-shadow .16s ease;
+}
+
+.atlas-hub-hotspot:hover .atlas-hotspot-ring,
+.atlas-hub-hotspot:focus-visible .atlas-hotspot-ring,
+.atlas-hub-hotspot.is-active .atlas-hotspot-ring {
+  opacity: 1;
+  transform: scale(1.08);
+  border-color: rgba(53, 204, 255, .98);
+  background: rgba(53, 204, 255, .045);
+  box-shadow:
+    inset 0 0 16px rgba(53, 204, 255, .12),
+    0 0 20px rgba(53, 204, 255, .30);
+}
+
+.hub-hotspot--training {
+  left: 38.15% !important;
+  top: 12.45% !important;
+  width: 4.20% !important;
+  height: auto !important;
+  aspect-ratio: 1 / 1;
+}
+
+.hub-hotspot--health {
+  left: 48.35% !important;
+  top: 8.60% !important;
+  width: 4.25% !important;
+  height: auto !important;
+  aspect-ratio: 1 / 1;
+}
+
+.hub-hotspot--mobility {
+  left: 64.30% !important;
+  top: 23.70% !important;
+  width: 4.25% !important;
+  height: auto !important;
+  aspect-ratio: 1 / 1;
+}
+
+.hub-hotspot--sleep {
+  left: 64.40% !important;
+  top: 37.50% !important;
+  width: 4.25% !important;
+  height: auto !important;
+  aspect-ratio: 1 / 1;
+}
+
+.hub-hotspot--nutrition {
+  left: 59.65% !important;
+  top: 49.35% !important;
+  width: 4.25% !important;
+  height: auto !important;
+  aspect-ratio: 1 / 1;
+}
+
+.hub-hotspot--analysis {
+  left: 48.35% !important;
+  top: 59.20% !important;
+  width: 4.25% !important;
+  height: auto !important;
+  aspect-ratio: 1 / 1;
+}
+
+.hub-hotspot--body3d {
+  left: 1.05% !important;
+  top: 26.10% !important;
+  width: 12.10% !important;
+  height: 5.90% !important;
+  border-radius: 11px;
+}
+
+.hub-hotspot--timeline {
+  left: 15.80% !important;
+  top: 72.55% !important;
+  width: 81.20% !important;
+  height: 8.05% !important;
+  border-radius: 11px;
+}
+
+.hub-hotspot--ask {
+  left: 70.90% !important;
+  top: 64.55% !important;
+  width: 27.20% !important;
+  height: 7.25% !important;
+  border-radius: 11px;
+}
+
+/* ████████████████████████████████████████████████████████████
+   🟪 FIN PARTIE E — E04
+   ████████████████████████████████████████████████████████████ */

@@ -513,38 +513,127 @@
   }
 
 
-  function extractMinutes(text) {
+  function parseTimeRangeMinutes(text) {
     if (!text) return 0;
 
-    const hourMatch = text.match(/(\d+)\s*h/);
-    const minuteMatch = text.match(/(\d+)\s*min/);
+    const normalized = text
+      .toLowerCase()
+      .replace(",", ".")
+      .replace(/\s+/g, " ")
+      .trim();
 
-    let total = 0;
-    if (hourMatch) total += Number(hourMatch[1]) * 60;
-    if (minuteMatch) total += Number(minuteMatch[1]);
-
-    if (!hourMatch && !minuteMatch) {
-      const plain = text.match(/^(\d+)$/);
-      if (plain) total = Number(plain[1]);
+    const minuteRange = normalized.match(/(\d+(?:\.\d+)?)\s*(?:à|-)\s*(\d+(?:\.\d+)?)\s*min/);
+    if (minuteRange) {
+      return (Number(minuteRange[1]) + Number(minuteRange[2])) / 2;
     }
 
-    return total;
+    const minutesSeconds = normalized.match(/(\d+(?:\.\d+)?)\s*min(?:ute)?s?\s*(\d+(?:\.\d+)?)?\s*s?/);
+    if (minutesSeconds) {
+      return Number(minutesSeconds[1]) +
+        (minutesSeconds[2] ? Number(minutesSeconds[2]) / 60 : 0);
+    }
+
+    const secondsOnly = normalized.match(/(\d+(?:\.\d+)?)\s*s(?:ec(?:onde)?s?)?/);
+    if (secondsOnly) {
+      return Number(secondsOnly[1]) / 60;
+    }
+
+    const hours = normalized.match(/(\d+(?:\.\d+)?)\s*h/);
+    const minutes = normalized.match(/(\d+(?:\.\d+)?)\s*min/);
+
+    if (hours || minutes) {
+      return (hours ? Number(hours[1]) * 60 : 0) +
+        (minutes ? Number(minutes[1]) : 0);
+    }
+
+    return 0;
+  }
+
+  function parseRepeatedEffort(text, zone) {
+    if (!text) return null;
+
+    const normalized = text
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const repeatedMinutes = normalized.match(/(\d+)\s*[×x]\s*(\d+(?:\.\d+)?)\s*min/);
+    if (repeatedMinutes) {
+      return {
+        repetitions: Number(repeatedMinutes[1]),
+        minutes: Number(repeatedMinutes[1]) * Number(repeatedMinutes[2])
+      };
+    }
+
+    const repeatedSeconds = normalized.match(/(\d+)\s*[×x]\s*(\d+(?:\.\d+)?)\s*s/);
+    if (repeatedSeconds) {
+      return {
+        repetitions: Number(repeatedSeconds[1]),
+        minutes: Number(repeatedSeconds[1]) * Number(repeatedSeconds[2]) / 60
+      };
+    }
+
+    const repeatedDistance = normalized.match(/(\d+)\s*[×x]\s*([\d\s]+)\s*m\b/);
+    if (repeatedDistance && zone) {
+      const repetitions = Number(repeatedDistance[1]);
+      const metres = Number(repeatedDistance[2].replace(/\s/g, ""));
+      const averageSpeed = (zone.speedLow + zone.speedHigh) / 2;
+
+      return {
+        repetitions,
+        minutes: ((repetitions * metres) / 1000) / averageSpeed * 60
+      };
+    }
+
+    return null;
+  }
+
+  function analyseSessionDurations(session) {
+    const analysed = [];
+    let previousRepetitions = 0;
+
+    session.blocks.forEach(([label, duration, zone]) => {
+      const repeated = parseRepeatedEffort(duration, zone);
+      let minutes = 0;
+
+      if (repeated) {
+        minutes = repeated.minutes;
+        previousRepetitions = repeated.repetitions;
+      } else {
+        minutes = parseTimeRangeMinutes(duration);
+
+        if (
+          /récupération/i.test(label) &&
+          previousRepetitions > 1 &&
+          minutes > 0
+        ) {
+          minutes *= previousRepetitions - 1;
+          previousRepetitions = 0;
+        }
+      }
+
+      analysed.push({
+        label,
+        duration,
+        zone,
+        minutes
+      });
+    });
+
+    return analysed;
   }
 
   function sessionTotalMinutes(session) {
-    return session.blocks.reduce((sum, [, duration]) => {
-      // On ne peut pas convertir précisément les blocs en distance ou répétitions.
-      if (/×|km|m$|descente|jambes|tronc|hanches|chevilles|rachis/i.test(duration)) {
-        return sum;
-      }
-      return sum + extractMinutes(duration);
-    }, 0);
+    return analyseSessionDurations(session)
+      .reduce((sum, block) => sum + block.minutes, 0);
   }
 
   function formatDuration(totalMinutes) {
-    if (!totalMinutes) return "Durée variable";
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
+    if (!totalMinutes) return "Durée non calculable";
+
+    const rounded = Math.round(totalMinutes);
+    const hours = Math.floor(rounded / 60);
+    const minutes = rounded % 60;
 
     if (!hours) return `${minutes} min`;
     if (!minutes) return `${hours} h`;
@@ -552,22 +641,17 @@
   }
 
   function renderDistribution(session) {
-    const timedBlocks = session.blocks
-      .map(([label, duration, zone]) => ({
-        label,
-        zone,
-        minutes: extractMinutes(duration)
-      }))
+    const timedBlocks = analyseSessionDurations(session)
       .filter(block => block.minutes > 0);
 
     const total = timedBlocks.reduce((sum, block) => sum + block.minutes, 0);
     if (!total) return "";
 
     return `
-      <div class="session-distribution" aria-label="Répartition des zones">
+      <div class="session-distribution" aria-label="Répartition estimée des zones">
         ${timedBlocks.map(block => `
           <i
-            title="${block.label} : ${block.minutes} min en Z${block.zone.id}"
+            title="${block.label} : ${Math.round(block.minutes)} min en Z${block.zone.id}"
             style="width:${(block.minutes / total) * 100}%;background:${block.zone.color}"
           ></i>
         `).join("")}
@@ -599,7 +683,7 @@
               <h3>${session.title}</h3>
               <div class="session-objective">${session.objective}</div>
               <div class="session-total">
-                ⏱ Durée totale estimée : ${formatDuration(sessionTotalMinutes(session))}
+                ⏱ Durée totale calculée : ${formatDuration(sessionTotalMinutes(session))}
               </div>
               ${renderDistribution(session)}
 
