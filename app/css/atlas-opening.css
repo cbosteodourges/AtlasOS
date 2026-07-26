@@ -1957,125 +1957,249 @@ button { font: inherit; }
 
 
 /* ████████████████████████████████████████████████████████████
-   🟪 PARTIE E — E07 — CORRECTION HUB 4.0.1
+   🟪 PARTIE E — E08 — HUB FINAL FIDÈLE À LA MAQUETTE
    ████████████████████████████████████████████████████████████ */
 
-.digital-twin4 {
-  width: 250px !important;
-  height: 555px !important;
-  top: 51% !important;
+.atlas-hub-final {
+  display: none;
+  width: 100%;
+  min-height: 100vh;
+  padding: 0;
+  overflow: auto;
+  background: #020813;
 }
 
-.digital-twin4 img {
-  object-fit: contain !important;
-  object-position: center center !important;
-  background: transparent !important;
-  border-radius: 0 !important;
-  filter:
-    drop-shadow(0 0 18px rgba(53,204,255,.38))
-    drop-shadow(0 0 34px rgba(53,204,255,.18)) !important;
+.atlas-hub-final.active {
+  display: grid;
+  place-items: start center;
 }
 
-.engine4 {
-  width: 78px !important;
-  height: 78px !important;
+.hub-final-stage {
+  position: relative;
+  width: min(100vw, 1536px);
+  aspect-ratio: 3 / 2;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #020813;
 }
 
-.engine4 > span {
-  width: 27px !important;
-  height: 27px !important;
-  margin-bottom: 3px !important;
-  font-size: .82rem !important;
+.hub-final-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
 }
 
-.engine4 strong {
-  font-size: .58rem !important;
+.hub-final-hotspot {
+  position: absolute;
+  z-index: 10;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    border-color .16s ease,
+    box-shadow .16s ease,
+    background .16s ease,
+    transform .16s ease;
 }
 
-.engine4 small {
-  font-size: .40rem !important;
+.hub-final-hotspot:hover,
+.hub-final-hotspot:focus-visible,
+.hub-final-hotspot.is-active {
+  outline: none;
+  border-color: rgba(53, 204, 255, .95);
+  background: rgba(53, 204, 255, .04);
+  box-shadow:
+    inset 0 0 18px rgba(53, 204, 255, .12),
+    0 0 22px rgba(53, 204, 255, .30);
+  transform: scale(1.05);
 }
 
-.engine-ai {
-  left: 15% !important;
-  top: 12% !important;
+/* Moteurs — coordonnées mesurées sur la maquette 1536 × 1024 */
+.hotspot-clinical {
+  left: 28.0%;
+  top: 14.5%;
+  width: 8.0%;
+  height: 12.0%;
 }
 
-.engine-clinical {
-  right: 15% !important;
-  top: 12% !important;
+.hotspot-ai {
+  left: 58.6%;
+  top: 14.2%;
+  width: 8.2%;
+  height: 12.5%;
 }
 
-.engine-biomech {
-  left: 4% !important;
-  top: 40% !important;
+.hotspot-biomech {
+  left: 22.0%;
+  top: 34.0%;
+  width: 8.0%;
+  height: 12.5%;
 }
 
-.engine-performance {
-  right: 4% !important;
-  top: 40% !important;
+.hotspot-performance {
+  left: 64.2%;
+  top: 34.0%;
+  width: 8.0%;
+  height: 12.5%;
 }
 
-.engine-physiology {
-  left: 15% !important;
-  bottom: 15% !important;
+.hotspot-physiology {
+  left: 28.3%;
+  top: 53.3%;
+  width: 8.0%;
+  height: 12.5%;
 }
 
-.engine-prevention {
-  right: 15% !important;
-  bottom: 15% !important;
+.hotspot-prevention {
+  left: 58.5%;
+  top: 53.3%;
+  width: 8.0%;
+  height: 12.5%;
 }
 
-.engine-memory {
-  left: 50% !important;
-  bottom: 1.8% !important;
+.hotspot-memory {
+  left: 44.3%;
+  top: 66.0%;
+  width: 7.3%;
+  height: 11.0%;
 }
 
-.atlas-index4 {
-  top: 3px !important;
-  z-index: 12 !important;
+/* Navigation basse */
+.hotspot-body3d,
+.hotspot-data,
+.hotspot-analysis,
+.hotspot-plans,
+.hotspot-reports,
+.hotspot-settings {
+  top: 94.0%;
+  height: 5.5%;
+  border-radius: 9px;
 }
 
-.twin4-status {
-  bottom: -12px !important;
-  min-width: 165px !important;
+.hotspot-body3d { left: 16.8%; width: 12.0%; }
+.hotspot-data { left: 29.0%; width: 11.8%; }
+.hotspot-analysis { left: 41.0%; width: 12.0%; }
+.hotspot-plans { left: 53.0%; width: 11.0%; }
+.hotspot-reports { left: 64.2%; width: 12.5%; }
+.hotspot-settings { left: 77.0%; width: 12.5%; }
+
+/* Actions latérales */
+.hotspot-brain-action {
+  left: 75.9%;
+  top: 72.0%;
+  width: 21.8%;
+  height: 5.2%;
+  border-radius: 9px;
 }
 
-.twin4-platform {
-  bottom: -18px !important;
-  width: 360px !important;
-  height: 78px !important;
+.hotspot-scanner {
+  left: 1.4%;
+  top: 76.2%;
+  width: 16.2%;
+  height: 5.2%;
+  border-radius: 9px;
 }
 
-.qualities4 {
-  bottom: -1px !important;
-  transform: translate(-50%, 100%) !important;
+.hub-final-back {
+  position: fixed;
+  z-index: 30;
+  left: 14px;
+  bottom: 18px;
+  padding: 8px 13px;
+  color: #a8bfd0;
+  border: 1px solid rgba(53, 204, 255, .22);
+  border-radius: 999px;
+  background: rgba(2, 13, 28, .90);
+  backdrop-filter: blur(10px);
 }
 
-.engine4:hover,
-.engine4:focus-visible,
-.engine4.active {
-  transform: scale(1.06) !important;
+.engine-panel {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 4, 10, .80);
+  backdrop-filter: blur(8px);
 }
 
-.engine-memory:hover,
-.engine-memory:focus-visible,
-.engine-memory.active {
-  transform: translateX(-50%) scale(1.06) !important;
+.engine-panel[hidden] {
+  display: none !important;
 }
 
-@media (max-width: 1280px) {
-  .digital-twin4 {
-    width: 220px !important;
-    height: 500px !important;
+.engine-panel-card {
+  position: relative;
+  width: min(520px, calc(100% - 24px));
+  padding: 28px;
+  color: #f5fbff;
+  border: 1px solid rgba(53, 204, 255, .28);
+  border-radius: 18px;
+  background: #061426;
+  box-shadow: 0 0 40px rgba(53, 204, 255, .20);
+}
+
+.engine-panel-card > button:first-child {
+  position: absolute;
+  right: 12px;
+  top: 9px;
+  color: white;
+  border: 0;
+  background: transparent;
+  font-size: 1.5rem;
+}
+
+.engine-panel-card > span {
+  color: #35ccff;
+  font-size: .68rem;
+  letter-spacing: .12em;
+}
+
+.engine-panel-card h2 {
+  margin: 8px 0;
+}
+
+.engine-panel-card p {
+  color: #a8bfd0;
+  line-height: 1.55;
+}
+
+.engine-panel-card > button:last-child {
+  padding: 10px 14px;
+  color: white;
+  border: 1px solid #35ccff;
+  border-radius: 9px;
+  background: #0758a8;
+}
+
+@media (max-width: 900px) {
+  .hub-final-stage {
+    width: 100vw;
+    min-width: 920px;
   }
 
-  .engine4 {
-    width: 70px !important;
-    height: 70px !important;
+  .atlas-hub-final {
+    justify-content: start;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 620px) {
+  .hub-final-stage {
+    min-width: 980px;
+  }
+
+  .hub-final-back {
+    left: 8px;
+    bottom: 8px;
+    font-size: .75rem;
   }
 }
 
 /* ████████████████████████████████████████████████████████████
-   🟪 FIN PARTIE E — E07
+   🟪 FIN PARTIE E — E08
    ████████████████████████████████████████████████████████████ */

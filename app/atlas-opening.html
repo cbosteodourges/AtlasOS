@@ -53,208 +53,43 @@
 
 
   <!-- ████████████████████████████████████████████████████████
-       🟪 PARTIE E — E01 — HUB ATLAS 4.0
+       🟪 PARTIE E — E01 — HUB ATLAS 4.1 FIDÈLE À LA MAQUETTE
        ████████████████████████████████████████████████████████ -->
-  <section class="atlas-page atlas-page--hub atlas-hub4" data-page="hub" aria-label="Atlas Hub 4.0">
-    <canvas id="hubParticles" class="hub4-particles" aria-hidden="true"></canvas>
+  <section class="atlas-page atlas-page--hub atlas-hub-final" data-page="hub" aria-label="Atlas Hub">
+    <div class="hub-final-stage">
+      <img
+        id="hubFinalImage"
+        class="hub-final-image"
+        src="./assets/atlas-hub-male-final.png"
+        alt="Interface Atlas OS autour du Digital Twin"
+      >
 
-    <header class="hub4-topbar">
-      <div class="hub4-brand">
-        <img src="./assets/atlas-logo-full.jpg" alt="Logo Atlas OS">
-        <div>
-          <strong>ATLAS OS</strong>
-          <span>GENESIS 4.0</span>
-        </div>
-      </div>
+      <!-- Zones interactives exactement superposées à la maquette -->
+      <button class="hub-final-hotspot hotspot-clinical" data-engine="Clinique" type="button" aria-label="Ouvrir Clinique"></button>
+      <button class="hub-final-hotspot hotspot-ai" data-engine="Atlas IA" type="button" aria-label="Ouvrir Atlas IA"></button>
+      <button class="hub-final-hotspot hotspot-biomech" data-engine="Biomécanique" type="button" aria-label="Ouvrir Biomécanique"></button>
+      <button class="hub-final-hotspot hotspot-performance" data-engine="Performance" type="button" aria-label="Ouvrir Performance"></button>
+      <button class="hub-final-hotspot hotspot-physiology" data-engine="Physiologie" type="button" aria-label="Ouvrir Physiologie"></button>
+      <button class="hub-final-hotspot hotspot-prevention" data-engine="Prévention" type="button" aria-label="Ouvrir Prévention"></button>
+      <button class="hub-final-hotspot hotspot-memory" data-engine="Mémoire" type="button" aria-label="Ouvrir Mémoire"></button>
 
-      <div class="hub4-topmetrics">
-        <article><span>VFC</span><strong>61 ms</strong><small>↗ +8 %</small></article>
-        <article><span>Sommeil</span><strong>7 h 42</strong><small>Qualité 87 %</small></article>
-        <article><span>Charge</span><strong class="metric-good">Optimale</strong><small>956 TL</small></article>
-        <article><span>FC repos</span><strong>48 bpm</strong><small>↘ -3 bpm</small></article>
-        <article><span>Objectif</span><strong>Semi-marathon</strong><small>25 oct. 2026</small></article>
-      </div>
+      <button class="hub-final-hotspot hotspot-body3d" data-engine="Biomécanique" type="button" aria-label="Ouvrir Corps 3D"></button>
+      <button class="hub-final-hotspot hotspot-data" data-engine="Physiologie" type="button" aria-label="Ouvrir Données"></button>
+      <button class="hub-final-hotspot hotspot-analysis" data-engine="Atlas IA" type="button" aria-label="Ouvrir Analyses"></button>
+      <button class="hub-final-hotspot hotspot-plans" data-engine="Performance" type="button" aria-label="Ouvrir Plans"></button>
+      <button class="hub-final-hotspot hotspot-reports" data-engine="Mémoire" type="button" aria-label="Ouvrir Rapports"></button>
+      <button class="hub-final-hotspot hotspot-settings" type="button" aria-label="Ouvrir Paramètres"></button>
 
-      <button class="hub4-profile" id="hubProfileButton" type="button">
-        <span id="hubProfileInitials">CB</span>
-        <div>
-          <strong id="hubProfileName">Christophe</strong>
-          <small>Digital Twin synchronisé</small>
-        </div>
-      </button>
-    </header>
+      <button class="hub-final-hotspot hotspot-brain-action" data-engine="Atlas IA" type="button" aria-label="Ouvrir l'analyse détaillée"></button>
+      <button class="hub-final-hotspot hotspot-scanner" data-engine="Biomécanique" type="button" aria-label="Scanner corporel"></button>
 
-    <main class="hub4-main">
-      <aside class="hub4-left">
-        <div class="panel-title">
-          <strong>ÉTAT DU JOUR</strong>
-          <span>Mis à jour il y a 5 min</span>
-        </div>
-
-        <div class="state-cards">
-          <article>
-            <i class="state-icon green">♥</i>
-            <div><span>Récupération</span><strong class="good">Excellente</strong><small>Prêt à performer</small></div>
-          </article>
-          <article>
-            <i class="state-icon orange">▥</i>
-            <div><span>Charge aiguë</span><strong class="good">Optimale</strong><small>956 TL</small></div>
-          </article>
-          <article>
-            <i class="state-icon purple">◒</i>
-            <div><span>Sommeil</span><strong>7 h 42</strong><small>Qualité 87 %</small></div>
-          </article>
-          <article>
-            <i class="state-icon cyan">♥</i>
-            <div><span>FC repos</span><strong>48 bpm</strong><small>Très bonne</small></div>
-          </article>
-          <article>
-            <i class="state-icon green">⌁</i>
-            <div><span>VFC</span><strong>61 ms</strong><small>Excellente</small></div>
-          </article>
-          <article>
-            <i class="state-icon orange">◇</i>
-            <div><span>Douleur</span><strong class="good">Aucune</strong><small>0/10</small></div>
-          </article>
-        </div>
-
-        <div class="objective-card">
-          <span>OBJECTIF PRINCIPAL</span>
-          <strong>Semi-marathon</strong>
-          <p>25 octobre 2026</p>
-          <small>12 semaines restantes</small>
-          <div class="objective-progress"><i style="width:48%"></i></div>
-        </div>
-
-        <button class="scanner-button" data-engine="Biomécanique" type="button">
-          ◎ Scanner corporel →
-        </button>
-      </aside>
-
-      <section class="hub4-center">
-        <svg class="hub4-orbit-lines" viewBox="0 0 1000 760" aria-hidden="true">
-          <ellipse cx="500" cy="390" rx="350" ry="285"></ellipse>
-          <ellipse cx="500" cy="390" rx="270" ry="220"></ellipse>
-        </svg>
-
-        <div class="atlas-index4">
-          <span>ATLAS INDEX</span>
-          <strong>82</strong>
-          <small>/100</small>
-        </div>
-
-        <div class="digital-twin4">
-          <div class="twin4-platform"></div>
-          <div class="twin4-scan"></div>
-          <img id="hubTwinImage" src="./assets/avatar-male-hub.jpg" alt="Digital Twin Atlas">
-          <div class="twin4-status">
-            <span></span>
-            <strong id="hubTwinLabel">Avatar Homme actif</strong>
-          </div>
-        </div>
-
-        <button class="engine4 engine-ai" data-engine="Atlas IA" type="button">
-          <span>✦</span><strong>Atlas IA</strong><small>Décider · Expliquer</small>
-        </button>
-        <button class="engine4 engine-clinical" data-engine="Clinique" type="button">
-          <span>♧</span><strong>Clinique</strong><small>Symptômes · Antécédents</small>
-        </button>
-        <button class="engine4 engine-performance" data-engine="Performance" type="button">
-          <span>⚡</span><strong>Performance</strong><small>Plans · Séances</small>
-        </button>
-        <button class="engine4 engine-biomech" data-engine="Biomécanique" type="button">
-          <span>⌬</span><strong>Biomécanique</strong><small>Corps 3D · Mobilité</small>
-        </button>
-        <button class="engine4 engine-prevention" data-engine="Prévention" type="button">
-          <span>⬡</span><strong>Prévention</strong><small>Risque · Charge</small>
-        </button>
-        <button class="engine4 engine-physiology" data-engine="Physiologie" type="button">
-          <span>♥</span><strong>Physiologie</strong><small>FC · VFC · VO₂max</small>
-        </button>
-        <button class="engine4 engine-memory" data-engine="Mémoire" type="button">
-          <span>▤</span><strong>Mémoire</strong><small>Chronologie · Documents</small>
-        </button>
-
-        <div class="qualities4">
-          <article><span>Endurance</span><strong>87%</strong><i><b style="width:87%"></b></i></article>
-          <article><span>Force</span><strong>78%</strong><i><b style="width:78%"></b></i></article>
-          <article><span>Mobilité</span><strong>81%</strong><i><b style="width:81%"></b></i></article>
-          <article><span>Souplesse</span><strong>76%</strong><i><b style="width:76%"></b></i></article>
-        </div>
-      </section>
-
-      <aside class="hub4-brain">
-        <div class="brain4-title">
-          <span class="brain4-dot"></span>
-          <div><strong>ATLAS BRAIN</strong><small>Votre assistant intelligent</small></div>
-        </div>
-
-        <div class="brain4-card">
-          <p id="brainGreeting">Bonjour Christophe.</p>
-          <p id="brainMainText">
-            Votre récupération est excellente aujourd’hui.
-          </p>
-          <ul>
-            <li>VFC en hausse de 8 %</li>
-            <li>Sommeil profond +41 min</li>
-            <li>Charge aiguë stable</li>
-            <li>FC de repos en baisse</li>
-          </ul>
-          <p>Vous pouvez réaliser une séance de seuil avec un faible risque de blessure.</p>
-        </div>
-
-        <div class="brain4-alert">
-          <span>POINTS DE VIGILANCE</span>
-          <strong>Mobilité cheville droite</strong>
-          <small>Légère diminution détectée</small>
-          <strong>Charge tendineuse</strong>
-          <small>Surveiller le tendon d’Achille droit</small>
-        </div>
-
-        <div class="brain4-reco">
-          <span>RECOMMANDATION DU JOUR</span>
-          <strong>15 min de mobilité</strong>
-          <p>Cheville, hanches et rachis thoracique avant votre séance.</p>
-        </div>
-
-        <button class="brain4-action" id="brainActionButton" type="button">
-          Ouvrir l’analyse détaillée →
-        </button>
-        <button class="brain4-question" type="button">▢ Poser une question à Atlas IA</button>
-      </aside>
-    </main>
-
-    <section class="hub4-timeline">
-      <div class="timeline4-title">
-        <strong>CHRONOLOGIE DU JUMEAU</strong>
-      </div>
-      <div class="timeline4-track">
-        <article><time>14 juil. 2024</time><i></i><span>Tendinite Achille</span></article>
-        <article><time>18 fév. 2025</time><i></i><span>Douleur genou droit</span></article>
-        <article><time>22 mai 2025</time><i></i><span>IRM lombaire</span></article>
-        <article><time>10 sept. 2025</time><i></i><span>Séance seuil 4 × 1000 m</span></article>
-        <article class="current"><time>Aujourd’hui</time><i></i><span>Récupération excellente</span></article>
-        <article><time>25 oct. 2026</time><i></i><span>Objectif semi-marathon</span></article>
-      </div>
-    </section>
-
-    <nav class="hub4-nav" aria-label="Navigation principale">
-      <button class="active" type="button">⌂ <span>Hub</span></button>
-      <button data-engine="Biomécanique" type="button">♙ <span>Corps 3D</span></button>
-      <button data-engine="Physiologie" type="button">▥ <span>Données</span></button>
-      <button data-engine="Atlas IA" type="button">⌕ <span>Analyses</span></button>
-      <button data-engine="Performance" type="button">▣ <span>Plans</span></button>
-      <button data-engine="Mémoire" type="button">▤ <span>Rapports</span></button>
-      <button type="button">⚙ <span>Paramètres</span></button>
-    </nav>
-
-    <button class="hub4-back" id="hubBackButton" type="button">← Changer d’avatar</button>
-    <div class="atlas-module-toast" id="moduleToast" aria-live="polite"></div>
+      <button class="hub-final-back" id="hubBackButton" type="button">← Changer d’avatar</button>
+    </div>
 
     <div class="engine-panel" id="enginePanel" hidden>
       <div class="engine-panel-card">
-        <button id="enginePanelClose" type="button">×</button>
-        <span id="enginePanelKicker">MOTEUR ATLAS</span>
+        <button id="enginePanelClose" type="button" aria-label="Fermer">×</button>
+        <span>MOTEUR ATLAS</span>
         <h2 id="enginePanelTitle">Module</h2>
         <p id="enginePanelText">Contenu du module.</p>
         <button id="enginePanelAction" type="button">Ouvrir le module →</button>

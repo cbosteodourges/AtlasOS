@@ -10,13 +10,12 @@
   const avatarStatus = document.getElementById("avatarStatus");
   const continueButton = document.getElementById("avatarContinue");
   const hubBackButton = document.getElementById("hubBackButton");
-  const hubAvatarLabel = document.getElementById("hubTwinLabel");
-  const hubTwinImage = document.getElementById("hubTwinImage");
   const hubProfileName = document.getElementById("hubProfileName");
   const hubProfileInitials = document.getElementById("hubProfileInitials");
   const brainGreeting = document.getElementById("brainGreeting");
   const brainMainText = document.getElementById("brainMainText");
   const moduleToast = document.getElementById("moduleToast");
+  const hubFinalImage = document.getElementById("hubFinalImage");
   let selectedAvatar = null;
 
   function showPage(name) {
@@ -30,14 +29,10 @@
     selectedAvatar = localStorage.getItem("atlasPreselectedAvatar") || "male";
     const isFemale = selectedAvatar === "female";
 
-    hubAvatarLabel.textContent = isFemale
-      ? "Avatar Femme actif"
-      : "Avatar Homme actif";
-
-    if (hubTwinImage) {
-      hubTwinImage.src = isFemale
-        ? "./assets/avatar-female-hub.jpg"
-        : "./assets/avatar-male-hub.jpg";
+    if (hubFinalImage) {
+      hubFinalImage.src = isFemale
+        ? "./assets/atlas-hub-female-final.png"
+        : "./assets/atlas-hub-male-final.png";
     }
 
     showPage("hub");
@@ -65,14 +60,10 @@
 
     const isFemale = selectedAvatar === "female";
 
-    hubAvatarLabel.textContent = isFemale
-      ? "Avatar Femme actif"
-      : "Avatar Homme actif";
-
-    if (hubTwinImage) {
-      hubTwinImage.src = isFemale
-        ? "./assets/avatar-female-hub.jpg"
-        : "./assets/avatar-male-hub.jpg";
+    if (hubFinalImage) {
+      hubFinalImage.src = isFemale
+        ? "./assets/atlas-hub-female-final.png"
+        : "./assets/atlas-hub-male-final.png";
     }
 
     showPage("hub");
@@ -82,7 +73,6 @@
   // 🟪 PARTIE E — E01 — INTERACTIONS DU HUB
   // ████████████████████████████████████████████████████████████
   hubBackButton.addEventListener("click", () => showPage("avatar"));
-
 
   const savedProfile = JSON.parse(localStorage.getItem("atlasProfile") || "null");
   const savedName = savedProfile?.profile?.firstName || "Christophe";
@@ -99,12 +89,8 @@
       .toUpperCase() || "AT";
   }
 
-
-
-
-
   // ████████████████████████████████████████████████████████████
-  // 🟪 PARTIE E — E06 — INTERACTIONS HUB 4.0
+  // 🟪 PARTIE E — E08 — INTERACTIONS HUB FINAL
   // ████████████████████████████████████████████████████████████
 
   const enginePanel = document.getElementById("enginePanel");
@@ -113,57 +99,53 @@
   const enginePanelText = document.getElementById("enginePanelText");
   const enginePanelAction = document.getElementById("enginePanelAction");
 
-  const engineContent = {
+  const hubEngineContent = {
     "Atlas IA": {
-      text: "Atlas IA relie les données physiologiques, cliniques, biomécaniques et sportives afin d’expliquer chaque recommandation."
+      text: "Atlas IA relie vos données et explique ses décisions."
     },
     "Clinique": {
-      text: "Le moteur Clinique organise les symptômes, antécédents, traitements, examens et hypothèses dans une chronologie cohérente."
+      text: "Le moteur Clinique organise les symptômes, antécédents, traitements et examens."
     },
     "Performance": {
-      text: "Le moteur Performance génère des plans datés et adaptatifs selon l’objectif, la VMA, la fréquence cardiaque, SV1, SV2 et la récupération.",
+      text: "Le moteur Performance génère et adapte vos plans d’entraînement.",
       href: "./performance-running.html"
     },
     "Biomécanique": {
-      text: "Le moteur Biomécanique regroupe le Corps 3D, la mobilité, les articulations, les muscles, les tendons et les chaînes de mouvement."
+      text: "Le moteur Biomécanique explore le Corps 3D, la mobilité, les muscles et les articulations."
     },
     "Prévention": {
-      text: "Le moteur Prévention surveille les hausses de volume, la fatigue, la charge tendineuse et les facteurs de risque de blessure."
+      text: "Le moteur Prévention surveille le volume, la récupération et le risque de blessure."
     },
     "Physiologie": {
-      text: "Le moteur Physiologie analyse la fréquence cardiaque, la VFC, la VO₂max, la VMA, SV1, SV2, le sommeil et la récupération."
+      text: "Le moteur Physiologie analyse FC, VFC, VO₂max, VMA, SV1 et SV2."
     },
     "Mémoire": {
-      text: "La Mémoire du Jumeau conserve la chronologie, les documents, l’imagerie, les blessures, les traitements et les performances."
+      text: "La Mémoire du Jumeau conserve la chronologie, les documents et l’évolution."
     }
   };
 
-  function openEngine(engine, trigger) {
-    document.querySelectorAll("[data-engine]").forEach(item => {
-      item.classList.toggle("active", item === trigger);
-    });
-
-    const content = engineContent[engine] || {
-      text: "Ce module sera progressivement relié au Digital Twin."
-    };
-
-    if (enginePanelTitle) enginePanelTitle.textContent = engine;
-    if (enginePanelText) enginePanelText.textContent = content.text;
-    if (enginePanelAction) {
-      enginePanelAction.textContent = content.href
-        ? "Ouvrir le module →"
-        : "Bientôt disponible";
-      enginePanelAction.disabled = !content.href;
-      enginePanelAction.dataset.href = content.href || "";
-    }
-
-    if (enginePanel) enginePanel.hidden = false;
-    if (brainMainText) brainMainText.textContent = content.text;
-  }
-
-  document.querySelectorAll("[data-engine]").forEach(button => {
+  document.querySelectorAll(".hub-final-hotspot[data-engine]").forEach(button => {
     button.addEventListener("click", () => {
-      openEngine(button.dataset.engine, button);
+      const engine = button.dataset.engine;
+      const content = hubEngineContent[engine];
+
+      document.querySelectorAll(".hub-final-hotspot").forEach(item => {
+        item.classList.remove("is-active");
+      });
+      button.classList.add("is-active");
+
+      if (enginePanelTitle) enginePanelTitle.textContent = engine;
+      if (enginePanelText) enginePanelText.textContent = content.text;
+
+      if (enginePanelAction) {
+        enginePanelAction.dataset.href = content.href || "";
+        enginePanelAction.disabled = !content.href;
+        enginePanelAction.textContent = content.href
+          ? "Ouvrir le module →"
+          : "Bientôt disponible";
+      }
+
+      if (enginePanel) enginePanel.hidden = false;
     });
   });
 
@@ -185,50 +167,5 @@
       if (href) window.location.href = href;
     });
   }
-
-  function initHubParticles4() {
-    const canvas = document.getElementById("hubParticles");
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    let particles = [];
-
-    function resize() {
-      canvas.width = canvas.clientWidth;
-      canvas.height = canvas.clientHeight;
-      particles = Array.from({length:90}, () => ({
-        x:Math.random()*canvas.width,
-        y:Math.random()*canvas.height,
-        r:Math.random()*1.3+.2,
-        s:Math.random()*.14+.03,
-        a:Math.random()*.28+.05
-      }));
-    }
-
-    function animate() {
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-
-      particles.forEach(p => {
-        p.y -= p.s;
-        if (p.y < -2) {
-          p.y = canvas.height + 2;
-          p.x = Math.random()*canvas.width;
-        }
-
-        ctx.beginPath();
-        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-        ctx.fillStyle = `rgba(53,204,255,${p.a})`;
-        ctx.fill();
-      });
-
-      requestAnimationFrame(animate);
-    }
-
-    resize();
-    animate();
-    window.addEventListener("resize", resize);
-  }
-
-  initHubParticles4();
 
 })();
