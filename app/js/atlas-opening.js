@@ -101,26 +101,32 @@
 
   const hubEngineContent = {
     "Atlas IA": {
-      text: "Atlas IA relie vos données et explique ses décisions."
+      text: "Atlas IA relie vos données et explique ses décisions.",
+      href: "./atlas-ai.html"
     },
     "Clinique": {
-      text: "Le moteur Clinique organise les symptômes, antécédents, traitements et examens."
+      text: "Le moteur Clinique organise les symptômes, antécédents, traitements et examens.",
+      href: "./clinique.html"
     },
     "Performance": {
       text: "Le moteur Performance génère et adapte vos plans d’entraînement.",
       href: "./performance-running.html"
     },
     "Biomécanique": {
-      text: "Le moteur Biomécanique explore le Corps 3D, la mobilité, les muscles et les articulations."
+      text: "Le moteur Biomécanique explore le Corps 3D, la mobilité, les muscles et les articulations.",
+      href: "./biomecanique.html"
     },
     "Prévention": {
-      text: "Le moteur Prévention surveille le volume, la récupération et le risque de blessure."
+      text: "Le moteur Prévention surveille le volume, la récupération et le risque de blessure.",
+      href: "./prevention.html"
     },
     "Physiologie": {
-      text: "Le moteur Physiologie analyse FC, VFC, VO₂max, VMA, SV1 et SV2."
+      text: "Le moteur Physiologie analyse FC, VFC, VO₂max, VMA, SV1 et SV2.",
+      href: "./physiologie.html"
     },
     "Mémoire": {
-      text: "La Mémoire du Jumeau conserve la chronologie, les documents et l’évolution."
+      text: "La Mémoire du Jumeau conserve la chronologie, les documents et l’évolution.",
+      href: "./memoire.html"
     }
   };
 
