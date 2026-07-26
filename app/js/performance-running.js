@@ -767,13 +767,31 @@
     elements.eventDate.value = target.toISOString().slice(0, 10);
   }
 
-  elements.thresholdSource.addEventListener("change", () => {
-    elements.measuredThresholds.hidden =
-      elements.thresholdSource.value !== "measured";
-  });
+  function syncMeasuredThresholdFields() {
+    const showMeasuredFields =
+      elements.thresholdSource.value === "measured";
+
+    elements.measuredThresholds.hidden = !showMeasuredFields;
+
+    [
+      elements.sv1HrMeasured,
+      elements.sv1SpeedMeasured,
+      elements.sv2HrMeasured,
+      elements.sv2SpeedMeasured
+    ].forEach(input => {
+      input.disabled = !showMeasuredFields;
+      input.required = showMeasuredFields;
+    });
+  }
+
+  elements.thresholdSource.addEventListener(
+    "change",
+    syncMeasuredThresholdFields
+  );
 
   elements.calculateButton.addEventListener("click", calculate);
   elements.printButton.addEventListener("click", () => window.print());
 
   setDefaultDate();
+  syncMeasuredThresholdFields();
 })();

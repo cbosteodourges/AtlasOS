@@ -162,7 +162,10 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(53,204,255,.10);
 }
 
-select option { color: #061426; }
+select option {
+  color: #f5fbff;
+  background: #07172b;
+}
 
 .unit-input { position: relative; }
 .unit-input input { padding-right: 62px; }
@@ -545,4 +548,46 @@ select option { color: #061426; }
 
 /* ████████████████████████████████████████████████████████████
    🟧 FIN PARTIE D — D02
+   ████████████████████████████████████████████████████████████ */
+
+
+/* ████████████████████████████████████████████████████████████
+   🟩 PARTIE B — B02 — LISTES DÉROULANTES LISIBLES
+   ████████████████████████████████████████████████████████████ */
+
+select {
+  color-scheme: dark;
+  color: var(--text);
+  background-color: #07172b;
+}
+
+select option,
+select optgroup {
+  color: #f5fbff !important;
+  background-color: #07172b !important;
+}
+
+select option:checked {
+  color: #ffffff !important;
+  background-color: #1267c5 !important;
+}
+
+/* ████████████████████████████████████████████████████████████
+   🟩 FIN PARTIE B — B02
+   ████████████████████████████████████████████████████████████ */
+
+/* ████████████████████████████████████████████████████████████
+   🟨 PARTIE C — C02 — CHAMPS DE SEUILS MESURÉS
+   ████████████████████████████████████████████████████████████ */
+
+[hidden] {
+  display: none !important;
+}
+
+.measured-thresholds:not([hidden]) {
+  display: grid;
+}
+
+/* ████████████████████████████████████████████████████████████
+   🟨 FIN PARTIE C — C02
    ████████████████████████████████████████████████████████████ */
