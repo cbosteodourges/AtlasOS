@@ -250,7 +250,48 @@
     return `${hrText} · ${speedText}`;
   }
 
-  function sessionTemplates(profile, zones, phase, eventType) {
+
+  function progressiveLongRunMinutes(eventType, phase, weekIndex, totalWeeks) {
+    const baseByEvent = {
+      "5k": 55,
+      "10k": 60,
+      "half": 65,
+      "marathon": 75,
+      "trail-short": 70,
+      "trail-long": 80,
+      "ultra": 90
+    };
+
+    const ceilingByEvent = {
+      "5k": 75,
+      "10k": 95,
+      "half": 125,
+      "marathon": 180,
+      "trail-short": 140,
+      "trail-long": 210,
+      "ultra": 300
+    };
+
+    const base = baseByEvent[eventType] || 60;
+    const ceiling = ceilingByEvent[eventType] || 100;
+    const ratio = weekIndex / Math.max(totalWeeks - 1, 1);
+
+    let target = base + (ceiling - base) * Math.min(ratio, 0.82);
+
+    // Semaine allégée toutes les 4 semaines.
+    if ((weekIndex + 1) % 4 === 0) {
+      target *= 0.82;
+    }
+
+    // Affûtage : réduction nette de la durée.
+    if (phase === "Affûtage") {
+      target *= 0.68;
+    }
+
+    return Math.max(base, Math.round(target / 5) * 5);
+  }
+
+  function sessionTemplates(profile, zones, phase, eventType, weekIndex, totalWeeks) {
     const z1 = getTargetZone(1, zones);
     const z2 = getTargetZone(2, zones);
     const z3 = getTargetZone(3, zones);
@@ -258,15 +299,12 @@
     const z5 = getTargetZone(5, zones);
 
     const enduranceDuration = ["marathon", "trail-long", "ultra"].includes(eventType) ? 65 : 50;
-    const longDuration = {
-      "5k": 70,
-      "10k": 85,
-      "half": 105,
-      "marathon": 150,
-      "trail-short": 110,
-      "trail-long": 160,
-      "ultra": 210
-    }[eventType];
+    const longDuration = progressiveLongRunMinutes(
+      eventType,
+      phase,
+      weekIndex,
+      totalWeeks
+    );
 
     const templates = {
       "Développement général": [
@@ -293,8 +331,8 @@
           title: "Sortie longue progressive",
           objective: "Augmenter progressivement la durée d’effort.",
           blocks: [
-            ["Début", `${Math.round(longDuration * .65)} min`, z2],
-            ["Fin progressive", `${Math.round(longDuration * .35)} min`, z3]
+            ["Début", `${Math.max(40, longDuration - Math.min(10, Math.round(longDuration * .12)))} min`, z2],
+            ["Fin progressive", `${Math.min(10, Math.round(longDuration * .12))} min`, z3]
           ]
         }
       ],
@@ -321,8 +359,8 @@
           title: "Sortie longue spécifique",
           objective: "Développer l’endurance proche des contraintes de l’épreuve.",
           blocks: [
-            ["Endurance", `${Math.round(longDuration * .70)} min`, z2],
-            ["Spécifique", `${Math.round(longDuration * .30)} min`, z3]
+            ["Endurance", `${Math.round(longDuration * .82)} min`, z2],
+            ["Spécifique", `${Math.round(longDuration * .18)} min`, z3]
           ]
         }
       ],
@@ -351,8 +389,8 @@
           title: "Sortie longue avec blocs",
           objective: "Maintenir l’endurance et répéter l’allure spécifique.",
           blocks: [
-            ["Endurance", `${Math.round(longDuration * .60)} min`, z2],
-            ["Blocs spécifiques", "3 × 10 min", z3],
+            ["Endurance", `${Math.max(45, longDuration - 30)} min`, z2],
+            ["Blocs spécifiques", "2 × 10 min", z3],
             ["Récupération", "5 min", z2]
           ]
         }
@@ -417,7 +455,14 @@
       const weekStart = addDays(firstWeek, weekIndex * 7);
       const weekEnd = addDays(weekStart, 6);
       const phase = getPhase(weekIndex, totalWeeks);
-      const templates = sessionTemplates(profile, zones, phase, profile.eventType);
+      const templates = sessionTemplates(
+        profile,
+        zones,
+        phase,
+        profile.eventType,
+        weekIndex,
+        totalWeeks
+      );
       const sessions = [];
 
       trainingDays.forEach((dayOfWeek, sessionIndex) => {
@@ -467,6 +512,69 @@
     return { weeks, totalWeeks, totalDays };
   }
 
+
+  function extractMinutes(text) {
+    if (!text) return 0;
+
+    const hourMatch = text.match(/(\d+)\s*h/);
+    const minuteMatch = text.match(/(\d+)\s*min/);
+
+    let total = 0;
+    if (hourMatch) total += Number(hourMatch[1]) * 60;
+    if (minuteMatch) total += Number(minuteMatch[1]);
+
+    if (!hourMatch && !minuteMatch) {
+      const plain = text.match(/^(\d+)$/);
+      if (plain) total = Number(plain[1]);
+    }
+
+    return total;
+  }
+
+  function sessionTotalMinutes(session) {
+    return session.blocks.reduce((sum, [, duration]) => {
+      // On ne peut pas convertir précisément les blocs en distance ou répétitions.
+      if (/×|km|m$|descente|jambes|tronc|hanches|chevilles|rachis/i.test(duration)) {
+        return sum;
+      }
+      return sum + extractMinutes(duration);
+    }, 0);
+  }
+
+  function formatDuration(totalMinutes) {
+    if (!totalMinutes) return "Durée variable";
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    if (!hours) return `${minutes} min`;
+    if (!minutes) return `${hours} h`;
+    return `${hours} h ${String(minutes).padStart(2, "0")}`;
+  }
+
+  function renderDistribution(session) {
+    const timedBlocks = session.blocks
+      .map(([label, duration, zone]) => ({
+        label,
+        zone,
+        minutes: extractMinutes(duration)
+      }))
+      .filter(block => block.minutes > 0);
+
+    const total = timedBlocks.reduce((sum, block) => sum + block.minutes, 0);
+    if (!total) return "";
+
+    return `
+      <div class="session-distribution" aria-label="Répartition des zones">
+        ${timedBlocks.map(block => `
+          <i
+            title="${block.label} : ${block.minutes} min en Z${block.zone.id}"
+            style="width:${(block.minutes / total) * 100}%;background:${block.zone.color}"
+          ></i>
+        `).join("")}
+      </div>
+    `;
+  }
+
   function renderPlan(profile, zones, plan) {
     const totalSessions = plan.weeks.reduce((sum, week) => sum + week.sessions.length, 0);
 
@@ -490,6 +598,10 @@
               <div class="session-date">${formatDate(session.date)}</div>
               <h3>${session.title}</h3>
               <div class="session-objective">${session.objective}</div>
+              <div class="session-total">
+                ⏱ Durée totale estimée : ${formatDuration(sessionTotalMinutes(session))}
+              </div>
+              ${renderDistribution(session)}
 
               <div class="session-blocks">
                 ${session.blocks.map(([label, duration, zone]) => `

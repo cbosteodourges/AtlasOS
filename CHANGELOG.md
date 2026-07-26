@@ -1,12 +1,12 @@
 # Changelog — Atlas OS
 
-## Genesis 2.0.0
-- premier moteur Performance & Running ;
-- calcul des zones FC et VMA ;
-- affichage des BPM ;
-- estimation ou saisie de SV1 et SV2 ;
-- plan daté jusqu’à l’événement ;
-- intégration du module au Hub.
+## Genesis 2.0.1
+- correction des zones de sélection du Hub ;
+- affichage vertical des séances ;
+- durée totale et répartition visuelle ;
+- progression plus prudente des sorties longues.
 
-## Genesis 1.6.0
-- ouverture, choix avatar et Hub officiels.
+## Genesis 2.0.0
+- moteur Performance & Running ;
+- zones FC/VMA, BPM, SV1, SV2 ;
+- plan daté jusqu’à l’événement.
