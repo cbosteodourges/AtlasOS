@@ -481,3 +481,170 @@ button { font: inherit; }
 /* ████████████████████████████████████████████████████████████
    🟪 FIN PARTIE E — E02
    ████████████████████████████████████████████████████████████ */
+
+
+/* ████████████████████████████████████████████████████████████
+   🟦 PARTIE A — A04 — CORRECTION DU BOUTON D’OUVERTURE
+   ████████████████████████████████████████████████████████████ */
+
+.atlas-opening-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.atlas-opening-card .atlas-enter-hotspot {
+  position: absolute !important;
+  z-index: 12;
+  left: 9.6% !important;
+  right: auto !important;
+  bottom: 3.1% !important;
+  width: 80.8% !important;
+  height: 8.3% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 13px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  opacity: 1;
+}
+
+.atlas-opening-card .atlas-enter-hotspot:hover,
+.atlas-opening-card .atlas-enter-hotspot:focus-visible {
+  outline: none !important;
+  border-color: rgba(53, 204, 255, .92) !important;
+  background: rgba(53, 204, 255, .045) !important;
+  box-shadow:
+    inset 0 0 20px rgba(53, 204, 255, .10),
+    0 0 18px rgba(53, 204, 255, .18) !important;
+  transform: none !important;
+}
+
+.atlas-opening-card .atlas-enter-hotspot:active {
+  transform: scale(.985) !important;
+}
+
+/* ████████████████████████████████████████████████████████████
+   🟦 FIN PARTIE A — A04
+   ████████████████████████████████████████████████████████████ */
+
+
+/* ████████████████████████████████████████████████████████████
+   🟪 PARTIE E — E03 — SURBRILLANCE PRÉCISE DES ICÔNES
+   ████████████████████████████████████████████████████████████ */
+
+.atlas-hub-hotspot {
+  opacity: 1 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+  overflow: visible;
+}
+
+.atlas-hub-hotspot:hover,
+.atlas-hub-hotspot:focus-visible,
+.atlas-hub-hotspot.is-active {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.atlas-hotspot-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 72%;
+  height: 72%;
+  transform: translate(-50%, -50%) scale(.88);
+  border: 2px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity .17s ease,
+    transform .17s ease,
+    border-color .17s ease,
+    box-shadow .17s ease,
+    background .17s ease;
+}
+
+.atlas-hub-hotspot:hover .atlas-hotspot-ring,
+.atlas-hub-hotspot:focus-visible .atlas-hotspot-ring,
+.atlas-hub-hotspot.is-active .atlas-hotspot-ring {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  border-color: rgba(53, 204, 255, .96);
+  background: rgba(53, 204, 255, .045);
+  box-shadow:
+    inset 0 0 18px rgba(53, 204, 255, .13),
+    0 0 18px rgba(53, 204, 255, .26);
+}
+
+/* Modules rectangulaires : surbrillance ajustée au bouton/menu réel */
+.hub-hotspot--body3d .atlas-hotspot-ring,
+.hub-hotspot--timeline .atlas-hotspot-ring,
+.hub-hotspot--ask .atlas-hotspot-ring {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+}
+
+/* Correction particulière du module Entraînement */
+.hub-hotspot--training {
+  left: 37.15% !important;
+  top: 20.2% !important;
+  width: 5.5% !important;
+  height: auto !important;
+  aspect-ratio: 1 / 1;
+}
+
+.hub-hotspot--training .atlas-hotspot-ring {
+  width: 92%;
+  height: 92%;
+}
+
+/* Correction particulière du module Objectifs qui ne doit plus être englobé */
+.hub-hotspot--training + .atlas-hub-hotspot {
+  isolation: isolate;
+}
+
+/* Ajustement des autres satellites */
+.hub-hotspot--health {
+  left: 48.25% !important;
+  top: 11.6% !important;
+  width: 5.1% !important;
+}
+
+.hub-hotspot--mobility {
+  left: 62.05% !important;
+  top: 29.3% !important;
+  width: 5.15% !important;
+}
+
+.hub-hotspot--sleep {
+  left: 61.3% !important;
+  top: 47.15% !important;
+  width: 5.15% !important;
+}
+
+.hub-hotspot--nutrition {
+  left: 56.3% !important;
+  top: 57.95% !important;
+  width: 5.15% !important;
+}
+
+.hub-hotspot--analysis {
+  left: 48.15% !important;
+  top: 67.6% !important;
+  width: 5.15% !important;
+}
+
+/* ████████████████████████████████████████████████████████████
+   🟪 FIN PARTIE E — E03
+   ████████████████████████████████████████████████████████████ */

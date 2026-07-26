@@ -63,6 +63,12 @@
 
   document.querySelectorAll("[data-hub-module]").forEach(button => {
     button.addEventListener("click", () => {
+      document.querySelectorAll("[data-hub-module]").forEach(item => {
+        item.classList.remove("is-active");
+      });
+
+      button.classList.add("is-active");
+
       const moduleName = button.dataset.hubModule;
 
       if (moduleName === "Entraînement") {
