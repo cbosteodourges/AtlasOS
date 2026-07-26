@@ -36,8 +36,8 @@
 
     if (hubTwinImage) {
       hubTwinImage.src = isFemale
-        ? "./assets/avatar-female.jpg"
-        : "./assets/avatar-male.jpg";
+        ? "./assets/avatar-female-hub.jpg"
+        : "./assets/avatar-male-hub.jpg";
     }
 
     showPage("hub");
@@ -71,8 +71,8 @@
 
     if (hubTwinImage) {
       hubTwinImage.src = isFemale
-        ? "./assets/avatar-female.jpg"
-        : "./assets/avatar-male.jpg";
+        ? "./assets/avatar-female-hub.jpg"
+        : "./assets/avatar-male-hub.jpg";
     }
 
     showPage("hub");
@@ -100,85 +100,135 @@
   }
 
 
+
+
+
   // ████████████████████████████████████████████████████████████
-  // 🟪 PARTIE E — E05 — INTERACTIONS HUB 3.0
+  // 🟪 PARTIE E — E06 — INTERACTIONS HUB 4.0
   // ████████████████████████████████████████████████████████████
 
-  const engineMessages = {
-    "Atlas IA": "Je relie vos données et j’explique chaque décision.",
-    "Clinique": "J’analyse votre histoire, vos symptômes et vos antécédents.",
-    "Performance": "Je construis et adapte vos plans d’entraînement.",
-    "Biomécanique": "J’explore muscles, articulations, tendons et chaînes de mouvement.",
-    "Prévention": "Je surveille les hausses de volume, la récupération et le risque de blessure.",
-    "Physiologie": "J’analyse fréquence cardiaque, VFC, VO₂max, SV1 et SV2.",
-    "Mémoire": "Je conserve votre chronologie, vos examens et votre évolution."
+  const enginePanel = document.getElementById("enginePanel");
+  const enginePanelClose = document.getElementById("enginePanelClose");
+  const enginePanelTitle = document.getElementById("enginePanelTitle");
+  const enginePanelText = document.getElementById("enginePanelText");
+  const enginePanelAction = document.getElementById("enginePanelAction");
+
+  const engineContent = {
+    "Atlas IA": {
+      text: "Atlas IA relie les données physiologiques, cliniques, biomécaniques et sportives afin d’expliquer chaque recommandation."
+    },
+    "Clinique": {
+      text: "Le moteur Clinique organise les symptômes, antécédents, traitements, examens et hypothèses dans une chronologie cohérente."
+    },
+    "Performance": {
+      text: "Le moteur Performance génère des plans datés et adaptatifs selon l’objectif, la VMA, la fréquence cardiaque, SV1, SV2 et la récupération.",
+      href: "./performance-running.html"
+    },
+    "Biomécanique": {
+      text: "Le moteur Biomécanique regroupe le Corps 3D, la mobilité, les articulations, les muscles, les tendons et les chaînes de mouvement."
+    },
+    "Prévention": {
+      text: "Le moteur Prévention surveille les hausses de volume, la fatigue, la charge tendineuse et les facteurs de risque de blessure."
+    },
+    "Physiologie": {
+      text: "Le moteur Physiologie analyse la fréquence cardiaque, la VFC, la VO₂max, la VMA, SV1, SV2, le sommeil et la récupération."
+    },
+    "Mémoire": {
+      text: "La Mémoire du Jumeau conserve la chronologie, les documents, l’imagerie, les blessures, les traitements et les performances."
+    }
   };
+
+  function openEngine(engine, trigger) {
+    document.querySelectorAll("[data-engine]").forEach(item => {
+      item.classList.toggle("active", item === trigger);
+    });
+
+    const content = engineContent[engine] || {
+      text: "Ce module sera progressivement relié au Digital Twin."
+    };
+
+    if (enginePanelTitle) enginePanelTitle.textContent = engine;
+    if (enginePanelText) enginePanelText.textContent = content.text;
+    if (enginePanelAction) {
+      enginePanelAction.textContent = content.href
+        ? "Ouvrir le module →"
+        : "Bientôt disponible";
+      enginePanelAction.disabled = !content.href;
+      enginePanelAction.dataset.href = content.href || "";
+    }
+
+    if (enginePanel) enginePanel.hidden = false;
+    if (brainMainText) brainMainText.textContent = content.text;
+  }
 
   document.querySelectorAll("[data-engine]").forEach(button => {
     button.addEventListener("click", () => {
-      document.querySelectorAll("[data-engine]").forEach(item => {
-        item.classList.remove("active");
-      });
-
-      button.classList.add("active");
-      const engine = button.dataset.engine;
-
-      if (brainMainText) {
-        brainMainText.textContent = engineMessages[engine];
-      }
-
-      if (engine === "Performance") {
-        window.setTimeout(() => {
-          window.location.href = "./performance-running.html";
-        }, 260);
-      }
+      openEngine(button.dataset.engine, button);
     });
   });
 
-  function initHubParticles() {
+  if (enginePanelClose) {
+    enginePanelClose.addEventListener("click", () => {
+      enginePanel.hidden = true;
+    });
+  }
+
+  if (enginePanel) {
+    enginePanel.addEventListener("click", event => {
+      if (event.target === enginePanel) enginePanel.hidden = true;
+    });
+  }
+
+  if (enginePanelAction) {
+    enginePanelAction.addEventListener("click", () => {
+      const href = enginePanelAction.dataset.href;
+      if (href) window.location.href = href;
+    });
+  }
+
+  function initHubParticles4() {
     const canvas = document.getElementById("hubParticles");
     if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
-    let points = [];
+    let particles = [];
 
     function resize() {
       canvas.width = canvas.clientWidth;
       canvas.height = canvas.clientHeight;
-      points = Array.from({ length: 80 }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        r: Math.random() * 1.4 + .2,
-        s: Math.random() * .16 + .03,
-        a: Math.random() * .35 + .06
+      particles = Array.from({length:90}, () => ({
+        x:Math.random()*canvas.width,
+        y:Math.random()*canvas.height,
+        r:Math.random()*1.3+.2,
+        s:Math.random()*.14+.03,
+        a:Math.random()*.28+.05
       }));
     }
 
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    function animate() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
 
-      points.forEach(point => {
-        point.y -= point.s;
-        if (point.y < -3) {
-          point.y = canvas.height + 3;
-          point.x = Math.random() * canvas.width;
+      particles.forEach(p => {
+        p.y -= p.s;
+        if (p.y < -2) {
+          p.y = canvas.height + 2;
+          p.x = Math.random()*canvas.width;
         }
 
         ctx.beginPath();
-        ctx.arc(point.x, point.y, point.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(53,204,255,${point.a})`;
+        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fillStyle = `rgba(53,204,255,${p.a})`;
         ctx.fill();
       });
 
-      requestAnimationFrame(draw);
+      requestAnimationFrame(animate);
     }
 
     resize();
-    draw();
+    animate();
     window.addEventListener("resize", resize);
   }
 
-  initHubParticles();
-
+  initHubParticles4();
 
 })();
