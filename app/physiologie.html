@@ -3,78 +3,270 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Atlas OS — Physiologie</title>
+  <title>Atlas OS — Physiologie & Import Garmin</title>
   <link rel="stylesheet" href="./css/atlas-module.css">
+  <link rel="stylesheet" href="./css/physiologie-import.css">
 </head>
 <body>
-  <div class="atlas-module-shell">
+  <div class="atlas-module-shell physiology-shell">
     <header class="module-topbar">
       <a class="module-back" href="./atlas-opening.html#hub">← Retour au Hub</a>
+
       <div class="module-brand">
         <img src="./assets/atlas-logo-full.jpg" alt="Atlas OS">
-        <div><strong>ATLAS OS</strong><span>Physiologie</span></div>
+        <div>
+          <strong>ATLAS OS</strong>
+          <span>Physiologie · Import Garmin</span>
+        </div>
       </div>
-      <div class="module-status"><i></i><span>Moteur actif</span></div>
+
+      <div class="module-status">
+        <i></i>
+        <span id="engineStatus">Moteur prêt</span>
+      </div>
     </header>
 
-    <main class="module-main">
-      <section class="module-content">
-        <div class="module-hero">
+    <main class="physiology-main">
+      <section class="physiology-content">
+        <div class="module-hero physiology-hero">
           <span class="module-kicker">MOTEUR PHYSIOLOGIQUE</span>
-          <h1>Physiologie</h1>
-          <p>Lire les réponses internes du corps</p>
-          <div class="module-summary">
-            <article><span>VFC</span><strong>61 ms</strong><small>+8 %</small></article>
-<article><span>FC repos</span><strong>48 bpm</strong><small>-3 bpm</small></article>
-<article><span>VO₂max</span><strong>52</strong><small>Très bon</small></article>
-<article><span>Récupération</span><strong>88 %</strong><small>Excellente</small></article>
+          <h1>Importer les données Garmin</h1>
+          <p>
+            Atlas lit les exports Garmin directement dans votre navigateur.
+            Les fichiers ne sont pas envoyés vers un serveur dans cette version.
+          </p>
+
+          <div class="module-summary" id="summaryCards">
+            <article>
+              <span>Activités importées</span>
+              <strong id="summaryActivities">0</strong>
+              <small id="summaryPeriod">Aucune donnée</small>
+            </article>
+            <article>
+              <span>Distance totale</span>
+              <strong id="summaryDistance">0 km</strong>
+              <small>Course et activités GPS</small>
+            </article>
+            <article>
+              <span>Temps total</span>
+              <strong id="summaryDuration">0 h</strong>
+              <small>Durée cumulée</small>
+            </article>
+            <article>
+              <span>FC moyenne</span>
+              <strong id="summaryHeartRate">—</strong>
+              <small>Activités renseignées</small>
+            </article>
           </div>
         </div>
 
-        <div class="module-grid">
-          <article class="module-card">
-          <h2>Cardiovasculaire</h2>
-          <p>Fréquence cardiaque, récupération et dérive.</p>
-          <ul><li>FC repos</li><li>FC max</li><li>Dérive cardiaque</li></ul>
-          <button type="button">Explorer →</button>
-        </article>
-<article class="module-card">
-          <h2>Seuils</h2>
-          <p>SV1, SV2, VMA et zones d’entraînement.</p>
-          <ul><li>SV1</li><li>SV2</li><li>VMA</li><li>BPM cibles</li></ul>
-          <button type="button">Explorer →</button>
-        </article>
-<article class="module-card">
-          <h2>Sommeil et VFC</h2>
-          <p>Suivre la capacité de récupération.</p>
-          <ul><li>Durée</li><li>Qualité</li><li>Variabilité</li></ul>
-          <button type="button">Explorer →</button>
-        </article>
-<article class="module-card">
-          <h2>Thermorégulation</h2>
-          <p>Adapter l’effort au contexte.</p>
-          <ul><li>Température corporelle</li><li>Chaleur</li><li>Hydratation</li></ul>
-          <button type="button">Explorer →</button>
-        </article>
-        </div>
+        <section class="import-layout">
+          <article class="import-card import-card-primary">
+            <div class="card-heading">
+              <div>
+                <span class="card-kicker">ÉTAPE 1</span>
+                <h2>Déposer un export Garmin</h2>
+              </div>
+              <span class="local-badge">Traitement local</span>
+            </div>
+
+            <label class="drop-zone" id="dropZone" for="garminFiles">
+              <input
+                id="garminFiles"
+                type="file"
+                multiple
+                accept=".csv,.json,.fit,.zip,text/csv,application/json"
+              >
+              <span class="drop-icon">⇩</span>
+              <strong>Glissez vos fichiers ici</strong>
+              <small>ou cliquez pour les sélectionner</small>
+              <em>CSV Garmin recommandé · JSON Atlas · FIT détecté</em>
+            </label>
+
+            <div class="import-actions">
+              <button class="primary-button" id="chooseFilesButton" type="button">
+                Sélectionner mes fichiers
+              </button>
+              <button class="secondary-button" id="loadDemoButton" type="button">
+                Charger une démonstration
+              </button>
+              <a class="secondary-link" href="./samples/garmin-activities-demo.csv" download>
+                Télécharger le CSV d’exemple
+              </a>
+            </div>
+
+            <div class="privacy-note">
+              <strong>Confidentialité</strong>
+              <p>
+                Dans ce prototype, la lecture et les calculs ont lieu sur votre ordinateur.
+                Les données normalisées sont stockées dans le navigateur avec localStorage.
+              </p>
+            </div>
+          </article>
+
+          <article class="import-card">
+            <div class="card-heading">
+              <div>
+                <span class="card-kicker">ÉTAPE 2</span>
+                <h2>Contrôle de l’import</h2>
+              </div>
+            </div>
+
+            <div class="import-status" id="importStatus" data-state="idle">
+              <i></i>
+              <div>
+                <strong>Aucun fichier analysé</strong>
+                <span>Atlas attend un export Garmin.</span>
+              </div>
+            </div>
+
+            <div class="file-results" id="fileResults">
+              <div class="empty-state">
+                Les fichiers analysés apparaîtront ici.
+              </div>
+            </div>
+
+            <div class="data-actions">
+              <button class="secondary-button" id="exportAtlasButton" type="button" disabled>
+                Exporter au format Atlas JSON
+              </button>
+              <button class="danger-button" id="clearDataButton" type="button">
+                Effacer les données locales
+              </button>
+            </div>
+          </article>
+        </section>
+
+        <section class="analysis-section">
+          <div class="section-heading">
+            <div>
+              <span class="card-kicker">ÉTAPE 3</span>
+              <h2>Première analyse physiologique</h2>
+            </div>
+            <span id="analysisConfidence" class="confidence-badge">Confiance : —</span>
+          </div>
+
+          <div class="analysis-grid">
+            <article class="analysis-card">
+              <span>Volume des 28 derniers jours</span>
+              <strong id="metricVolume28">0 km</strong>
+              <small id="metricVolumeTrend">Données insuffisantes</small>
+              <div class="mini-bar"><i id="volumeBar"></i></div>
+            </article>
+
+            <article class="analysis-card">
+              <span>Plus longue sortie récente</span>
+              <strong id="metricLongest">0 km</strong>
+              <small id="metricLongestDate">Aucune activité</small>
+              <div class="mini-bar"><i id="longestBar"></i></div>
+            </article>
+
+            <article class="analysis-card">
+              <span>Fréquence cardiaque maximale observée</span>
+              <strong id="metricMaxHeartRate">—</strong>
+              <small>Valeur issue des activités importées</small>
+              <div class="mini-bar"><i id="heartRateBar"></i></div>
+            </article>
+
+            <article class="analysis-card">
+              <span>Allure moyenne course</span>
+              <strong id="metricAveragePace">—</strong>
+              <small id="metricPaceNote">Activités de course uniquement</small>
+              <div class="mini-bar"><i id="paceBar"></i></div>
+            </article>
+          </div>
+
+          <div class="weeks-panel">
+            <div class="weeks-heading">
+              <h3>Volume hebdomadaire détecté</h3>
+              <span>8 dernières semaines disponibles</span>
+            </div>
+            <div class="weeks-chart" id="weeksChart">
+              <div class="chart-empty">Importez un CSV pour afficher les semaines.</div>
+            </div>
+          </div>
+
+          <div class="activities-panel">
+            <div class="weeks-heading">
+              <h3>Dernières activités reconnues</h3>
+              <span id="activitiesCountLabel">0 activité</span>
+            </div>
+
+            <div class="activities-table-wrap">
+              <table class="activities-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Activité</th>
+                    <th>Distance</th>
+                    <th>Durée</th>
+                    <th>FC moy.</th>
+                    <th>FC max.</th>
+                    <th>Allure</th>
+                  </tr>
+                </thead>
+                <tbody id="activitiesTableBody">
+                  <tr>
+                    <td colspan="7" class="table-empty">Aucune activité importée.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
       </section>
 
-      <aside class="module-brain">
+      <aside class="module-brain physiology-brain">
         <article class="brain-card">
-          <div class="brain-title"><i></i><div><strong>ATLAS BRAIN</strong><span>Analyse du module</span></div></div>
-          <p>Les indicateurs physiologiques sont favorables. Le maintien de la séance prévue est cohérent avec la récupération observée.</p>
+          <div class="brain-title">
+            <i></i>
+            <div>
+              <strong>ATLAS BRAIN</strong>
+              <span>Analyse de l’import</span>
+            </div>
+          </div>
+          <p id="brainImportText">
+            Importez votre historique Garmin pour permettre à Atlas d’évaluer
+            le volume récent, la fréquence d’entraînement et les réponses cardiaques.
+          </p>
         </article>
+
         <article class="brain-card">
-          <strong>Prochaine étape</strong>
-          <p>Cette page constitue la base fonctionnelle du moteur. Les données réelles, formulaires et visualisations seront ajoutés progressivement.</p>
-          <button class="module-primary-action" type="button">Continuer le développement</button>
+          <strong>Données reconnues</strong>
+          <ul class="recognition-list" id="recognitionList">
+            <li class="pending">Date et type d’activité</li>
+            <li class="pending">Distance et durée</li>
+            <li class="pending">Fréquence cardiaque</li>
+            <li class="pending">Allure et vitesse</li>
+            <li class="pending">Dénivelé et cadence</li>
+          </ul>
+        </article>
+
+        <article class="brain-card">
+          <strong>Formats</strong>
+          <ul>
+            <li><b>CSV :</b> analysé dans cette version</li>
+            <li><b>JSON Atlas :</b> importé et réutilisable</li>
+            <li><b>FIT :</b> détecté, décodeur prévu ensuite</li>
+            <li><b>ZIP complet :</b> détecté, extraction prévue ensuite</li>
+          </ul>
+        </article>
+
+        <article class="brain-card">
+          <strong>Objectif de la prochaine version</strong>
+          <p>
+            Ajouter les données de bien-être : sommeil, VFC nocturne,
+            fréquence cardiaque de repos, stress et Body Battery.
+          </p>
         </article>
       </aside>
     </main>
 
     <footer class="module-footer">
-      Atlas OS Genesis 4.2 — Digital Twin biomécanique intelligent
+      Atlas OS Genesis 4.3 — Import local Garmin pour le moteur physiologique
     </footer>
   </div>
+
+  <script src="./js/physiologie-import.js"></script>
 </body>
 </html>
