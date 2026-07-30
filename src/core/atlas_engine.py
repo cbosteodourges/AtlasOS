@@ -6,6 +6,8 @@ Moteur principal.
 from datetime import date, datetime, timedelta
 
 from src.anatomy import build_right_ankle_foot
+from src.atlas_brain import AtlasBrain
+from src.biomechanics import BiomechanicalEngine
 from src.core.config import Config
 from src.core.logger import AtlasLogger
 from src.core.version import APP_NAME, VERSION
@@ -27,7 +29,7 @@ from src.twin import DigitalTwin
 # ████████████████████████████████████████████████████████████
 
 class AtlasEngine:
-    def __init__(self):
+    def __init__(self) -> None:
         self.start_time = datetime.now()
 
         self.user = Patient(
@@ -45,25 +47,24 @@ class AtlasEngine:
         self.maximum_heart_rate = 185
         self.vma_kmh = 14.0
 
-        self.anatomy = (
-            build_right_ankle_foot()
-        )
+        self.anatomy = build_right_ankle_foot()
 
         self.history_analyzer = (
             TrainingHistoryAnalyzer()
         )
 
-        self.zones_engine = (
-            TrainingZonesEngine()
-        )
-
-        self.plan_generator = (
-            RunningPlanGenerator()
-        )
+        self.zones_engine = TrainingZonesEngine()
+        self.plan_generator = RunningPlanGenerator()
 
         self.twin = DigitalTwin(
             user=self.user
         )
+
+        self.biomechanical_engine = (
+            BiomechanicalEngine()
+        )
+
+        self.brain = AtlasBrain()
 
 
 # ████████████████████████████████████████████████████████████
@@ -78,108 +79,43 @@ class AtlasEngine:
     def build_demo_history(self):
         today = date.today()
 
-        return [
-            TrainingActivity(
-                activity_date=(
-                    today - timedelta(days=27)
-                ),
-                activity_type="running",
-                distance_km=8,
-                duration_minutes=48,
-                average_heart_rate=136,
-                perceived_exertion=4,
-            ),
-            TrainingActivity(
-                activity_date=(
-                    today - timedelta(days=24)
-                ),
-                activity_type="running",
-                distance_km=10,
-                duration_minutes=58,
-                average_heart_rate=139,
-                perceived_exertion=5,
-            ),
-            TrainingActivity(
-                activity_date=(
-                    today - timedelta(days=21)
-                ),
-                activity_type="running",
-                distance_km=14,
-                duration_minutes=84,
-                average_heart_rate=141,
-                perceived_exertion=5,
-            ),
-            TrainingActivity(
-                activity_date=(
-                    today - timedelta(days=18)
-                ),
-                activity_type="running",
-                distance_km=9,
-                duration_minutes=52,
-                average_heart_rate=143,
-                perceived_exertion=5,
-            ),
-            TrainingActivity(
-                activity_date=(
-                    today - timedelta(days=15)
-                ),
-                activity_type="running",
-                distance_km=11,
-                duration_minutes=62,
-                average_heart_rate=146,
-                perceived_exertion=6,
-            ),
-            TrainingActivity(
-                activity_date=(
-                    today - timedelta(days=13)
-                ),
-                activity_type="running",
-                distance_km=7,
-                duration_minutes=38,
-                average_heart_rate=154,
-                perceived_exertion=8,
-            ),
-            TrainingActivity(
-                activity_date=(
-                    today - timedelta(days=10)
-                ),
-                activity_type="running",
-                distance_km=16,
-                duration_minutes=96,
-                average_heart_rate=142,
-                perceived_exertion=6,
-            ),
-            TrainingActivity(
-                activity_date=(
-                    today - timedelta(days=7)
-                ),
-                activity_type="running",
-                distance_km=8,
-                duration_minutes=46,
-                average_heart_rate=140,
-                perceived_exertion=4,
-            ),
-            TrainingActivity(
-                activity_date=(
-                    today - timedelta(days=5)
-                ),
-                activity_type="running",
-                distance_km=10,
-                duration_minutes=55,
-                average_heart_rate=148,
-                perceived_exertion=6,
-            ),
-            TrainingActivity(
-                activity_date=(
-                    today - timedelta(days=2)
-                ),
-                activity_type="running",
-                distance_km=17,
-                duration_minutes=102,
-                average_heart_rate=144,
-                perceived_exertion=6,
-            ),
+        demo_values = [
+            (27, 8, 48, 136, 4),
+            (24, 10, 58, 139, 5),
+            (21, 14, 84, 141, 5),
+            (18, 9, 52, 143, 5),
+            (15, 11, 62, 146, 6),
+            (13, 7, 38, 154, 8),
+            (10, 16, 96, 142, 6),
+            (7, 8, 46, 140, 4),
+            (5, 10, 55, 148, 6),
+            (2, 17, 102, 144, 6),
         ]
+
+        activities = []
+
+        for (
+            days_ago,
+            distance,
+            duration,
+            average_hr,
+            rpe,
+        ) in demo_values:
+            activities.append(
+                TrainingActivity(
+                    activity_date=(
+                        today
+                        - timedelta(days=days_ago)
+                    ),
+                    activity_type="running",
+                    distance_km=distance,
+                    duration_minutes=duration,
+                    average_heart_rate=average_hr,
+                    perceived_exertion=rpe,
+                )
+            )
+
+        return activities
 
 
 # ████████████████████████████████████████████████████████████
@@ -192,14 +128,10 @@ class AtlasEngine:
 # ████████████████████████████████████████████████████████████
 
     def build_performance_data(self):
-        activities = (
-            self.build_demo_history()
-        )
+        activities = self.build_demo_history()
 
-        analysis = (
-            self.history_analyzer.analyse(
-                activities
-            )
+        analysis = self.history_analyzer.analyse(
+            activities
         )
 
         zones = self.zones_engine.calculate(
@@ -234,14 +166,14 @@ class AtlasEngine:
 
 
 # ████████████████████████████████████████████████████████████
-# 🟧 PARTIE D — CONSTRUCTION DU JUMEAU
+# 🟧 PARTIE D — DIGITAL TWIN
 # ████████████████████████████████████████████████████████████
 
     def build_digital_twin(
         self,
         analysis,
         plan,
-    ):
+    ) -> None:
         self.twin.attach_anatomy(
             self.anatomy
         )
@@ -289,7 +221,7 @@ class AtlasEngine:
 # 🟥 PARTIE E — DÉMARRAGE
 # ████████████████████████████████████████████████████████████
 
-    def start(self):
+    def start(self) -> None:
         AtlasLogger.info(
             "Initialisation du moteur ATLAS"
         )
@@ -307,7 +239,6 @@ class AtlasEngine:
         )
 
         print()
-
         self.user.afficher()
 
         AtlasLogger.info(
@@ -315,7 +246,6 @@ class AtlasEngine:
         )
 
         print()
-
         self.anatomy.display_summary()
 
         AtlasLogger.info(
@@ -327,19 +257,16 @@ class AtlasEngine:
         )
 
         print()
-
         display_history_analysis(
             analysis
         )
 
         print()
-
         self.zones_engine.display(
             zones
         )
 
         print()
-
         display_training_plan(
             plan
         )
@@ -354,11 +281,38 @@ class AtlasEngine:
         )
 
         print()
-
         self.twin.display_summary()
 
         AtlasLogger.info(
             "Jumeau numérique chargé"
+        )
+
+        biomechanical_report = (
+            self.biomechanical_engine.analyse_twin(
+                self.twin
+            )
+        )
+
+        print()
+        self.biomechanical_engine.display_report(
+            biomechanical_report
+        )
+
+        AtlasLogger.info(
+            "Moteur biomécanique chargé"
+        )
+
+        brain_report = self.brain.analyse(
+            self.twin
+        )
+
+        print()
+        self.brain.display_report(
+            brain_report
+        )
+
+        AtlasLogger.info(
+            "Atlas Brain chargé"
         )
 
         AtlasLogger.info(

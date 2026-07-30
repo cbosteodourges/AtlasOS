@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+
+# Environnements
+.venv/
+venv/
+env/
+
+# VS Code
+.vscode/
+
+# Données Atlas
+atlas-data/private/
+atlas-data/imports/
+atlas-data/garmin/
+atlas-data/apple/
+atlas-data/polar/
+atlas-data/coros/
+atlas-data/suunto/
+atlas-data/strava/
+
+*.fit
+*.tcx
+*.gpx
+*.zip
+*.7z
+*.rar
