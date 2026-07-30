@@ -7,7 +7,9 @@ from src.core.atlas_engine import AtlasEngine
 
 
 def main():
+
     engine = AtlasEngine()
+
     engine.start()
 
 
