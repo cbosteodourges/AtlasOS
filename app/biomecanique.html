@@ -3,78 +3,154 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Atlas OS — Biomécanique</title>
-  <link rel="stylesheet" href="./css/atlas-module.css">
+  <meta name="theme-color" content="#070b10">
+  <title>ATLAS OS — Anatomie biomécanique 3D</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="../css/biomecanique-3d.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/"
+      }
+    }
+  </script>
 </head>
 <body>
-  <div class="atlas-module-shell">
-    <header class="module-topbar">
-      <a class="module-back" href="./atlas-opening.html#hub">← Retour au Hub</a>
-      <div class="module-brand">
-        <img src="./assets/atlas-logo-full.jpg" alt="Atlas OS">
-        <div><strong>ATLAS OS</strong><span>Biomécanique</span></div>
+  <div class="atlas-shell" id="atlasShell">
+    <header class="topbar">
+      <a class="back-link" href="./atlas-opening.html#hub" aria-label="Retour au Hub">
+        <span aria-hidden="true">←</span><span>Hub</span>
+      </a>
+
+      <div class="brand">
+        <img src="../assets/images/atlas-logo.jpg" alt="Logo ATLAS OS">
+        <div><strong>ATLAS <em>OS</em></strong><span>ANATOMICAL DIGITAL TWIN</span></div>
       </div>
-      <div class="module-status"><i></i><span>Moteur actif</span></div>
+
+      <div class="engine-state"><i></i><span>Moteur anatomique</span><strong id="engineState">Initialisation</strong></div>
     </header>
 
-    <main class="module-main">
-      <section class="module-content">
-        <div class="module-hero">
-          <span class="module-kicker">MOTEUR BIOMÉCANIQUE</span>
-          <h1>Biomécanique</h1>
-          <p>Explorer le corps, le mouvement et les contraintes</p>
-          <div class="module-summary">
-            <article><span>Mobilité</span><strong>81 %</strong><small>Équilibre global</small></article>
-<article><span>Asymétries</span><strong>2</strong><small>À explorer</small></article>
-<article><span>Douleurs</span><strong>0/10</strong><small>Aujourd’hui</small></article>
-<article><span>Scan</span><strong>Récent</strong><small>20 juillet 2026</small></article>
+    <main class="cockpit">
+      <section class="viewer-panel" aria-label="Jumeau anatomique interactif">
+        <div class="viewer-heading">
+          <div>
+            <span class="eyebrow">MOTEUR BIOMÉCANIQUE · V0.8</span>
+            <h1>ANATOMIE <span>3D</span></h1>
+            <p>Cliquez directement sur une structure pour l’identifier et lancer son analyse.</p>
+          </div>
+          <div class="object-counter"><strong id="objectCount">0</strong><span>structures chargées</span></div>
+        </div>
+
+        <div class="viewport" id="viewport">
+          <canvas id="anatomyCanvas" aria-label="Modèle anatomique 3D du membre inférieur"></canvas>
+
+          <div class="loading" id="loadingPanel" role="status" aria-live="polite">
+            <div class="atlas-loader"><i></i><i></i><i></i></div>
+            <strong>CONSTRUCTION DU JUMEAU</strong>
+            <span id="loadingLabel">Préparation du moteur 3D…</span>
+            <div class="loading-track"><i id="loadingBar"></i></div>
+          </div>
+
+          <div class="viewer-hud hud-left">
+            <span>GLB · SEGMENTÉ</span>
+            <strong>MEMBRE INFÉRIEUR</strong>
+            <small>Rotation libre · sélection anatomique</small>
+          </div>
+
+          <div class="viewer-hud hud-right">
+            <span id="fpsState">RENDU TEMPS RÉEL</span>
+            <strong>672 CIBLES</strong>
+            <small>Source anatomique attribuée</small>
+          </div>
+
+          <div class="orientation-cube" aria-hidden="true"><span>ANT</span><i></i><small>D</small></div>
+
+          <div class="interaction-help" id="interactionHelp">
+            <span><b>Glisser</b> Tourner</span>
+            <span><b>Molette</b> Zoomer</span>
+            <span><b>Clic</b> Sélectionner</span>
+            <button type="button" aria-label="Masquer l’aide" id="dismissHelp">×</button>
+          </div>
+
+          <div class="selection-tag" id="selectionTag" hidden>
+            <span id="selectionLayer">STRUCTURE</span>
+            <strong id="selectionName">—</strong>
           </div>
         </div>
 
-        <div class="module-grid">
-          <article class="module-card">
-          <h2>Corps 3D</h2>
-          <p>Afficher les différentes couches anatomiques.</p>
-          <ul><li>Peau</li><li>Muscles</li><li>Squelette</li><li>Organes</li></ul>
-          <button type="button">Explorer →</button>
-        </article>
-<article class="module-card">
-          <h2>Mobilité articulaire</h2>
-          <p>Suivre amplitudes, contrôle et restrictions.</p>
-          <ul><li>Hanches</li><li>Chevilles</li><li>Rachis</li><li>Épaules</li></ul>
-          <button type="button">Explorer →</button>
-        </article>
-<article class="module-card">
-          <h2>Chaînes musculaires</h2>
-          <p>Relier les déficits aux contraintes observées.</p>
-          <ul><li>Force</li><li>Souplesse</li><li>Contrôle moteur</li></ul>
-          <button type="button">Explorer →</button>
-        </article>
-<article class="module-card">
-          <h2>Carte de douleur</h2>
-          <p>Sélectionner une zone et raconter son évolution.</p>
-          <ul><li>Localisation précise</li><li>Irradiations</li><li>Chronologie</li></ul>
-          <button type="button">Explorer →</button>
-        </article>
-        </div>
+        <nav class="layer-console" aria-label="Couches anatomiques">
+          <button class="layer-button active" data-layer="squelette" aria-pressed="true">
+            <i class="bone-icon"></i><span><small>COUCHE 01</small><strong>Squelette</strong></span><em>66</em>
+          </button>
+          <button class="layer-button active" data-layer="articulations" aria-pressed="true">
+            <i class="joint-icon"></i><span><small>COUCHE 02</small><strong>Articulations</strong></span><em>176</em>
+          </button>
+          <button class="layer-button active" data-layer="muscles_tendons" aria-pressed="true">
+            <i class="muscle-icon"></i><span><small>COUCHE 03</small><strong>Muscles & tendons</strong></span><em>229</em>
+          </button>
+          <button class="layer-button" data-layer="insertions" aria-pressed="false">
+            <i class="insertion-icon"></i><span><small>COUCHE 04</small><strong>Insertions</strong></span><em>201</em>
+          </button>
+        </nav>
       </section>
 
-      <aside class="module-brain">
-        <article class="brain-card">
-          <div class="brain-title"><i></i><div><strong>ATLAS BRAIN</strong><span>Analyse du module</span></div></div>
-          <p>La mobilité globale est bonne. Une légère restriction de cheville droite mérite un contrôle avant la prochaine séance qualitative.</p>
+      <aside class="analysis-panel" aria-label="Analyse de la structure sélectionnée">
+        <div class="analysis-head">
+          <div><span class="eyebrow">ATLAS BRAIN</span><h2>ANALYSE <span>ACTIVE</span></h2></div>
+          <div class="brain-pulse"><i></i><i></i><i></i></div>
+        </div>
+
+        <article class="selection-card" id="selectionCard">
+          <span class="card-index">CIBLE ANATOMIQUE</span>
+          <div class="empty-selection" id="emptySelection">
+            <i></i>
+            <strong>Sélectionnez l’avatar</strong>
+            <p>Touchez ou cliquez sur un os, une articulation, un muscle, un tendon ou une insertion.</p>
+          </div>
+          <div class="selected-content" id="selectedContent" hidden>
+            <span class="side-pill" id="selectedSide">CENTRAL</span>
+            <h3 id="selectedName">—</h3>
+            <p id="selectedType">Structure anatomique</p>
+            <dl>
+              <div><dt>Couche</dt><dd id="selectedLayer">—</dd></div>
+              <div><dt>Charge associée</dt><dd id="selectedLoad">À calculer</dd></div>
+              <div><dt>Confiance</dt><dd>Source 3D</dd></div>
+            </dl>
+          </div>
         </article>
-        <article class="brain-card">
-          <strong>Prochaine étape</strong>
-          <p>Cette page constitue la base fonctionnelle du moteur. Les données réelles, formulaires et visualisations seront ajoutés progressivement.</p>
-          <button class="module-primary-action" type="button">Continuer le développement</button>
+
+        <article class="metric-card">
+          <div class="metric-title"><span>CHARGE MÉCANIQUE</span><strong id="loadScore">—</strong></div>
+          <div class="metric-track"><i id="loadBar"></i></div>
+          <p id="loadExplanation">Sélectionnez une structure pour relier la zone aux données de charge, de douleur et de récupération.</p>
+        </article>
+
+        <article class="actions-card">
+          <span class="card-index">OUTILS DE VISUALISATION</span>
+          <div class="action-grid">
+            <button type="button" id="focusButton" disabled>⌖<span>Centrer</span></button>
+            <button type="button" id="isolateButton" disabled>◉<span>Isoler</span></button>
+            <button type="button" id="restoreButton">↺<span>Réinitialiser</span></button>
+            <button type="button" id="painButton" disabled>＋<span>Signaler douleur</span></button>
+          </div>
+        </article>
+
+        <article class="recommendation-card">
+          <div><i></i><span>CONSEIL ATLAS</span></div>
+          <p id="recommendationText">L’analyse biomécanique contextuelle apparaîtra après sélection d’une structure.</p>
+          <button type="button" id="analyseButton" disabled>Analyser avec ATLAS BRAIN →</button>
         </article>
       </aside>
     </main>
 
-    <footer class="module-footer">
-      Atlas OS Genesis 4.2 — Digital Twin biomécanique intelligent
+    <footer class="statusbar">
+      <span><i class="status-online"></i> ATLAS CORE CONNECTÉ</span>
+      <span id="renderStats">WEBGL · EN ATTENTE</span>
+      <span>Z-ANATOMY · BODYParts3D · ATTRIBUTIONS ACTIVES</span>
     </footer>
   </div>
+
+  <script type="module" src="../js/biomecanique-3d.js"></script>
 </body>
 </html>
