@@ -6,7 +6,7 @@ Contrat commun des connecteurs d'activités.
 from abc import ABC, abstractmethod
 from typing import Iterable
 
-from .activity_schema import ActivitySample, NormalizedActivity
+from .activity_schema import NormalizedActivity, RawActivity
 
 
 class ActivityConnector(ABC):
@@ -23,14 +23,14 @@ class ActivityConnector(ABC):
     def fetch_activities(
         self,
         since: str | None = None,
-    ) -> Iterable[ActivitySample]:
+    ) -> Iterable[RawActivity]:
         """Récupère les activités nouvelles ou modifiées."""
         raise NotImplementedError
 
     @abstractmethod
     def normalize(
         self,
-        activity: ActivitySample,
+        activity: RawActivity,
     ) -> NormalizedActivity:
-        """Convertit une activité au format commun ATLAS."""
+        """Convertit une activité brute au format commun ATLAS."""
         raise NotImplementedError

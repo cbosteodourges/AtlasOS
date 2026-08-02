@@ -1,4 +1,4 @@
-"""Format commun des activités importées dans ATLAS OS."""
+"""Formats communs des activités importées dans ATLAS OS."""
 
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
@@ -7,6 +7,8 @@ from typing import Any, Dict, List, Optional
 
 @dataclass
 class ActivitySample:
+    """Mesure physiologique ou géographique horodatée."""
+
     timestamp: str
     heart_rate_bpm: Optional[float] = None
     speed_mps: Optional[float] = None
@@ -18,7 +20,22 @@ class ActivitySample:
 
 
 @dataclass
+class RawActivity:
+    """Activité brute reçue depuis un fournisseur externe."""
+
+    provider: str
+    external_id: str
+    payload: Dict[str, Any] = field(default_factory=dict)
+    samples: List[ActivitySample] = field(default_factory=list)
+    received_at: str = field(
+        default_factory=lambda: datetime.now().astimezone().isoformat()
+    )
+
+
+@dataclass
 class NormalizedActivity:
+    """Activité convertie au format commun exploitable par ATLAS."""
+
     provider: str
     external_id: str
     activity_type: str
