@@ -226,11 +226,21 @@ class GarminConnector(ActivityConnector):
 
     @staticmethod
     def _activity_type(session: Dict[str, Any]) -> str:
-        activity_type = session.get(
-            "sub_sport",
-            session.get("sport", "unknown"),
-        )
-        return str(activity_type).strip().lower()
+        sport = str(
+            session.get("sport", "unknown")
+        ).strip().lower()
+
+        sub_sport = str(
+            session.get("sub_sport", "")
+        ).strip().lower()
+
+        if sub_sport and sub_sport not in {
+            "generic",
+            "unknown",
+        }:
+            return sub_sport
+
+        return sport
 
     @staticmethod
     def _source_device(

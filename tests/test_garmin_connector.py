@@ -40,6 +40,7 @@ class GarminConnectorTests(unittest.TestCase):
             payload={
                 "session": {
                     "sport": "running",
+                                        "sub_sport": "generic",
                     "start_time": datetime(
                         2026,
                         8,
