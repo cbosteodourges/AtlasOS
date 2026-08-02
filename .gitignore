@@ -28,3 +28,8 @@ atlas-data/strava/
 *.zip
 *.7z
 *.rar
+
+# Secrets et identifiants OAuth
+.env
+.env.*
+!.env.example
