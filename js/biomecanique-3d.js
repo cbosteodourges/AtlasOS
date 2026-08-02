@@ -475,6 +475,73 @@ function toggleLayer(button) {
   if (selected?.userData.layer === key && !LAYERS[key].visible) { restoreMaterial(selected); selected = null; clearSelectionUI(); }
 }
 
+async function runAtlasBrainAnalysis() {
+  const button = document.querySelector('#analyseButton');
+
+  if (!twinStorage || !selected) {
+    alert('Sélectionnez d’abord une structure anatomique.');
+    return;
+  }
+
+  const twin = twinStorage.load();
+  const context = twin.atlasBrain?.activeContext;
+
+  if (!context) {
+    alert('Sélectionnez de nouveau une structure anatomique.');
+    return;
+  }
+
+  const initialLabel = button.textContent;
+  button.disabled = true;
+  button.textContent = 'ANALYSE EN COURS…';
+
+  try {
+    const response = await fetch('/api/atlas-brain/analyse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ context })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(data.error || 'Analyse impossible.');
+    }
+
+    const analysis = {
+      ...data.report,
+      analysedAt: data.analysedAt,
+      anatomy: context.anatomy
+    };
+
+    const currentTwin = twinStorage.load();
+    const history = currentTwin.atlasBrain?.history || [];
+
+    twinStorage.update({
+      atlasBrain: {
+        lastAnalysis: analysis,
+        history: [...history, analysis].slice(-20)
+      }
+    });
+
+    document.querySelector('#recommendationText').textContent =
+      data.report.summary;
+
+    document.querySelector('#loadExplanation').textContent =
+      data.report.detailed_explanation?.join(' ') || data.report.summary;
+
+    button.textContent = 'ANALYSE TERMINÉE ✓';
+  } catch (error) {
+    console.error('[ATLAS BRAIN]', error);
+    alert(`Atlas Brain : ${error.message}`);
+    button.textContent = 'ÉCHEC — RÉESSAYER';
+  } finally {
+    setTimeout(() => {
+      button.disabled = false;
+      button.textContent = initialLabel;
+    }, 2500);
+  }
+}
 function showError(message) {
   const banner = document.createElement('div'); banner.className = 'error-banner'; banner.textContent = message; viewport.appendChild(banner);
 }
@@ -484,7 +551,7 @@ document.querySelector('#focusButton').addEventListener('click', focusSelected);
 document.querySelector('#isolateButton').addEventListener('click', toggleIsolation);
 document.querySelector('#restoreButton').addEventListener('click', restoreView);
 document.querySelector('#painButton').addEventListener('click', () => alert('La structure sélectionnée sera transmise à la future fiche de douleur ATLAS.'));
-document.querySelector('#analyseButton').addEventListener('click', () => alert('Connexion à Atlas Brain prévue dans la prochaine étape.'));
+document.querySelector('#analyseButton').addEventListener('click', runAtlasBrainAnalysis);
 document.querySelector('#dismissHelp').addEventListener('click', () => interactionHelp.remove());
 canvas.addEventListener('pointerdown', onPointerDown);
 canvas.addEventListener('pointerup', onPointerUp);
