@@ -317,6 +317,50 @@ function readPatientContext() {
     weeklyVolumeKm: twin.performance?.running?.weeklyVolumeKm ?? null
   };
 }
+function updateLoadUI(context) {
+  const acuteLoad = Number(context?.currentLoad?.acute_load_7d);
+  const chronicLoad = Number(context?.currentLoad?.chronic_load_28d);
+  const readinessScore = Number(context?.readiness?.readiness_score);
+
+  const hasAcuteLoad = Number.isFinite(acuteLoad);
+  const hasChronicLoad = Number.isFinite(chronicLoad) && chronicLoad > 0;
+  const hasReadiness = Number.isFinite(readinessScore);
+  const hasProfessionalLoad = context?.professionalLoad !== null;
+
+  if (hasAcuteLoad && hasChronicLoad) {
+    const ratio = acuteLoad / chronicLoad;
+    document.querySelector('#loadScore').textContent = `RATIO ${ratio.toFixed(2)}`;
+    document.querySelector('#loadBar').style.width = `${Math.min(100, ratio * 50)}%`;
+    document.querySelector('#loadExplanation').textContent =
+      `Charge aiguë 7 j : ${acuteLoad}. Charge chronique 28 j : ${chronicLoad}. Analyse contextuelle disponible pour Atlas Brain.`;
+    document.querySelector('#selectedLoad').textContent = `${acuteLoad} / ${chronicLoad}`;
+    return;
+  }
+
+  if (hasReadiness) {
+    document.querySelector('#loadScore').textContent = `${Math.round(readinessScore)}/100`;
+    document.querySelector('#loadBar').style.width = `${Math.max(0, Math.min(100, readinessScore))}%`;
+    document.querySelector('#loadExplanation').textContent =
+      'Disponibilité physiologique disponible. Les charges aiguë et chronique restent à compléter.';
+    document.querySelector('#selectedLoad').textContent = 'Disponibilité détectée';
+    return;
+  }
+
+  if (hasProfessionalLoad) {
+    document.querySelector('#loadScore').textContent = 'CHARGE PRO';
+    document.querySelector('#loadBar').style.width = '35%';
+    document.querySelector('#loadExplanation').textContent =
+      'Charge professionnelle disponible. Les données sportives restent à compléter.';
+    document.querySelector('#selectedLoad').textContent = 'Charge professionnelle';
+    return;
+  }
+
+  document.querySelector('#loadScore').textContent = 'EN ATTENTE';
+  document.querySelector('#loadBar').style.width = '18%';
+  document.querySelector('#loadExplanation').textContent =
+    'La structure est identifiée. ATLAS attend les données du patient et la charge récente pour calculer un indicateur personnalisé.';
+  document.querySelector('#selectedLoad').textContent = 'Connexion requise';
+}
 function contextualAdvice(name, layer) {
   if (/calcaneal tendon|achilles/i.test(name)) return 'Corréler la sensibilité locale avec la charge de course récente, la raideur matinale et la tolérance aux contraintes élastiques.';
   if (/meniscus/i.test(name)) return 'Explorer les contraintes en flexion, rotation et appui, puis confronter la zone aux symptômes déclarés et à la charge récente.';
@@ -383,6 +427,7 @@ function selectObject(object) {
   document.querySelector('#loadScore').textContent = 'EN ATTENTE';
   document.querySelector('#loadBar').style.width = '18%';
   document.querySelector('#loadExplanation').textContent = 'La structure est identifiée. ATLAS attend les données du patient et la charge récente pour calculer un indicateur personnalisé.';
+    updateLoadUI(patientContext);
   document.querySelector('#recommendationText').textContent = contextualAdvice(rawName, layer);
   ['focusButton', 'isolateButton', 'painButton', 'analyseButton'].forEach((id) => document.querySelector(`#${id}`).disabled = false);
 }
