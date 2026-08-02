@@ -232,7 +232,11 @@
                     limitations: []
 
                 },
-
+                atlasBrain: {
+                    activeContext: null,
+                    lastAnalysis: null,
+                    history: []
+                },
                 function: {
 
                     mobility: {},

@@ -303,7 +303,20 @@ function typeFromName(name, layer) {
   if (layer === 'articulations') return 'Structure articulaire';
   return 'Structure osseuse';
 }
+function readPatientContext() {
+  if (!twinStorage) return null;
 
+  const twin = twinStorage.load();
+
+  return {
+    identity: twin.identity,
+    pain: twin.function?.pain || [],
+    professionalLoad: twin.profession?.physicalLoad ?? null,
+    currentLoad: twin.performance?.running?.currentLoad || {},
+    readiness: twin.performance?.running?.readiness || {},
+    weeklyVolumeKm: twin.performance?.running?.weeklyVolumeKm ?? null
+  };
+}
 function contextualAdvice(name, layer) {
   if (/calcaneal tendon|achilles/i.test(name)) return 'Corréler la sensibilité locale avec la charge de course récente, la raideur matinale et la tolérance aux contraintes élastiques.';
   if (/meniscus/i.test(name)) return 'Explorer les contraintes en flexion, rotation et appui, puis confronter la zone aux symptômes déclarés et à la charge récente.';
@@ -333,10 +346,27 @@ function selectObject(object) {
     selectedAt: new Date().toISOString()
   };
 
+    const patientContext = readPatientContext();
+  const hasProfessionalLoad = patientContext?.professionalLoad !== null;
+  const hasCurrentLoad = Object.keys(patientContext?.currentLoad || {}).length > 0;
+  const hasReadiness = Object.keys(patientContext?.readiness || {}).length > 0;
+
   if (twinStorage) {
     twinStorage.update({
       anatomy: {
         currentSelection: anatomicalSelection
+      },
+      atlasBrain: {
+        activeContext: {
+          anatomy: anatomicalSelection,
+          patient: patientContext,
+          dataStatus: {
+            professionalLoad: hasProfessionalLoad ? 'available' : 'missing',
+            currentLoad: hasCurrentLoad ? 'available' : 'missing',
+            readiness: hasReadiness ? 'available' : 'missing'
+          },
+          createdAt: new Date().toISOString()
+        }
       }
     });
   }
