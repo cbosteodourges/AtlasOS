@@ -20,7 +20,7 @@ const engineState = document.querySelector('#engineState');
 const renderStats = document.querySelector('#renderStats');
 const selectionTag = document.querySelector('#selectionTag');
 const interactionHelp = document.querySelector('#interactionHelp');
-
+const twinStorage = window.AtlasTwinStorage ? new window.AtlasTwinStorage() : null;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -323,7 +323,23 @@ function selectObject(object) {
   const cleanName = cleanAnatomicalName(rawName);
   const side = sideFromName(rawName);
   const type = typeFromName(rawName, layer);
+  const anatomicalSelection = {
+    id: rawName,
+    name: cleanName,
+    side,
+    type,
+    layer,
+    source: 'anatomy-3d',
+    selectedAt: new Date().toISOString()
+  };
 
+  if (twinStorage) {
+    twinStorage.update({
+      anatomy: {
+        currentSelection: anatomicalSelection
+      }
+    });
+  }
   document.querySelector('#emptySelection').hidden = true;
   document.querySelector('#selectedContent').hidden = false;
   document.querySelector('#selectedName').textContent = cleanName;
