@@ -798,19 +798,114 @@
     document.querySelectorAll(".provider-button");
 
   const syncStatus =
-    document.querySelector("#syncStatus");  syncProviderButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      syncProviderButtons.forEach((item) =>
-        item.classList.remove("connected")
+    document.querySelector("#syncStatus");
+
+  const GARMIN_ACTIVITIES_URL =
+    "../atlas-data/private/garmin-normalized-activities.json";
+
+  function formatActivityDuration(seconds) {
+    const totalMinutes = Math.round(Number(seconds) / 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    if (hours === 0) {
+      return `${minutes} min`;
+    }
+
+    return `${hours} h ${String(minutes).padStart(2, "0")} min`;
+  }
+
+  async function loadGarminActivities() {
+    const response = await fetch(
+      GARMIN_ACTIVITIES_URL,
+      { cache: "no-store" }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Fichier Garmin indisponible (${response.status})`
       );
+    }
 
-      button.classList.add("connected");
+    const activities = await response.json();
 
+    if (!Array.isArray(activities)) {
+      throw new Error(
+        "Le fichier Garmin ne contient pas une liste valide."
+      );
+    }
+
+    return activities;
+  }
+
+  syncProviderButtons.forEach((button) => {
+    button.addEventListener("click", async () => {
+      const provider = button.dataset.provider;
       const providerName =
         button.querySelector("strong")?.textContent ||
         "Source de données";
 
+      syncProviderButtons.forEach((item) =>
+        item.classList.remove("connected")
+      );
+
+      if (provider !== "garmin") {
+        button.classList.add("connected");
+        syncStatus.textContent =
+          `${providerName} sélectionné. Ce connecteur sera activé prochainement.`;
+        return;
+      }
+
       syncStatus.textContent =
-        `${providerName} sélectionné. La connexion sécurisée sera activée à l’étape suivante.`;
+        "Import des activités Garmin en cours…";
+
+      try {
+        const activities = await loadGarminActivities();
+
+        if (activities.length === 0) {
+          button.classList.add("connected");
+          syncStatus.textContent =
+            "Garmin est connecté, mais aucune activité n’a été trouvée.";
+          return;
+        }
+
+        const latestActivity = [...activities].sort(
+          (first, second) =>
+            new Date(second.start_time) -
+            new Date(first.start_time)
+        )[0];
+
+        const distanceKm = (
+          Number(latestActivity.distance_meters || 0) / 1000
+        ).toFixed(2);
+
+        const averageHeartRate =
+          latestActivity.average_heart_rate_bpm
+            ? `${Math.round(
+                latestActivity.average_heart_rate_bpm
+              )} bpm`
+            : "FC indisponible";
+
+        const sampleCount =
+          Array.isArray(latestActivity.samples)
+            ? latestActivity.samples.length
+            : 0;
+
+        button.classList.add("connected");
+        syncStatus.textContent =
+          `Garmin connecté · ${activities.length} activité(s) · ` +
+          `Dernière séance : ${distanceKm} km en ` +
+          `${formatActivityDuration(
+            latestActivity.duration_seconds
+          )} · ${averageHeartRate} · ` +
+          `${sampleCount} mesures`;
+      } catch (error) {
+        console.error(error);
+        syncStatus.textContent =
+          "Import Garmin impossible. Lancez d’abord la commande " +
+          "py scripts\\import_garmin.py puis ouvrez ATLAS " +
+          "avec un serveur local.";
+      }
     });
-  });})();
+  });
+})();
