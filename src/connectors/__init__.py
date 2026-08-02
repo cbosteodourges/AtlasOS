@@ -7,6 +7,7 @@ from .activity_schema import (
 )
 from .base import ActivityConnector
 from .demo import DemoConnector
+from .garmin import GarminConnector
 from .registry import ConnectorRegistry
 from .strava import StravaConnector
 from .sync_service import ActivitySyncService
@@ -17,6 +18,7 @@ __all__ = [
     "NormalizedActivity",
     "ActivityConnector",
     "DemoConnector",
+    "GarminConnector",
     "StravaConnector",
     "ConnectorRegistry",
     "ActivitySyncService",
