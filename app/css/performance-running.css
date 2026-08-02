@@ -591,3 +591,65 @@ select option:checked {
 /* ████████████████████████████████████████████████████████████
    🟨 FIN PARTIE C — C02
    ████████████████████████████████████████████████████████████ */
+/* Synchronisation des montres et capteurs */
+
+.sync-panel {
+  border-color: rgba(42, 220, 235, 0.35);
+}
+
+.sync-providers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.provider-button {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px;
+  color: #eafcff;
+  text-align: left;
+  background: rgba(8, 20, 25, 0.85);
+  border: 1px solid rgba(83, 150, 160, 0.35);
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.provider-button:hover {
+  border-color: #28ddea;
+  background: rgba(20, 60, 68, 0.55);
+  transform: translateY(-2px);
+}
+
+.provider-button strong {
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.provider-button span {
+  color: #7f9da3;
+  font-size: 0.78rem;
+}
+
+.provider-button.connected {
+  border-color: #28ddea;
+  box-shadow: 0 0 18px rgba(40, 221, 234, 0.15);
+}
+
+.provider-button.connected span {
+  color: #28ddea;
+}
+
+#syncStatus {
+  margin: 18px 0 0;
+  color: #7f9da3;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 800px) {
+  .sync-providers {
+    grid-template-columns: 1fr;
+  }
+}

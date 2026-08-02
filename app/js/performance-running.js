@@ -794,4 +794,23 @@
 
   setDefaultDate();
   syncMeasuredThresholdFields();
-})();
+  const syncProviderButtons =
+    document.querySelectorAll(".provider-button");
+
+  const syncStatus =
+    document.querySelector("#syncStatus");  syncProviderButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      syncProviderButtons.forEach((item) =>
+        item.classList.remove("connected")
+      );
+
+      button.classList.add("connected");
+
+      const providerName =
+        button.querySelector("strong")?.textContent ||
+        "Source de données";
+
+      syncStatus.textContent =
+        `${providerName} sélectionné. La connexion sécurisée sera activée à l’étape suivante.`;
+    });
+  });})();

@@ -33,7 +33,51 @@
   <!-- ████████████████████████████████████████████████████████
        🟩 PARTIE B — B01 — PROFIL DE COURSE
        ████████████████████████████████████████████████████████ -->
-  <section class="panel setup-panel">
+    <section class="panel sync-panel" id="syncPanel">
+    <div class="section-title">
+      <p>SYNCHRONISATION</p>
+      <h2>Connecter mes montres et capteurs</h2>
+      <span>
+        Atlas centralisera automatiquement les activités enregistrées.
+      </span>
+    </div>
+
+    <div class="sync-providers" id="syncProviders">
+      <button type="button" class="provider-button" data-provider="health-connect">
+        <strong>Health Connect</strong>
+        <span>Android · recommandé</span>
+      </button>
+
+      <button type="button" class="provider-button" data-provider="garmin">
+        <strong>Garmin</strong>
+        <span>Garmin Connect</span>
+      </button>
+
+      <button type="button" class="provider-button" data-provider="polar">
+        <strong>Polar</strong>
+        <span>Polar Flow</span>
+      </button>
+
+      <button type="button" class="provider-button" data-provider="suunto">
+        <strong>Suunto</strong>
+        <span>Suunto App</span>
+      </button>
+
+      <button type="button" class="provider-button" data-provider="coros">
+        <strong>COROS</strong>
+        <span>COROS Training Hub</span>
+      </button>
+
+      <button type="button" class="provider-button" data-provider="strava">
+        <strong>Strava</strong>
+        <span>Activités multisources</span>
+      </button>
+    </div>
+
+    <p id="syncStatus" role="status">Aucune source connectée.</p>
+  </section>
+
+       <section class="panel setup-panel">
     <div class="section-title">
       <p>ÉTAPE 1</p>
       <h1>Définir le profil et l’échéance</h1>
