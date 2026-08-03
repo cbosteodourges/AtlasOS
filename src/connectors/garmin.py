@@ -161,6 +161,23 @@ class GarminConnector(ActivityConnector):
                 ),
                 "sport": session.get("sport"),
                 "sub_sport": session.get("sub_sport"),
+                "workout_rpe_raw": self._optional_float(
+                    session.get("workout_rpe")
+                ),
+                "perceived_effort":
+                    self._perceived_effort(
+                        session.get("workout_rpe")
+                    ),
+                "workout_feel_raw": self._optional_float(
+                    session.get("workout_feel")
+                ),
+                "feeling_score":
+                    self._optional_float(
+                        session.get("workout_feel")
+                    ),
+                "feeling_label": self._feeling_label(
+                    session.get("workout_feel")
+                ),
                 "total_elapsed_time": session.get(
                     "total_elapsed_time"
                 ),
@@ -266,6 +283,41 @@ class GarminConnector(ActivityConnector):
         return known_devices.get(
             device_name.strip().lower(),
             device_name,
+        )
+
+    @staticmethod
+    def _perceived_effort(
+        value: Any,
+    ) -> Optional[float]:
+        """Convertit l'effort Garmin de 0-100 vers 0-10."""
+        if value is None:
+            return None
+
+        effort = float(value)
+
+        if effort > 10:
+            effort /= 10
+
+        return round(effort, 1)
+
+    @staticmethod
+    def _feeling_label(
+        value: Any,
+    ) -> Optional[str]:
+        """Traduit le score Garmin de ressenti."""
+        if value is None:
+            return None
+
+        feeling_labels = {
+            0: "very_weak",
+            25: "weak",
+            50: "neutral",
+            75: "strong",
+            100: "very_strong",
+        }
+
+        return feeling_labels.get(
+            round(float(value))
         )
 
     @staticmethod

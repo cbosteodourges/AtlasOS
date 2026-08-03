@@ -58,6 +58,8 @@ class GarminConnectorTests(unittest.TestCase):
                     "enhanced_avg_speed": 3.70,
                     "total_ascent": 82,
                     "training_stress_score": 96.0,
+                    "workout_rpe": 40,
+                    "workout_feel": 75,
                 },
                 "device_info": {
                     "garmin_product": "fr255"
@@ -83,6 +85,26 @@ class GarminConnectorTests(unittest.TestCase):
         self.assertEqual(activity.average_speed_mps, 3.70)
         self.assertEqual(activity.elevation_gain_m, 82.0)
         self.assertEqual(activity.training_load, 96.0)
+        self.assertEqual(
+            activity.raw_metadata["workout_rpe_raw"],
+            40.0,
+        )
+        self.assertEqual(
+            activity.raw_metadata["perceived_effort"],
+            4.0,
+        )
+        self.assertEqual(
+            activity.raw_metadata["workout_feel_raw"],
+            75.0,
+        )
+        self.assertEqual(
+            activity.raw_metadata["feeling_score"],
+            75.0,
+        )
+        self.assertEqual(
+            activity.raw_metadata["feeling_label"],
+            "strong",
+        )
         self.assertEqual(
             activity.source_device,
             "Garmin Forerunner 255",

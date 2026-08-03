@@ -79,6 +79,18 @@ class LongitudinalActivityAdapter:
         )
 
         recovery = RecoveryMetrics(
+             perceived_effort_1_to_10=self._number(
+                metadata.get("perceived_effort")
+            ),
+            feeling_score_0_to_100=self._number(
+                metadata.get("feeling_score")
+            ),
+            feeling_label=(
+                str(metadata.get("feeling_label"))
+                if metadata.get("feeling_label")
+                is not None
+                else None
+            ),
             aerobic_training_effect=self._number(
                 metadata.get(
                     "aerobic_training_effect"

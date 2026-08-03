@@ -38,6 +38,9 @@ class EnvironmentMetrics:
 class RecoveryMetrics:
     """Charge interne et conséquences de la séance."""
 
+    perceived_effort_1_to_10: Optional[float] = None
+    feeling_score_0_to_100: Optional[float] = None
+    feeling_label: Optional[str] = None
     aerobic_training_effect: Optional[float] = None
     anaerobic_training_effect: Optional[float] = None
     body_battery_impact: Optional[float] = None

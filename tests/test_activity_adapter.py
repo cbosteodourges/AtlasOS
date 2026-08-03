@@ -49,6 +49,9 @@ class LongitudinalActivityAdapterTests(
                 "minimum_altitude": 34,
                 "maximum_altitude": 112,
                 "aerobic_training_effect": 3.2,
+                "perceived_effort": 4.0,
+                "feeling_score": 75.0,
+                "feeling_label": "strong",
                 "body_battery_consumption": 14,
                 "average_respiration_rate": 31,
                 "minimum_respiration_rate": 18,
@@ -94,6 +97,18 @@ class LongitudinalActivityAdapterTests(
         self.assertEqual(
             result.recovery.aerobic_training_effect,
             3.2,
+        )
+        self.assertEqual(
+            result.recovery.perceived_effort_1_to_10,
+            4.0,
+        )
+        self.assertEqual(
+            result.recovery.feeling_score_0_to_100,
+            75.0,
+        )
+        self.assertEqual(
+            result.recovery.feeling_label,
+            "strong",
         )
         self.assertEqual(
             result.energy.total_calories_kcal,
