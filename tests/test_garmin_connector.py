@@ -40,7 +40,7 @@ class GarminConnectorTests(unittest.TestCase):
             payload={
                 "session": {
                     "sport": "running",
-                                        "sub_sport": "generic",
+                    "sub_sport": "generic",
                     "start_time": datetime(
                         2026,
                         8,
@@ -60,7 +60,7 @@ class GarminConnectorTests(unittest.TestCase):
                     "training_stress_score": 96.0,
                 },
                 "device_info": {
-                    "garmin_product": "forerunner_255"
+                    "garmin_product": "fr255"
                 },
                 "source_file": "activity.fit",
             },
@@ -85,7 +85,7 @@ class GarminConnectorTests(unittest.TestCase):
         self.assertEqual(activity.training_load, 96.0)
         self.assertEqual(
             activity.source_device,
-            "forerunner_255",
+            "Garmin Forerunner 255",
         )
 
     def test_build_samples_from_fit_records(self) -> None:

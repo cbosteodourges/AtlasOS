@@ -257,7 +257,16 @@ class GarminConnector(ActivityConnector):
         if device is None:
             return None
 
-        return str(device)
+        device_name = str(device)
+
+        known_devices = {
+            "fr255": "Garmin Forerunner 255",
+        }
+
+        return known_devices.get(
+            device_name.strip().lower(),
+            device_name,
+        )
 
     @staticmethod
     def _training_load(
