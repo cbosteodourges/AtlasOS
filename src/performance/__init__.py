@@ -6,6 +6,16 @@ Moteur Performance.
 from src.performance.activity_adapter import (
     LongitudinalActivityAdapter,
 )
+from src.performance.competition_analyzer import (
+    CompetitionPreparationAnalyzer,
+)
+from src.performance.competition_models import (
+    CompetitionComparison,
+    CompetitionEvent,
+    CompetitionPreparationAnalysis,
+    PreparationWindowSummary,
+    TaperSummary,
+)
 from src.performance.history_analyzer import (
     TrainingHistoryAnalyzer,
     display_history_analysis,
@@ -49,6 +59,10 @@ from src.performance.zones import (
 )
 
 __all__ = [
+    "CompetitionComparison",
+    "CompetitionEvent",
+    "CompetitionPreparationAnalysis",
+    "CompetitionPreparationAnalyzer",
     "DistancePerformanceBenchmark",
     "EnergyMetrics",
     "EnvironmentMetrics",
@@ -61,10 +75,12 @@ __all__ = [
     "PerformanceInsightAnalysis",
     "PerformanceInsightAnalyzer",
     "PerformanceWindowSummary",
+    "PreparationWindowSummary",
     "PlannedWorkout",
     "RecoveryMetrics",
     "RunningDynamics",
     "RunningPlanGenerator",
+    "TaperSummary",
     "TrainingActivity",
     "TrainingHistoryAnalyzer",
     "TrainingPlan",
