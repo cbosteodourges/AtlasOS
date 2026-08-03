@@ -3,9 +3,24 @@ ATLAS OS
 Moteur Performance.
 """
 
+from src.performance.activity_adapter import (
+    LongitudinalActivityAdapter,
+)
 from src.performance.history_analyzer import (
     TrainingHistoryAnalyzer,
     display_history_analysis,
+)
+from src.performance.longitudinal_analyzer import (
+    LongitudinalPerformanceAnalyzer,
+)
+from src.performance.longitudinal_models import (
+    EnergyMetrics,
+    EnvironmentMetrics,
+    LongitudinalActivity,
+    LongitudinalAnalysis,
+    RecoveryMetrics,
+    RunningDynamics,
+    WeeklyPerformanceSummary,
 )
 from src.performance.models import (
     HistoryAnalysis,
@@ -26,9 +41,17 @@ from src.performance.zones import (
 )
 
 __all__ = [
+    "EnergyMetrics",
+    "EnvironmentMetrics",
     "HistoryAnalysis",
+    "LongitudinalActivity",
+    "LongitudinalActivityAdapter",
+    "LongitudinalAnalysis",
+    "LongitudinalPerformanceAnalyzer",
     "PerformanceGoal",
     "PlannedWorkout",
+    "RecoveryMetrics",
+    "RunningDynamics",
     "RunningPlanGenerator",
     "TrainingActivity",
     "TrainingHistoryAnalyzer",
@@ -36,6 +59,7 @@ __all__ = [
     "TrainingWeek",
     "TrainingZone",
     "TrainingZonesEngine",
+    "WeeklyPerformanceSummary",
     "display_history_analysis",
     "display_training_plan",
     "format_pace",

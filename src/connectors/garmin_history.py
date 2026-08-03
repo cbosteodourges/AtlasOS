@@ -167,6 +167,12 @@ class GarminHistoryConnector(ActivityConnector):
                 "best_pace": payload.get(
                     "Meilleure allure"
                 ),
+                "descent_m": self._parse_number(
+                    payload.get("Descente totale")
+                ),
+                "average_gap": payload.get(
+                    "GAP moyenne"
+                ),
                 "aerobic_training_effect":
                     self._parse_number(
                         payload.get("TE aérobie")
@@ -183,26 +189,106 @@ class GarminHistoryConnector(ActivityConnector):
                             "Cadence de course maximale"
                         )
                     ),
+                "secondary_average_cadence":
+                    self._parse_number(
+                        payload.get(
+                            "Cadence de course moyenne__2"
+                        )
+                    ),
+                "secondary_maximum_cadence":
+                    self._parse_number(
+                        payload.get(
+                            "Cadence de course maximale__2"
+                        )
+                    ),
                 "average_stride_length":
                     self._parse_number(
                         payload.get(
                             "Longueur moyenne des foulées"
                         )
                     ),
-                "average_gap": payload.get(
-                    "GAP moyenne"
-                ),
+                "average_vertical_ratio":
+                    self._parse_number(
+                        payload.get(
+                            "Rapport vertical moyen"
+                        )
+                    ),
+                "average_vertical_oscillation":
+                    self._parse_number(
+                        payload.get(
+                            "Oscillation verticale moyenne"
+                        )
+                    ),
+                "average_ground_contact_time":
+                    self._parse_number(
+                        payload.get(
+                            "Temps de contact moyen avec le sol"
+                        )
+                    ),
+                "normalized_power":
+                    self._parse_number(
+                        payload.get(
+                            "Normalized Power® (NP®)"
+                        )
+                    ),
+                "average_power":
+                    self._parse_number(
+                        payload.get("Puissance moyenne")
+                    ),
+                "maximum_power":
+                    self._parse_number(
+                        payload.get("Puissance max.")
+                    ),
                 "body_battery_consumption":
                     self._parse_number(
                         payload.get(
                             "Consommation du Body Battery"
                         )
                     ),
+                "minimum_temperature":
+                    self._parse_number(
+                        payload.get(
+                            "Température minimale"
+                        )
+                    ),
+                "maximum_temperature":
+                    self._parse_number(
+                        payload.get(
+                            "Température maximale"
+                        )
+                    ),
+                "average_respiration_rate":
+                    self._parse_number(
+                        payload.get(
+                            "Fréquence respiratoire moyenne"
+                        )
+                    ),
+                "minimum_respiration_rate":
+                    self._parse_number(
+                        payload.get(
+                            "Fréquence respiratoire minimale"
+                        )
+                    ),
+                "maximum_respiration_rate":
+                    self._parse_number(
+                        payload.get(
+                            "Fréquence respiratoire maximale"
+                        )
+                    ),
+                "rest_time": payload.get(
+                    "Temps de repos"
+                ),
                 "moving_time": payload.get(
                     "Temps de déplacement"
                 ),
                 "elapsed_time": payload.get(
                     "Temps écoulé"
+                ),
+                "best_lap_time": payload.get(
+                    "Temps du meilleur circuit"
+                ),
+                "lap_count": self._parse_number(
+                    payload.get("Nombre de tours")
                 ),
                 "minimum_altitude":
                     self._parse_number(
@@ -212,7 +298,40 @@ class GarminHistoryConnector(ActivityConnector):
                     self._parse_number(
                         payload.get("Altitude maximale")
                     ),
+                "total_strokes":
+                    self._parse_number(
+                        payload.get(
+                            "Nombre total de coups"
+                        )
+                    ),
+                "average_swolf":
+                    self._parse_number(
+                        payload.get("SWOLF moyen")
+                    ),
+                "average_stroke_rate":
+                    self._parse_number(
+                        payload.get(
+                            "Fréquence moy. des coups"
+                        )
+                    ),
+                "steps": self._parse_number(
+                    payload.get("Pas")
+                ),
+                "total_repetitions":
+                    self._parse_number(
+                        payload.get(
+                            "Total répétitions"
+                        )
+                    ),
+                "total_sets":
+                    self._parse_number(
+                        payload.get("Total séries")
+                    ),
+                "decompression": payload.get(
+                    "Décompression"
+                ),
                 "received_at": activity.received_at,
+                "garmin_csv": dict(payload),
             },
         )
 
