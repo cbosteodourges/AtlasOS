@@ -59,7 +59,29 @@
     planOverview: document.getElementById("planOverview"),
     trainingCalendar: document.getElementById("trainingCalendar"),
     validationMessage: document.getElementById("validationMessage"),
-    printButton: document.getElementById("printButton")
+        printButton: document.getElementById("printButton"),
+    garminActivityCard:
+      document.getElementById("garminActivityCard"),
+    garminActivityTitle:
+      document.getElementById("garminActivityTitle"),
+    garminActivityDate:
+      document.getElementById("garminActivityDate"),
+    garminDistance:
+      document.getElementById("garminDistance"),
+    garminDuration:
+      document.getElementById("garminDuration"),
+    garminPace:
+      document.getElementById("garminPace"),
+    garminAverageHeartRate:
+      document.getElementById("garminAverageHeartRate"),
+    garminMaximumHeartRate:
+      document.getElementById("garminMaximumHeartRate"),
+    garminElevationGain:
+      document.getElementById("garminElevationGain"),
+    garminCalories:
+      document.getElementById("garminCalories"),
+    garminDevice:
+      document.getElementById("garminDevice")
   };
 
   // ████████████████████████████████████████████████████████████
@@ -815,6 +837,80 @@
     return `${hours} h ${String(minutes).padStart(2, "0")} min`;
   }
 
+    function displayGarminActivity(activity) {
+    const distanceKm =
+      Number(activity.distance_meters || 0) / 1000;
+
+    const speedKmh =
+      Number(activity.average_speed_mps || 0) * 3.6;
+
+    const activityDate =
+      activity.start_time
+        ? new Date(activity.start_time)
+        : null;
+
+    const activityLabels = {
+      running: "Course à pied Garmin",
+      trail_running: "Trail Garmin",
+      cycling: "Cyclisme Garmin",
+      swimming: "Natation Garmin"
+    };
+
+    elements.garminActivityTitle.textContent =
+      activityLabels[activity.activity_type] ||
+      "Activité Garmin";
+
+    elements.garminActivityDate.textContent =
+      activityDate
+        ? activityDate.toLocaleString("fr-FR", {
+            dateStyle: "long",
+            timeStyle: "short"
+          })
+        : "Date indisponible";
+
+    elements.garminDistance.textContent =
+      `${distanceKm.toFixed(2).replace(".", ",")} km`;
+
+    elements.garminDuration.textContent =
+      formatActivityDuration(activity.duration_seconds);
+
+    elements.garminPace.textContent =
+      paceFromSpeed(speedKmh);
+
+    elements.garminAverageHeartRate.textContent =
+      activity.average_heart_rate_bpm
+        ? `${Math.round(
+            activity.average_heart_rate_bpm
+          )} bpm`
+        : "—";
+
+    elements.garminMaximumHeartRate.textContent =
+      activity.maximum_heart_rate_bpm
+        ? `${Math.round(
+            activity.maximum_heart_rate_bpm
+          )} bpm`
+        : "—";
+
+    elements.garminElevationGain.textContent =
+      activity.elevation_gain_m != null
+        ? `${Math.round(
+            activity.elevation_gain_m
+          )} m`
+        : "—";
+
+    elements.garminCalories.textContent =
+      activity.calories_kcal != null
+        ? `${Math.round(
+            activity.calories_kcal
+          )} kcal`
+        : "—";
+
+    elements.garminDevice.textContent =
+      activity.source_device || "Garmin";
+
+    elements.garminActivityCard.hidden = false;
+  }
+
   async function loadGarminActivities() {
     const response = await fetch(
       GARMIN_ACTIVITIES_URL,
@@ -874,7 +970,7 @@
             new Date(second.start_time) -
             new Date(first.start_time)
         )[0];
-
+              displayGarminActivity(latestActivity);
         const distanceKm = (
           Number(latestActivity.distance_meters || 0) / 1000
         ).toFixed(2);

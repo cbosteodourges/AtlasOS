@@ -75,7 +75,55 @@
     </div>
 
     <p id="syncStatus" role="status">Aucune source connectée.</p>
-  </section>
+      <article
+      class="garmin-activity-card"
+      id="garminActivityCard"
+      hidden
+    >
+      <div class="garmin-activity-heading">
+        <div>
+          <p>DERNIÈRE ACTIVITÉ GARMIN</p>
+          <h3 id="garminActivityTitle">Séance Garmin</h3>
+        </div>
+        <time id="garminActivityDate"></time>
+      </div>
+
+      <div class="garmin-activity-metrics">
+        <div>
+          <span>Distance</span>
+          <strong id="garminDistance">—</strong>
+        </div>
+        <div>
+          <span>Durée</span>
+          <strong id="garminDuration">—</strong>
+        </div>
+        <div>
+          <span>Allure moyenne</span>
+          <strong id="garminPace">—</strong>
+        </div>
+        <div>
+          <span>FC moyenne</span>
+          <strong id="garminAverageHeartRate">—</strong>
+        </div>
+        <div>
+          <span>FC maximale</span>
+          <strong id="garminMaximumHeartRate">—</strong>
+        </div>
+        <div>
+          <span>Dénivelé positif</span>
+          <strong id="garminElevationGain">—</strong>
+        </div>
+        <div>
+          <span>Calories</span>
+          <strong id="garminCalories">—</strong>
+        </div>
+        <div>
+          <span>Appareil</span>
+          <strong id="garminDevice">—</strong>
+        </div>
+      </div>
+    </article>
+    </section>
 
        <section class="panel setup-panel">
     <div class="section-title">
