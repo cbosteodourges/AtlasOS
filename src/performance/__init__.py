@@ -10,6 +10,11 @@ from src.performance.history_analyzer import (
     TrainingHistoryAnalyzer,
     display_history_analysis,
 )
+from src.performance.insight_models import (
+    DistancePerformanceBenchmark,
+    PerformanceInsightAnalysis,
+    PerformanceWindowSummary,
+)
 from src.performance.longitudinal_analyzer import (
     LongitudinalPerformanceAnalyzer,
 )
@@ -31,6 +36,9 @@ from src.performance.models import (
     TrainingWeek,
     TrainingZone,
 )
+from src.performance.performance_insight_analyzer import (
+    PerformanceInsightAnalyzer,
+)
 from src.performance.planner import (
     RunningPlanGenerator,
     display_training_plan,
@@ -41,6 +49,7 @@ from src.performance.zones import (
 )
 
 __all__ = [
+    "DistancePerformanceBenchmark",
     "EnergyMetrics",
     "EnvironmentMetrics",
     "HistoryAnalysis",
@@ -49,6 +58,9 @@ __all__ = [
     "LongitudinalAnalysis",
     "LongitudinalPerformanceAnalyzer",
     "PerformanceGoal",
+    "PerformanceInsightAnalysis",
+    "PerformanceInsightAnalyzer",
+    "PerformanceWindowSummary",
     "PlannedWorkout",
     "RecoveryMetrics",
     "RunningDynamics",
