@@ -78,6 +78,54 @@ class TaperSummary:
 
 
 @dataclass
+class PreparationPhaseSummary:
+    """Synthèse d'une phase de la préparation détectée."""
+
+    phase_name: str
+    start_at: datetime
+    end_at: datetime
+    duration_days: int
+
+    activity_count: int = 0
+    running_activity_count: int = 0
+    running_distance_km: float = 0.0
+    average_running_distance_per_week_km: float = 0.0
+
+    high_intensity_session_count: int = 0
+    long_run_count: int = 0
+
+
+@dataclass
+class AdaptivePreparationPeriod:
+    """
+    Période de préparation pertinente détectée dans l'historique.
+
+    La durée n'est pas imposée à l'avance. Elle dépend de la quantité
+    d'historique disponible et des changements réellement observés
+    dans l'entraînement de l'utilisateur.
+    """
+
+    event: CompetitionEvent
+
+    detected_start_at: datetime
+    detected_end_at: datetime
+    duration_days: int
+    duration_weeks: float
+
+    available_history_days: int
+    available_history_weeks: float
+    data_limited: bool
+
+    confidence_score: int = 0
+    detection_reasons: List[str] = field(
+        default_factory=list
+    )
+    phases: List[PreparationPhaseSummary] = field(
+        default_factory=list
+    )
+
+
+@dataclass
 class CompetitionPreparationAnalysis:
     """Analyse complète d'une préparation de compétition."""
 
@@ -87,6 +135,10 @@ class CompetitionPreparationAnalysis:
     four_week_window: PreparationWindowSummary
     final_week_window: PreparationWindowSummary
     taper: TaperSummary
+
+    adaptive_period: Optional[
+        AdaptivePreparationPeriod
+    ] = None
 
     preparation_score: int = 0
     strengths: List[str] = field(default_factory=list)

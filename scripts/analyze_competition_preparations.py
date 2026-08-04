@@ -261,13 +261,82 @@ def display_window(
     )
 
 
+def display_adaptive_period(
+    adaptive_period,
+) -> None:
+    """Affiche la période de préparation détectée."""
+    print()
+    print("  PÉRIODE ADAPTATIVE DÉTECTÉE")
+
+    if adaptive_period is None:
+        print(
+            "    Analyse adaptative non disponible."
+        )
+        return
+
+    print(
+        "    Début détecté : "
+        f"{adaptive_period.detected_start_at.date()}"
+    )
+    print(
+        "    Durée pertinente : "
+        f"{adaptive_period.duration_weeks} semaines "
+        f"({adaptive_period.duration_days} jours)"
+    )
+    print(
+        "    Historique disponible : "
+        f"{adaptive_period.available_history_weeks} "
+        "semaines"
+    )
+    print(
+        "    Confiance de la détection : "
+        f"{adaptive_period.confidence_score}/100"
+    )
+    print(
+        "    Historique limité : "
+        f"{'oui' if adaptive_period.data_limited else 'non'}"
+    )
+
+    print("    Raisons :")
+
+    for reason in adaptive_period.detection_reasons:
+        print(f"      - {reason}")
+
+    print("    Phases détectées :")
+
+    phase_labels = {
+        "base": "Base",
+        "specific": "Spécifique",
+        "taper": "Affûtage",
+    }
+
+    for phase in adaptive_period.phases:
+        label = phase_labels.get(
+            phase.phase_name,
+            phase.phase_name,
+        )
+        print(
+            f"      - {label} : "
+            f"{phase.start_at.date()} au "
+            f"{phase.end_at.date()} | "
+            f"{phase.duration_days} jours | "
+            f"{phase.running_distance_km} km | "
+            f"{phase.high_intensity_session_count} "
+            "séance(s) intense(s) | "
+            f"{phase.long_run_count} sortie(s) longue(s)"
+        )
+
+
 def display_comparison(
     comparison: CompetitionComparison,
     destination: Path,
 ) -> None:
     """Affiche l'analyse des compétitions."""
     print("=" * 76)
-    print("ATLAS OS - ANALYSE DES PRÉPARATIONS DE COMPÉTITION")
+    print(
+        "ATLAS OS - ANALYSE DES PRÉPARATIONS "
+        "DE COMPÉTITION"
+    )
     print("=" * 76)
 
     for analysis in comparison.analyses:
@@ -281,12 +350,16 @@ def display_comparison(
             f"{event.distance_km} km"
         )
         print(
-            f"Résultat utilisateur : "
+            "Résultat utilisateur : "
             f"{event.outcome_label}"
         )
         print(
-            f"Score de préparation ATLAS : "
+            "Score de préparation ATLAS : "
             f"{analysis.preparation_score}/100"
+        )
+
+        display_adaptive_period(
+            analysis.adaptive_period
         )
 
         display_window(

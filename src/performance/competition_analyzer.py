@@ -8,6 +8,9 @@ from datetime import timedelta
 from statistics import mean
 from typing import List, Optional
 
+from .adaptive_preparation_analyzer import (
+    AdaptivePreparationAnalyzer,
+)
 from .competition_models import (
     CompetitionComparison,
     CompetitionEvent,
@@ -55,7 +58,12 @@ class CompetitionPreparationAnalyzer:
             preparation,
             event,
         )
-
+        adaptive_period = (
+            AdaptivePreparationAnalyzer().detect(
+                preparation,
+                event,
+            )
+        )
         analysis = CompetitionPreparationAnalysis(
             event=event,
             twelve_week_window=twelve_week,
@@ -63,7 +71,7 @@ class CompetitionPreparationAnalyzer:
             four_week_window=four_week,
             final_week_window=final_week,
             taper=taper,
-        )
+            adaptive_period=adaptive_period,        )
 
         analysis.preparation_score = (
             self._preparation_score(analysis)
@@ -79,13 +87,47 @@ class CompetitionPreparationAnalyzer:
         activities: List[LongitudinalActivity],
         events: List[CompetitionEvent],
     ) -> CompetitionComparison:
-        analyses = [
-            self.analyse_event(
-                activities,
-                event,
+        """
+        Compare les compétitions dans l'ordre chronologique.
+
+        Après une compétition, la préparation adaptative
+        suivante repart des activités réalisées à partir
+        du lendemain. Cela évite de fusionner plusieurs
+        cycles successifs.
+        """
+        ordered_events = sorted(
+            events,
+            key=lambda event: event.event_date,
+        )
+
+        analyses: List[
+            CompetitionPreparationAnalysis
+        ] = []
+        previous_event: Optional[
+            CompetitionEvent
+        ] = None
+
+        for event in ordered_events:
+            event_activities = activities
+
+            if previous_event is not None:
+                event_activities = [
+                    activity
+                    for activity in activities
+                    if (
+                        activity.start_time.date()
+                        > previous_event
+                        .event_date.date()
+                    )
+                ]
+
+            analyses.append(
+                self.analyse_event(
+                    event_activities,
+                    event,
+                )
             )
-            for event in events
-        ]
+            previous_event = event
 
         comparison = CompetitionComparison(
             analyses=analyses

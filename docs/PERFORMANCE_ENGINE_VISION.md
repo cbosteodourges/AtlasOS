@@ -180,3 +180,133 @@ Les données absentes doivent rester facultatives afin de permettre l’évoluti
 Toute évolution du moteur Performance ou de son interface doit contribuer à cette boucle :
 
 **profil → historique → réponse individuelle → séances efficaces → plan personnalisé → nouvelles données → adaptation du plan**
+## Chronologie interactive de la performance
+
+Atlas Coach devra proposer une chronologie unifiée permettant de
+visualiser, sélectionner, analyser et comparer les entraînements,
+les compétitions, les périodes de repos et les événements de santé.
+
+La chronologie devra notamment afficher :
+
+- les séances réalisées ;
+- les séances planifiées ;
+- les compétitions préparatoires ;
+- les compétitions principales ;
+- les périodes de repos ;
+- les interruptions, maladies, blessures et douleurs ;
+- les changements de charge ;
+- les phases de base, spécifiques et d'affûtage.
+
+Un code couleur stable devra identifier immédiatement chaque type
+de séance ou d'événement.
+
+L'utilisateur devra pouvoir sélectionner librement une période,
+modifier les bornes proposées par Atlas et comparer plusieurs
+préparations.
+
+La détection automatique fournira une proposition explicable, mais
+elle ne devra jamais empêcher l'utilisateur d'étudier une autre
+période.
+
+Atlas devra progressivement apprendre des périodes confirmées ou
+corrigées par l'utilisateur.
+
+## Couches physiologiques et contextuelles
+
+La chronologie devra pouvoir afficher en parallèle ou en
+superposition :
+
+- la HRV ;
+- le sommeil ;
+- la Body Battery ;
+- la fréquence cardiaque au repos ;
+- la charge d'entraînement ;
+- le RPE ;
+- le ressenti ;
+- la douleur ;
+- la météo et la température.
+
+L'utilisateur devra pouvoir activer, masquer, superposer et régler
+la visibilité de ces couches sans rendre l'interface complexe.
+
+Atlas devra produire des commentaires courts, ciblés et explicables,
+directement reliés aux séances et aux données visibles.
+
+## Programmation multi-échelle
+
+La programmation des entraînements devra utiliser le même langage
+visuel que l'historique.
+
+Elle devra être disponible sous deux formes complémentaires :
+
+- une frise chronologique ;
+- un agenda.
+
+L'utilisateur devra pouvoir naviguer entre plusieurs niveaux de
+zoom :
+
+- une séance ;
+- une semaine ;
+- deux semaines ;
+- quatre semaines ;
+- huit semaines ;
+- douze semaines ;
+- un macrocycle ou une saison complète.
+
+À grande échelle, Atlas montrera l'architecture générale du plan.
+À petite échelle, il affichera les consignes détaillées de chaque
+séance.
+
+## Comparaison entre prévu et réalisé
+
+Après chaque synchronisation, Atlas devra rapprocher la séance
+planifiée de la séance réellement effectuée.
+
+Le moteur devra identifier notamment :
+
+- une séance conforme ;
+- une séance modifiée ;
+- une séance partiellement réalisée ;
+- une séance remplacée ;
+- une séance déplacée ;
+- une séance non réalisée.
+
+Atlas devra expliquer les écarts et utiliser ces informations pour
+adapter les séances suivantes.
+
+## Compétitions intermédiaires
+
+Une compétition antérieure ne devra pas automatiquement interrompre
+la préparation d'une compétition suivante.
+
+Atlas devra distinguer :
+
+- une compétition préparatoire intégrée à un macrocycle ;
+- une compétition principale terminant un cycle ;
+- une compétition servant de test de forme ;
+- une compétition sans lien avec l'objectif suivant.
+
+Cette classification pourra être proposée automatiquement, puis
+confirmée ou corrigée par l'utilisateur sur la chronologie.
+
+## Intégration au hub premium
+
+Le hub Atlas Coach devra rester simple et immédiatement lisible.
+
+Il donnera accès à quatre espaces principaux :
+
+- Aujourd'hui ;
+- Mon programme ;
+- Ma chronologie ;
+- Mes analyses.
+
+La carte Mon programme affichera la semaine actuelle, la séance du
+jour, la prochaine sortie longue, la compétition cible et le
+principal ajustement proposé par Atlas.
+
+La carte Ma chronologie donnera accès à l'historique, aux couches
+physiologiques, à la sélection de périodes et aux comparaisons.
+
+L'interface devra conserver un design premium, futuriste, visuel et
+sobre, avec une complexité progressive adaptée au niveau
+d'expertise de l'utilisateur.

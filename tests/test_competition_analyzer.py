@@ -37,7 +37,10 @@ class CompetitionPreparationAnalyzerTests(
         )
 
         return LongitudinalActivity(
-            atlas_id=f"run-{reference_date.date()}-{days_before}",
+            atlas_id=(
+                f"run-{reference_date.date()}-"
+                f"{days_before}-{title}"
+            ),
             start_time=(
                 reference_date
                 - timedelta(days=days_before)
@@ -256,6 +259,91 @@ class CompetitionPreparationAnalyzerTests(
         )
         self.assertTrue(
             comparison.conclusions
+        )
+
+    def test_new_preparation_starts_after_previous_event(
+        self,
+    ) -> None:
+        first_event_date = datetime.fromisoformat(
+            "2026-01-04T09:00:00+01:00"
+        )
+        second_event_date = datetime.fromisoformat(
+            "2026-03-01T09:00:00+01:00"
+        )
+
+        activities = [
+            self._run(
+                35,
+                8,
+                "Course à pied",
+                first_event_date,
+            ),
+            self._run(
+                21,
+                12,
+                "Sortie longue",
+                first_event_date,
+            ),
+            self._run(
+                7,
+                8,
+                "Séance seuil",
+                first_event_date,
+            ),
+        ]
+
+        for days_before in range(
+            42,
+            0,
+            -7,
+        ):
+            activities.extend(
+                [
+                    self._run(
+                        days_before,
+                        8,
+                        "Course à pied",
+                        second_event_date,
+                    ),
+                    self._run(
+                        days_before - 2,
+                        7,
+                        "Séance seuil",
+                        second_event_date,
+                    ),
+                ]
+            )
+
+        comparison = self.analyzer.compare(
+            activities,
+            [
+                self._event(
+                    second_event_date,
+                ),
+                self._event(
+                    first_event_date,
+                ),
+            ],
+        )
+
+        second_analysis = (
+            comparison.analyses[1]
+        )
+
+        self.assertGreaterEqual(
+            second_analysis
+            .adaptive_period
+            .detected_start_at,
+            first_event_date,
+        )
+        self.assertLessEqual(
+            second_analysis
+            .adaptive_period
+            .duration_days,
+            (
+                second_event_date.date()
+                - first_event_date.date()
+            ).days,
         )
 
 
