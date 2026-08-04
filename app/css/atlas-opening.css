@@ -1,33 +1,87 @@
 /* ╔══════════════════════════════════════════════════════════════╗
-   ║ ATLAS OS — Genesis 1.6.0                                   ║
+   ║ ATLAS OS — OUVERTURE, AVATAR ET HUB                         ║
    ╚══════════════════════════════════════════════════════════════╝ */
 
-/* ████████████████████████████████████████████████████████████
-   🟦 PARTIE A — A01 — BASE
-   ████████████████████████████████████████████████████████████ */
 :root {
   --atlas-bg: #020713;
+  --atlas-panel: #061426;
   --atlas-cyan: #35ccff;
   --atlas-violet: #9c58ff;
   --atlas-text: #f5fbff;
   --atlas-muted: #a7bac8;
 }
 
-* { box-sizing: border-box; }
-html, body { width: 100%; min-height: 100%; margin: 0; background: var(--atlas-bg); }
-body { color: var(--atlas-text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-button { font: inherit; }
+* {
+  box-sizing: border-box;
+}
 
-.atlas-opening-app { min-height: 100dvh; background: radial-gradient(circle at 50% 35%, rgba(26,108,190,.17), transparent 42%), #020713; }
-.atlas-page { display: none; min-height: 100dvh; position: relative; overflow: hidden; }
-.atlas-page.is-active { display: grid; }
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  background: var(--atlas-bg);
+}
 
-.atlas-image-stage { position: relative; overflow: hidden; background: #020713; }
-.atlas-image-stage img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center; }
+body {
+  color: var(--atlas-text);
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
 
-/* ████████████████████████████████████████████████████████████
-   🟦 PARTIE A — A02 — PAGE D’OUVERTURE
-   ████████████████████████████████████████████████████████████ */
+button {
+  font: inherit;
+}
+
+.atlas-opening-app {
+  min-height: 100dvh;
+  background:
+    radial-gradient(
+      circle at 50% 38%,
+      rgba(26, 108, 190, 0.18),
+      transparent 46%
+    ),
+    var(--atlas-bg);
+}
+
+.atlas-page {
+  position: relative;
+  display: none;
+  width: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+.atlas-page.is-active {
+  display: grid;
+}
+
+.atlas-image-stage {
+  position: relative;
+  overflow: hidden;
+  background: var(--atlas-bg);
+}
+
+.atlas-image-stage img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* ============================================================
+   ÉCRAN D’OUVERTURE
+   ============================================================ */
+
 .atlas-page--welcome {
   place-items: center;
   padding:
@@ -37,17 +91,20 @@ button { font: inherit; }
 }
 
 .atlas-image-stage--portrait {
-  width: min(727px, 100%);
+  width: min(
+    727px,
+    calc(100vw - 20px),
+    calc((100dvh - 20px) * 0.727)
+  );
   aspect-ratio: 727 / 1000;
-  max-height: calc(100dvh - 20px);
   border-radius: 28px;
   box-shadow:
-    0 0 0 1px rgba(53,204,255,.10),
-    0 28px 90px rgba(0,0,0,.38);
+    0 0 0 1px rgba(53, 204, 255, 0.11),
+    0 28px 90px rgba(0, 0, 0, 0.42);
 }
 
-.atlas-image-stage--portrait img {
-  object-fit: contain;
+.atlas-opening-card {
+  position: relative;
 }
 
 .atlas-breathing-light {
@@ -56,1931 +113,230 @@ button { font: inherit; }
   border-radius: 28px;
   pointer-events: none;
   box-shadow:
-    inset 0 0 48px rgba(53,204,255,.12),
-    0 0 42px rgba(53,204,255,.08);
-  animation: atlasBreath 4.8s ease-in-out infinite;
+    inset 0 0 48px rgba(53, 204, 255, 0.12),
+    0 0 42px rgba(53, 204, 255, 0.08);
+  animation: atlas-breath 4.8s ease-in-out infinite;
 }
 
-/* Zone cliquable placée exactement sur le bouton dessiné dans l'image. */
+/* Zone centrée exactement sur le bouton dessiné dans l’image. */
 .atlas-enter-hotspot {
   position: absolute;
   z-index: 10;
-  left: 10%;
+  left: 50%;
   bottom: 3.1%;
-  width: 80%;
-  height: 8.6%;
+  width: 80.8%;
+  height: 8.3%;
   padding: 0;
-  border: 0;
+  border: 1px solid transparent;
   border-radius: 13px;
   background: transparent;
   cursor: pointer;
+  transform: translateX(-50%);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .atlas-enter-hotspot:hover,
 .atlas-enter-hotspot:focus-visible {
-  outline: 2px solid rgba(53,204,255,.92);
-  outline-offset: -2px;
-  background: rgba(53,204,255,.045);
+  outline: none;
+  border-color: rgba(53, 204, 255, 0.94);
+  background: rgba(53, 204, 255, 0.045);
   box-shadow:
-    inset 0 0 24px rgba(53,204,255,.10),
-    0 0 22px rgba(53,204,255,.16);
+    inset 0 0 20px rgba(53, 204, 255, 0.11),
+    0 0 20px rgba(53, 204, 255, 0.22);
+  transform: translateX(-50%);
 }
 
 .atlas-enter-hotspot:active {
-  transform: scale(.985);
+  transform: translateX(-50%) scale(0.985);
 }
 
-/* ████████████████████████████████████████████████████████████
-   🟩 PARTIE B — B02 — PAGE AVATAR À PARTIR DE L’IMAGE VALIDÉE
-   ████████████████████████████████████████████████████████████ */
-.atlas-page--avatar { place-items: center; padding: 12px; }
-.atlas-image-stage--landscape { width: min(1536px, 100%); aspect-ratio: 3 / 2; border-radius: 18px; }
-.atlas-image-stage--landscape img { object-fit: contain; }
+/* ============================================================
+   CHOIX HOMME / FEMME
+   ============================================================ */
 
-.atlas-hotspot { position: absolute; z-index: 4; padding: 0; border: 0; background: transparent; border-radius: 14px; }
-.atlas-hotspot:focus-visible { outline: 3px solid white; outline-offset: 3px; }
-.atlas-hotspot--male { left: 25.9%; top: 78.4%; width: 19.7%; height: 7.1%; }
-.atlas-hotspot--female { left: 64.5%; top: 78.4%; width: 18.9%; height: 7.1%; }
-.atlas-hotspot--continue { left: 39.4%; top: 88.8%; width: 27.4%; height: 7.2%; }
-.atlas-hotspot--continue:disabled { cursor: not-allowed; }
-
-.atlas-selection-ring { position: absolute; z-index: 3; display: none; pointer-events: none; border: 3px solid currentColor; border-radius: 14px; box-shadow: 0 0 28px currentColor; }
-.atlas-selection-ring--male { left: 25.9%; top: 78.4%; width: 19.7%; height: 7.1%; color: var(--atlas-cyan); }
-.atlas-selection-ring--female { left: 64.5%; top: 78.4%; width: 18.9%; height: 7.1%; color: var(--atlas-violet); }
-.atlas-image-stage--landscape[data-selected="male"] .atlas-selection-ring--male,
-.atlas-image-stage--landscape[data-selected="female"] .atlas-selection-ring--female { display: block; }
-
-.atlas-selection-status { position: fixed; z-index: 8; left: 50%; bottom: max(10px, env(safe-area-inset-bottom)); transform: translateX(-50%); padding: 9px 15px; color: var(--atlas-muted); border: 1px solid rgba(53,204,255,.18); border-radius: 999px; background: rgba(2,13,28,.88); backdrop-filter: blur(10px); font-size: .82rem; }
-.atlas-selection-status.is-ready { color: var(--atlas-cyan); }
-.atlas-landscape-hint { display: none; }
-
-@keyframes atlasBreath { 0%,100% { opacity: .35; transform: scale(.995); } 50% { opacity: .9; transform: scale(1.01); } }
-
-/* ████████████████████████████████████████████████████████████
-   🟪 PARTIE E — E01 — RESPONSIVE SMARTPHONE
-   ████████████████████████████████████████████████████████████ */
-@media (orientation: portrait) and (max-width: 900px) {
-  .atlas-page--avatar { align-content: center; padding: 64px 8px 52px; overflow: auto; }
-  .atlas-landscape-hint { display: block; position: fixed; z-index: 12; top: max(10px, env(safe-area-inset-top)); left: 50%; width: calc(100% - 24px); transform: translateX(-50%); padding: 10px 14px; text-align: center; color: var(--atlas-cyan); border: 1px solid rgba(53,204,255,.28); border-radius: 12px; background: rgba(2,13,28,.92); font-size: .8rem; }
-  .atlas-image-stage--landscape { width: 100%; min-width: 0; }
-  .atlas-selection-status { bottom: max(8px, env(safe-area-inset-bottom)); }
-}
-
-@media (max-width: 520px) {
-  .atlas-page--welcome { padding-left: 6px; padding-right: 6px; }
-  .atlas-image-stage--portrait { width: 100%; height: calc(100dvh - 104px); border-radius: 0; }
-}
-
-
-/* ████████████████████████████████████████████████████████████
-   🟪 PARTIE E — E01 — HUB ATLAS OFFICIEL
-   ████████████████████████████████████████████████████████████ */
-
-.atlas-page--hub {
+.atlas-page--avatar {
   place-items: center;
-  padding: 62px 12px 18px;
-  background:
-    radial-gradient(circle at 50% 42%, rgba(26,108,190,.16), transparent 44%),
-    #020713;
+  padding: 12px;
 }
 
-.atlas-hub-toolbar {
-  position: fixed;
-  z-index: 20;
-  top: max(10px, env(safe-area-inset-top));
-  left: 12px;
-  right: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  pointer-events: none;
-}
-
-.atlas-back-button,
-.atlas-hub-user {
-  pointer-events: auto;
-  color: var(--atlas-text);
-  border: 1px solid rgba(53,204,255,.22);
-  border-radius: 999px;
-  background: rgba(2,13,28,.88);
-  backdrop-filter: blur(12px);
-}
-
-.atlas-back-button {
-  padding: 9px 15px;
-}
-
-.atlas-hub-user {
-  display: grid;
-  padding: 8px 15px;
-  text-align: right;
-}
-
-.atlas-hub-user strong,
-.atlas-hub-user span {
-  display: block;
-}
-
-.atlas-hub-user strong {
-  color: var(--atlas-cyan);
-  font-size: .75rem;
-  letter-spacing: .12em;
-}
-
-.atlas-hub-user span {
-  margin-top: 2px;
-  color: var(--atlas-muted);
-  font-size: .7rem;
-}
-
-.atlas-image-stage--hub {
-  width: min(1536px, 100%);
+.atlas-image-stage--landscape {
+  width: min(
+    1536px,
+    calc(100vw - 24px),
+    calc((100dvh - 24px) * 1.5)
+  );
   aspect-ratio: 3 / 2;
   border-radius: 18px;
   box-shadow:
-    0 0 0 1px rgba(53,204,255,.12),
-    0 30px 90px rgba(0,0,0,.36);
+    0 0 0 1px rgba(53, 204, 255, 0.1),
+    0 24px 80px rgba(0, 0, 0, 0.38);
 }
 
-.atlas-image-stage--hub img {
-  object-fit: contain;
-}
-
-.atlas-hub-hotspot {
-  position: absolute;
-  z-index: 5;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: 50%;
-  background: transparent;
-  cursor: pointer;
-  opacity: 0;
-  transition:
-    opacity .16s ease,
-    border-color .16s ease,
-    background .16s ease,
-    box-shadow .16s ease,
-    transform .16s ease;
-}
-
-.atlas-hub-hotspot:hover,
-.atlas-hub-hotspot:focus-visible {
-  opacity: 1;
-  outline: none;
-  border-color: rgba(53, 204, 255, .9);
-  background: rgba(53, 204, 255, .06);
-  box-shadow:
-    inset 0 0 18px rgba(53, 204, 255, .10),
-    0 0 20px rgba(53, 204, 255, .20);
-  transform: scale(1.06);
-}
-
-.atlas-hub-hotspot:active {
-  transform: scale(.96);
-}
-
-/* Emplacements calibrés sur l'image 1536 × 1024 */
-.hub-hotspot--body {
-  left: 0.7%;
-  top: 17.5%;
-  width: 14%;
-  height: 8%;
-}
-
-.hub-hotspot--health {
-  left: 44.7%;
-  top: 8.5%;
-  width: 10%;
-  height: 12%;
-}
-
-.hub-hotspot--training {
-  left: 36%;
-  top: 14%;
-  width: 10%;
-  height: 14%;
-}
-
-.hub-hotspot--mobility {
-  left: 57.5%;
-  top: 19%;
-  width: 9%;
-  height: 16%;
-}
-
-.hub-hotspot--nutrition {
-  left: 55%;
-  top: 47%;
-  width: 10%;
-  height: 14%;
-}
-
-.hub-hotspot--sleep {
-  left: 60%;
-  top: 37%;
-  width: 9%;
-  height: 14%;
-}
-
-.hub-hotspot--analysis {
-  left: 45%;
-  top: 56%;
-  width: 11%;
-  height: 13%;
-}
-
-.hub-hotspot--timeline {
-  left: 16%;
-  top: 75%;
-  width: 80%;
-  height: 10%;
-}
-
-.hub-hotspot--ask {
-  left: 70%;
-  top: 66%;
-  width: 28%;
-  height: 10%;
-}
-
-.atlas-module-toast {
-  position: fixed;
-  z-index: 30;
-  left: 50%;
-  bottom: max(16px, env(safe-area-inset-bottom));
-  width: min(520px, calc(100% - 28px));
-  padding: 12px 18px;
-  opacity: 0;
-  transform: translate(-50%, 18px);
-  color: var(--atlas-cyan);
-  text-align: center;
-  border: 1px solid rgba(53,204,255,.28);
-  border-radius: 999px;
-  background: rgba(2,13,28,.94);
-  backdrop-filter: blur(14px);
-  pointer-events: none;
-  transition:
-    opacity .22s ease,
-    transform .22s ease;
-}
-
-.atlas-module-toast.is-visible {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-
-.atlas-landscape-hint--hub {
-  display: none;
-}
-
-/* ████████████████████████████████████████████████████████████
-   🟪 FIN PARTIE E — E01
-   ████████████████████████████████████████████████████████████ */
-
-@media (orientation: portrait) and (max-width: 900px) {
-  .atlas-page--hub {
-    align-content: center;
-    padding: 70px 7px 52px;
-    overflow: auto;
-  }
-
-  .atlas-landscape-hint--hub {
-    display: block;
-    position: fixed;
-    z-index: 18;
-    top: max(58px, calc(env(safe-area-inset-top) + 48px));
-    left: 50%;
-    width: calc(100% - 24px);
-    transform: translateX(-50%);
-    padding: 9px 13px;
-    text-align: center;
-    color: var(--atlas-cyan);
-    border: 1px solid rgba(53,204,255,.25);
-    border-radius: 12px;
-    background: rgba(2,13,28,.92);
-    font-size: .76rem;
-  }
-
-  .atlas-image-stage--hub {
-    width: 100%;
-  }
-
-  .atlas-hub-user {
-    display: none;
-  }
-}
-
-
-/* ████████████████████████████████████████████████████████████
-   🟦 PARTIE A — A03 — CORRECTION VISUELLE GENESIS 1.6
-   ████████████████████████████████████████████████████████████ */
-
-@media (max-width: 520px) {
-  .atlas-page--welcome {
-    padding:
-      max(4px, env(safe-area-inset-top))
-      4px
-      max(4px, env(safe-area-inset-bottom));
-  }
-
-  .atlas-image-stage--portrait {
-    width: 100%;
-    max-height: calc(100dvh - 8px);
-    border-radius: 18px;
-  }
-}
-
-/* ████████████████████████████████████████████████████████████
-   🟦 FIN PARTIE A — A03
-   ████████████████████████████████████████████████████████████ */
-
-
-/* ████████████████████████████████████████████████████████████
-   🟪 PARTIE E — E02 — HOTSPOTS HUB RECALIBRÉS
-   ████████████████████████████████████████████████████████████ */
-
-/* Corps / Body 3D dans le menu latéral */
-.hub-hotspot--body3d {
-  left: 1.05%;
-  top: 29.5%;
-  width: 11.7%;
-  height: 7.2%;
-  border-radius: 12px;
-}
-
-/* Satellites autour du Digital Twin */
-.hub-hotspot--training {
-  left: 35.8%;
-  top: 19.2%;
-  width: 7.2%;
-  aspect-ratio: 1;
-}
-
-.hub-hotspot--health {
-  left: 47.2%;
-  top: 10.2%;
-  width: 6.2%;
-  aspect-ratio: 1;
-}
-
-.hub-hotspot--mobility {
-  left: 60.8%;
-  top: 27.2%;
-  width: 6.6%;
-  aspect-ratio: 1;
-}
-
-.hub-hotspot--sleep {
-  left: 60.2%;
-  top: 45.0%;
-  width: 6.5%;
-  aspect-ratio: 1;
-}
-
-.hub-hotspot--nutrition {
-  left: 55.1%;
-  top: 56.0%;
-  width: 6.6%;
-  aspect-ratio: 1;
-}
-
-.hub-hotspot--analysis {
-  left: 47.0%;
-  top: 66.0%;
-  width: 6.4%;
-  aspect-ratio: 1;
-}
-
-/* Zones larges restant rectangulaires */
-.hub-hotspot--timeline {
-  left: 15.9%;
-  top: 78.3%;
-  width: 81.1%;
-  height: 8.8%;
-  border-radius: 11px;
-}
-
-.hub-hotspot--ask {
-  left: 70.5%;
-  top: 68.4%;
-  width: 27.5%;
-  height: 7.2%;
-  border-radius: 12px;
-}
-
-/* État sélectionné temporaire */
-.atlas-hub-hotspot.is-active {
-  opacity: 1;
-  border-color: rgba(53, 204, 255, .92);
-  background: rgba(53, 204, 255, .075);
-  box-shadow:
-    inset 0 0 22px rgba(53, 204, 255, .12),
-    0 0 22px rgba(53, 204, 255, .24);
-}
-
-/* ████████████████████████████████████████████████████████████
-   🟪 FIN PARTIE E — E02
-   ████████████████████████████████████████████████████████████ */
-
-
-/* ████████████████████████████████████████████████████████████
-   🟦 PARTIE A — A04 — CORRECTION DU BOUTON D’OUVERTURE
-   ████████████████████████████████████████████████████████████ */
-
-.atlas-opening-card {
-  position: relative;
-  overflow: hidden;
-}
-
-.atlas-opening-card .atlas-enter-hotspot {
-  position: absolute !important;
-  z-index: 12;
-  left: 9.6% !important;
-  right: auto !important;
-  bottom: 3.1% !important;
-  width: 80.8% !important;
-  height: 8.3% !important;
-  min-width: 0 !important;
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 1px solid transparent !important;
-  border-radius: 13px !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  opacity: 1;
-}
-
-.atlas-opening-card .atlas-enter-hotspot:hover,
-.atlas-opening-card .atlas-enter-hotspot:focus-visible {
-  outline: none !important;
-  border-color: rgba(53, 204, 255, .92) !important;
-  background: rgba(53, 204, 255, .045) !important;
-  box-shadow:
-    inset 0 0 20px rgba(53, 204, 255, .10),
-    0 0 18px rgba(53, 204, 255, .18) !important;
-  transform: none !important;
-}
-
-.atlas-opening-card .atlas-enter-hotspot:active {
-  transform: scale(.985) !important;
-}
-
-/* ████████████████████████████████████████████████████████████
-   🟦 FIN PARTIE A — A04
-   ████████████████████████████████████████████████████████████ */
-
-
-/* ████████████████████████████████████████████████████████████
-   🟪 PARTIE E — E03 — SURBRILLANCE PRÉCISE DES ICÔNES
-   ████████████████████████████████████████████████████████████ */
-
-.atlas-hub-hotspot {
-  opacity: 1 !important;
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  transform: none !important;
-  overflow: visible;
-}
-
-.atlas-hub-hotspot:hover,
-.atlas-hub-hotspot:focus-visible,
-.atlas-hub-hotspot.is-active {
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-.atlas-hotspot-ring {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 72%;
-  height: 72%;
-  transform: translate(-50%, -50%) scale(.88);
-  border: 2px solid transparent;
-  border-radius: 50%;
-  background: transparent;
-  box-shadow: none;
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    opacity .17s ease,
-    transform .17s ease,
-    border-color .17s ease,
-    box-shadow .17s ease,
-    background .17s ease;
-}
-
-.atlas-hub-hotspot:hover .atlas-hotspot-ring,
-.atlas-hub-hotspot:focus-visible .atlas-hotspot-ring,
-.atlas-hub-hotspot.is-active .atlas-hotspot-ring {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
-  border-color: rgba(53, 204, 255, .96);
-  background: rgba(53, 204, 255, .045);
-  box-shadow:
-    inset 0 0 18px rgba(53, 204, 255, .13),
-    0 0 18px rgba(53, 204, 255, .26);
-}
-
-/* Modules rectangulaires : surbrillance ajustée au bouton/menu réel */
-.hub-hotspot--body3d .atlas-hotspot-ring,
-.hub-hotspot--timeline .atlas-hotspot-ring,
-.hub-hotspot--ask .atlas-hotspot-ring {
-  width: 100%;
-  height: 100%;
-  border-radius: 12px;
-}
-
-/* Correction particulière du module Entraînement */
-.hub-hotspot--training {
-  left: 37.15% !important;
-  top: 20.2% !important;
-  width: 5.5% !important;
-  height: auto !important;
-  aspect-ratio: 1 / 1;
-}
-
-.hub-hotspot--training .atlas-hotspot-ring {
-  width: 92%;
-  height: 92%;
-}
-
-/* Correction particulière du module Objectifs qui ne doit plus être englobé */
-.hub-hotspot--training + .atlas-hub-hotspot {
-  isolation: isolate;
-}
-
-/* Ajustement des autres satellites */
-.hub-hotspot--health {
-  left: 48.25% !important;
-  top: 11.6% !important;
-  width: 5.1% !important;
-}
-
-.hub-hotspot--mobility {
-  left: 62.05% !important;
-  top: 29.3% !important;
-  width: 5.15% !important;
-}
-
-.hub-hotspot--sleep {
-  left: 61.3% !important;
-  top: 47.15% !important;
-  width: 5.15% !important;
-}
-
-.hub-hotspot--nutrition {
-  left: 56.3% !important;
-  top: 57.95% !important;
-  width: 5.15% !important;
-}
-
-.hub-hotspot--analysis {
-  left: 48.15% !important;
-  top: 67.6% !important;
-  width: 5.15% !important;
-}
-
-/* ████████████████████████████████████████████████████████████
-   🟪 FIN PARTIE E — E03
-   ████████████████████████████████████████████████████████████ */
-
-
-/* ████████████████████████████████████████████████████████████
-   🟪 PARTIE E — E04 — HOTSPOTS HUB DÉFINITIFS
-   ████████████████████████████████████████████████████████████ */
-
-.atlas-hub-hotspot {
-  position: absolute;
-  z-index: 8;
-  display: block;
-  padding: 0;
-  margin: 0;
-  border: 0 !important;
-  border-radius: 50%;
-  background: transparent !important;
-  box-shadow: none !important;
-  opacity: 1 !important;
-  cursor: pointer;
-  transform: none !important;
-  overflow: visible;
-}
-
-.atlas-hub-hotspot:hover,
-.atlas-hub-hotspot:focus-visible,
-.atlas-hub-hotspot.is-active {
-  outline: none;
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-.atlas-hotspot-ring {
-  position: absolute;
-  inset: 0;
-  display: block;
-  border: 2px solid transparent;
-  border-radius: inherit;
-  background: transparent;
-  box-shadow: none;
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(.90);
-  transition:
-    opacity .16s ease,
-    transform .16s ease,
-    border-color .16s ease,
-    background .16s ease,
-    box-shadow .16s ease;
-}
-
-.atlas-hub-hotspot:hover .atlas-hotspot-ring,
-.atlas-hub-hotspot:focus-visible .atlas-hotspot-ring,
-.atlas-hub-hotspot.is-active .atlas-hotspot-ring {
-  opacity: 1;
-  transform: scale(1.08);
-  border-color: rgba(53, 204, 255, .98);
-  background: rgba(53, 204, 255, .045);
-  box-shadow:
-    inset 0 0 16px rgba(53, 204, 255, .12),
-    0 0 20px rgba(53, 204, 255, .30);
-}
-
-.hub-hotspot--training {
-  left: 38.15% !important;
-  top: 12.45% !important;
-  width: 4.20% !important;
-  height: auto !important;
-  aspect-ratio: 1 / 1;
-}
-
-.hub-hotspot--health {
-  left: 48.35% !important;
-  top: 8.60% !important;
-  width: 4.25% !important;
-  height: auto !important;
-  aspect-ratio: 1 / 1;
-}
-
-.hub-hotspot--mobility {
-  left: 64.30% !important;
-  top: 23.70% !important;
-  width: 4.25% !important;
-  height: auto !important;
-  aspect-ratio: 1 / 1;
-}
-
-.hub-hotspot--sleep {
-  left: 64.40% !important;
-  top: 37.50% !important;
-  width: 4.25% !important;
-  height: auto !important;
-  aspect-ratio: 1 / 1;
-}
-
-.hub-hotspot--nutrition {
-  left: 59.65% !important;
-  top: 49.35% !important;
-  width: 4.25% !important;
-  height: auto !important;
-  aspect-ratio: 1 / 1;
-}
-
-.hub-hotspot--analysis {
-  left: 48.35% !important;
-  top: 59.20% !important;
-  width: 4.25% !important;
-  height: auto !important;
-  aspect-ratio: 1 / 1;
-}
-
-.hub-hotspot--body3d {
-  left: 1.05% !important;
-  top: 26.10% !important;
-  width: 12.10% !important;
-  height: 5.90% !important;
-  border-radius: 11px;
-}
-
-.hub-hotspot--timeline {
-  left: 15.80% !important;
-  top: 72.55% !important;
-  width: 81.20% !important;
-  height: 8.05% !important;
-  border-radius: 11px;
-}
-
-.hub-hotspot--ask {
-  left: 70.90% !important;
-  top: 64.55% !important;
-  width: 27.20% !important;
-  height: 7.25% !important;
-  border-radius: 11px;
-}
-
-/* ████████████████████████████████████████████████████████████
-   🟪 FIN PARTIE E — E04
-   ████████████████████████████████████████████████████████████ */
-
-
-/* ████████████████████████████████████████████████████████████
-   🟪 PARTIE E — E05 — HUB ATLAS 3.0
-   ████████████████████████████████████████████████████████████ */
-
-.atlas-hub3 {
-  display: none;
-  grid-template-rows: 78px minmax(0,1fr) 135px;
-  padding: 0;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 44%, rgba(26,108,190,.18), transparent 35%),
-    linear-gradient(180deg,#041020,#01050b);
-}
-
-.atlas-hub3.active {
-  display: grid;
-}
-
-.hub-particles {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-.hub3-topbar {
-  position: relative;
-  z-index: 5;
-  display: grid;
-  grid-template-columns: 250px 1fr 260px;
-  align-items: center;
-  gap: 20px;
-  padding: 10px 22px;
-  border-bottom: 1px solid rgba(53,204,255,.16);
-  background: rgba(2,10,22,.84);
-  backdrop-filter: blur(16px);
-}
-
-.hub3-brand,
-.hub3-profile {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.hub3-brand img {
-  width: 52px;
-  height: 52px;
-  object-fit: cover;
-  border-radius: 10px;
-}
-
-.hub3-brand strong,
-.hub3-brand span,
-.hub3-profile strong,
-.hub3-profile small {
-  display: block;
-}
-
-.hub3-brand strong { letter-spacing: .11em; }
-.hub3-brand span,
-.hub3-profile small { color: var(--atlas-muted); font-size: .7rem; }
-
-.hub3-metrics {
-  display: grid;
-  grid-template-columns: repeat(4,minmax(100px,1fr));
-  gap: 8px;
-}
-
-.hub3-metrics article {
-  padding: 8px 12px;
-  border: 1px solid rgba(53,204,255,.12);
-  border-radius: 10px;
-  background: rgba(5,20,38,.64);
-}
-
-.hub3-metrics span,
-.hub3-metrics strong {
-  display: block;
-}
-
-.hub3-metrics span {
-  color: var(--atlas-muted);
-  font-size: .65rem;
-}
-
-.hub3-metrics strong {
-  margin-top: 3px;
-  color: var(--atlas-cyan);
-  font-size: .85rem;
-}
-
-.hub3-profile {
-  justify-self: end;
-  padding: 7px 12px;
-  color: var(--atlas-text);
-  border: 1px solid rgba(53,204,255,.16);
-  border-radius: 999px;
-  background: rgba(5,20,38,.72);
-}
-
-.hub3-profile>span {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border: 1px solid var(--atlas-cyan);
-  border-radius: 50%;
-}
-
-.hub3-main {
-  position: relative;
-  z-index: 2;
-  display: grid;
-  grid-template-columns: minmax(720px,1fr) 310px;
-  min-height: 0;
-}
-
-.hub3-center {
-  position: relative;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.atlas-index {
-  position: absolute;
-  z-index: 6;
-  left: 50%;
-  top: 12px;
-  display: grid;
-  grid-template-columns: auto auto auto;
-  align-items: end;
-  gap: 6px;
-  transform: translateX(-50%);
-  padding: 8px 14px;
-  border: 1px solid rgba(53,204,255,.2);
-  border-radius: 999px;
-  background: rgba(3,14,28,.82);
-}
-
-.atlas-index span { color: var(--atlas-muted); font-size: .65rem; letter-spacing:.12em; }
-.atlas-index strong { color: var(--atlas-cyan); font-size: 1.35rem; }
-.atlas-index small { color: var(--atlas-muted); }
-
-.engine-connections {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.engine-connections line {
-  stroke: rgba(53,204,255,.16);
-  stroke-width: 1.2;
-  stroke-dasharray: 5 8;
-}
-
-.engine-orb {
-  position: absolute;
-  z-index: 7;
-  display: grid;
-  justify-items: center;
-  align-content: center;
-  width: 132px;
-  height: 132px;
-  color: var(--atlas-text);
-  border: 1px solid rgba(53,204,255,.26);
-  border-radius: 50%;
-  background:
-    radial-gradient(circle, rgba(53,204,255,.12), rgba(4,15,31,.88) 68%);
-  box-shadow: inset 0 0 30px rgba(53,204,255,.08);
-  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
-}
-
-.engine-orb:hover,
-.engine-orb:focus-visible,
-.engine-orb.active {
-  outline: none;
-  transform: scale(1.08);
-  border-color: rgba(53,204,255,.95);
-  box-shadow:
-    inset 0 0 34px rgba(53,204,255,.16),
-    0 0 28px rgba(53,204,255,.24);
-}
-
-.engine-icon {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  margin-bottom: 7px;
-  color: var(--atlas-cyan);
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  font-size: 1.25rem;
-}
-
-.engine-orb strong { font-size: .85rem; }
-.engine-orb small { margin-top: 3px; color: var(--atlas-muted); font-size: .60rem; }
-
-.engine-ai { left: calc(50% - 66px); top: 48px; }
-.engine-clinical { left: 13%; top: 130px; }
-.engine-performance { right: 13%; top: 130px; }
-.engine-biomech { left: 8%; top: 48%; }
-.engine-prevention { right: 8%; top: 48%; }
-.engine-physiology { left: 22%; bottom: 28px; }
-.engine-memory { right: 22%; bottom: 28px; }
-
-.digital-twin-stage {
-  position: absolute;
-  z-index: 5;
-  left: 50%;
-  top: 52%;
-  width: 300px;
-  height: 560px;
-  transform: translate(-50%,-50%);
-  overflow: visible;
-}
-
-.digital-twin-stage img {
-  position: relative;
-  z-index: 3;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 24px;
-  filter: drop-shadow(0 0 26px rgba(53,204,255,.5));
-  animation: twinBreath 4.5s ease-in-out infinite;
-}
-
-.twin-halo {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  border: 1px solid rgba(53,204,255,.22);
-  border-radius: 50%;
-  transform: translate(-50%,-50%);
-}
-
-.twin-halo-1 { width: 450px; height: 450px; }
-.twin-halo-2 { width: 560px; height: 560px; opacity:.5; }
-
-.twin-scan {
+.atlas-hotspot {
   position: absolute;
   z-index: 4;
-  left: -25px;
-  right: -25px;
-  top: 10%;
-  height: 2px;
-  background: linear-gradient(90deg,transparent,var(--atlas-cyan),transparent);
-  box-shadow: 0 0 18px var(--atlas-cyan);
-  animation: hubScan 4s ease-in-out infinite;
-}
-
-.twin-status {
-  position: absolute;
-  z-index: 7;
-  left: 50%;
-  bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transform: translateX(-50%);
-  min-width: 190px;
-  padding: 8px 12px;
-  border: 1px solid rgba(53,204,255,.22);
-  border-radius: 999px;
-  background: rgba(2,13,28,.9);
-}
-
-.twin-status span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #55e6a5;
-  box-shadow: 0 0 10px #55e6a5;
-}
-
-.twin-status strong {
-  font-size: .72rem;
-}
-
-.hub3-brain {
-  position: relative;
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 20px;
-  border-left: 1px solid rgba(53,204,255,.16);
-  background: rgba(2,10,22,.72);
-  backdrop-filter: blur(12px);
-}
-
-.brain-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.brain-pulse {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--atlas-cyan);
-  box-shadow: 0 0 18px var(--atlas-cyan);
-  animation: brainPulse 2s ease-in-out infinite;
-}
-
-.brain-header strong,
-.brain-header small { display:block; }
-.brain-header small { color:var(--atlas-muted); }
-
-.brain-message,
-.brain-recommendation,
-.brain-signals article {
-  border: 1px solid rgba(53,204,255,.13);
-  border-radius: 12px;
-  background: rgba(5,20,38,.64);
-}
-
-.brain-message { padding: 14px; }
-.brain-message p { margin:0 0 10px; color:#c6d8e2; line-height:1.5; }
-.brain-message p:last-child { margin-bottom:0; }
-
-.brain-signals {
-  display: grid;
-  gap: 8px;
-}
-
-.brain-signals article {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
-}
-
-.brain-signals span { color:var(--atlas-muted); font-size:.72rem; }
-.good { color:#55e6a5; }
-.watch { color:#ffb85c; }
-
-.brain-recommendation {
-  padding: 14px;
-}
-
-.brain-recommendation>span {
-  color:var(--atlas-cyan);
-  font-size:.65rem;
-  letter-spacing:.12em;
-}
-
-.brain-recommendation strong {
-  display:block;
-  margin-top:7px;
-}
-
-.brain-recommendation p {
-  color:var(--atlas-muted);
-  font-size:.75rem;
-  line-height:1.45;
-}
-
-.brain-action {
-  margin-top:auto;
-  padding:11px 14px;
-  color:white;
-  border:1px solid var(--atlas-cyan);
-  border-radius:10px;
-  background:linear-gradient(180deg,#0b76dc,#064282);
-}
-
-.hub3-timeline {
-  position: relative;
-  z-index: 5;
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 20px;
-  align-items: center;
-  padding: 12px 24px;
-  border-top: 1px solid rgba(53,204,255,.16);
-  background: rgba(2,10,22,.9);
-}
-
-.timeline-title strong,
-.timeline-title span { display:block; }
-.timeline-title span { margin-top:4px; color:var(--atlas-muted); font-size:.7rem; }
-
-.timeline-track {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(5,1fr);
-  gap: 12px;
-}
-
-.timeline-track::before {
-  content:"";
-  position:absolute;
-  left:5%;
-  right:5%;
-  top:28px;
-  height:1px;
-  background:linear-gradient(90deg,transparent,var(--atlas-cyan),transparent);
-}
-
-.timeline-track article {
-  position:relative;
-  z-index:2;
-  text-align:center;
-}
-
-.timeline-track time {
-  display:block;
-  color:var(--atlas-cyan);
-  font-size:.68rem;
-}
-
-.timeline-track i {
-  display:block;
-  width:13px;
-  height:13px;
-  margin:8px auto;
-  border:3px solid var(--atlas-cyan);
-  border-radius:50%;
-  background:#041020;
-  box-shadow:0 0 10px var(--atlas-cyan);
-}
-
-.timeline-track .current i {
-  border-color:#55e6a5;
-  box-shadow:0 0 12px #55e6a5;
-}
-
-.timeline-track span {
-  color:var(--atlas-muted);
-  font-size:.66rem;
-}
-
-.hub3-back {
-  position:fixed;
-  z-index:20;
-  left:14px;
-  bottom:145px;
-  padding:8px 12px;
-  color:var(--atlas-muted);
-  border:1px solid rgba(53,204,255,.16);
-  border-radius:999px;
-  background:rgba(2,13,28,.86);
-}
-
-@keyframes twinBreath {
-  0%,100% { transform:scale(1); filter:drop-shadow(0 0 24px rgba(53,204,255,.42)); }
-  50% { transform:scale(1.012); filter:drop-shadow(0 0 34px rgba(53,204,255,.62)); }
-}
-
-@keyframes hubScan {
-  0%,100% { top:8%; opacity:.25; }
-  50% { top:90%; opacity:1; }
-}
-
-@keyframes brainPulse {
-  0%,100% { transform:scale(.85); opacity:.55; }
-  50% { transform:scale(1.15); opacity:1; }
-}
-
-@media (max-width: 1180px) {
-  .hub3-main { grid-template-columns: 1fr 280px; }
-  .engine-orb { width:110px; height:110px; }
-  .digital-twin-stage { width:260px; height:500px; }
-}
-
-@media (max-width: 900px) {
-  .atlas-hub3 {
-    grid-template-rows: auto auto auto;
-    overflow:auto;
-  }
-
-  .hub3-topbar {
-    grid-template-columns: 1fr auto;
-  }
-
-  .hub3-metrics { display:none; }
-  .hub3-main { grid-template-columns:1fr; min-height:900px; }
-  .hub3-brain { border-left:0; border-top:1px solid rgba(53,204,255,.16); }
-  .hub3-center { min-height:760px; }
-  .hub3-timeline { grid-template-columns:1fr; }
-  .hub3-back { position:absolute; bottom:auto; top:84px; }
-}
-
-@media (max-width: 620px) {
-  .hub3-topbar { padding:8px 10px; }
-  .hub3-profile div { display:none; }
-  .hub3-center { min-height:690px; }
-  .digital-twin-stage { width:200px; height:420px; }
-  .engine-orb { width:92px; height:92px; }
-  .engine-orb small { display:none; }
-  .engine-ai { top:48px; }
-  .engine-clinical { left:3%; top:145px; }
-  .engine-performance { right:3%; top:145px; }
-  .engine-biomech { left:1%; top:48%; }
-  .engine-prevention { right:1%; top:48%; }
-  .engine-physiology { left:11%; bottom:35px; }
-  .engine-memory { right:11%; bottom:35px; }
-  .timeline-track { grid-template-columns:repeat(5,150px); overflow-x:auto; }
-}
-
-/* ████████████████████████████████████████████████████████████
-   🟪 FIN PARTIE E — E05
-   ████████████████████████████████████████████████████████████ */
-
-
-/* ████████████████████████████████████████████████████████████
-   🟪 PARTIE E — E06 — HUB ATLAS 4.0
-   ████████████████████████████████████████████████████████████ */
-
-.atlas-hub4 {
-  display: none;
-  grid-template-rows: 84px minmax(0,1fr) 112px 70px;
-  min-height: 100vh;
   padding: 0;
-  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.atlas-hotspot:hover,
+.atlas-hotspot:focus-visible {
+  outline: none;
+  border-color: rgba(53, 204, 255, 0.82);
+  background: rgba(53, 204, 255, 0.035);
+  box-shadow: 0 0 22px rgba(53, 204, 255, 0.2);
+}
+
+.atlas-hotspot:active {
+  transform: scale(0.985);
+}
+
+.atlas-hotspot--male {
+  left: 25.9%;
+  top: 78.4%;
+  width: 19.7%;
+  height: 7.1%;
+}
+
+.atlas-hotspot--female {
+  left: 64.5%;
+  top: 78.4%;
+  width: 18.9%;
+  height: 7.1%;
+}
+
+.atlas-hotspot--female:hover,
+.atlas-hotspot--female:focus-visible {
+  border-color: rgba(156, 88, 255, 0.9);
+  background: rgba(156, 88, 255, 0.035);
+  box-shadow: 0 0 22px rgba(156, 88, 255, 0.24);
+}
+
+.atlas-hotspot--continue {
+  left: 39.4%;
+  top: 88.8%;
+  width: 27.4%;
+  height: 7.2%;
+}
+
+.atlas-hotspot--continue:disabled {
+  cursor: not-allowed;
+}
+
+.atlas-hotspot--continue:disabled:hover {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.atlas-selection-ring {
+  position: absolute;
+  z-index: 3;
+  display: none;
+  pointer-events: none;
+  border: 3px solid currentColor;
+  border-radius: 14px;
+}
+
+.atlas-selection-ring--male {
+  left: 25.9%;
+  top: 78.4%;
+  width: 19.7%;
+  height: 7.1%;
+  color: var(--atlas-cyan);
+  box-shadow: 0 0 28px currentColor;
+}
+
+.atlas-selection-ring--female {
+  left: 64.5%;
+  top: 78.4%;
+  width: 18.9%;
+  height: 7.1%;
+  color: var(--atlas-violet);
+  box-shadow: 0 0 28px currentColor;
+}
+
+.atlas-image-stage--landscape[data-selected="male"]
+  .atlas-selection-ring--male,
+.atlas-image-stage--landscape[data-selected="female"]
+  .atlas-selection-ring--female {
+  display: block;
+}
+
+.atlas-selection-status {
+  position: fixed;
+  z-index: 20;
+  right: 18px;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  max-width: 280px;
+  padding: 9px 15px;
+  color: var(--atlas-muted);
+  text-align: center;
+  white-space: nowrap;
+  border: 1px solid rgba(53, 204, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(2, 13, 28, 0.9);
+  backdrop-filter: blur(10px);
+  font-size: 0.82rem;
+}
+.atlas-selection-status.is-ready {
+  color: var(--atlas-cyan);
+}
+
+.atlas-landscape-hint {
+  display: none;
+}
+
+/* ============================================================
+   HUB FINAL HOMME / FEMME
+   ============================================================ */
+
+.atlas-page--hub {
+  place-items: center;
   background:
-    radial-gradient(circle at 50% 40%, rgba(13,92,165,.16), transparent 36%),
-    #020813;
+    radial-gradient(
+      circle at 50% 42%,
+      rgba(26, 108, 190, 0.18),
+      transparent 45%
+    ),
+    var(--atlas-bg);
 }
-
-.atlas-hub4.active { display:grid; }
-
-.hub4-particles {
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  pointer-events:none;
-}
-
-.hub4-topbar {
-  position:relative;
-  z-index:10;
-  display:grid;
-  grid-template-columns:240px 1fr 260px;
-  gap:18px;
-  align-items:center;
-  padding:8px 18px;
-  border-bottom:1px solid rgba(53,204,255,.15);
-  background:rgba(2,10,22,.94);
-}
-
-.hub4-brand,
-.hub4-profile {
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-
-.hub4-brand img {
-  width:54px;
-  height:54px;
-  object-fit:cover;
-  border-radius:10px;
-}
-
-.hub4-brand strong,
-.hub4-brand span,
-.hub4-profile strong,
-.hub4-profile small { display:block; }
-
-.hub4-brand strong { letter-spacing:.12em; }
-.hub4-brand span { color:var(--atlas-cyan); font-size:.7rem; letter-spacing:.14em; }
-
-.hub4-topmetrics {
-  display:grid;
-  grid-template-columns:repeat(5,minmax(110px,1fr));
-  gap:8px;
-}
-
-.hub4-topmetrics article {
-  padding:8px 10px;
-  border:1px solid rgba(53,204,255,.12);
-  border-radius:10px;
-  background:rgba(5,20,38,.7);
-}
-
-.hub4-topmetrics span,
-.hub4-topmetrics strong,
-.hub4-topmetrics small { display:block; }
-
-.hub4-topmetrics span,
-.hub4-topmetrics small { color:var(--atlas-muted); font-size:.62rem; }
-.hub4-topmetrics strong { margin:3px 0; color:var(--atlas-cyan); font-size:.84rem; }
-.hub4-topmetrics .metric-good { color:#55e6a5; }
-
-.hub4-profile {
-  justify-self:end;
-  padding:7px 12px;
-  color:white;
-  border:1px solid rgba(53,204,255,.16);
-  border-radius:999px;
-  background:rgba(5,20,38,.7);
-}
-
-.hub4-profile>span {
-  display:grid;
-  place-items:center;
-  width:40px;
-  height:40px;
-  border:1px solid var(--atlas-cyan);
-  border-radius:50%;
-}
-
-.hub4-profile small { color:var(--atlas-muted); font-size:.66rem; }
-
-.hub4-main {
-  position:relative;
-  z-index:3;
-  display:grid;
-  grid-template-columns:280px minmax(680px,1fr) 330px;
-  min-height:0;
-}
-
-.hub4-left,
-.hub4-brain {
-  padding:14px;
-  background:rgba(2,10,22,.75);
-  backdrop-filter:blur(12px);
-}
-
-.hub4-left { border-right:1px solid rgba(53,204,255,.14); }
-.hub4-brain { border-left:1px solid rgba(53,204,255,.14); }
-
-.panel-title strong,
-.panel-title span { display:block; }
-.panel-title strong { color:var(--atlas-cyan); font-size:.72rem; letter-spacing:.12em; }
-.panel-title span { margin-top:3px; color:var(--atlas-muted); font-size:.62rem; }
-
-.state-cards {
-  display:grid;
-  gap:7px;
-  margin-top:10px;
-}
-
-.state-cards article {
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:8px 10px;
-  border:1px solid rgba(53,204,255,.10);
-  border-radius:10px;
-  background:rgba(5,20,38,.64);
-}
-
-.state-icon {
-  display:grid;
-  place-items:center;
-  width:36px;
-  height:36px;
-  border-radius:50%;
-  font-style:normal;
-}
-
-.state-icon.green { color:#55e6a5; background:rgba(85,230,165,.12); }
-.state-icon.orange { color:#ffad4d; background:rgba(255,173,77,.12); }
-.state-icon.purple { color:#9b67ff; background:rgba(155,103,255,.12); }
-.state-icon.cyan { color:var(--atlas-cyan); background:rgba(53,204,255,.12); }
-
-.state-cards span,
-.state-cards strong,
-.state-cards small { display:block; }
-
-.state-cards span,
-.state-cards small { color:var(--atlas-muted); font-size:.62rem; }
-.state-cards strong { margin:2px 0; font-size:.8rem; }
-.good { color:#55e6a5 !important; }
-
-.objective-card {
-  margin-top:10px;
-  padding:12px;
-  border:1px solid rgba(53,204,255,.12);
-  border-radius:12px;
-  background:rgba(5,20,38,.64);
-}
-
-.objective-card span { color:var(--atlas-cyan); font-size:.65rem; letter-spacing:.08em; }
-.objective-card strong { display:block; margin-top:7px; }
-.objective-card p,
-.objective-card small { color:var(--atlas-muted); font-size:.72rem; }
-
-.objective-progress {
-  height:6px;
-  overflow:hidden;
-  border-radius:999px;
-  background:rgba(255,255,255,.08);
-}
-
-.objective-progress i {
-  display:block;
-  height:100%;
-  background:linear-gradient(90deg,#159cff,#35ccff);
-}
-
-.scanner-button {
-  width:100%;
-  margin-top:10px;
-  padding:10px;
-  color:white;
-  border:1px solid rgba(53,204,255,.25);
-  border-radius:10px;
-  background:rgba(5,20,38,.7);
-}
-
-.hub4-center {
-  position:relative;
-  min-height:0;
-  overflow:hidden;
-}
-
-.hub4-orbit-lines {
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-}
-
-.hub4-orbit-lines ellipse {
-  fill:none;
-  stroke:rgba(53,204,255,.16);
-  stroke-width:1.2;
-  stroke-dasharray:4 8;
-}
-
-.atlas-index4 {
-  position:absolute;
-  z-index:8;
-  left:50%;
-  top:10px;
-  display:grid;
-  grid-template-columns:auto auto auto;
-  align-items:end;
-  gap:5px;
-  transform:translateX(-50%);
-  padding:8px 13px;
-  border:1px solid #55e6a5;
-  border-radius:999px;
-  background:rgba(3,14,28,.9);
-  box-shadow:0 0 22px rgba(85,230,165,.28);
-}
-
-.atlas-index4 span { color:var(--atlas-muted); font-size:.6rem; letter-spacing:.10em; }
-.atlas-index4 strong { color:#fff; font-size:1.35rem; }
-.atlas-index4 small { color:var(--atlas-muted); }
-
-.digital-twin4 {
-  position:absolute;
-  z-index:5;
-  left:50%;
-  top:52%;
-  width:270px;
-  height:520px;
-  transform:translate(-50%,-50%);
-}
-
-.digital-twin4 img {
-  position:relative;
-  z-index:4;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  border-radius:24px;
-  filter:drop-shadow(0 0 24px rgba(53,204,255,.48));
-  animation:twinBreath4 4.8s ease-in-out infinite;
-}
-
-.twin4-platform {
-  position:absolute;
-  z-index:2;
-  left:50%;
-  bottom:-5px;
-  width:390px;
-  height:90px;
-  transform:translateX(-50%);
-  border:1px solid rgba(53,204,255,.35);
-  border-radius:50%;
-  box-shadow:0 0 35px rgba(53,204,255,.28);
-}
-
-.twin4-scan {
-  position:absolute;
-  z-index:6;
-  left:-20px;
-  right:-20px;
-  top:8%;
-  height:2px;
-  background:linear-gradient(90deg,transparent,var(--atlas-cyan),transparent);
-  box-shadow:0 0 16px var(--atlas-cyan);
-  animation:scan4 4s ease-in-out infinite;
-}
-
-.twin4-status {
-  position:absolute;
-  z-index:7;
-  left:50%;
-  bottom:6px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  min-width:175px;
-  transform:translateX(-50%);
-  padding:7px 11px;
-  border:1px solid rgba(53,204,255,.2);
-  border-radius:999px;
-  background:rgba(2,13,28,.9);
-}
-
-.twin4-status span {
-  width:8px;
-  height:8px;
-  border-radius:50%;
-  background:#55e6a5;
-  box-shadow:0 0 10px #55e6a5;
-}
-
-.twin4-status strong { font-size:.68rem; }
-
-.engine4 {
-  position:absolute;
-  z-index:7;
-  display:grid;
-  justify-items:center;
-  align-content:center;
-  width:94px;
-  height:94px;
-  color:white;
-  border:1px solid rgba(53,204,255,.30);
-  border-radius:50%;
-  background:radial-gradient(circle,rgba(53,204,255,.12),rgba(4,15,31,.94) 72%);
-  box-shadow:inset 0 0 24px rgba(53,204,255,.08);
-  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
-}
-
-.engine4:hover,
-.engine4:focus-visible,
-.engine4.active {
-  outline:none;
-  transform:scale(1.09);
-  border-color:var(--atlas-cyan);
-  box-shadow:inset 0 0 26px rgba(53,204,255,.16),0 0 22px rgba(53,204,255,.28);
-}
-
-.engine4>span {
-  display:grid;
-  place-items:center;
-  width:32px;
-  height:32px;
-  margin-bottom:4px;
-  color:var(--atlas-cyan);
-  border:1px solid currentColor;
-  border-radius:50%;
-}
-
-.engine4 strong { font-size:.68rem; }
-.engine4 small { margin-top:2px; color:var(--atlas-muted); font-size:.48rem; }
-
-.engine-ai { left:20%; top:11%; }
-.engine-clinical { right:20%; top:11%; }
-.engine-biomech { left:6%; top:39%; }
-.engine-performance { right:6%; top:39%; }
-.engine-physiology { left:19%; bottom:14%; }
-.engine-prevention { right:19%; bottom:14%; }
-.engine-memory { left:50%; bottom:4%; transform:translateX(-50%); }
-
-.engine-memory:hover,
-.engine-memory:focus-visible,
-.engine-memory.active { transform:translateX(-50%) scale(1.09); }
-
-.qualities4 {
-  position:absolute;
-  z-index:7;
-  left:50%;
-  bottom:4px;
-  display:grid;
-  grid-template-columns:repeat(4,110px);
-  gap:12px;
-  transform:translateX(-50%);
-}
-
-.qualities4 article {
-  display:grid;
-  grid-template-columns:1fr auto;
-  gap:4px 8px;
-  align-items:center;
-}
-
-.qualities4 span,
-.qualities4 strong { font-size:.55rem; }
-.qualities4 span { color:var(--atlas-muted); }
-.qualities4 i {
-  grid-column:1/3;
-  height:4px;
-  overflow:hidden;
-  border-radius:999px;
-  background:rgba(255,255,255,.08);
-}
-.qualities4 b { display:block; height:100%; background:var(--atlas-cyan); }
-
-.brain4-title {
-  display:flex;
-  align-items:center;
-  gap:9px;
-}
-
-.brain4-dot {
-  width:13px;
-  height:13px;
-  border-radius:50%;
-  background:var(--atlas-cyan);
-  box-shadow:0 0 16px var(--atlas-cyan);
-  animation:brainPulse 2s ease-in-out infinite;
-}
-
-.brain4-title strong,
-.brain4-title small { display:block; }
-.brain4-title small { color:var(--atlas-muted); font-size:.68rem; }
-
-.brain4-card,
-.brain4-alert,
-.brain4-reco {
-  margin-top:10px;
-  padding:12px;
-  border:1px solid rgba(53,204,255,.12);
-  border-radius:12px;
-  background:rgba(5,20,38,.66);
-}
-
-.brain4-card p {
-  margin:0 0 9px;
-  color:#d4e2ea;
-  font-size:.75rem;
-  line-height:1.5;
-}
-
-.brain4-card ul {
-  margin:8px 0 10px;
-  padding-left:18px;
-  color:#bcd0dc;
-  font-size:.7rem;
-}
-
-.brain4-alert span,
-.brain4-reco span {
-  display:block;
-  color:#ffad4d;
-  font-size:.62rem;
-  letter-spacing:.08em;
-}
-
-.brain4-alert strong,
-.brain4-alert small {
-  display:block;
-  margin-top:7px;
-}
-
-.brain4-alert small,
-.brain4-reco p { color:var(--atlas-muted); font-size:.68rem; }
-
-.brain4-reco span { color:var(--atlas-cyan); }
-.brain4-reco strong { display:block; margin-top:8px; }
-.brain4-reco p { line-height:1.45; }
-
-.brain4-action,
-.brain4-question {
-  width:100%;
-  margin-top:10px;
-  padding:10px;
-  border-radius:10px;
-}
-
-.brain4-action {
-  color:white;
-  border:1px solid var(--atlas-cyan);
-  background:linear-gradient(180deg,#0b76dc,#064282);
-}
-
-.brain4-question {
-  color:var(--atlas-cyan);
-  border:1px solid rgba(53,204,255,.15);
-  background:rgba(5,20,38,.64);
-}
-
-.hub4-timeline {
-  position:relative;
-  z-index:8;
-  display:grid;
-  grid-template-columns:180px 1fr;
-  align-items:center;
-  gap:15px;
-  padding:10px 20px;
-  border-top:1px solid rgba(53,204,255,.15);
-  background:rgba(2,10,22,.92);
-}
-
-.timeline4-title strong {
-  color:var(--atlas-cyan);
-  font-size:.68rem;
-  letter-spacing:.10em;
-}
-
-.timeline4-track {
-  position:relative;
-  display:grid;
-  grid-template-columns:repeat(6,1fr);
-  gap:10px;
-}
-
-.timeline4-track::before {
-  content:"";
-  position:absolute;
-  left:3%;
-  right:3%;
-  top:28px;
-  height:1px;
-  background:linear-gradient(90deg,transparent,var(--atlas-cyan),transparent);
-}
-
-.timeline4-track article { position:relative; z-index:2; text-align:center; }
-.timeline4-track time { color:var(--atlas-muted); font-size:.58rem; }
-.timeline4-track i {
-  display:block;
-  width:12px;
-  height:12px;
-  margin:7px auto;
-  border:3px solid var(--atlas-cyan);
-  border-radius:50%;
-  background:#041020;
-  box-shadow:0 0 9px var(--atlas-cyan);
-}
-.timeline4-track .current i { border-color:#55e6a5; box-shadow:0 0 10px #55e6a5; }
-.timeline4-track span { color:#c6d8e2; font-size:.58rem; }
-
-.hub4-nav {
-  position:relative;
-  z-index:10;
-  display:grid;
-  grid-template-columns:repeat(7,1fr);
-  align-items:center;
-  border-top:1px solid rgba(53,204,255,.14);
-  background:rgba(2,10,22,.98);
-}
-
-.hub4-nav button {
-  height:100%;
-  color:var(--atlas-muted);
-  border:0;
-  border-bottom:2px solid transparent;
-  background:transparent;
-}
-
-.hub4-nav button.active,
-.hub4-nav button:hover {
-  color:white;
-  border-bottom-color:var(--atlas-cyan);
-}
-
-.hub4-nav span { margin-left:6px; }
-
-.hub4-back {
-  position:fixed;
-  z-index:30;
-  left:12px;
-  bottom:76px;
-  padding:7px 11px;
-  color:var(--atlas-muted);
-  border:1px solid rgba(53,204,255,.14);
-  border-radius:999px;
-  background:rgba(2,13,28,.9);
-}
-
-.engine-panel {
-  position:fixed;
-  z-index:100;
-  inset:0;
-  display:grid;
-  place-items:center;
-  background:rgba(0,4,10,.78);
-  backdrop-filter:blur(8px);
-}
-
-.engine-panel[hidden] { display:none !important; }
-
-.engine-panel-card {
-  position:relative;
-  width:min(520px,calc(100% - 24px));
-  padding:28px;
-  border:1px solid rgba(53,204,255,.25);
-  border-radius:18px;
-  background:#061426;
-  box-shadow:0 0 40px rgba(53,204,255,.18);
-}
-
-.engine-panel-card>button:first-child {
-  position:absolute;
-  right:12px;
-  top:10px;
-  color:white;
-  border:0;
-  background:transparent;
-  font-size:1.5rem;
-}
-
-.engine-panel-card span { color:var(--atlas-cyan); font-size:.68rem; letter-spacing:.12em; }
-.engine-panel-card h2 { margin:8px 0; }
-.engine-panel-card p { color:var(--atlas-muted); line-height:1.55; }
-.engine-panel-card>button:last-child {
-  padding:10px 14px;
-  color:white;
-  border:1px solid var(--atlas-cyan);
-  border-radius:9px;
-  background:#0758a8;
-}
-
-@keyframes twinBreath4 {
-  0%,100% { transform:scale(1); }
-  50% { transform:scale(1.012); }
-}
-
-@keyframes scan4 {
-  0%,100% { top:8%; opacity:.25; }
-  50% { top:90%; opacity:1; }
-}
-
-@media (max-width:1280px) {
-  .hub4-main { grid-template-columns:240px minmax(620px,1fr) 290px; }
-  .engine4 { width:84px; height:84px; }
-  .digital-twin4 { width:240px; height:480px; }
-}
-
-@media (max-width:980px) {
-  .atlas-hub4 { grid-template-rows:auto auto auto auto; overflow:auto; }
-  .hub4-topbar { grid-template-columns:1fr auto; }
-  .hub4-topmetrics { display:none; }
-  .hub4-main { grid-template-columns:1fr; }
-  .hub4-left,.hub4-brain { border:0; border-bottom:1px solid rgba(53,204,255,.14); }
-  .hub4-center { min-height:760px; }
-  .hub4-timeline { grid-template-columns:1fr; }
-}
-
-@media (max-width:620px) {
-  .hub4-brand span { display:none; }
-  .hub4-profile div { display:none; }
-  .hub4-center { min-height:680px; }
-  .digital-twin4 { width:190px; height:400px; }
-  .engine4 { width:74px; height:74px; }
-  .engine4 small { display:none; }
-  .engine-ai { left:8%; top:12%; }
-  .engine-clinical { right:8%; top:12%; }
-  .engine-biomech { left:1%; top:40%; }
-  .engine-performance { right:1%; top:40%; }
-  .engine-physiology { left:8%; bottom:14%; }
-  .engine-prevention { right:8%; bottom:14%; }
-  .qualities4 { display:none; }
-  .timeline4-track { grid-template-columns:repeat(6,140px); overflow-x:auto; }
-  .hub4-nav span { display:none; }
-}
-
-/* ████████████████████████████████████████████████████████████
-   🟪 FIN PARTIE E — E06
-   ████████████████████████████████████████████████████████████ */
-
-
-/* ████████████████████████████████████████████████████████████
-   🟪 PARTIE E — E08 — HUB FINAL FIDÈLE À LA MAQUETTE
-   ████████████████████████████████████████████████████████████ */
 
 .atlas-hub-final {
-  display: none;
   width: 100%;
-  min-height: 100vh;
+  min-height: 100dvh;
   padding: 0;
-  overflow: auto;
-  background: #020813;
+  overflow: hidden;
 }
 
-.atlas-hub-final.active {
+.atlas-hub-final.is-active {
   display: grid;
-  place-items: start center;
+  place-items: center;
 }
 
 .hub-final-stage {
   position: relative;
-  width: min(100vw, 1536px);
+  width: min(
+    1536px,
+    100vw,
+    calc(100dvh * 1.5)
+  );
   aspect-ratio: 3 / 2;
-  margin: 0 auto;
+  margin: auto;
   overflow: hidden;
-  background: #020813;
+  background: var(--atlas-bg);
 }
 
 .hub-final-image {
@@ -2001,30 +357,30 @@ button { font: inherit; }
   background: transparent;
   cursor: pointer;
   transition:
-    border-color .16s ease,
-    box-shadow .16s ease,
-    background .16s ease,
-    transform .16s ease;
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
 }
 
 .hub-final-hotspot:hover,
 .hub-final-hotspot:focus-visible,
 .hub-final-hotspot.is-active {
   outline: none;
-  border-color: rgba(53, 204, 255, .95);
-  background: rgba(53, 204, 255, .04);
+  border-color: rgba(53, 204, 255, 0.95);
+  background: rgba(53, 204, 255, 0.04);
   box-shadow:
-    inset 0 0 18px rgba(53, 204, 255, .12),
-    0 0 22px rgba(53, 204, 255, .30);
+    inset 0 0 18px rgba(53, 204, 255, 0.12),
+    0 0 22px rgba(53, 204, 255, 0.3);
   transform: scale(1.05);
 }
 
-/* Moteurs — coordonnées mesurées sur la maquette 1536 × 1024 */
+/* Modules circulaires de l’image 1536 × 1024. */
 .hotspot-clinical {
-  left: 28.0%;
+  left: 28%;
   top: 14.5%;
-  width: 8.0%;
-  height: 12.0%;
+  width: 8%;
+  height: 12%;
 }
 
 .hotspot-ai {
@@ -2035,63 +391,86 @@ button { font: inherit; }
 }
 
 .hotspot-biomech {
-  left: 22.0%;
-  top: 34.0%;
-  width: 8.0%;
+  left: 22%;
+  top: 34%;
+  width: 8%;
   height: 12.5%;
 }
 
 .hotspot-performance {
   left: 64.2%;
-  top: 34.0%;
-  width: 8.0%;
+  top: 34%;
+  width: 8%;
   height: 12.5%;
 }
 
 .hotspot-physiology {
   left: 28.3%;
   top: 53.3%;
-  width: 8.0%;
+  width: 8%;
   height: 12.5%;
 }
 
 .hotspot-prevention {
   left: 58.5%;
   top: 53.3%;
-  width: 8.0%;
+  width: 8%;
   height: 12.5%;
 }
 
 .hotspot-memory {
   left: 44.3%;
-  top: 66.0%;
+  top: 66%;
   width: 7.3%;
-  height: 11.0%;
+  height: 11%;
 }
 
-/* Navigation basse */
+/* Navigation basse. */
 .hotspot-body3d,
 .hotspot-data,
 .hotspot-analysis,
 .hotspot-plans,
 .hotspot-reports,
 .hotspot-settings {
-  top: 94.0%;
+  top: 94%;
   height: 5.5%;
   border-radius: 9px;
 }
 
-.hotspot-body3d { left: 16.8%; width: 12.0%; }
-.hotspot-data { left: 29.0%; width: 11.8%; }
-.hotspot-analysis { left: 41.0%; width: 12.0%; }
-.hotspot-plans { left: 53.0%; width: 11.0%; }
-.hotspot-reports { left: 64.2%; width: 12.5%; }
-.hotspot-settings { left: 77.0%; width: 12.5%; }
+.hotspot-body3d {
+  left: 16.8%;
+  width: 12%;
+}
 
-/* Actions latérales */
+.hotspot-data {
+  left: 29%;
+  width: 11.8%;
+}
+
+.hotspot-analysis {
+  left: 41%;
+  width: 12%;
+}
+
+.hotspot-plans {
+  left: 53%;
+  width: 11%;
+}
+
+.hotspot-reports {
+  left: 64.2%;
+  width: 12.5%;
+}
+
+.hotspot-settings {
+  left: 77%;
+  width: 12.5%;
+}
+
+/* Actions latérales. */
 .hotspot-brain-action {
   left: 75.9%;
-  top: 72.0%;
+  top: 72%;
   width: 21.8%;
   height: 5.2%;
   border-radius: 9px;
@@ -2109,14 +488,27 @@ button { font: inherit; }
   position: fixed;
   z-index: 30;
   left: 14px;
-  bottom: 18px;
+  bottom: max(18px, env(safe-area-inset-bottom));
   padding: 8px 13px;
   color: #a8bfd0;
-  border: 1px solid rgba(53, 204, 255, .22);
+  border: 1px solid rgba(53, 204, 255, 0.22);
   border-radius: 999px;
-  background: rgba(2, 13, 28, .90);
+  background: rgba(2, 13, 28, 0.9);
   backdrop-filter: blur(10px);
+  cursor: pointer;
 }
+
+.hub-final-back:hover,
+.hub-final-back:focus-visible {
+  outline: none;
+  color: white;
+  border-color: rgba(53, 204, 255, 0.72);
+  box-shadow: 0 0 18px rgba(53, 204, 255, 0.18);
+}
+
+/* ============================================================
+   FENÊTRE D’UN MODULE
+   ============================================================ */
 
 .engine-panel {
   position: fixed;
@@ -2124,39 +516,50 @@ button { font: inherit; }
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(0, 4, 10, .80);
+  padding: 12px;
+  background: rgba(0, 4, 10, 0.8);
   backdrop-filter: blur(8px);
 }
 
 .engine-panel[hidden] {
-  display: none !important;
+  display: none;
 }
 
 .engine-panel-card {
   position: relative;
-  width: min(520px, calc(100% - 24px));
+  width: min(520px, 100%);
   padding: 28px;
-  color: #f5fbff;
-  border: 1px solid rgba(53, 204, 255, .28);
+  color: var(--atlas-text);
+  border: 1px solid rgba(53, 204, 255, 0.28);
   border-radius: 18px;
-  background: #061426;
-  box-shadow: 0 0 40px rgba(53, 204, 255, .20);
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(53, 204, 255, 0.08),
+      transparent 42%
+    ),
+    var(--atlas-panel);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(53, 204, 255, 0.2);
 }
 
 .engine-panel-card > button:first-child {
   position: absolute;
-  right: 12px;
   top: 9px;
+  right: 12px;
+  padding: 4px 9px;
   color: white;
   border: 0;
   background: transparent;
+  cursor: pointer;
   font-size: 1.5rem;
 }
 
 .engine-panel-card > span {
-  color: #35ccff;
-  font-size: .68rem;
-  letter-spacing: .12em;
+  color: var(--atlas-cyan);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
 }
 
 .engine-panel-card h2 {
@@ -2164,42 +567,105 @@ button { font: inherit; }
 }
 
 .engine-panel-card p {
-  color: #a8bfd0;
+  color: var(--atlas-muted);
   line-height: 1.55;
 }
 
 .engine-panel-card > button:last-child {
   padding: 10px 14px;
   color: white;
-  border: 1px solid #35ccff;
+  border: 1px solid var(--atlas-cyan);
   border-radius: 9px;
   background: #0758a8;
+  cursor: pointer;
 }
 
-@media (max-width: 900px) {
-  .hub-final-stage {
-    width: 100vw;
-    min-width: 920px;
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
+@keyframes atlas-breath {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.995);
   }
 
-  .atlas-hub-final {
-    justify-content: start;
-    overflow-x: auto;
+  50% {
+    opacity: 0.9;
+    transform: scale(1.01);
+  }
+}
+
+/* ============================================================
+   PETITS ÉCRANS
+   ============================================================ */
+
+@media (orientation: portrait) and (max-width: 900px) {
+  .atlas-page--avatar {
+    align-content: center;
+    padding:
+      max(58px, env(safe-area-inset-top))
+      8px
+      max(50px, env(safe-area-inset-bottom));
+  }
+
+  .atlas-landscape-hint {
+    position: fixed;
+    z-index: 30;
+    top: max(10px, env(safe-area-inset-top));
+    left: 50%;
+    display: block;
+    width: calc(100% - 24px);
+    padding: 10px 14px;
+    color: var(--atlas-cyan);
+    text-align: center;
+    border: 1px solid rgba(53, 204, 255, 0.28);
+    border-radius: 12px;
+    background: rgba(2, 13, 28, 0.92);
+    transform: translateX(-50%);
+    font-size: 0.8rem;
+  }
+
+  .atlas-selection-status {
+    bottom: max(8px, env(safe-area-inset-bottom));
   }
 }
 
 @media (max-width: 620px) {
-  .hub-final-stage {
-    min-width: 980px;
+  .atlas-page--welcome {
+    padding:
+      max(4px, env(safe-area-inset-top))
+      4px
+      max(4px, env(safe-area-inset-bottom));
+  }
+
+  .atlas-image-stage--portrait {
+    width: min(
+      calc(100vw - 8px),
+      calc((100dvh - 8px) * 0.727)
+    );
+    border-radius: 18px;
+  }
+
+  .atlas-selection-status {
+    font-size: 0.74rem;
   }
 
   .hub-final-back {
     left: 8px;
     bottom: 8px;
-    font-size: .75rem;
+    font-size: 0.75rem;
   }
 }
 
-/* ████████████████████████████████████████████████████████████
-   🟪 FIN PARTIE E — E08
-   ████████████████████████████████████████████████████████████ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
