@@ -67,6 +67,14 @@ from src.performance.planner import (
     RunningPlanGenerator,
     display_training_plan,
 )
+from src.performance.session_fingerprint import (
+    AthleteSessionLearning,
+    SessionFingerprint,
+    SessionTypeEffectiveness,
+)
+from src.performance.session_fingerprint_builder import (
+    SessionFingerprintBuilder,
+)
 from src.performance.zones import (
     TrainingZonesEngine,
     format_pace,
@@ -77,6 +85,7 @@ __all__ = [
     "AdaptivePreparationPeriod",
     "AthleteProfile",
     "AthleteProfileBuilder",
+    "AthleteSessionLearning",
     "CompetitionComparison",
     "CompetitionEvent",
     "CompetitionPreparationAnalysis",
@@ -100,6 +109,9 @@ __all__ = [
     "RecoveryMetrics",
     "RunningDynamics",
     "RunningPlanGenerator",
+    "SessionFingerprint",
+    "SessionFingerprintBuilder",
+    "SessionTypeEffectiveness",
     "TaperSummary",
     "TrainingActivity",
     "TrainingAvailability",

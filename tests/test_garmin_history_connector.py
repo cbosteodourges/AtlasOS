@@ -151,6 +151,31 @@ class GarminHistoryConnectorTests(unittest.TestCase):
             -7.0,
         )
 
+    def test_swimming_distance_is_read_in_meters(
+        self,
+    ) -> None:
+        self.assertEqual(
+            GarminHistoryConnector._distance_meters(
+                "841",
+                "open_water_swimming",
+            ),
+            841.0,
+        )
+        self.assertEqual(
+            GarminHistoryConnector._distance_meters(
+                "1500",
+                "lap_swimming",
+            ),
+            1500.0,
+        )
+        self.assertEqual(
+            GarminHistoryConnector._distance_meters(
+                "6.55",
+                "running",
+            ),
+            6550.0,
+        )
+
     def test_since_filter_excludes_old_activity(self) -> None:
         connector = GarminHistoryConnector(
             str(self.csv_path)
