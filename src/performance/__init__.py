@@ -5,6 +5,7 @@ Moteur Performance.
 
 from src.performance.activity_adapter import (
     LongitudinalActivityAdapter,
+    TrainingActivityAdapter,
 )
 from src.performance.adaptive_preparation_analyzer import (
     AdaptivePreparationAnalyzer,
@@ -96,6 +97,7 @@ __all__ = [
     "HistoryAnalysis",
     "LongitudinalActivity",
     "LongitudinalActivityAdapter",
+    "TrainingActivityAdapter",
     "LongitudinalAnalysis",
     "LongitudinalPerformanceAnalyzer",
     "PerformanceGoal",

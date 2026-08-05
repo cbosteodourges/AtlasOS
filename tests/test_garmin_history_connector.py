@@ -228,5 +228,83 @@ class GarminHistoryConnectorTests(unittest.TestCase):
         )
 
 
+    def test_supports_simplified_demo_headers(
+        self,
+    ) -> None:
+        headers = [
+            "Type d'activit\u00e9",
+            "Date",
+            "Titre",
+            "Distance",
+            "Temps",
+            "FC moyenne",
+            "FC max",
+            "Allure moyenne",
+            "D\u00e9nivel\u00e9 positif",
+            "Cadence moyenne",
+        ]
+
+        row = [
+            "Course \u00e0 pied",
+            "01/06/2026 08:15",
+            "Footing endurance",
+            "10.20",
+            "00:58:20",
+            "132",
+            "148",
+            "5:43",
+            "65",
+            "164",
+        ]
+
+        with self.csv_path.open(
+            "w",
+            encoding="utf-8-sig",
+            newline="",
+        ) as csv_file:
+            writer = csv.writer(csv_file)
+            writer.writerow(headers)
+            writer.writerow(row)
+
+        connector = GarminHistoryConnector(
+            str(self.csv_path)
+        )
+        connector.connect()
+
+        raw_activity = next(
+            iter(connector.fetch_activities())
+        )
+        activity = connector.normalize(
+            raw_activity
+        )
+
+        self.assertEqual(
+            activity.start_time,
+            "2026-06-01T08:15:00+02:00",
+        )
+        self.assertEqual(
+            activity.duration_seconds,
+            3500,
+        )
+        self.assertEqual(
+            activity.average_heart_rate_bpm,
+            132,
+        )
+        self.assertEqual(
+            activity.maximum_heart_rate_bpm,
+            148,
+        )
+        self.assertEqual(
+            activity.elevation_gain_m,
+            65,
+        )
+        self.assertEqual(
+            activity.raw_metadata[
+                "average_cadence"
+            ],
+            164,
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

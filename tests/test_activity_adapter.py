@@ -5,7 +5,10 @@ Tests de l'adaptateur Performance Intelligence v2.
 import unittest
 
 from src.connectors import NormalizedActivity
-from src.performance import LongitudinalActivityAdapter
+from src.performance import (
+    LongitudinalActivityAdapter,
+    TrainingActivityAdapter,
+)
 
 
 class LongitudinalActivityAdapterTests(
@@ -177,6 +180,63 @@ class LongitudinalActivityAdapterTests(
         self.assertLess(
             result.data_quality_score,
             100,
+        )
+
+
+    def test_adapts_longitudinal_to_training_activity(
+        self,
+    ) -> None:
+        activity = NormalizedActivity(
+            provider="garmin",
+            external_id="garmin-bridge-001",
+            activity_type="running",
+            start_time="2026-08-02T08:30:00+02:00",
+            duration_seconds=2638,
+            distance_meters=6552,
+            average_heart_rate_bpm=134,
+            maximum_heart_rate_bpm=159,
+            raw_metadata={
+                "title": "Course test",
+                "perceived_effort": 4,
+            },
+        )
+
+        longitudinal = self.adapter.adapt(activity)
+        result = TrainingActivityAdapter().adapt(
+            longitudinal
+        )
+
+        self.assertEqual(
+            result.activity_date.isoformat(),
+            "2026-08-02",
+        )
+        self.assertEqual(
+            result.activity_type,
+            "running",
+        )
+        self.assertAlmostEqual(
+            result.distance_km,
+            6.552,
+        )
+        self.assertEqual(
+            result.duration_minutes,
+            44,
+        )
+        self.assertEqual(
+            result.average_heart_rate,
+            134,
+        )
+        self.assertEqual(
+            result.maximum_heart_rate,
+            159,
+        )
+        self.assertEqual(
+            result.perceived_exertion,
+            4,
+        )
+        self.assertEqual(
+            result.notes,
+            "Course test",
         )
 
 

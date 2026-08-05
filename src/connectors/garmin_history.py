@@ -106,7 +106,7 @@ class GarminHistoryConnector(ActivityConnector):
             payload.get("Type d'activité")
         )
         duration_seconds = self._parse_duration(
-            payload.get("Durée")
+            (payload.get("Durée") or payload.get("Temps"))
         )
         distance_meters = self._distance_meters(
             payload.get("Distance"),
@@ -136,18 +136,14 @@ class GarminHistoryConnector(ActivityConnector):
                 payload.get("Calories")
             ),
             average_heart_rate_bpm=self._parse_number(
-                payload.get(
-                    "Fréquence cardiaque moyenne"
-                )
+                (payload.get("Fréquence cardiaque moyenne") or payload.get("FC moyenne"))
             ),
             maximum_heart_rate_bpm=self._parse_number(
-                payload.get(
-                    "Fréquence cardiaque maximale"
-                )
+                (payload.get("Fréquence cardiaque maximale") or payload.get("FC max"))
             ),
             average_speed_mps=average_speed_mps,
             elevation_gain_m=self._parse_number(
-                payload.get("Ascension totale")
+                (payload.get("Ascension totale") or payload.get("Dénivelé positif"))
             ),
             training_load=self._parse_number(
                 payload.get(
@@ -177,9 +173,7 @@ class GarminHistoryConnector(ActivityConnector):
                 ),
                 "average_cadence": (
                     self._parse_number(
-                        payload.get(
-                            "Cadence de course moyenne"
-                        )
+                        (payload.get("Cadence de course moyenne") or payload.get("Cadence moyenne"))
                     )
                 ),
                 "maximum_cadence": (
@@ -456,12 +450,27 @@ class GarminHistoryConnector(ActivityConnector):
         if not value:
             return ""
 
-        parsed_date = datetime.strptime(
-            str(value).strip(),
+        date_value = str(value).strip()
+        supported_formats = (
             "%Y-%m-%d %H:%M:%S",
+            "%d/%m/%Y %H:%M",
+            "%d/%m/%Y %H:%M:%S",
         )
 
-        return parsed_date.astimezone().isoformat()
+        for date_format in supported_formats:
+            try:
+                parsed_date = datetime.strptime(
+                    date_value,
+                    date_format,
+                )
+                return parsed_date.astimezone().isoformat()
+            except ValueError:
+                continue
+
+        raise ValueError(
+            "Format de date Garmin non reconnu : "
+            f"{date_value!r}"
+        )
 
     @staticmethod
     def _parse_duration(value: Any) -> float:

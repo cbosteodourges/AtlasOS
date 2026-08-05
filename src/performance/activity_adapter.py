@@ -15,6 +15,7 @@ from .longitudinal_models import (
     RecoveryMetrics,
     RunningDynamics,
 )
+from .models import TrainingActivity
 
 
 class LongitudinalActivityAdapter:
@@ -250,3 +251,53 @@ class LongitudinalActivityAdapter:
             / len(available_values)
             * 100
         )
+
+class TrainingActivityAdapter:
+    """Adapte le mod?le longitudinal au g?n?rateur historique."""
+
+    def adapt(
+        self,
+        activity: LongitudinalActivity,
+    ) -> TrainingActivity:
+        """Convertit une activit? longitudinale."""
+        perceived_effort = (
+            round(
+                activity.recovery
+                .perceived_effort_1_to_10
+            )
+            if (
+                activity.recovery
+                .perceived_effort_1_to_10
+                is not None
+            )
+            else None
+        )
+
+        return TrainingActivity(
+            activity_date=activity.start_time.date(),
+            activity_type=activity.activity_type,
+            distance_km=activity.distance_km,
+            duration_minutes=max(
+                0,
+                round(activity.duration_minutes),
+            ),
+            average_heart_rate=self._integer(
+                activity.average_heart_rate_bpm
+            ),
+            maximum_heart_rate=self._integer(
+                activity.maximum_heart_rate_bpm
+            ),
+            perceived_exertion=perceived_effort,
+            completed=True,
+            notes=activity.title,
+        )
+
+    @staticmethod
+    def _integer(
+        value: Optional[float],
+    ) -> Optional[int]:
+        if value is None:
+            return None
+
+        return round(value)
+
