@@ -60,10 +60,36 @@ class GarminConnectorTests(unittest.TestCase):
                     "training_stress_score": 96.0,
                     "workout_rpe": 40,
                     "workout_feel": 75,
+                    "avg_running_cadence": 80,
+                    "max_running_cadence": 97,
+                    "avg_step_length": 911.6,
+                    "avg_vertical_ratio": 9.2,
+                    "avg_vertical_oscillation": 82.5,
+                    "avg_stance_time": 292.6,
+                    "avg_power": 354,
+                    "max_power": 765,
+                    "normalized_power": 369,
+                    "avg_temperature": 31,
+                    "min_temperature": 30,
+                    "max_temperature": 31,
+                    "total_training_effect": 2.9,
+                    "total_anaerobic_training_effect": 1.2,
                 },
                 "device_info": {
                     "garmin_product": "fr255"
                 },
+                "laps": [{
+                    "timestamp": datetime(
+                        2026, 8, 2, 6, 10,
+                        tzinfo=timezone.utc,
+                    ),
+                    "total_distance": 1000.0,
+                }],
+                "time_in_zones": [{
+                    1: "session",
+                    "threshold_heart_rate": 161,
+                    "time_in_hr_zone": [60.0, 120.0],
+                }],
                 "source_file": "activity.fit",
             },
         )
@@ -104,6 +130,38 @@ class GarminConnectorTests(unittest.TestCase):
         self.assertEqual(
             activity.raw_metadata["feeling_label"],
             "strong",
+        )
+        self.assertEqual(
+            activity.raw_metadata["average_cadence"],
+            160.0,
+        )
+        self.assertEqual(
+            activity.raw_metadata["maximum_cadence"],
+            194.0,
+        )
+        self.assertAlmostEqual(
+            activity.raw_metadata["average_stride_length"],
+            0.9116,
+        )
+        self.assertEqual(
+            activity.raw_metadata["average_vertical_oscillation"],
+            8.25,
+        )
+        self.assertEqual(
+            activity.raw_metadata["average_ground_contact_time"],
+            292.6,
+        )
+        self.assertEqual(
+            activity.raw_metadata["normalized_power"],
+            369.0,
+        )
+        self.assertEqual(
+            activity.raw_metadata["laps"][0]["timestamp"],
+            "2026-08-02T08:10:00+02:00",
+        )
+        self.assertEqual(
+            activity.raw_metadata["time_in_zones"][0]["1"],
+            "session",
         )
         self.assertEqual(
             activity.source_device,

@@ -17,6 +17,12 @@ class ActivitySample:
     altitude_m: Optional[float] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    distance_meters: Optional[float] = None
+    temperature_c: Optional[float] = None
+    vertical_oscillation_cm: Optional[float] = None
+    vertical_ratio_percent: Optional[float] = None
+    ground_contact_time_ms: Optional[float] = None
+    stride_length_m: Optional[float] = None
 
 
 @dataclass

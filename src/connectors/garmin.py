@@ -79,8 +79,17 @@ class GarminConnector(ActivityConnector):
                 if not self._is_after(start_time, since):
                     continue
 
+            cadence_multiplier = (
+                2.0
+                if str(
+                    session.get("sport", "")
+                ).strip().lower() == "running"
+                else 1.0
+            )
+
             samples = self._build_samples(
-                messages.get("record_mesgs", [])
+                messages.get("record_mesgs", []),
+                cadence_multiplier=cadence_multiplier,
             )
 
             device_messages = messages.get(
@@ -98,6 +107,14 @@ class GarminConnector(ActivityConnector):
                             device_messages[0]
                             if device_messages
                             else {}
+                        ),
+                        "laps": messages.get(
+                            "lap_mesgs",
+                            [],
+                        ),
+                        "time_in_zones": messages.get(
+                            "time_in_zone_mesgs",
+                            [],
                         ),
                         "source_file": fit_path.name,
                     },
@@ -161,6 +178,22 @@ class GarminConnector(ActivityConnector):
                 ),
                 "sport": session.get("sport"),
                 "sub_sport": session.get("sub_sport"),
+                "laps": self._serializable(activity.payload.get("laps", [])),
+                "time_in_zones": self._serializable(activity.payload.get("time_in_zones", [])),
+                "average_cadence": self._session_cadence(session),
+                "maximum_cadence": self._session_cadence(session, maximum=True),
+                "average_stride_length": self._scaled_float(session.get("avg_step_length"), 1000),
+                "average_vertical_ratio": self._optional_float(session.get("avg_vertical_ratio")),
+                "average_vertical_oscillation": self._scaled_float(session.get("avg_vertical_oscillation"), 10),
+                "average_ground_contact_time": self._optional_float(session.get("avg_stance_time")),
+                "average_power": self._optional_float(session.get("avg_power")),
+                "maximum_power": self._optional_float(session.get("max_power")),
+                "normalized_power": self._optional_float(session.get("normalized_power")),
+                "average_temperature": self._optional_float(session.get("avg_temperature")),
+                "minimum_temperature": self._optional_float(session.get("min_temperature")),
+                "maximum_temperature": self._optional_float(session.get("max_temperature")),
+                "aerobic_training_effect": self._optional_float(session.get("total_training_effect")),
+                "anaerobic_training_effect": self._optional_float(session.get("total_anaerobic_training_effect")),
                 "workout_rpe_raw": self._optional_float(
                     session.get("workout_rpe")
                 ),
@@ -197,14 +230,31 @@ class GarminConnector(ActivityConnector):
     def _build_samples(
         cls,
         records: List[Dict[str, Any]],
+        cadence_multiplier: float = 1.0,
     ) -> List[ActivitySample]:
         samples: List[ActivitySample] = []
 
         for record in records:
-            timestamp = cls._to_iso(record.get("timestamp"))
+            timestamp = cls._to_iso(
+                record.get("timestamp")
+            )
 
             if not timestamp:
                 continue
+
+            cadence = cls._optional_float(
+                record.get("cadence")
+            )
+            vertical_oscillation = (
+                cls._optional_float(
+                    record.get(
+                        "vertical_oscillation"
+                    )
+                )
+            )
+            step_length = cls._optional_float(
+                record.get("step_length")
+            )
 
             samples.append(
                 ActivitySample(
@@ -218,8 +268,11 @@ class GarminConnector(ActivityConnector):
                             record.get("speed"),
                         )
                     ),
-                    cadence_spm=cls._optional_float(
-                        record.get("cadence")
+                    cadence_spm=(
+                        cadence
+                        * cadence_multiplier
+                        if cadence is not None
+                        else None
                     ),
                     power_watts=cls._optional_float(
                         record.get("power")
@@ -235,6 +288,35 @@ class GarminConnector(ActivityConnector):
                     ),
                     longitude=cls._semicircles_to_degrees(
                         record.get("position_long")
+                    ),
+                    distance_meters=cls._optional_float(
+                        record.get("distance")
+                    ),
+                    temperature_c=cls._optional_float(
+                        record.get("temperature")
+                    ),
+                    vertical_oscillation_cm=(
+                        vertical_oscillation / 10
+                        if vertical_oscillation
+                        is not None
+                        else None
+                    ),
+                    vertical_ratio_percent=(
+                        cls._optional_float(
+                            record.get(
+                                "vertical_ratio"
+                            )
+                        )
+                    ),
+                    ground_contact_time_ms=(
+                        cls._optional_float(
+                            record.get("stance_time")
+                        )
+                    ),
+                    stride_length_m=(
+                        step_length / 1000
+                        if step_length is not None
+                        else None
                     ),
                 )
             )
@@ -258,6 +340,38 @@ class GarminConnector(ActivityConnector):
             return sub_sport
 
         return sport
+
+    @classmethod
+    def _session_cadence(
+        cls,
+        session: Dict[str, Any],
+        maximum: bool = False,
+    ) -> Optional[float]:
+        """Convertit la cadence FIT en pas par minute."""
+        field = (
+            "max_running_cadence"
+            if maximum
+            else "avg_running_cadence"
+        )
+        fallback = (
+            "max_cadence"
+            if maximum
+            else "avg_cadence"
+        )
+        cadence = cls._optional_float(
+            session.get(
+                field,
+                session.get(fallback),
+            )
+        )
+
+        if cadence is None:
+            return None
+
+        if cls._activity_type(session) == "running":
+            cadence *= 2
+
+        return cadence
 
     @staticmethod
     def _source_device(
@@ -330,6 +444,43 @@ class GarminConnector(ActivityConnector):
         )
 
         return GarminConnector._optional_float(value)
+
+    @classmethod
+    def _serializable(
+        cls,
+        value: Any,
+    ) -> Any:
+        """Convertit r?cursivement une donn?e FIT en donn?e JSON."""
+        if isinstance(value, datetime):
+            return cls._to_iso(value)
+
+        if isinstance(value, dict):
+            return {
+                str(key): cls._serializable(item)
+                for key, item in value.items()
+            }
+
+        if isinstance(value, (list, tuple)):
+            return [
+                cls._serializable(item)
+                for item in value
+            ]
+
+        return value
+
+    @classmethod
+    def _scaled_float(
+        cls,
+        value: Any,
+        divisor: float,
+    ) -> Optional[float]:
+        """Convertit et redimensionne une valeur FIT optionnelle."""
+        number = cls._optional_float(value)
+
+        if number is None:
+            return None
+
+        return number / divisor
 
     @staticmethod
     def _optional_float(
