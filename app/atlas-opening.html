@@ -68,7 +68,14 @@
       <button class="hub-final-hotspot hotspot-clinical" data-engine="Clinique" type="button" aria-label="Ouvrir Clinique"></button>
       <button class="hub-final-hotspot hotspot-ai" data-engine="Atlas IA" type="button" aria-label="Ouvrir Atlas IA"></button>
       <button class="hub-final-hotspot hotspot-biomech" data-engine="Biomécanique" type="button" aria-label="Ouvrir Biomécanique"></button>
-      <button class="hub-final-hotspot hotspot-performance" data-engine="Performance" type="button" aria-label="Ouvrir Performance"></button>
+      <button class="hub-final-hotspot hotspot-performance agent-hotspot agent-hotspot--coach" data-engine="Atlas Coach" type="button" aria-label="Ouvrir Atlas Coach">
+        <span class="agent-hotspot__sigil" aria-hidden="true">AC</span>
+        <span class="agent-hotspot__identity">
+          <strong>Atlas Coach</strong>
+          <small>Analyse • Entraînement</small>
+          <small>Compétitions • Performance</small>
+        </span>
+      </button>
       <button class="hub-final-hotspot hotspot-physiology" data-engine="Physiologie" type="button" aria-label="Ouvrir Physiologie"></button>
       <button class="hub-final-hotspot hotspot-prevention" data-engine="Prévention" type="button" aria-label="Ouvrir Prévention"></button>
       <button class="hub-final-hotspot hotspot-memory" data-engine="Mémoire" type="button" aria-label="Ouvrir Mémoire"></button>
@@ -89,7 +96,7 @@
     <div class="engine-panel" id="enginePanel" hidden>
       <div class="engine-panel-card">
         <button id="enginePanelClose" type="button" aria-label="Fermer">×</button>
-        <span>MOTEUR ATLAS</span>
+        <span>AGENT SPÉCIALISÉ ATLAS</span>
         <h2 id="enginePanelTitle">Module</h2>
         <p id="enginePanelText">Contenu du module.</p>
         <button id="enginePanelAction" type="button">Ouvrir le module →</button>

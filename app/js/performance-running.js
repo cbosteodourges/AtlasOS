@@ -1005,3 +1005,189 @@
     });
   });
 })();
+
+/* ████████████████████████████████████████████████████████████
+   NAVIGATION ATLAS COACH
+   ████████████████████████████████████████████████████████████ */
+
+(() => {
+  const navigation = document.querySelector(".coach-navigation");
+
+  if (!navigation) {
+    return;
+  }
+
+  const buttons = [
+    ...navigation.querySelectorAll(".coach-navigation-button")
+  ];
+
+  const analysisPanel = document.getElementById("syncPanel");
+  const trainingPanel = document.querySelector(".setup-panel");
+  const physiologyPanel = document.getElementById("physiologyPanel");
+
+  const status = document.createElement("p");
+  status.className = "coach-navigation-status";
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-live", "polite");
+  navigation.insertAdjacentElement("afterend", status);
+
+  function setActiveButton(activeButton) {
+    buttons.forEach((button) => {
+      const isActive = button === activeButton;
+      button.classList.toggle("active", isActive);
+      button.setAttribute("aria-pressed", String(isActive));
+    });
+  }
+
+  function scrollToPanel(panel) {
+    if (!panel) {
+      return;
+    }
+
+    const headerOffset = 92;
+    const panelTop =
+      panel.getBoundingClientRect().top +
+      window.scrollY -
+      headerOffset;
+
+    window.scrollTo({
+      top: panelTop,
+      behavior: "smooth"
+    });
+  }
+
+  function showStatus(message) {
+    status.textContent = message;
+    status.classList.add("visible");
+
+    window.clearTimeout(showStatus.timeoutId);
+
+    showStatus.timeoutId = window.setTimeout(() => {
+      status.classList.remove("visible");
+    }, 4200);
+  }
+
+  buttons.forEach((button) => {
+    button.setAttribute(
+      "aria-pressed",
+      String(button.classList.contains("active"))
+    );
+
+    button.addEventListener("click", () => {
+      const space = button.dataset.coachSpace;
+
+      setActiveButton(button);
+
+      if (space === "analysis") {
+        scrollToPanel(analysisPanel);
+        showStatus("Espace Analyse : données, capteurs et activités.");
+        return;
+      }
+
+      if (space === "training") {
+        scrollToPanel(trainingPanel);
+        showStatus(
+          "Espace Entraînement : profil, zones et plan personnalisé."
+        );
+        return;
+      }
+
+      if (space === "competitions") {
+        scrollToPanel(document.getElementById("competitionPanel"));
+        showStatus("Espace Compétitions : prochaine échéance et objectif.");
+        return;
+      }
+
+      if (space === "performance") {
+        if (physiologyPanel && !physiologyPanel.hidden) {
+          scrollToPanel(physiologyPanel);
+          showStatus(
+            "Espace Performance : carte physiologique et zones personnelles."
+          );
+          return;
+        }
+
+        scrollToPanel(trainingPanel);
+        showStatus(
+          "Calculez d’abord vos zones pour afficher l’espace Performance."
+        );
+      }
+    });
+  });
+})();
+
+/* ████████████████████████████████████████████████████████████
+   FIN NAVIGATION ATLAS COACH
+   ████████████████████████████████████████████████████████████ */
+
+/* GESTION DES COMPÉTITIONS ATLAS COACH */
+(() => {
+  const fields = {
+    name: document.getElementById("competitionName"),
+    type: document.getElementById("competitionType"),
+    date: document.getElementById("competitionDate"),
+    targetTime: document.getElementById("competitionTargetTime"),
+    priority: document.getElementById("competitionPriority"),
+    courseProfile: document.getElementById("competitionCourseProfile")
+  };
+
+  const saveButton = document.getElementById("saveCompetitionButton");
+  const saveStatus = document.getElementById("competitionSaveStatus");
+  const trainingType = document.getElementById("eventType");
+  const trainingDate = document.getElementById("eventDate");
+  const storageKey = "atlasCoachCompetition";
+
+  if (!saveButton || !saveStatus) {
+    return;
+  }
+
+  function applyCompetition(competition) {
+    Object.entries(fields).forEach(([key, field]) => {
+      if (field && competition[key] != null) {
+        field.value = competition[key];
+      }
+    });
+
+    if (trainingType && competition.type) {
+      trainingType.value = competition.type;
+    }
+
+    if (trainingDate && competition.date) {
+      trainingDate.value = competition.date;
+    }
+  }
+
+  try {
+    const savedCompetition = JSON.parse(
+      localStorage.getItem(storageKey) || "null"
+    );
+
+    if (savedCompetition) {
+      applyCompetition(savedCompetition);
+      saveStatus.textContent = "Compétition enregistrée et restaurée.";
+    }
+  } catch (error) {
+    console.warn("Compétition Atlas Coach illisible.", error);
+  }
+
+  saveButton.addEventListener("click", () => {
+    const competition = Object.fromEntries(
+      Object.entries(fields).map(([key, field]) => [
+        key,
+        field ? field.value.trim() : ""
+      ])
+    );
+
+    if (!competition.name || !competition.date) {
+      saveStatus.textContent =
+        "Indiquez le nom et la date de la compétition.";
+      return;
+    }
+
+    localStorage.setItem(storageKey, JSON.stringify(competition));
+    applyCompetition(competition);
+    saveStatus.textContent =
+      "Compétition enregistrée et transmise au plan d’entraînement.";
+  });
+})();
+/* FIN GESTION DES COMPÉTITIONS ATLAS COACH */

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#020713">
-  <title>Atlas OS — Performance & Running</title>
+  <title>Atlas OS — Atlas Coach</title>
   <link rel="stylesheet" href="./css/performance-running.css">
 </head>
 <body>
@@ -20,15 +20,45 @@
       <img src="./assets/atlas-logo-full.jpg" alt="Logo Atlas OS">
       <div>
         <strong>ATLAS OS</strong>
-        <span>Performance & Running</span>
+        <span>Atlas Coach</span>
       </div>
     </div>
 
     <div class="engine-status">
       <span></span>
-      Moteur physiologique actif
+      Agent spécialisé Atlas actif
     </div>
   </header>
+
+  <section class="coach-hero" aria-labelledby="coachTitle">
+    <div class="coach-identity">
+      <div class="coach-emblem" aria-hidden="true">AC</div>
+
+      <div class="coach-introduction">
+        <p>AGENT SPÉCIALISÉ ATLAS</p>
+        <h1 id="coachTitle">Atlas Coach</h1>
+        <span>
+          Analyse physiologique, entraînement personnalisé,
+          préparation des compétitions et suivi de la performance.
+        </span>
+      </div>
+    </div>
+
+    <nav class="coach-navigation" aria-label="Espaces Atlas Coach">
+      <button type="button" class="coach-navigation-button active" data-coach-space="analysis">
+        Analyse
+      </button>
+      <button type="button" class="coach-navigation-button" data-coach-space="training">
+        Entraînement
+      </button>
+      <button type="button" class="coach-navigation-button" data-coach-space="competitions">
+        Compétitions
+      </button>
+      <button type="button" class="coach-navigation-button" data-coach-space="performance">
+        Performance
+      </button>
+    </nav>
+  </section>
 
   <!-- ████████████████████████████████████████████████████████
        🟩 PARTIE B — B01 — PROFIL DE COURSE
@@ -229,6 +259,72 @@
     </div>
   </section>
 
+  <!-- 🟧 PARTIE B — B03 — ESPACE COMPÉTITIONS -->
+  <section class="panel competition-panel" id="competitionPanel">
+    <div class="section-title competition-title">
+      <div>
+        <p>COMPÉTITIONS</p>
+        <h2>Ma prochaine échéance</h2>
+        <span>Cette épreuve servira de référence pour adapter la préparation et suivre la progression jusqu’au jour de la compétition.</span>
+      </div>
+      <div class="competition-badge">Objectif principal</div>
+    </div>
+
+    <div class="competition-grid">
+      <label>
+        <span>Nom de l’épreuve</span>
+        <input id="competitionName" type="text" placeholder="Ex. Semi-marathon de Lille">
+      </label>
+
+      <label>
+        <span>Type d’épreuve</span>
+        <select id="competitionType">
+          <option value="5k">5 km</option>
+          <option value="10k" selected>10 km</option>
+          <option value="half">Semi-marathon</option>
+          <option value="marathon">Marathon</option>
+          <option value="trail-short">Trail court</option>
+          <option value="trail-long">Trail long</option>
+          <option value="ultra">Ultra-trail</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Date de la compétition</span>
+        <input id="competitionDate" type="date">
+      </label>
+
+      <label>
+        <span>Objectif chronométrique</span>
+        <input id="competitionTargetTime" type="time" step="1" value="00:47:00">
+      </label>
+
+      <label>
+        <span>Priorité</span>
+        <select id="competitionPriority">
+          <option value="a" selected>A — Objectif principal</option>
+          <option value="b">B — Objectif intermédiaire</option>
+          <option value="c">C — Course de préparation</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Profil du parcours</span>
+        <select id="competitionCourseProfile">
+          <option value="flat" selected>Plat et rapide</option>
+          <option value="rolling">Vallonné</option>
+          <option value="hilly">Fort dénivelé</option>
+          <option value="trail">Sentiers / trail</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="competition-actions">
+      <button class="primary-button" id="saveCompetitionButton" type="button">Enregistrer cette compétition</button>
+      <p class="competition-save-status" id="competitionSaveStatus" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+  <!-- 🟧 FIN PARTIE B — B03 -->
   <!-- ████████████████████████████████████████████████████████
        🟨 PARTIE C — C01 — CARTE PHYSIOLOGIQUE
        ████████████████████████████████████████████████████████ -->

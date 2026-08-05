@@ -108,8 +108,8 @@
       text: "Le moteur Clinique organise les symptômes, antécédents, traitements et examens.",
       href: "./clinique.html"
     },
-    "Performance": {
-      text: "Le moteur Performance génère et adapte vos plans d’entraînement.",
+    "Atlas Coach": {
+      text: "Atlas Coach analyse votre profil, construit vos entraînements, prépare vos compétitions et suit votre performance.",
       href: "./performance-running.html"
     },
     "Biomécanique": {

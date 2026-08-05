@@ -669,3 +669,133 @@ button {
     transition-duration: 0.01ms !important;
   }
 }
+/* ============================================================
+   AGENT 01 — ATLAS COACH
+   Première migration progressive du hub vers les agents.
+   ============================================================ */
+
+.agent-hotspot--coach {
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+  overflow: visible;
+  border-color: rgba(255, 166, 57, 0.92);
+  background:
+    radial-gradient(
+      circle at 50% 42%,
+      rgba(255, 176, 62, 0.36),
+      rgba(33, 15, 4, 0.96) 66%,
+      rgba(3, 8, 18, 0.98) 100%
+    );
+  box-shadow:
+    inset 0 0 22px rgba(255, 173, 54, 0.28),
+    0 0 14px rgba(255, 149, 28, 0.8),
+    0 0 36px rgba(255, 128, 12, 0.38);
+}
+
+.agent-hotspot--coach::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -10%;
+  border: 1px solid rgba(255, 174, 63, 0.72);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 18px rgba(255, 168, 50, 0.24),
+    0 0 18px rgba(255, 137, 23, 0.44);
+  animation: atlas-coach-pulse 2.8s ease-in-out infinite;
+}
+
+.agent-hotspot__sigil {
+  display: grid;
+  place-items: center;
+  width: 66%;
+  aspect-ratio: 1;
+  color: #fff4dc;
+  border: 1px solid rgba(255, 199, 112, 0.82);
+  border-radius: 50%;
+  background: rgba(26, 10, 2, 0.94);
+  box-shadow:
+    inset 0 0 16px rgba(255, 157, 36, 0.34),
+    0 0 14px rgba(255, 144, 27, 0.38);
+  font-size: clamp(0.56rem, 1.05vw, 1.05rem);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.agent-hotspot__identity {
+  position: absolute;
+  top: 98%;
+  left: 50%;
+  display: grid;
+  width: 190%;
+  min-width: 112px;
+  padding: 5% 8% 7%;
+  transform: translateX(-50%);
+  color: #d9e7f5;
+  border-radius: 0 0 12px 12px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(2, 8, 18, 0.98),
+      rgba(2, 8, 18, 0.92) 78%,
+      rgba(2, 8, 18, 0)
+    );
+  text-align: center;
+  line-height: 1.2;
+}
+
+.agent-hotspot__identity strong {
+  color: #fff;
+  font-size: clamp(0.55rem, 1.1vw, 1.08rem);
+  text-shadow: 0 0 12px rgba(255, 152, 34, 0.8);
+}
+
+.agent-hotspot__identity small {
+  margin-top: 3px;
+  color: #b8c6d7;
+  font-size: clamp(0.38rem, 0.7vw, 0.7rem);
+  white-space: nowrap;
+}
+
+.agent-hotspot--coach:hover,
+.agent-hotspot--coach:focus-visible,
+.agent-hotspot--coach.is-active {
+  border-color: #ffd08a;
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(255, 192, 91, 0.48),
+      rgba(36, 14, 3, 0.98) 68%
+    );
+  box-shadow:
+    inset 0 0 26px rgba(255, 185, 72, 0.36),
+    0 0 18px rgba(255, 174, 55, 0.95),
+    0 0 44px rgba(255, 129, 15, 0.52);
+}
+
+@keyframes atlas-coach-pulse {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: scale(0.96);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+/* CORRECTION ATLAS COACH — masquage de l’ancien libellé Performance */
+.agent-hotspot--coach .agent-hotspot__identity {
+  top: 80%;
+  padding-top: 24%;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(2, 8, 18, 0) 0%,
+      rgba(2, 8, 18, 0.98) 22%,
+      rgba(2, 8, 18, 0.96) 82%,
+      rgba(2, 8, 18, 0) 100%
+    );
+}
