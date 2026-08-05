@@ -175,6 +175,13 @@ class GarminHistoryConnectorTests(unittest.TestCase):
             ),
             6550.0,
         )
+        self.assertEqual(
+            GarminHistoryConnector._distance_meters(
+                "10,410",
+                "running",
+            ),
+            10410.0,
+        )
 
     def test_since_filter_excludes_old_activity(self) -> None:
         connector = GarminHistoryConnector(
@@ -304,6 +311,38 @@ class GarminHistoryConnectorTests(unittest.TestCase):
             ],
             164,
         )
+
+
+    def test_normalizes_real_garmin_sport_families(
+        self,
+    ) -> None:
+        expected_types = {
+            "Course \u00e0 pied": "running",
+            "Trail": "running",
+            "Course \u00e0 pied sur piste": "running",
+            "Course \u00e0 pied sur tapis roulant": "running",
+            "Ultrafond": "running",
+            "Cyclisme sur route": "cycling",
+            "V\u00e9lo d'int\u00e9rieur": "indoor_cycling",
+            "Nat. piscine": "lap_swimming",
+            "Natation en eau libre": "open_water_swimming",
+            "Ski de fond classique": "cross_country_skiing",
+            "Randonn\u00e9e": "hiking",
+            "HIIT": "hiit",
+            "Autre": "other",
+        }
+
+        for garmin_type, atlas_type in (
+            expected_types.items()
+        ):
+            with self.subTest(
+                garmin_type=garmin_type
+            ):
+                self.assertEqual(
+                    GarminHistoryConnector
+                    ._activity_type(garmin_type),
+                    atlas_type,
+                )
 
 
 if __name__ == "__main__":

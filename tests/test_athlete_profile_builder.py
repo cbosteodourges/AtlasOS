@@ -233,5 +233,57 @@ class AthleteProfileBuilderTests(
         )
 
 
+    def test_current_profile_uses_recent_twelve_weeks(
+        self,
+    ) -> None:
+        activities = [
+            self._run(
+                -104,
+                0,
+                50,
+                "Ancienne sortie",
+            )
+        ]
+
+        for week in range(12):
+            activities.extend(
+                [
+                    self._run(week, 0, 8),
+                    self._run(week, 2, 10),
+                    self._run(week, 5, 12),
+                ]
+            )
+
+        profile = self.builder.build(
+            athlete_id="athlete-recent",
+            declared_level="regular_amateur",
+            activities=activities,
+        )
+
+        self.assertGreater(
+            profile.history_duration_weeks,
+            100,
+        )
+        self.assertEqual(
+            profile.tolerance
+            .usual_running_distance_per_week_km,
+            30,
+        )
+        self.assertEqual(
+            profile.tolerance
+            .usual_running_sessions_per_week,
+            3,
+        )
+        self.assertEqual(
+            profile.tolerance
+            .maximum_observed_weekly_distance_km,
+            50,
+        )
+        self.assertEqual(
+            profile.observed_level,
+            "regular_amateur",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

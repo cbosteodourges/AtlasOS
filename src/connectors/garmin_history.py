@@ -153,6 +153,9 @@ class GarminHistoryConnector(ActivityConnector):
             source_device="Garmin Connect",
             raw_metadata={
                 "title": payload.get("Titre"),
+                "garmin_activity_type": payload.get(
+                    "Type d\u0027activit\u00e9"
+                ),
                 "favorite": payload.get("Favori"),
                 "average_pace": payload.get(
                     "Allure moyenne"
@@ -392,21 +395,32 @@ class GarminHistoryConnector(ActivityConnector):
         ).strip().lower()
 
         activity_types = {
-            "course à pied": "running",
-            "course sur tapis": "treadmill_running",
-            "trail": "trail_running",
+            "course \u00e0 pied": "running",
+            "course sur tapis": "running",
+            "course \u00e0 pied sur tapis roulant": "running",
+            "course \u00e0 pied sur piste": "running",
+            "trail": "running",
+            "ultrafond": "running",
             "cyclisme": "cycling",
-            "vélo en salle": "indoor_cycling",
+            "cyclisme sur route": "cycling",
+            "v\u00e9lo en salle": "indoor_cycling",
+            "v\u00e9lo d'int\u00e9rieur": "indoor_cycling",
             "vtt": "mountain_biking",
-            "marche à pied": "walking",
+            "marche \u00e0 pied": "walking",
             "marche": "walking",
-            "randonnée": "hiking",
+            "randonn\u00e9e": "hiking",
             "natation en piscine": "lap_swimming",
+            "nat. piscine": "lap_swimming",
             "natation en eau libre": (
                 "open_water_swimming"
             ),
+            "ski de fond classique": (
+                "cross_country_skiing"
+            ),
             "musculation": "strength_training",
             "cardio": "cardio_training",
+            "hiit": "hiit",
+            "autre": "other",
         }
 
         return activity_types.get(
@@ -424,23 +438,40 @@ class GarminHistoryConnector(ActivityConnector):
         activity_type: str,
     ) -> Optional[float]:
         """
-        Normalise la distance Garmin en mètres.
+        Normalise la distance Garmin en m?tres.
 
-        Garmin exprime les distances terrestres en kilomètres,
-        mais les distances de natation en mètres dans l'export CSV.
+        Garmin exprime les distances terrestres en kilom?tres,
+        mais les distances de natation en m?tres dans l'export CSV.
+        Les exports fran?ais peuvent employer une virgule d?cimale
+        pour les distances terrestres.
         """
-        distance = cls._parse_number(value)
-
-        if distance is None:
-            return None
-
         swimming_types = {
             "lap_swimming",
             "open_water_swimming",
         }
 
         if activity_type in swimming_types:
-            return distance
+            return cls._parse_number(value)
+
+        distance_value = str(
+            value or ""
+        ).strip()
+
+        if (
+            "," in distance_value
+            and "." not in distance_value
+        ):
+            distance_value = distance_value.replace(
+                ",",
+                ".",
+            )
+
+        distance = cls._parse_number(
+            distance_value
+        )
+
+        if distance is None:
+            return None
 
         return distance * 1000
 

@@ -60,16 +60,49 @@ class AthleteProfileBuilder:
             ordered,
             running,
         )
-        weekly_distances = [
+        all_weekly_values = list(
+            weekly_running.values()
+        )
+        all_weekly_distances = [
             values["distance"]
-            for values in weekly_running.values()
-        ]
-        weekly_sessions = [
-            values["sessions"]
-            for values in weekly_running.values()
+            for values in all_weekly_values
         ]
 
         history_weeks = len(weekly_running)
+        recent_week_count = min(
+            12,
+            history_weeks,
+        )
+        recent_weekly_values = (
+            all_weekly_values[-recent_week_count:]
+            if recent_week_count
+            else []
+        )
+        weekly_distances = [
+            values["distance"]
+            for values in recent_weekly_values
+        ]
+        weekly_sessions = [
+            values["sessions"]
+            for values in recent_weekly_values
+        ]
+
+        recent_week_keys = set(
+            list(weekly_running.keys())[
+                -recent_week_count:
+            ]
+            if recent_week_count
+            else []
+        )
+        recent_running = [
+            activity
+            for activity in running
+            if (
+                activity.start_time.isocalendar()[:2]
+                in recent_week_keys
+            )
+        ]
+
         average_distance = self._average(
             weekly_distances
         )
@@ -77,7 +110,7 @@ class AthleteProfileBuilder:
             weekly_sessions
         )
         maximum_distance = max(
-            weekly_distances,
+            all_weekly_distances,
             default=0.0,
         )
 
@@ -85,7 +118,7 @@ class AthleteProfileBuilder:
             self._is_structured_intensity(
                 activity
             )
-            for activity in running
+            for activity in recent_running
         )
 
         observed_level = self._observed_level(
@@ -128,8 +161,8 @@ class AthleteProfileBuilder:
             ),
             usual_long_runs_per_month=(
                 self._long_runs_per_month(
-                    running,
-                    history_weeks,
+                    recent_running,
+                    recent_week_count,
                 )
             ),
             recent_load_change_percent=(
