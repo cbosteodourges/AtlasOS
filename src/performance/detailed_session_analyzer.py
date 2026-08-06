@@ -103,13 +103,15 @@ class DetailedSessionAnalyzer:
         dominant_work_type = self._dominant_type(
             work_blocks
         )
+        workout_execution = self._workout_execution(
+            activity,
+            blocks,
+        )
 
         return DetailedSessionAnalysis(
             activity_id=activity.atlas_id,
-            workout_execution=self._workout_execution(
-                activity,
-                blocks,
-            ),
+            workout_execution=workout_execution,
+
             blocks=blocks,
             threshold_observations=(
                 self._threshold_observations(blocks)
@@ -141,12 +143,14 @@ class DetailedSessionAnalyzer:
             interpretation=self._interpretation(
                 blocks,
                 dominant_work_type,
+                workout_execution,
             ),
             planning_influences=(
                 self._planning_influences(
                     blocks,
                     physiological_load,
                     biomechanical_load,
+                    workout_execution,
                 )
             ),
         )
@@ -1539,13 +1543,14 @@ class DetailedSessionAnalyzer:
     def _interpretation(
         blocks: List[SessionBlock],
         dominant_work_type: str,
+        workout_execution: WorkoutExecutionSummary,
     ) -> List[str]:
         if not blocks:
             return [
                 "Aucun bloc exploitable n'a été détecté."
             ]
 
-        return [
+        interpretation = [
             f"{len(blocks)} blocs homogènes détectés.",
             (
                 "Travail dominant détecté : "
@@ -1553,11 +1558,25 @@ class DetailedSessionAnalyzer:
             ),
         ]
 
+        if workout_execution.workout_name:
+            interpretation.append(
+                (
+                    "Programme Garmin "
+                    f"« {workout_execution.workout_name} » : "
+                    f"{workout_execution.completed_repetition_count}/"
+                    f"{workout_execution.planned_repetition_count} "
+                    "blocs actifs réalisés, score d'exécution "
+                    f"{workout_execution.execution_score}/100."
+                )
+            )
+
+        return interpretation
     @staticmethod
     def _planning_influences(
         blocks: List[SessionBlock],
         physiological_load: int,
         biomechanical_load: int,
+        workout_execution: WorkoutExecutionSummary,
     ) -> List[str]:
         influences = []
 
@@ -1577,6 +1596,42 @@ class DetailedSessionAnalyzer:
                 "avant la prochaine séance rapide."
             )
 
+        if workout_execution.workout_name:
+            completed = (
+                workout_execution
+                .completed_repetition_count
+            )
+            planned = (
+                workout_execution
+                .planned_repetition_count
+            )
+
+            if (
+                planned > 0
+                and completed >= planned
+                and workout_execution.execution_score >= 90
+                and workout_execution.target_compliance_score
+                >= 85
+            ):
+                influences.append(
+                    "Séance programmée maîtrisée : autoriser "
+                    "une progression prudente du volume ou de "
+                    "l'allure lors d'une prochaine séance "
+                    "comparable, si la récupération est bonne."
+                )
+            elif workout_execution.execution_score >= 70:
+                influences.append(
+                    "Conserver les mêmes paramètres sur une "
+                    "prochaine séance comparable avant toute "
+                    "progression."
+                )
+            else:
+                influences.append(
+                    "Ne pas augmenter cette séance : la "
+                    "répéter ou alléger son volume jusqu'à "
+                    "une exécution plus stable."
+                )
+
         if not influences:
             influences.append(
                 "Utiliser cette séance pour ajuster "
@@ -1584,7 +1639,6 @@ class DetailedSessionAnalyzer:
             )
 
         return influences
-
     @staticmethod
     def _detection_reason(
         block_type: str,

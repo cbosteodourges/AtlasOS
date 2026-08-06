@@ -640,6 +640,12 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
             result.workout_execution.execution_score,
             80,
         )
+        self.assertTrue(
+            any(
+                "progression prudente" in influence
+                for influence in result.planning_influences
+            )
+        )
 
 if __name__ == "__main__":
     unittest.main()
