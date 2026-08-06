@@ -101,6 +101,9 @@ class LongitudinalActivity:
     time_in_zones: List[Dict[str, Any]] = field(
         default_factory=list
     )
+    workout: List[Dict[str, Any]] = field(default_factory=list)
+    workout_steps: List[Dict[str, Any]] = field(default_factory=list)
+    events: List[Dict[str, Any]] = field(default_factory=list)
     source: str = ""
     title: str = ""
     data_quality_score: int = 0

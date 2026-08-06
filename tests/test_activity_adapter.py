@@ -162,6 +162,18 @@ class LongitudinalActivityAdapterTests(
             raw_metadata={
                 "laps": laps,
                 "time_in_zones": time_in_zones,
+                "workout": [{
+                    "wkt_name": "20 x 30/30 VMA",
+                }],
+                "workout_steps": [{
+                    "message_index": 0,
+                    "duration_type": "time",
+                    "intensity": "warmup",
+                }],
+                "events": [{
+                    "event": "workout",
+                    "event_type": "start",
+                }],
             },
         )
 
@@ -172,6 +184,18 @@ class LongitudinalActivityAdapterTests(
         self.assertEqual(
             result.time_in_zones,
             time_in_zones,
+        )
+        self.assertEqual(
+            result.workout[0]["wkt_name"],
+            "20 x 30/30 VMA",
+        )
+        self.assertEqual(
+            result.workout_steps[0]["intensity"],
+            "warmup",
+        )
+        self.assertEqual(
+            result.events[0]["event_type"],
+            "start",
         )
     def test_calculates_pace_and_aerobic_efficiency(
         self,

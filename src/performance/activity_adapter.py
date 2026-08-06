@@ -192,6 +192,11 @@ class LongitudinalActivityAdapter:
             time_in_zones=list(
                 metadata.get("time_in_zones") or []
             ),
+            workout=list(metadata.get("workout") or []),
+            workout_steps=list(
+                metadata.get("workout_steps") or []
+            ),
+            events=list(metadata.get("events") or []),
             source=activity.provider,
             title=str(metadata.get("title") or ""),
             data_quality_score=self._quality_score(

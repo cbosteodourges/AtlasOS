@@ -116,6 +116,18 @@ class GarminConnector(ActivityConnector):
                             "time_in_zone_mesgs",
                             [],
                         ),
+                        "workout": messages.get(
+                            "workout_mesgs",
+                            [],
+                        ),
+                        "workout_steps": messages.get(
+                            "workout_step_mesgs",
+                            [],
+                        ),
+                        "events": messages.get(
+                            "event_mesgs",
+                            [],
+                        ),
                         "source_file": fit_path.name,
                     },
                     samples=samples,
@@ -180,6 +192,15 @@ class GarminConnector(ActivityConnector):
                 "sub_sport": session.get("sub_sport"),
                 "laps": self._serializable(activity.payload.get("laps", [])),
                 "time_in_zones": self._serializable(activity.payload.get("time_in_zones", [])),
+                "workout": self._serializable(
+                    activity.payload.get("workout", [])
+                ),
+                "workout_steps": self._serializable(
+                    activity.payload.get("workout_steps", [])
+                ),
+                "events": self._serializable(
+                    activity.payload.get("events", [])
+                ),
                 "average_cadence": self._session_cadence(session),
                 "maximum_cadence": self._session_cadence(session, maximum=True),
                 "average_stride_length": self._scaled_float(session.get("avg_step_length"), 1000),

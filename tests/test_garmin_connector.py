@@ -90,6 +90,21 @@ class GarminConnectorTests(unittest.TestCase):
                     "threshold_heart_rate": 161,
                     "time_in_hr_zone": [60.0, 120.0],
                 }],
+                "workout": [{
+                    "wkt_name": "5x1000m récup 2min",
+                    "num_valid_steps": 5,
+                }],
+                "workout_steps": [{
+                    "message_index": 0,
+                    "duration_type": "time",
+                    "duration_time": 600.0,
+                    "target_type": "open",
+                    "intensity": "warmup",
+                }],
+                "events": [{
+                    "event": "workout",
+                    "event_type": "start",
+                }],
                 "source_file": "activity.fit",
             },
         )
@@ -168,6 +183,18 @@ class GarminConnectorTests(unittest.TestCase):
             "Garmin Forerunner 255",
         )
 
+        self.assertEqual(
+            activity.raw_metadata["workout"][0]["wkt_name"],
+            "5x1000m récup 2min",
+        )
+        self.assertEqual(
+            activity.raw_metadata["workout_steps"][0]["intensity"],
+            "warmup",
+        )
+        self.assertEqual(
+            activity.raw_metadata["events"][0]["event_type"],
+            "start",
+        )
     def test_build_samples_from_fit_records(self) -> None:
         records = [
             {
