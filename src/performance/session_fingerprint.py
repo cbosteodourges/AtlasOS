@@ -108,6 +108,11 @@ class WorkoutExecutionSummary:
     """Comparaison entre une séance programmée et son exécution."""
 
     workout_name: str = ""
+    workout_origin: str = "unknown"
+    origin_confidence_score: int = 0
+    origin_reasons: List[str] = field(
+        default_factory=list
+    )
     planned_step_count: int = 0
     executed_block_count: int = 0
     planned_repetition_count: int = 0

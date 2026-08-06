@@ -512,6 +512,8 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
         workout = [{
             "wkt_name": "2 x 40 s rapide",
             "num_valid_steps": 5,
+            "capabilities": "tcx",
+            "9": 1,
         }]
         workout_steps = [
             {
@@ -623,6 +625,14 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
         self.assertEqual(
             result.workout_execution.workout_name,
             "2 x 40 s rapide",
+        )
+        self.assertEqual(
+            result.workout_execution.workout_origin,
+            "user_created",
+        )
+        self.assertGreaterEqual(
+            result.workout_execution.origin_confidence_score,
+            90,
         )
         self.assertEqual(
             result.workout_execution.planned_repetition_count,

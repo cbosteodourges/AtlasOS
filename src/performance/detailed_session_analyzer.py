@@ -178,6 +178,45 @@ class DetailedSessionAnalyzer:
         else:
             workout_name = str(raw_name or "")
 
+        workout_payload = activity.workout[0]
+        capabilities = str(
+            workout_payload.get("capabilities", "")
+        ).strip().lower()
+        origin_marker = workout_payload.get(
+            "9",
+            workout_payload.get(9),
+        )
+
+        if (
+            "tcx" in capabilities
+            or origin_marker == 1
+            or str(origin_marker) == "1"
+        ):
+            workout_origin = "user_created"
+            origin_confidence = 95
+            origin_reasons = [
+                "Capacité TCX ou marqueur FIT utilisateur."
+            ]
+        elif (
+            not capabilities
+            and (
+                origin_marker == 0
+                or str(origin_marker) == "0"
+            )
+        ):
+            workout_origin = "garmin_suggested"
+            origin_confidence = 85
+            origin_reasons = [
+                "Programme Garmin sans capacité TCX.",
+                "Marqueur FIT compatible avec une suggestion.",
+            ]
+        else:
+            workout_origin = "unknown"
+            origin_confidence = 40
+            origin_reasons = [
+                "Origine non explicitement fournie par Garmin."
+            ]
+
         ordered_steps = sorted(
             activity.workout_steps,
             key=lambda step: int(
@@ -425,6 +464,9 @@ class DetailedSessionAnalyzer:
 
         return WorkoutExecutionSummary(
             workout_name=workout_name,
+            workout_origin=workout_origin,
+            origin_confidence_score=origin_confidence,
+            origin_reasons=origin_reasons,
             planned_step_count=len(expanded_steps),
             executed_block_count=len(blocks),
             planned_repetition_count=(
