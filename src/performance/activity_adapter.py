@@ -187,6 +187,11 @@ class LongitudinalActivityAdapter:
             environment=environment,
             recovery=recovery,
             energy=energy,
+            samples=list(activity.samples),
+            laps=list(metadata.get("laps") or []),
+            time_in_zones=list(
+                metadata.get("time_in_zones") or []
+            ),
             source=activity.provider,
             title=str(metadata.get("title") or ""),
             data_quality_score=self._quality_score(

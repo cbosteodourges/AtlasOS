@@ -5,7 +5,7 @@ Modèles du moteur d'analyse longitudinale Performance Intelligence.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -92,6 +92,15 @@ class LongitudinalActivity:
         default_factory=EnergyMetrics
     )
 
+    samples: List[Any] = field(
+        default_factory=list
+    )
+    laps: List[Dict[str, Any]] = field(
+        default_factory=list
+    )
+    time_in_zones: List[Dict[str, Any]] = field(
+        default_factory=list
+    )
     source: str = ""
     title: str = ""
     data_quality_score: int = 0

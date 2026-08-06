@@ -4,7 +4,7 @@ Tests de l'adaptateur Performance Intelligence v2.
 
 import unittest
 
-from src.connectors import NormalizedActivity
+from src.connectors import ActivitySample, NormalizedActivity
 from src.performance import (
     LongitudinalActivityAdapter,
     TrainingActivityAdapter,
@@ -126,6 +126,53 @@ class LongitudinalActivityAdapterTests(
             100,
         )
 
+    def test_preserves_detailed_fit_data(
+        self,
+    ) -> None:
+        sample = ActivitySample(
+            timestamp="2026-08-02T08:30:01+02:00",
+            heart_rate_bpm=142,
+            speed_mps=3.8,
+            cadence_spm=174,
+            power_watts=410,
+            distance_meters=3.8,
+            ground_contact_time_ms=238,
+        )
+        laps = [
+            {
+                "start_time": "2026-08-02T08:30:00+02:00",
+                "total_distance": 1000,
+                "total_timer_time": 240,
+            }
+        ]
+        time_in_zones = [
+            {
+                "reference_mesg": "session",
+                "time_in_hr_zone": [60, 300, 420, 180, 30],
+            }
+        ]
+        activity = NormalizedActivity(
+            provider="garmin",
+            external_id="garmin-fit-detailed-001",
+            activity_type="running",
+            start_time="2026-08-02T08:30:00+02:00",
+            duration_seconds=990,
+            distance_meters=3800,
+            samples=[sample],
+            raw_metadata={
+                "laps": laps,
+                "time_in_zones": time_in_zones,
+            },
+        )
+
+        result = self.adapter.adapt(activity)
+
+        self.assertEqual(result.samples, [sample])
+        self.assertEqual(result.laps, laps)
+        self.assertEqual(
+            result.time_in_zones,
+            time_in_zones,
+        )
     def test_calculates_pace_and_aerobic_efficiency(
         self,
     ) -> None:
