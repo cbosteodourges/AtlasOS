@@ -104,6 +104,23 @@ class ThresholdObservation:
 
 
 @dataclass
+class DataIntegrityAssessment:
+    """Fiabilité des données et probabilité d'appartenance."""
+
+    heart_rate_reliable: bool = True
+    physiological_data_usable: bool = True
+    identity_confidence_score: int = 100
+    sensor_quality_score: int = 100
+    recommended_action: str = "use_all_data"
+    anomalies: List[str] = field(
+        default_factory=list
+    )
+    warnings: List[str] = field(
+        default_factory=list
+    )
+
+
+@dataclass
 class WorkoutExecutionSummary:
     """Comparaison entre une séance programmée et son exécution."""
 
@@ -130,6 +147,9 @@ class DetailedSessionAnalysis:
     """Analyse des blocs et effets d'une séance FIT."""
 
     activity_id: str
+    data_integrity: DataIntegrityAssessment = field(
+        default_factory=DataIntegrityAssessment
+    )
     workout_execution: WorkoutExecutionSummary = field(
         default_factory=WorkoutExecutionSummary
     )

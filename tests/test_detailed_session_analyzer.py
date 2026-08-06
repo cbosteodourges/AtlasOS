@@ -657,5 +657,57 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
             )
         )
 
+    def test_flags_heart_rate_above_declared_limit(
+        self,
+    ) -> None:
+        activity = LongitudinalActivity(
+            atlas_id="garmin:heart-rate-anomaly",
+            start_time=self.start,
+            activity_type="running",
+            distance_km=5,
+            duration_minutes=30,
+            average_heart_rate_bpm=176,
+            maximum_heart_rate_bpm=188,
+            average_speed_kmh=10,
+            samples=[
+                self._sample(0, 2.78, 0, 174),
+                self._sample(1800, 2.78, 5000, 188),
+            ],
+            data_quality_score=90,
+        )
+
+        profile = AthleteProfile(
+            athlete_id="athlete-heart-rate-test",
+            declared_level="intermediate",
+            observed_level="intermediate",
+            physiological=PhysiologicalReferences(
+                maximum_heart_rate_bpm=170,
+                vma_kmh=14,
+                threshold_speed_kmh=12.8,
+            ),
+        )
+        result = self.analyzer.analyze(
+            activity,
+            profile,
+        )
+
+        self.assertFalse(
+            result.data_integrity.heart_rate_reliable
+        )
+        self.assertFalse(
+            result.data_integrity.physiological_data_usable
+        )
+        self.assertTrue(
+            any(
+                "170" in anomaly
+                for anomaly
+                in result.data_integrity.anomalies
+            )
+        )
+        self.assertEqual(
+            result.data_integrity.recommended_action,
+            "exclude_heart_rate",
+        )
+
 if __name__ == "__main__":
     unittest.main()

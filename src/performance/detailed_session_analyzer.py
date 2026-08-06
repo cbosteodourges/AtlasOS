@@ -12,6 +12,7 @@ from src.connectors import ActivitySample
 from .athlete_profile import AthleteProfile
 from .longitudinal_models import LongitudinalActivity
 from .session_fingerprint import (
+    DataIntegrityAssessment,
     DetailedSessionAnalysis,
     SessionBlock,
     ThresholdObservation,
@@ -38,6 +39,7 @@ class DetailedSessionAnalyzer:
         if len(samples) < 2:
             return DetailedSessionAnalysis(
                 activity_id=activity.atlas_id,
+            data_integrity=data_integrity,
                 interpretation=[
                     "Points FIT insuffisants pour détecter "
                     "les blocs de la séance."
@@ -107,15 +109,30 @@ class DetailedSessionAnalyzer:
             activity,
             blocks,
         )
+        data_integrity = self._data_integrity(
+            activity,
+            profile,
+        )
+        threshold_observations = (
+            self._threshold_observations(blocks)
+        )
+
+        if not data_integrity.heart_rate_reliable:
+            for observation in threshold_observations:
+                observation.estimated_heart_rate_bpm = None
+                observation.evidence.append(
+                    "Fréquence cardiaque exclue par le "
+                    "contrôle d'intégrité."
+                )
 
         return DetailedSessionAnalysis(
             activity_id=activity.atlas_id,
+            data_integrity=data_integrity,
             workout_execution=workout_execution,
 
             blocks=blocks,
-            threshold_observations=(
-                self._threshold_observations(blocks)
-            ),
+            threshold_observations=threshold_observations,
+
             dominant_work_type=dominant_work_type,
             work_duration_seconds=sum(
                 block.duration_seconds
@@ -155,6 +172,91 @@ class DetailedSessionAnalyzer:
             ),
         )
 
+    @staticmethod
+    def _data_integrity(
+        activity: LongitudinalActivity,
+        profile: Optional[AthleteProfile],
+    ) -> DataIntegrityAssessment:
+        """Signale les données douteuses sans supprimer l'activité."""
+        anomalies = []
+        warnings = []
+        heart_rate_reliable = True
+        sensor_quality = 100
+        identity_confidence = 100
+
+        declared_maximum = (
+            profile.physiological.maximum_heart_rate_bpm
+            if profile
+            else None
+        )
+        observed_values = [
+            value
+            for value in (
+                activity.maximum_heart_rate_bpm,
+                *[
+                    sample.heart_rate_bpm
+                    for sample in activity.samples
+                ],
+            )
+            if value is not None
+        ]
+        observed_maximum = (
+            max(observed_values)
+            if observed_values
+            else None
+        )
+
+        if (
+            declared_maximum is not None
+            and observed_maximum is not None
+        ):
+            excess = observed_maximum - declared_maximum
+
+            if excess > 3:
+                heart_rate_reliable = False
+                sensor_quality -= 45
+                identity_confidence -= 20
+                anomalies.append(
+                    (
+                        "FC observée "
+                        f"{observed_maximum:.0f} bpm supérieure "
+                        "à la limite déclarée de "
+                        f"{declared_maximum:.0f} bpm."
+                    )
+                )
+            elif excess > 0:
+                sensor_quality -= 10
+                warnings.append(
+                    (
+                        "FC légèrement supérieure à la "
+                        f"référence de {declared_maximum:.0f} bpm."
+                    )
+                )
+
+        physiological_usable = heart_rate_reliable
+        action = (
+            "use_all_data"
+            if heart_rate_reliable
+            else "exclude_heart_rate"
+        )
+
+        return DataIntegrityAssessment(
+            heart_rate_reliable=heart_rate_reliable,
+            physiological_data_usable=(
+                physiological_usable
+            ),
+            identity_confidence_score=max(
+                0,
+                identity_confidence,
+            ),
+            sensor_quality_score=max(
+                0,
+                sensor_quality,
+            ),
+            recommended_action=action,
+            anomalies=anomalies,
+            warnings=warnings,
+        )
     @classmethod
     def _workout_execution(
         cls,

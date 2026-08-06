@@ -75,6 +75,7 @@ from src.performance.planner import (
 )
 from src.performance.session_fingerprint import (
     AthleteSessionLearning,
+    DataIntegrityAssessment,
     DetailedSessionAnalysis,
     SessionBlock,
     SessionFingerprint,
@@ -100,6 +101,7 @@ __all__ = [
     "EvolvingThreshold",
     "AthleteProfileBuilder",
     "AthleteSessionLearning",
+    "DataIntegrityAssessment",
     "DetailedSessionAnalysis",
     "DetailedSessionAnalyzer",
     "CompetitionComparison",
