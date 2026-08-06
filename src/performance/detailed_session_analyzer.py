@@ -47,7 +47,7 @@ class DetailedSessionAnalyzer:
         threshold_speed_kmh = self._threshold_speed(
             profile
         )
-        if self._has_manual_laps(activity.laps):
+        if activity.laps:
             blocks = self._blocks_from_laps(
                 activity,
                 vma_kmh,
@@ -1205,7 +1205,20 @@ class DetailedSessionAnalyzer:
             score += 10
         score += 10 if activity.time_in_zones else 0
 
-        return min(100, score)
+        has_manual_laps = any(
+            str(lap.get("lap_trigger", "")).lower()
+            == "manual"
+            for lap in activity.laps
+        )
+
+        if has_manual_laps:
+            maximum_confidence = 95
+        elif activity.laps:
+            maximum_confidence = 85
+        else:
+            maximum_confidence = 75
+
+        return min(maximum_confidence, score)
 
     @staticmethod
     def _dominant_type(

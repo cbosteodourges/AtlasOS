@@ -100,26 +100,43 @@ class ThresholdEvolutionAnalyzer:
         ):
             return current
 
+        speed_observations = (
+            self._filtered_observations(
+                observations,
+                "estimated_speed_kmh",
+                maximum_deviation_percent=6,
+            )
+        )
+        heart_rate_observations = (
+            self._filtered_observations(
+                observations,
+                "estimated_heart_rate_bpm",
+                maximum_deviation_percent=8,
+            )
+        )
+
         speeds = [
             observation.estimated_speed_kmh
-            for observation in observations
+            for observation in speed_observations
             if observation.estimated_speed_kmh
             is not None
         ]
         heart_rates = [
             observation.estimated_heart_rate_bpm
-            for observation in observations
+            for observation in heart_rate_observations
             if observation.estimated_heart_rate_bpm
             is not None
         ]
 
-        speed = self._weighted_average(
-            observations,
+        proposed_speed = self._weighted_average(
+            speed_observations,
             "estimated_speed_kmh",
         )
-        heart_rate = self._weighted_average(
-            observations,
-            "estimated_heart_rate_bpm",
+        proposed_heart_rate = (
+            self._weighted_average(
+                heart_rate_observations,
+                "estimated_heart_rate_bpm",
+            )
         )
 
         previous_speed = (
@@ -133,13 +150,19 @@ class ThresholdEvolutionAnalyzer:
             else seed_heart_rate_bpm
         )
 
-        speed = self._limited_update(
-            previous_speed,
-            speed,
+        speed = self._validated_metric(
+            previous=previous_speed,
+            proposed=proposed_speed,
+            values=speeds,
+            maximum_spread=0.8,
+            maximum_reference_shift_percent=6,
         )
-        heart_rate = self._limited_update(
-            previous_heart_rate,
-            heart_rate,
+        heart_rate = self._validated_metric(
+            previous=previous_heart_rate,
+            proposed=proposed_heart_rate,
+            values=heart_rates,
+            maximum_spread=8,
+            maximum_reference_shift_percent=5,
         )
 
         confidence = self._confidence_score(
@@ -157,6 +180,18 @@ class ThresholdEvolutionAnalyzer:
             for item in observation.evidence:
                 if item not in evidence:
                     evidence.append(item)
+
+        if (
+            proposed_heart_rate is not None
+            and heart_rate == previous_heart_rate
+            and proposed_heart_rate
+            != previous_heart_rate
+        ):
+            evidence.append(
+                "Fréquence cardiaque non actualisée : "
+                "observations trop dispersées ou trop "
+                "éloignées de la référence."
+            )
 
         history = list(current.history)
         history.append(
@@ -197,6 +232,99 @@ class ThresholdEvolutionAnalyzer:
             history=history,
         )
 
+    @staticmethod
+    def _filtered_observations(
+        observations: List[ThresholdObservation],
+        field_name: str,
+        maximum_deviation_percent: float,
+    ) -> List[ThresholdObservation]:
+        available = [
+            observation
+            for observation in observations
+            if getattr(observation, field_name)
+            is not None
+        ]
+
+        if len(available) < 3:
+            return available
+
+        ordered_values = sorted(
+            float(
+                getattr(observation, field_name)
+            )
+            for observation in available
+        )
+        middle = len(ordered_values) // 2
+
+        if len(ordered_values) % 2:
+            median_value = ordered_values[middle]
+        else:
+            median_value = (
+                ordered_values[middle - 1]
+                + ordered_values[middle]
+            ) / 2
+
+        if median_value <= 0:
+            return available
+
+        selected = [
+            observation
+            for observation in available
+            if (
+                abs(
+                    float(
+                        getattr(
+                            observation,
+                            field_name,
+                        )
+                    )
+                    - median_value
+                )
+                / median_value
+                * 100
+                <= maximum_deviation_percent
+            )
+        ]
+
+        if len(selected) < 3:
+            return available
+
+        return selected
+
+    def _validated_metric(
+        self,
+        previous: Optional[float],
+        proposed: Optional[float],
+        values: List[float],
+        maximum_spread: float,
+        maximum_reference_shift_percent: float,
+    ) -> Optional[float]:
+        if proposed is None:
+            return previous
+
+        if len(values) < 3:
+            return previous
+
+        if max(values) - min(values) > maximum_spread:
+            return previous
+
+        if previous is not None and previous > 0:
+            difference_percent = (
+                abs(proposed - previous)
+                / previous
+                * 100
+            )
+
+            if (
+                difference_percent
+                > maximum_reference_shift_percent
+            ):
+                return previous
+
+        return self._limited_update(
+            previous,
+            proposed,
+        )
     def _observations(
         self,
         analyses: List[DetailedSessionAnalysis],

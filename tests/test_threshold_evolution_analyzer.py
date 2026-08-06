@@ -154,5 +154,54 @@ class ThresholdEvolutionAnalyzerTests(unittest.TestCase):
             160,
         )
 
+    def test_updates_speed_but_rejects_inconsistent_hr(
+        self,
+    ) -> None:
+        values = [
+            (13.0428, 144),
+            (11.9412, 131),
+            (12.7476, 146),
+            (13.2948, 147),
+        ]
+        analyses = [
+            DetailedSessionAnalysis(
+                activity_id=f"real-like-{index}",
+                threshold_observations=[
+                    ThresholdObservation(
+                        threshold_name="sv2",
+                        estimated_speed_kmh=speed,
+                        estimated_heart_rate_bpm=heart_rate,
+                        confidence_score=88,
+                        evidence=[
+                            "Observation de terrain."
+                        ],
+                    )
+                ],
+            )
+            for index, (speed, heart_rate)
+            in enumerate(values, start=1)
+        ]
+
+        result = self.analyzer.update(
+            self.profile,
+            analyses,
+            updated_at=(
+                self.start + timedelta(days=7)
+            ),
+        )
+
+        self.assertGreaterEqual(
+            result.physiological.sv2.speed_kmh,
+            12.8,
+        )
+        self.assertLessEqual(
+            result.physiological.sv2.speed_kmh,
+            13.2,
+        )
+        self.assertEqual(
+            result.physiological.sv2.heart_rate_bpm,
+            160,
+        )
+
 if __name__ == "__main__":
     unittest.main()

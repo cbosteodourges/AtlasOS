@@ -371,8 +371,10 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
             activity_type="running",
             distance_km=2.513,
             duration_minutes=17,
-            samples=samples,
+            samples=samples * 1000,
             laps=laps,
+            time_in_zones=[{}],
+            data_quality_score=90,
         )
 
         result = self.analyzer.analyze(
@@ -435,6 +437,73 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
         self.assertEqual(
             self.analyzer._dominant_type(blocks),
             "sprint_acceleration",
+        )
+
+    def test_uses_automatic_laps_before_raw_points(
+        self,
+    ) -> None:
+        laps = [
+            {
+                "message_index": 0,
+                "lap_trigger": "distance",
+                "total_timer_time": 360,
+                "total_distance": 1000,
+                "enhanced_avg_speed": 2.78,
+                "avg_heart_rate": 130,
+            },
+            {
+                "message_index": 1,
+                "lap_trigger": "distance",
+                "total_timer_time": 350,
+                "total_distance": 1000,
+                "enhanced_avg_speed": 2.86,
+                "avg_heart_rate": 135,
+            },
+            {
+                "message_index": 2,
+                "lap_trigger": "session_end",
+                "total_timer_time": 180,
+                "total_distance": 500,
+                "enhanced_avg_speed": 2.78,
+                "avg_heart_rate": 132,
+            },
+        ]
+        samples = [
+            self._sample(0, 2.78, 0, 125),
+            self._sample(890, 2.78, 2500, 132),
+        ]
+        activity = LongitudinalActivity(
+            atlas_id="garmin:auto-laps-test",
+            start_time=self.start,
+            activity_type="running",
+            distance_km=2.5,
+            duration_minutes=890 / 60,
+            samples=samples * 1000,
+            laps=laps,
+            time_in_zones=[{}],
+            data_quality_score=90,
+        )
+
+        result = self.analyzer.analyze(
+            activity,
+            self.profile,
+        )
+
+        self.assertEqual(
+            len(result.blocks),
+            3,
+        )
+        self.assertEqual(
+            result.blocks[0].block_type,
+            "warm_up",
+        )
+        self.assertEqual(
+            result.blocks[-1].block_type,
+            "cool_down",
+        )
+        self.assertLessEqual(
+            result.analysis_confidence_score,
+            85,
         )
 
 if __name__ == "__main__":
