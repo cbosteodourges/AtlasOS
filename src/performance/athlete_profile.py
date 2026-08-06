@@ -4,7 +4,44 @@ Profil sportif adaptatif du moteur Performance.
 """
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import List, Optional
+
+
+@dataclass
+class ThresholdHistoryEntry:
+    """Valeur historique validée d'un seuil physiologique."""
+
+    recorded_at: datetime
+    speed_kmh: Optional[float] = None
+    heart_rate_bpm: Optional[float] = None
+    confidence_score: int = 0
+    observation_count: int = 0
+
+
+@dataclass
+class EvolvingThreshold:
+    """Seuil individuel évoluant avec les séances concordantes."""
+
+    threshold_name: str
+    speed_kmh: Optional[float] = None
+    heart_rate_bpm: Optional[float] = None
+    minimum_speed_kmh: Optional[float] = None
+    maximum_speed_kmh: Optional[float] = None
+    minimum_heart_rate_bpm: Optional[float] = None
+    maximum_heart_rate_bpm: Optional[float] = None
+
+    confidence_score: int = 0
+    observation_count: int = 0
+    trend: str = "unknown"
+    last_updated_at: Optional[datetime] = None
+
+    evidence: List[str] = field(
+        default_factory=list
+    )
+    history: List[ThresholdHistoryEntry] = field(
+        default_factory=list
+    )
 
 
 @dataclass
@@ -23,6 +60,17 @@ class PhysiologicalReferences:
     vma_kmh: Optional[float] = None
     vo2_max: Optional[float] = None
     threshold_speed_kmh: Optional[float] = None
+
+    sv1: EvolvingThreshold = field(
+        default_factory=lambda: EvolvingThreshold(
+            threshold_name="sv1"
+        )
+    )
+    sv2: EvolvingThreshold = field(
+        default_factory=lambda: EvolvingThreshold(
+            threshold_name="sv2"
+        )
+    )
 
     hrv_baseline_ms: Optional[float] = None
     body_battery_baseline: Optional[float] = None

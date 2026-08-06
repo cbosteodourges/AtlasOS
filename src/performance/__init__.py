@@ -12,7 +12,9 @@ from src.performance.adaptive_preparation_analyzer import (
 )
 from src.performance.athlete_profile import (
     AthleteProfile,
+    EvolvingThreshold,
     PhysiologicalReferences,
+    ThresholdHistoryEntry,
     TrainingAvailability,
     TrainingTolerance,
 )
@@ -82,6 +84,9 @@ from src.performance.session_fingerprint import (
 from src.performance.session_fingerprint_builder import (
     SessionFingerprintBuilder,
 )
+from src.performance.threshold_evolution_analyzer import (
+    ThresholdEvolutionAnalyzer,
+)
 from src.performance.zones import (
     TrainingZonesEngine,
     format_pace,
@@ -91,6 +96,7 @@ __all__ = [
     "AdaptivePreparationAnalyzer",
     "AdaptivePreparationPeriod",
     "AthleteProfile",
+    "EvolvingThreshold",
     "AthleteProfileBuilder",
     "AthleteSessionLearning",
     "DetailedSessionAnalysis",
@@ -123,6 +129,8 @@ __all__ = [
     "SessionFingerprint",
     "SessionFingerprintBuilder",
     "SessionTypeEffectiveness",
+    "ThresholdEvolutionAnalyzer",
+    "ThresholdHistoryEntry",
     "ThresholdObservation",
     "TaperSummary",
     "TrainingActivity",
