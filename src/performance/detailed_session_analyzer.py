@@ -15,6 +15,7 @@ from .session_fingerprint import (
     DetailedSessionAnalysis,
     SessionBlock,
     ThresholdObservation,
+    WorkoutExecutionSummary,
 )
 from .zones import TrainingZonesEngine
 
@@ -105,6 +106,10 @@ class DetailedSessionAnalyzer:
 
         return DetailedSessionAnalysis(
             activity_id=activity.atlas_id,
+            workout_execution=self._workout_execution(
+                activity,
+                blocks,
+            ),
             blocks=blocks,
             threshold_observations=(
                 self._threshold_observations(blocks)
@@ -146,6 +151,289 @@ class DetailedSessionAnalyzer:
             ),
         )
 
+    @classmethod
+    def _workout_execution(
+        cls,
+        activity: LongitudinalActivity,
+        blocks: List[SessionBlock],
+    ) -> WorkoutExecutionSummary:
+        """Compare les étapes Garmin prévues aux tours exécutés."""
+        if not activity.workout or not activity.workout_steps:
+            return WorkoutExecutionSummary()
+
+        raw_name = activity.workout[0].get("wkt_name", "")
+        if isinstance(raw_name, list):
+            workout_name = next(
+                (
+                    str(value)
+                    for value in raw_name
+                    if str(value).strip()
+                ),
+                "",
+            )
+        else:
+            workout_name = str(raw_name or "")
+
+        ordered_steps = sorted(
+            activity.workout_steps,
+            key=lambda step: int(
+                step.get("message_index", 0)
+            ),
+        )
+
+        def expand_steps(
+            start: int,
+            end: int,
+        ) -> List[dict]:
+            expanded = []
+
+            for position in range(start, end):
+                step = ordered_steps[position]
+                duration_type = str(
+                    step.get("duration_type", "")
+                )
+
+                if duration_type.startswith(
+                    "repeat_until"
+                ):
+                    repeat_count = max(
+                        1,
+                        int(step.get("repeat_steps", 1)),
+                    )
+                    repeat_start = max(
+                        start,
+                        int(step.get("duration_step", 0)),
+                    )
+                    segment = expand_steps(
+                        repeat_start,
+                        position,
+                    )
+
+                    for _ in range(repeat_count - 1):
+                        expanded.extend(segment)
+                    continue
+
+                expanded.append(step)
+
+            return expanded
+
+        expanded_steps = expand_steps(
+            0,
+            len(ordered_steps),
+        )
+        tolerance = 5
+        block_cursor = 0
+        matched_blocks = []
+
+        for step_index, step in enumerate(expanded_steps):
+            selected = []
+            duration_target = step.get("duration_time")
+            distance_target = step.get(
+                "duration_distance"
+            )
+            duration_total = 0.0
+            distance_total = 0.0
+
+            while block_cursor < len(blocks):
+                block = blocks[block_cursor]
+                selected.append(block)
+                block_cursor += 1
+                duration_total += block.duration_seconds
+                distance_total += block.distance_meters
+
+                if duration_target is not None:
+                    if (
+                        duration_total
+                        >= float(duration_target) - tolerance
+                    ):
+                        break
+                elif distance_target is not None:
+                    if (
+                        distance_total
+                        >= float(distance_target) * 0.90
+                    ):
+                        break
+                elif (
+                    step_index
+                    == len(expanded_steps) - 1
+                ):
+                    selected.extend(
+                        blocks[block_cursor:]
+                    )
+                    block_cursor = len(blocks)
+                    break
+                else:
+                    break
+
+            matched_blocks.append(selected)
+
+        planned_active_positions = [
+            index
+            for index, step in enumerate(expanded_steps)
+            if str(step.get("intensity", "")).lower()
+            in {"active", "interval"}
+        ]
+        completed_active_count = 0
+        target_scores = []
+
+        for index in planned_active_positions:
+            if index >= len(matched_blocks):
+                continue
+
+            selected = matched_blocks[index]
+            if not selected:
+                continue
+
+            step = expanded_steps[index]
+            duration_total = sum(
+                block.duration_seconds
+                for block in selected
+            )
+            distance_total = sum(
+                block.distance_meters
+                for block in selected
+            )
+            duration_target = step.get("duration_time")
+            distance_target = step.get(
+                "duration_distance"
+            )
+            completed = True
+
+            if duration_target is not None:
+                completed = (
+                    abs(
+                        duration_total
+                        - float(duration_target)
+                    )
+                    <= tolerance
+                )
+            elif distance_target is not None:
+                target_distance = float(distance_target)
+                completed = (
+                    target_distance > 0
+                    and abs(
+                        distance_total - target_distance
+                    )
+                    / target_distance
+                    <= 0.10
+                )
+
+            if completed:
+                completed_active_count += 1
+
+            minimum_speed = step.get(
+                "custom_target_speed_low"
+            )
+            maximum_speed = step.get(
+                "custom_target_speed_high"
+            )
+            speed_blocks = [
+                block
+                for block in selected
+                if block.average_speed_kmh is not None
+            ]
+
+            if (
+                minimum_speed is None
+                or maximum_speed is None
+                or not speed_blocks
+            ):
+                continue
+
+            total_weight = sum(
+                max(block.duration_seconds, 1)
+                for block in speed_blocks
+            )
+            actual_speed_mps = (
+                sum(
+                    block.average_speed_kmh
+                    * max(block.duration_seconds, 1)
+                    for block in speed_blocks
+                )
+                / total_weight
+                / 3.6
+            )
+            low = float(minimum_speed)
+            high = float(maximum_speed)
+
+            if low <= actual_speed_mps <= high:
+                target_scores.append(100)
+            else:
+                difference = min(
+                    abs(actual_speed_mps - low),
+                    abs(actual_speed_mps - high),
+                )
+                target_scores.append(
+                    max(0, round(100 - difference * 50))
+                )
+
+        planned_active_count = len(
+            planned_active_positions
+        )
+        completion_score = (
+            round(
+                completed_active_count
+                / planned_active_count
+                * 100
+            )
+            if planned_active_count
+            else 100
+        )
+        matched_step_count = sum(
+            bool(selected)
+            for selected in matched_blocks
+        )
+        step_score = (
+            round(
+                matched_step_count
+                / len(expanded_steps)
+                * 100
+            )
+            if expanded_steps
+            else 100
+        )
+        target_score = (
+            round(mean(target_scores))
+            if target_scores
+            else completion_score
+        )
+        execution_score = round(
+            completion_score * 0.5
+            + target_score * 0.3
+            + step_score * 0.2
+        )
+
+        observations = [
+            (
+                f"{completed_active_count}/"
+                f"{planned_active_count} blocs actifs "
+                "réalisés."
+            ),
+            (
+                f"Respect des cibles : "
+                f"{target_score}/100."
+            ),
+            (
+                "Transitions de 5 secondes ou moins "
+                "neutralisées."
+            ),
+        ]
+
+        return WorkoutExecutionSummary(
+            workout_name=workout_name,
+            planned_step_count=len(expanded_steps),
+            executed_block_count=len(blocks),
+            planned_repetition_count=(
+                planned_active_count
+            ),
+            completed_repetition_count=(
+                completed_active_count
+            ),
+            target_compliance_score=target_score,
+            execution_score=min(100, execution_score),
+            countdown_tolerance_seconds=tolerance,
+            observations=observations,
+        )
     def _threshold_observations(
         self,
         blocks: List[SessionBlock],

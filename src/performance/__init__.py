@@ -80,6 +80,7 @@ from src.performance.session_fingerprint import (
     SessionFingerprint,
     SessionTypeEffectiveness,
     ThresholdObservation,
+    WorkoutExecutionSummary,
 )
 from src.performance.session_fingerprint_builder import (
     SessionFingerprintBuilder,
@@ -132,6 +133,7 @@ __all__ = [
     "ThresholdEvolutionAnalyzer",
     "ThresholdHistoryEntry",
     "ThresholdObservation",
+    "WorkoutExecutionSummary",
     "TaperSummary",
     "TrainingActivity",
     "TrainingAvailability",

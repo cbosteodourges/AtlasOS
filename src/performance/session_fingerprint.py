@@ -104,10 +104,30 @@ class ThresholdObservation:
 
 
 @dataclass
+class WorkoutExecutionSummary:
+    """Comparaison entre une séance programmée et son exécution."""
+
+    workout_name: str = ""
+    planned_step_count: int = 0
+    executed_block_count: int = 0
+    planned_repetition_count: int = 0
+    completed_repetition_count: int = 0
+    target_compliance_score: int = 0
+    execution_score: int = 0
+    countdown_tolerance_seconds: int = 5
+    observations: List[str] = field(
+        default_factory=list
+    )
+
+
+@dataclass
 class DetailedSessionAnalysis:
     """Analyse des blocs et effets d'une séance FIT."""
 
     activity_id: str
+    workout_execution: WorkoutExecutionSummary = field(
+        default_factory=WorkoutExecutionSummary
+    )
     blocks: List[SessionBlock] = field(
         default_factory=list
     )

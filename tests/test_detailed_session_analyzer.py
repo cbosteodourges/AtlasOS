@@ -506,5 +506,140 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
             85,
         )
 
+    def test_compares_structured_workout_with_execution(
+        self,
+    ) -> None:
+        workout = [{
+            "wkt_name": "2 x 40 s rapide",
+            "num_valid_steps": 5,
+        }]
+        workout_steps = [
+            {
+                "message_index": 0,
+                "duration_type": "time",
+                "duration_time": 600,
+                "intensity": "warmup",
+            },
+            {
+                "message_index": 1,
+                "duration_type": "time",
+                "duration_time": 40,
+                "target_type": "speed",
+                "custom_target_speed_low": 4.2,
+                "custom_target_speed_high": 4.6,
+                "intensity": "active",
+            },
+            {
+                "message_index": 2,
+                "duration_type": "time",
+                "duration_time": 120,
+                "intensity": "recovery",
+            },
+            {
+                "message_index": 3,
+                "duration_type": "repeat_until_steps_cmplt",
+                "duration_step": 1,
+                "repeat_steps": 2,
+            },
+            {
+                "message_index": 4,
+                "duration_type": "time",
+                "duration_time": 300,
+                "intensity": "cooldown",
+            },
+        ]
+        laps = [
+            {
+                "message_index": 0,
+                "lap_trigger": "distance",
+                "total_timer_time": 381,
+                "total_distance": 1000,
+                "enhanced_avg_speed": 2.62,
+            },
+            {
+                "message_index": 1,
+                "lap_trigger": "workout_step",
+                "total_timer_time": 222,
+                "total_distance": 600,
+                "enhanced_avg_speed": 2.70,
+            },
+            {
+                "message_index": 1,
+                "lap_trigger": "workout_step",
+                "total_timer_time": 38,
+                "total_distance": 170,
+                "enhanced_avg_speed": 4.47,
+            },
+            {
+                "message_index": 2,
+                "lap_trigger": "workout_step",
+                "total_timer_time": 122,
+                "total_distance": 280,
+                "enhanced_avg_speed": 2.30,
+            },
+            {
+                "message_index": 3,
+                "lap_trigger": "workout_step",
+                "total_timer_time": 42,
+                "total_distance": 185,
+                "enhanced_avg_speed": 4.40,
+            },
+            {
+                "message_index": 4,
+                "lap_trigger": "workout_step",
+                "total_timer_time": 118,
+                "total_distance": 270,
+                "enhanced_avg_speed": 2.29,
+            },
+            {
+                "message_index": 5,
+                "lap_trigger": "session_end",
+                "total_timer_time": 302,
+                "total_distance": 800,
+                "enhanced_avg_speed": 2.65,
+            },
+        ]
+        activity = LongitudinalActivity(
+            atlas_id="garmin:structured-workout-test",
+            start_time=self.start,
+            activity_type="running",
+            distance_km=3.305,
+            duration_minutes=1225 / 60,
+            samples=[
+                self._sample(0, 2.65, 0, 120),
+                self._sample(1225, 2.65, 3305, 145),
+            ],
+            laps=laps,
+            workout=workout,
+            workout_steps=workout_steps,
+            data_quality_score=95,
+        )
+
+        result = self.analyzer.analyze(
+            activity,
+            self.profile,
+        )
+
+        self.assertEqual(
+            result.workout_execution.workout_name,
+            "2 x 40 s rapide",
+        )
+        self.assertEqual(
+            result.workout_execution.planned_repetition_count,
+            2,
+        )
+        self.assertEqual(
+            result.workout_execution.completed_repetition_count,
+            2,
+        )
+        self.assertEqual(
+            result.workout_execution.countdown_tolerance_seconds,
+            5,
+        )
+        self.assertGreaterEqual(
+            result.workout_execution.execution_score,
+            80,
+        )
+
 if __name__ == "__main__":
     unittest.main()
