@@ -109,5 +109,77 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
         )
 
 
+    def test_observes_sv1_and_sv2_transitions(
+        self,
+    ) -> None:
+        samples = []
+        distance = 0.0
+
+        for seconds in range(0, 630, 30):
+            if seconds < 210:
+                speed_mps = 2.83
+                heart_rate = 136 + seconds / 105
+            elif seconds < 420:
+                speed_mps = 3.11
+                heart_rate = 145 + (seconds - 210) / 105
+            else:
+                speed_mps = 3.56
+                heart_rate = 158 + (seconds - 420) / 105
+
+            samples.append(
+                self._sample(
+                    seconds,
+                    speed_mps,
+                    distance,
+                    heart_rate,
+                )
+            )
+            distance += speed_mps * 30
+
+        activity = LongitudinalActivity(
+            atlas_id="garmin:threshold-test",
+            start_time=self.start,
+            activity_type="running",
+            distance_km=distance / 1000,
+            duration_minutes=10,
+            samples=samples,
+        )
+
+        result = self.analyzer.analyze(
+            activity,
+            self.profile,
+        )
+
+        observations = {
+            observation.threshold_name: observation
+            for observation in result.threshold_observations
+        }
+
+        self.assertIn(
+            "sv1",
+            observations,
+            [
+                block.block_type
+                for block in result.blocks
+            ],
+        )
+        self.assertIn("sv2", observations)
+        self.assertGreater(
+            observations["sv1"].confidence_score,
+            0,
+        )
+        self.assertGreater(
+            observations["sv2"].confidence_score,
+            0,
+        )
+        self.assertGreater(
+            observations["sv1"].estimated_speed_kmh,
+            10,
+        )
+        self.assertGreater(
+            observations["sv2"].estimated_speed_kmh,
+            observations["sv1"].estimated_speed_kmh,
+        )
+
 if __name__ == "__main__":
     unittest.main()

@@ -14,6 +14,7 @@ from .longitudinal_models import LongitudinalActivity
 from .session_fingerprint import (
     DetailedSessionAnalysis,
     SessionBlock,
+    ThresholdObservation,
 )
 from .zones import TrainingZonesEngine
 
@@ -96,6 +97,9 @@ class DetailedSessionAnalyzer:
         return DetailedSessionAnalysis(
             activity_id=activity.atlas_id,
             blocks=blocks,
+            threshold_observations=(
+                self._threshold_observations(blocks)
+            ),
             dominant_work_type=dominant_work_type,
             work_duration_seconds=sum(
                 block.duration_seconds
@@ -131,6 +135,135 @@ class DetailedSessionAnalyzer:
                     biomechanical_load,
                 )
             ),
+        )
+
+    def _threshold_observations(
+        self,
+        blocks: List[SessionBlock],
+    ) -> List[ThresholdObservation]:
+        """Repère les transitions compatibles avec SV1 et SV2."""
+        observations = {}
+
+        for left, right in zip(blocks, blocks[1:]):
+            observation = None
+
+            if (
+                left.block_type == "z2"
+                and right.block_type == "z3"
+            ):
+                observation = self._threshold_observation(
+                    "sv1",
+                    left,
+                    right,
+                    (
+                        "Transition stable entre endurance "
+                        "fondamentale et tempo."
+                    ),
+                )
+
+            elif (
+                left.block_type == "z3"
+                and right.block_type == "sv2"
+            ):
+                observation = self._threshold_observation(
+                    "sv2",
+                    left,
+                    right,
+                    (
+                        "Transition stable entre tempo "
+                        "et travail au second seuil."
+                    ),
+                    use_right_block=True,
+                )
+
+            if observation is None:
+                continue
+
+            previous = observations.get(
+                observation.threshold_name
+            )
+
+            if (
+                previous is None
+                or observation.confidence_score
+                > previous.confidence_score
+            ):
+                observations[
+                    observation.threshold_name
+                ] = observation
+
+        return [
+            observations[name]
+            for name in ("sv1", "sv2")
+            if name in observations
+        ]
+
+    @staticmethod
+    def _threshold_observation(
+        threshold_name: str,
+        left: SessionBlock,
+        right: SessionBlock,
+        evidence: str,
+        use_right_block: bool = False,
+    ) -> ThresholdObservation:
+        speeds = [
+            value
+            for value in (
+                left.average_speed_kmh,
+                right.average_speed_kmh,
+            )
+            if value is not None
+        ]
+        heart_rates = [
+            value
+            for value in (
+                left.average_heart_rate_bpm,
+                right.average_heart_rate_bpm,
+            )
+            if value is not None
+        ]
+
+        if use_right_block:
+            estimated_speed = right.average_speed_kmh
+            estimated_heart_rate = (
+                right.average_heart_rate_bpm
+            )
+        else:
+            estimated_speed = (
+                mean(speeds) if speeds else None
+            )
+            estimated_heart_rate = (
+                mean(heart_rates)
+                if heart_rates
+                else None
+            )
+
+        stable_duration = min(
+            left.duration_seconds,
+            right.duration_seconds,
+        )
+        confidence = 45
+        confidence += min(
+            30,
+            round(stable_duration / 12),
+        )
+        confidence += 10 if estimated_speed else 0
+        confidence += 10 if estimated_heart_rate else 0
+
+        return ThresholdObservation(
+            threshold_name=threshold_name,
+            estimated_speed_kmh=estimated_speed,
+            estimated_heart_rate_bpm=(
+                estimated_heart_rate
+            ),
+            confidence_score=min(95, confidence),
+            evidence=[
+                evidence,
+                (
+                    "Observation issue d'une seule séance : "
+                    "confirmation longitudinale nécessaire."
+                ),
+            ],
         )
 
     def _build_intervals(
