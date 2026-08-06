@@ -57,6 +57,83 @@ class SessionFingerprint:
 
 
 @dataclass
+class SessionBlock:
+    """Bloc homogène détecté dans une séance détaillée."""
+
+    block_index: int
+    block_type: str
+    start_offset_seconds: float
+    end_offset_seconds: float
+    duration_seconds: float
+    distance_meters: float
+
+    average_speed_kmh: Optional[float] = None
+    maximum_speed_kmh: Optional[float] = None
+    average_heart_rate_bpm: Optional[float] = None
+    maximum_heart_rate_bpm: Optional[float] = None
+    average_power_watts: Optional[float] = None
+    average_cadence_spm: Optional[float] = None
+    average_stride_length_m: Optional[float] = None
+    average_vertical_ratio_percent: Optional[float] = None
+    average_vertical_oscillation_cm: Optional[float] = None
+    average_ground_contact_time_ms: Optional[float] = None
+
+    physiological_load_score: int = 0
+    biomechanical_load_score: int = 0
+    confidence_score: int = 0
+    detection_reasons: List[str] = field(
+        default_factory=list
+    )
+
+
+@dataclass
+class ThresholdObservation:
+    """
+    Indice de terrain pouvant faire évoluer un seuil individuel.
+
+    Une observation isolée ne modifie jamais directement le profil.
+    """
+
+    threshold_name: str
+    estimated_speed_kmh: Optional[float] = None
+    estimated_heart_rate_bpm: Optional[float] = None
+    confidence_score: int = 0
+    evidence: List[str] = field(
+        default_factory=list
+    )
+
+
+@dataclass
+class DetailedSessionAnalysis:
+    """Analyse des blocs et effets d'une séance FIT."""
+
+    activity_id: str
+    blocks: List[SessionBlock] = field(
+        default_factory=list
+    )
+    threshold_observations: List[
+        ThresholdObservation
+    ] = field(default_factory=list)
+
+    dominant_work_type: str = "unknown"
+    work_duration_seconds: float = 0.0
+    recovery_duration_seconds: float = 0.0
+    work_distance_meters: float = 0.0
+    recovery_distance_meters: float = 0.0
+
+    physiological_load_score: int = 0
+    biomechanical_load_score: int = 0
+    analysis_confidence_score: int = 0
+
+    interpretation: List[str] = field(
+        default_factory=list
+    )
+    planning_influences: List[str] = field(
+        default_factory=list
+    )
+
+
+@dataclass
 class SessionTypeEffectiveness:
     """
     Synthèse de l'efficacité observée d'un type de séance.

@@ -31,6 +31,9 @@ from src.performance.competition_models import (
     PreparationWindowSummary,
     TaperSummary,
 )
+from src.performance.detailed_session_analyzer import (
+    DetailedSessionAnalyzer,
+)
 from src.performance.history_analyzer import (
     TrainingHistoryAnalyzer,
     display_history_analysis,
@@ -70,8 +73,11 @@ from src.performance.planner import (
 )
 from src.performance.session_fingerprint import (
     AthleteSessionLearning,
+    DetailedSessionAnalysis,
+    SessionBlock,
     SessionFingerprint,
     SessionTypeEffectiveness,
+    ThresholdObservation,
 )
 from src.performance.session_fingerprint_builder import (
     SessionFingerprintBuilder,
@@ -87,6 +93,8 @@ __all__ = [
     "AthleteProfile",
     "AthleteProfileBuilder",
     "AthleteSessionLearning",
+    "DetailedSessionAnalysis",
+    "DetailedSessionAnalyzer",
     "CompetitionComparison",
     "CompetitionEvent",
     "CompetitionPreparationAnalysis",
@@ -111,9 +119,11 @@ __all__ = [
     "RecoveryMetrics",
     "RunningDynamics",
     "RunningPlanGenerator",
+    "SessionBlock",
     "SessionFingerprint",
     "SessionFingerprintBuilder",
     "SessionTypeEffectiveness",
+    "ThresholdObservation",
     "TaperSummary",
     "TrainingActivity",
     "TrainingAvailability",
