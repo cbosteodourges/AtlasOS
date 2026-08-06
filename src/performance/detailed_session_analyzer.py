@@ -4,7 +4,7 @@ Analyse détaillée des points, tours et zones d'une séance FIT.
 """
 
 from datetime import datetime
-from statistics import mean
+from statistics import mean, median
 from typing import List, Optional, Tuple
 
 from src.connectors import ActivitySample
@@ -47,12 +47,21 @@ class DetailedSessionAnalyzer:
         threshold_speed_kmh = self._threshold_speed(
             profile
         )
-        intervals = self._build_intervals(
-            samples,
-            vma_kmh,
-            threshold_speed_kmh,
-        )
-        blocks = self._group_intervals(intervals)
+        if self._has_manual_laps(activity.laps):
+            blocks = self._blocks_from_laps(
+                activity,
+                vma_kmh,
+                threshold_speed_kmh,
+            )
+        else:
+            intervals = self._build_intervals(
+                samples,
+                vma_kmh,
+                threshold_speed_kmh,
+            )
+            blocks = self._group_intervals(
+                intervals
+            )
 
         work_blocks = [
             block
@@ -266,6 +275,299 @@ class DetailedSessionAnalyzer:
             ],
         )
 
+    @staticmethod
+    def _has_manual_laps(
+        laps: List[dict],
+    ) -> bool:
+        return any(
+            str(lap.get("lap_trigger", "")).lower()
+            == "manual"
+            for lap in laps
+        )
+
+    def _blocks_from_laps(
+        self,
+        activity: LongitudinalActivity,
+        vma_kmh: Optional[float],
+        threshold_speed_kmh: Optional[float],
+    ) -> List[SessionBlock]:
+        """Utilise les tours manuels comme structure prioritaire."""
+        blocks = []
+        elapsed = 0.0
+        previous_type = None
+        laps = activity.laps
+
+        for index, lap in enumerate(laps, start=1):
+            duration = self._number(
+                lap.get(
+                    "total_timer_time",
+                    lap.get("total_elapsed_time"),
+                )
+            ) or 0.0
+            distance = self._number(
+                lap.get("total_distance")
+            ) or 0.0
+            average_speed_mps = self._number(
+                lap.get(
+                    "enhanced_avg_speed",
+                    lap.get("avg_speed"),
+                )
+            )
+            maximum_speed_mps = self._number(
+                lap.get(
+                    "enhanced_max_speed",
+                    lap.get("max_speed"),
+                )
+            )
+            average_speed_kmh = (
+                average_speed_mps * 3.6
+                if average_speed_mps is not None
+                else (
+                    distance / duration * 3.6
+                    if duration > 0
+                    else None
+                )
+            )
+            maximum_speed_kmh = (
+                maximum_speed_mps * 3.6
+                if maximum_speed_mps is not None
+                else average_speed_kmh
+            )
+            trigger = str(
+                lap.get("lap_trigger", "")
+            ).lower()
+
+            block_type = self._lap_block_type(
+                index=index,
+                lap_count=len(laps),
+                trigger=trigger,
+                duration_seconds=duration,
+                average_speed_kmh=average_speed_kmh,
+                maximum_speed_kmh=maximum_speed_kmh,
+                previous_type=previous_type,
+                vma_kmh=vma_kmh,
+                threshold_speed_kmh=(
+                    threshold_speed_kmh
+                ),
+            )
+
+            cadence = self._number(
+                lap.get(
+                    "avg_running_cadence",
+                    lap.get("avg_cadence"),
+                )
+            )
+            if cadence is not None:
+                cadence *= 2
+
+            block = SessionBlock(
+                block_index=index,
+                block_type=block_type,
+                start_offset_seconds=elapsed,
+                end_offset_seconds=(
+                    elapsed + duration
+                ),
+                duration_seconds=duration,
+                distance_meters=distance,
+                average_speed_kmh=average_speed_kmh,
+                maximum_speed_kmh=maximum_speed_kmh,
+                average_heart_rate_bpm=self._number(
+                    lap.get("avg_heart_rate")
+                ),
+                maximum_heart_rate_bpm=self._number(
+                    lap.get("max_heart_rate")
+                ),
+                average_power_watts=self._number(
+                    lap.get("avg_power")
+                ),
+                average_cadence_spm=cadence,
+                average_stride_length_m=(
+                    self._scaled_number(
+                        lap.get("avg_step_length"),
+                        1000,
+                    )
+                ),
+                average_vertical_ratio_percent=(
+                    self._number(
+                        lap.get("avg_vertical_ratio")
+                    )
+                ),
+                average_vertical_oscillation_cm=(
+                    self._scaled_number(
+                        lap.get(
+                            "avg_vertical_oscillation"
+                        ),
+                        10,
+                    )
+                ),
+                average_ground_contact_time_ms=(
+                    self._number(
+                        lap.get("avg_stance_time")
+                    )
+                ),
+                physiological_load_score=(
+                    self._physiological_load(
+                        block_type,
+                        duration,
+                    )
+                ),
+                biomechanical_load_score=(
+                    self._lap_biomechanical_load(
+                        block_type,
+                        duration,
+                        lap,
+                    )
+                ),
+                confidence_score=(
+                    95 if trigger == "manual" else 85
+                ),
+                detection_reasons=[
+                    (
+                        "Tour manuel marqué par "
+                        "l'athlète."
+                        if trigger == "manual"
+                        else
+                        "Tour automatique Garmin."
+                    )
+                ],
+            )
+            blocks.append(block)
+            previous_type = block_type
+            elapsed += duration
+
+        return blocks
+
+    def _lap_block_type(
+        self,
+        index: int,
+        lap_count: int,
+        trigger: str,
+        duration_seconds: float,
+        average_speed_kmh: Optional[float],
+        maximum_speed_kmh: Optional[float],
+        previous_type: Optional[str],
+        vma_kmh: Optional[float],
+        threshold_speed_kmh: Optional[float],
+    ) -> str:
+        if index == 1 and trigger != "manual":
+            return "warm_up"
+
+        if (
+            index == lap_count
+            and trigger == "session_end"
+        ):
+            return "cool_down"
+
+        average_speed = average_speed_kmh or 0.0
+        maximum_speed = (
+            maximum_speed_kmh
+            if maximum_speed_kmh is not None
+            else average_speed
+        )
+
+        if (
+            trigger == "manual"
+            and duration_seconds <= 30
+            and vma_kmh
+            and maximum_speed >= vma_kmh * 1.05
+        ):
+            return "sprint"
+
+        if (
+            trigger == "manual"
+            and duration_seconds <= 30
+            and vma_kmh
+            and average_speed >= vma_kmh * 0.75
+        ):
+            return "acceleration"
+
+        base_type = self._block_type(
+            average_speed,
+            0.0,
+            vma_kmh,
+            threshold_speed_kmh,
+        )
+
+        if (
+            trigger == "manual"
+            and previous_type
+            in {
+                "acceleration",
+                "sprint",
+                "vma",
+                "sv2",
+            }
+            and base_type in {"z1", "z2"}
+        ):
+            return "recovery"
+
+        return base_type
+
+    @staticmethod
+    def _lap_biomechanical_load(
+        block_type: str,
+        duration_seconds: float,
+        lap: dict,
+    ) -> int:
+        intensity = {
+            "warm_up": 0.5,
+            "cool_down": 0.5,
+            "recovery": 0.4,
+            "z1": 0.6,
+            "z2": 0.8,
+            "z3": 1.2,
+            "sv2": 1.7,
+            "vma": 2.4,
+            "acceleration": 2.8,
+            "sprint": 3.5,
+        }.get(block_type, 0.6)
+
+        dynamics_count = sum(
+            1
+            for field_name in (
+                "avg_running_cadence",
+                "avg_stance_time",
+                "avg_vertical_ratio",
+                "avg_step_length",
+            )
+            if lap.get(field_name) is not None
+        )
+
+        return max(
+            0,
+            round(
+                duration_seconds
+                / 60
+                * intensity
+                * (1 + dynamics_count * 0.05)
+            ),
+        )
+
+    @staticmethod
+    def _number(
+        value,
+    ) -> Optional[float]:
+        if value is None or value == "":
+            return None
+
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    @classmethod
+    def _scaled_number(
+        cls,
+        value,
+        divisor: float,
+    ) -> Optional[float]:
+        number = cls._number(value)
+
+        if number is None:
+            return None
+
+        return number / divisor
+
     def _build_intervals(
         self,
         samples: List[ActivitySample],
@@ -273,6 +575,10 @@ class DetailedSessionAnalyzer:
         threshold_speed_kmh: Optional[float],
     ) -> List[Tuple[str, ActivitySample, float, float, float]]:
         intervals = []
+        smoothed_speeds = self._smoothed_speeds(
+            samples
+        )
+        previous_type = None
 
         for index in range(len(samples) - 1):
             current = samples[index]
@@ -287,9 +593,9 @@ class DetailedSessionAnalyzer:
             if duration <= 0:
                 continue
 
-            speed = current.speed_mps or 0.0
+            speed = smoothed_speeds[index]
             previous_speed = (
-                samples[index - 1].speed_mps
+                smoothed_speeds[index - 1]
                 if index > 0
                 else None
             )
@@ -304,6 +610,13 @@ class DetailedSessionAnalyzer:
                 vma_kmh,
                 threshold_speed_kmh,
             )
+            block_type = self._stabilize_zone_boundary(
+                block_type,
+                previous_type,
+                speed * 3.6,
+                vma_kmh,
+            )
+            previous_type = block_type
             distance = self._interval_distance(
                 current,
                 following,
@@ -321,7 +634,7 @@ class DetailedSessionAnalyzer:
                 )
             )
 
-        return intervals
+        return self._mark_recoveries(intervals)
 
     def _group_intervals(
         self,
@@ -343,6 +656,7 @@ class DetailedSessionAnalyzer:
                 current_group = [interval]
 
         groups.append(current_group)
+        groups = self._merge_short_groups(groups)
 
         first_time = self._date(
             intervals[0][1].timestamp
@@ -355,6 +669,171 @@ class DetailedSessionAnalyzer:
                 first_time,
             )
             for index, group in enumerate(groups, start=1)
+        ]
+
+    @classmethod
+    def _merge_short_groups(
+        cls,
+        groups: List[
+            List[
+                Tuple[
+                    str,
+                    ActivitySample,
+                    float,
+                    float,
+                    float,
+                ]
+            ]
+        ],
+    ) -> List[
+        List[
+            Tuple[
+                str,
+                ActivitySample,
+                float,
+                float,
+                float,
+            ]
+        ]
+    ]:
+        """Fusionne les variations trop courtes pour être fiables."""
+        minimum_durations = {
+            "acceleration": 3.0,
+            "sprint": 3.0,
+            "recovery": 5.0,
+            "vma": 8.0,
+            "sv2": 10.0,
+            "z3": 10.0,
+            "z2": 10.0,
+            "z1": 10.0,
+            "unknown": 10.0,
+        }
+        merged = [list(group) for group in groups]
+        changed = True
+
+        while changed and len(merged) > 1:
+            changed = False
+
+            for index, group in enumerate(merged):
+                block_type = group[0][0]
+                duration = sum(
+                    interval[2]
+                    for interval in group
+                )
+                minimum = minimum_durations.get(
+                    block_type,
+                    10.0,
+                )
+
+                if duration >= minimum:
+                    continue
+
+                left = (
+                    merged[index - 1]
+                    if index > 0
+                    else None
+                )
+                right = (
+                    merged[index + 1]
+                    if index + 1 < len(merged)
+                    else None
+                )
+
+                if left is None and right is None:
+                    continue
+
+                if (
+                    left is not None
+                    and right is not None
+                    and left[0][0] == right[0][0]
+                ):
+                    target_type = left[0][0]
+                    combined = (
+                        left
+                        + cls._relabel_group(
+                            group,
+                            target_type,
+                        )
+                        + right
+                    )
+                    merged[index - 1:index + 2] = [
+                        combined
+                    ]
+
+                elif right is None:
+                    target_type = left[0][0]
+                    left.extend(
+                        cls._relabel_group(
+                            group,
+                            target_type,
+                        )
+                    )
+                    del merged[index]
+
+                elif left is None:
+                    target_type = right[0][0]
+                    merged[index + 1] = (
+                        cls._relabel_group(
+                            group,
+                            target_type,
+                        )
+                        + right
+                    )
+                    del merged[index]
+
+                else:
+                    left_duration = sum(
+                        interval[2]
+                        for interval in left
+                    )
+                    right_duration = sum(
+                        interval[2]
+                        for interval in right
+                    )
+
+                    if left_duration >= right_duration:
+                        target_type = left[0][0]
+                        left.extend(
+                            cls._relabel_group(
+                                group,
+                                target_type,
+                            )
+                        )
+                        del merged[index]
+                    else:
+                        target_type = right[0][0]
+                        merged[index + 1] = (
+                            cls._relabel_group(
+                                group,
+                                target_type,
+                            )
+                            + right
+                        )
+                        del merged[index]
+
+                changed = True
+                break
+
+        return merged
+
+    @staticmethod
+    def _relabel_group(
+        group: List[
+            Tuple[str, ActivitySample, float, float, float]
+        ],
+        block_type: str,
+    ) -> List[
+        Tuple[str, ActivitySample, float, float, float]
+    ]:
+        return [
+            (
+                block_type,
+                interval[1],
+                interval[2],
+                interval[3],
+                interval[4],
+            )
+            for interval in group
         ]
 
     def _build_block(
@@ -456,6 +935,94 @@ class DetailedSessionAnalyzer:
             ],
         )
 
+    @staticmethod
+    def _smoothed_speeds(
+        samples: List[ActivitySample],
+        radius: int = 2,
+    ) -> List[float]:
+        """Lisse la vitesse avec une médiane glissante."""
+        speeds = [
+            sample.speed_mps or 0.0
+            for sample in samples
+        ]
+        smoothed = []
+
+        for index in range(len(speeds)):
+            start = max(0, index - radius)
+            end = min(
+                len(speeds),
+                index + radius + 1,
+            )
+            smoothed.append(
+                float(median(speeds[start:end]))
+            )
+
+        return smoothed
+
+    @staticmethod
+    def _stabilize_zone_boundary(
+        block_type: str,
+        previous_type: Optional[str],
+        speed_kmh: float,
+        vma_kmh: Optional[float],
+    ) -> str:
+        """Évite les bascules répétées autour de Z1–Z2."""
+        if (
+            previous_type not in {"z1", "z2"}
+            or not vma_kmh
+            or vma_kmh <= 0
+        ):
+            return block_type
+
+        vma_percent = speed_kmh / vma_kmh * 100
+
+        if 63 <= vma_percent <= 67:
+            return previous_type
+
+        return block_type
+
+    @staticmethod
+    def _mark_recoveries(
+        intervals: List[
+            Tuple[str, ActivitySample, float, float, float]
+        ],
+    ) -> List[
+        Tuple[str, ActivitySample, float, float, float]
+    ]:
+        """Identifie une récupération après haute intensité."""
+        result = []
+        recovery_context = False
+
+        for interval in intervals:
+            block_type = interval[0]
+
+            if block_type in {
+                "acceleration",
+                "sv2",
+                "vma",
+                "sprint",
+            }:
+                recovery_context = True
+
+            elif (
+                block_type == "z1"
+                and recovery_context
+            ):
+                interval = (
+                    "recovery",
+                    interval[1],
+                    interval[2],
+                    interval[3],
+                    interval[4],
+                )
+
+            elif block_type == "z2":
+                recovery_context = False
+
+            result.append(interval)
+
+        return result
+
     def _block_type(
         self,
         speed_kmh: float,
@@ -476,7 +1043,7 @@ class DetailedSessionAnalyzer:
         vma_percent = speed_kmh / vma_kmh * 100
 
         if vma_percent < 65:
-            return "recovery"
+            return "z1"
         if vma_percent < 75:
             return "z2"
         if vma_percent < 85:
@@ -540,6 +1107,7 @@ class DetailedSessionAnalyzer:
     ) -> int:
         intensity = {
             "recovery": 0.5,
+            "z1": 0.7,
             "z2": 1.0,
             "z3": 1.5,
             "sv2": 2.2,
@@ -562,6 +1130,7 @@ class DetailedSessionAnalyzer:
     ) -> int:
         intensity = {
             "recovery": 0.4,
+            "z1": 0.6,
             "z2": 0.8,
             "z3": 1.2,
             "sv2": 1.7,
@@ -626,7 +1195,14 @@ class DetailedSessionAnalyzer:
         score = 35
         score += min(25, len(samples) // 100)
         score += 20 if vma_kmh else 0
-        score += 10 if activity.laps else 0
+        if any(
+            str(lap.get("lap_trigger", "")).lower()
+            == "manual"
+            for lap in activity.laps
+        ):
+            score += 30
+        elif activity.laps:
+            score += 10
         score += 10 if activity.time_in_zones else 0
 
         return min(100, score)
@@ -637,6 +1213,16 @@ class DetailedSessionAnalyzer:
     ) -> str:
         if not blocks:
             return "unknown"
+
+        rapid_blocks = [
+            block
+            for block in blocks
+            if block.block_type
+            in {"sprint", "acceleration"}
+        ]
+
+        if len(rapid_blocks) >= 3:
+            return "sprint_acceleration"
 
         durations = {}
 
@@ -703,7 +1289,8 @@ class DetailedSessionAnalyzer:
         block_type: str,
     ) -> str:
         labels = {
-            "recovery": "Vitesse inférieure à 65 % de la VMA.",
+            "recovery": "Allure basse après un bloc intense.",
+            "z1": "Vitesse inférieure à 65 % de la VMA.",
             "z2": "Vitesse comprise entre 65 et 75 % de la VMA.",
             "z3": "Vitesse comprise entre 75 et 85 % de la VMA.",
             "sv2": "Vitesse située autour du second seuil.",

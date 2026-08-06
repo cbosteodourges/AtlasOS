@@ -10,6 +10,7 @@ from src.performance import (
     AthleteProfile,
     DetailedSessionAnalyzer,
     LongitudinalActivity,
+    SessionBlock,
 )
 from src.performance.athlete_profile import (
     PhysiologicalReferences,
@@ -179,6 +180,261 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
         self.assertGreater(
             observations["sv2"].estimated_speed_kmh,
             observations["sv1"].estimated_speed_kmh,
+        )
+
+    def test_smooths_easy_pace_noise_without_false_recovery(
+        self,
+    ) -> None:
+        samples = []
+        distance = 0.0
+        speeds = [
+            2.50,
+            2.53,
+            2.56,
+            2.51,
+            2.55,
+            2.52,
+        ]
+
+        for seconds in range(0, 181):
+            speed_mps = speeds[
+                seconds % len(speeds)
+            ]
+            samples.append(
+                self._sample(
+                    seconds,
+                    speed_mps,
+                    distance,
+                    130 + seconds / 90,
+                )
+            )
+            distance += speed_mps
+
+        activity = LongitudinalActivity(
+            atlas_id="garmin:easy-noise-test",
+            start_time=self.start,
+            activity_type="running",
+            distance_km=distance / 1000,
+            duration_minutes=3,
+            samples=samples,
+        )
+
+        result = self.analyzer.analyze(
+            activity,
+            self.profile,
+        )
+
+        block_types = [
+            block.block_type
+            for block in result.blocks
+        ]
+
+        self.assertNotIn(
+            "acceleration",
+            block_types,
+        )
+        self.assertNotIn(
+            "recovery",
+            block_types,
+        )
+        self.assertTrue(
+            set(block_types).issubset({"z1", "z2"})
+        )
+        self.assertLessEqual(
+            len(result.blocks),
+            2,
+        )
+
+    def test_merges_short_zone_artifact(
+        self,
+    ) -> None:
+        samples = []
+        distance = 0.0
+
+        for seconds in range(0, 181):
+            speed_mps = (
+                3.0
+                if 100 <= seconds < 105
+                else 2.8
+            )
+            samples.append(
+                self._sample(
+                    seconds,
+                    speed_mps,
+                    distance,
+                    132,
+                )
+            )
+            distance += speed_mps
+
+        activity = LongitudinalActivity(
+            atlas_id="garmin:micro-block-test",
+            start_time=self.start,
+            activity_type="running",
+            distance_km=distance / 1000,
+            duration_minutes=3,
+            samples=samples,
+        )
+
+        result = self.analyzer.analyze(
+            activity,
+            self.profile,
+        )
+
+        self.assertEqual(
+            [
+                block.block_type
+                for block in result.blocks
+            ],
+            ["z2"],
+        )
+
+    def test_uses_manual_laps_as_primary_structure(
+        self,
+    ) -> None:
+        laps = [
+            {
+                "message_index": 0,
+                "lap_trigger": "distance",
+                "start_time": self.start.isoformat(),
+                "total_timer_time": 600,
+                "total_distance": 1400,
+                "enhanced_avg_speed": 2.33,
+                "enhanced_max_speed": 3.0,
+                "avg_heart_rate": 125,
+                "max_heart_rate": 138,
+            },
+            {
+                "message_index": 1,
+                "lap_trigger": "manual",
+                "start_time": (
+                    self.start
+                    + timedelta(seconds=600)
+                ).isoformat(),
+                "total_timer_time": 15,
+                "total_distance": 65,
+                "enhanced_avg_speed": 4.33,
+                "enhanced_max_speed": 4.7,
+                "avg_heart_rate": 150,
+                "max_heart_rate": 162,
+            },
+            {
+                "message_index": 2,
+                "lap_trigger": "manual",
+                "start_time": (
+                    self.start
+                    + timedelta(seconds=615)
+                ).isoformat(),
+                "total_timer_time": 90,
+                "total_distance": 180,
+                "enhanced_avg_speed": 2.0,
+                "enhanced_max_speed": 2.4,
+                "avg_heart_rate": 140,
+                "max_heart_rate": 158,
+            },
+            {
+                "message_index": 3,
+                "lap_trigger": "manual",
+                "start_time": (
+                    self.start
+                    + timedelta(seconds=705)
+                ).isoformat(),
+                "total_timer_time": 15,
+                "total_distance": 68,
+                "enhanced_avg_speed": 4.53,
+                "enhanced_max_speed": 4.9,
+                "avg_heart_rate": 152,
+                "max_heart_rate": 164,
+            },
+            {
+                "message_index": 4,
+                "lap_trigger": "session_end",
+                "start_time": (
+                    self.start
+                    + timedelta(seconds=720)
+                ).isoformat(),
+                "total_timer_time": 300,
+                "total_distance": 800,
+                "enhanced_avg_speed": 2.67,
+                "enhanced_max_speed": 3.0,
+                "avg_heart_rate": 132,
+                "max_heart_rate": 145,
+            },
+        ]
+        samples = [
+            self._sample(0, 2.33, 0, 120),
+            self._sample(1020, 2.67, 2513, 132),
+        ]
+        activity = LongitudinalActivity(
+            atlas_id="garmin:manual-laps-test",
+            start_time=self.start,
+            activity_type="running",
+            distance_km=2.513,
+            duration_minutes=17,
+            samples=samples,
+            laps=laps,
+        )
+
+        result = self.analyzer.analyze(
+            activity,
+            self.profile,
+        )
+
+        self.assertEqual(
+            [
+                block.block_type
+                for block in result.blocks
+            ],
+            [
+                "warm_up",
+                "sprint",
+                "recovery",
+                "sprint",
+                "cool_down",
+            ],
+        )
+        self.assertEqual(
+            len(result.blocks),
+            len(laps),
+        )
+        self.assertGreaterEqual(
+            result.analysis_confidence_score,
+            80,
+        )
+
+    def test_repeated_sprints_are_dominant_stimulus(
+        self,
+    ) -> None:
+        blocks = [
+            SessionBlock(
+                block_index=1,
+                block_type="z1",
+                start_offset_seconds=0,
+                end_offset_seconds=600,
+                duration_seconds=600,
+                distance_meters=1400,
+            )
+        ]
+
+        for index in range(2, 10):
+            blocks.append(
+                SessionBlock(
+                    block_index=index,
+                    block_type=(
+                        "sprint"
+                        if index % 2 == 0
+                        else "acceleration"
+                    ),
+                    start_offset_seconds=600 + index * 15,
+                    end_offset_seconds=615 + index * 15,
+                    duration_seconds=15,
+                    distance_meters=60,
+                )
+            )
+
+        self.assertEqual(
+            self.analyzer._dominant_type(blocks),
+            "sprint_acceleration",
         )
 
 if __name__ == "__main__":
