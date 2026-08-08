@@ -9,6 +9,12 @@ from .training_protocol import (
     TrainingProtocolRegistry,
     TrainingResearchProtocol,
 )
+from .training_protocol_catalog import (
+    build_default_training_protocol_registry,
+    build_hill_sprints_protocol,
+    build_mixed_threshold_vo2_protocol,
+    build_triangular_vo2_protocol,
+)
 
 __all__ = [
     "EvidenceLevel",
@@ -18,4 +24,8 @@ __all__ = [
     "ResearchReference",
     "TrainingProtocolRegistry",
     "TrainingResearchProtocol",
+    "build_default_training_protocol_registry",
+    "build_hill_sprints_protocol",
+    "build_mixed_threshold_vo2_protocol",
+    "build_triangular_vo2_protocol",
 ]
