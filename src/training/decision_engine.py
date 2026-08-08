@@ -65,6 +65,9 @@ class TrainingDecisionEngine:
         WorkoutType.THRESHOLD_SV2,
         WorkoutType.VMA_SHORT,
         WorkoutType.VMA_LONG,
+        WorkoutType.HILL_SPRINTS,
+        WorkoutType.MIXED_THRESHOLD_VO2,
+        WorkoutType.TRIANGULAR_VO2,
         WorkoutType.RACE_SPECIFIC,
         WorkoutType.LONG_RUN,
     }

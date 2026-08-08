@@ -20,6 +20,9 @@ class WorkoutType(str, Enum):
     THRESHOLD_SV2 = "threshold_sv2"
     VMA_SHORT = "vma_short"
     VMA_LONG = "vma_long"
+    HILL_SPRINTS = "hill_sprints"
+    MIXED_THRESHOLD_VO2 = "mixed_threshold_vo2"
+    TRIANGULAR_VO2 = "triangular_vo2"
     RACE_SPECIFIC = "race_specific"
     LONG_RUN = "long_run"
     CYCLING = "cycling"
@@ -62,6 +65,10 @@ class IntensityTarget:
     power_min_watts: Optional[int] = None
     power_max_watts: Optional[int] = None
     rpe_0_10: Optional[float] = None
+    gradient_min_percent: Optional[float] = None
+    gradient_max_percent: Optional[float] = None
+    intensity_pattern: str = "constant"
+    transition_seconds: Optional[int] = None
 
     def validate(self) -> None:
         if self.zone is not None and not 1 <= self.zone <= 5:
