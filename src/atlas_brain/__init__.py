@@ -6,6 +6,10 @@ Module central Atlas Brain.
 from dataclasses import dataclass
 from typing import List
 
+from src.atlas_brain.atlas_index import (
+    AtlasIndexEngine,
+    AtlasIndexResult,
+)
 from src.atlas_brain.alerts import (
     AtlasAlert,
     AtlasAlertEngine,
@@ -231,6 +235,8 @@ class AtlasBrain:
 
 
 __all__ = [
+    "AtlasIndexEngine",
+    "AtlasIndexResult",
     "AtlasAlert",
     "AtlasBrain",
     "AtlasBrainReport",
