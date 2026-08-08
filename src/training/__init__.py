@@ -14,6 +14,9 @@ from .decision_engine import (
     TrainingDecisionAction,
     TrainingDecisionEngine,
 )
+from .program_generator import (
+    TrainingProgramGenerator,
+)
 from .program_models import (
     AdaptiveTrainingProgram,
     AdaptiveTrainingWeek,
@@ -73,6 +76,7 @@ __all__ = [
     "TrainingDecisionAction",
     "TrainingDecisionEngine",
     "TrainingPhase",
+    "TrainingProgramGenerator",
     "TrainingResponseLearning",
     "TrainingResponseLearningEngine",
     "TrainingResponseObservation",
