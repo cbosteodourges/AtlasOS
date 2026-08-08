@@ -20,6 +20,10 @@ from .program_models import (
     ProgramGenerationSettings,
     TrainingPhase,
 )
+from .program_phase_planner import (
+    ProgramPhasePlan,
+    ProgramPhasePlanner,
+)
 from .research_workout_builder import (
     ResearchWorkoutBuilder,
 )
@@ -56,6 +60,8 @@ __all__ = [
     "ExpectedTrainingResponse",
     "IntensityTarget",
     "ProgramGenerationSettings",
+    "ProgramPhasePlan",
+    "ProgramPhasePlanner",
     "ResearchWorkoutBuilder",
     "ToleranceLearningApplication",
     "TrainingBlock",
