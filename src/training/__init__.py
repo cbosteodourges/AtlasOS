@@ -42,6 +42,9 @@ from .session_models import (
     WorkoutPriority,
     WorkoutType,
 )
+from .standard_workout_builder import (
+    StandardWorkoutBuilder,
+)
 from .tolerance_learning import (
     AthleteToleranceLearningEngine,
     ToleranceLearningApplication,
@@ -63,6 +66,7 @@ __all__ = [
     "ProgramPhasePlan",
     "ProgramPhasePlanner",
     "ResearchWorkoutBuilder",
+    "StandardWorkoutBuilder",
     "ToleranceLearningApplication",
     "TrainingBlock",
     "TrainingDecision",
