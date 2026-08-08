@@ -1,5 +1,9 @@
 """Moteur d’entraînement adaptatif d’ATLAS OS."""
 
+from .adaptation_engine import (
+    AdaptedWorkoutResult,
+    WorkoutAdaptationEngine,
+)
 from .decision_engine import (
     TrainingDecision,
     TrainingDecisionAction,
@@ -16,6 +20,7 @@ from .session_models import (
 )
 
 __all__ = [
+    "AdaptedWorkoutResult",
     "AdaptiveWorkout",
     "BlockType",
     "ExpectedTrainingResponse",
@@ -24,6 +29,7 @@ __all__ = [
     "TrainingDecision",
     "TrainingDecisionAction",
     "TrainingDecisionEngine",
+    "WorkoutAdaptationEngine",
     "WorkoutPriority",
     "WorkoutType",
 ]
