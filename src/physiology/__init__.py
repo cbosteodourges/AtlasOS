@@ -8,10 +8,16 @@ from .physiology_engine import (
     PhysiologyInput,
     PhysiologyResult,
 )
+from .recovery_fusion import (
+    RecoveryFusionEngine,
+    RecoveryFusionResult,
+)
 
 __all__ = [
     "GarminRecoveryAdapter",
     "PhysiologyEngine",
     "PhysiologyInput",
     "PhysiologyResult",
+    "RecoveryFusionEngine",
+    "RecoveryFusionResult",
 ]
