@@ -14,6 +14,15 @@ from .decision_engine import (
     TrainingDecisionAction,
     TrainingDecisionEngine,
 )
+from .program_models import (
+    AdaptiveTrainingProgram,
+    AdaptiveTrainingWeek,
+    ProgramGenerationSettings,
+    TrainingPhase,
+)
+from .research_workout_builder import (
+    ResearchWorkoutBuilder,
+)
 from .response_learning import (
     TrainingResponseLearning,
     TrainingResponseLearningEngine,
@@ -38,17 +47,22 @@ __all__ = [
     "AdaptedWorkoutResult",
     "AdaptiveLearningResult",
     "AdaptiveTrainingLoop",
+    "AdaptiveTrainingProgram",
+    "AdaptiveTrainingWeek",
     "AdaptiveWorkout",
     "AthleteToleranceLearningEngine",
     "BlockType",
     "DailyAdaptiveTrainingResult",
     "ExpectedTrainingResponse",
     "IntensityTarget",
+    "ProgramGenerationSettings",
+    "ResearchWorkoutBuilder",
     "ToleranceLearningApplication",
     "TrainingBlock",
     "TrainingDecision",
     "TrainingDecisionAction",
     "TrainingDecisionEngine",
+    "TrainingPhase",
     "TrainingResponseLearning",
     "TrainingResponseLearningEngine",
     "TrainingResponseObservation",
