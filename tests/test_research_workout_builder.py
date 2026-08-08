@@ -106,6 +106,10 @@ class ResearchWorkoutBuilderTests(unittest.TestCase):
             workout.estimated_duration_minutes,
             61,
         )
+        self.assertEqual(
+            workout.planned_duration_minutes,
+            61,
+        )
         workout.validate()
 
     def test_converts_threshold_and_vma_to_speeds(

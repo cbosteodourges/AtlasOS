@@ -116,6 +116,12 @@ class TrainingProgramGeneratorTests(unittest.TestCase):
             program.total_running_workouts,
             0,
         )
+        self.assertFalse(
+            any(
+                "recovery_status" in warning
+                for warning in program.warnings
+            )
+        )
 
     def test_uses_all_progressive_phases(self) -> None:
         program = self.generator.generate(

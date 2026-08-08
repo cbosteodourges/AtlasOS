@@ -76,6 +76,11 @@ class TrainingProgramGenerator:
         settings = settings or ProgramGenerationSettings()
         settings.validate()
 
+        runtime_metrics = set(
+            available_dynamic_metrics or set()
+        )
+        runtime_metrics.add("recovery_status")
+
         phase_plan = self._phase_planner.plan(
             start_date=start_date,
             event_date=goal.event_date,
@@ -126,9 +131,7 @@ class TrainingProgramGenerator:
                 week_end=week_end,
                 phase=phase,
                 quality_cycle_index=quality_cycle_index,
-                available_dynamic_metrics=(
-                    available_dynamic_metrics or set()
-                ),
+                available_dynamic_metrics=runtime_metrics,
             )
             weeks.append(week)
 

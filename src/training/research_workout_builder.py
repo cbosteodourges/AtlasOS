@@ -76,6 +76,12 @@ class ResearchWorkoutBuilder:
             objective=" ; ".join(protocol.objectives),
             blocks=blocks,
             priority=WorkoutPriority.KEY,
+            planned_duration_minutes=round(
+                sum(
+                    block.estimated_duration_minutes
+                    for block in blocks
+                )
+            ),
             expected_response=self._expected_response(
                 workout_type
             ),

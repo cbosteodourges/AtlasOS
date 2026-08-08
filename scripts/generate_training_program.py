@@ -1,0 +1,353 @@
+"""Génère un programme Atlas Coach depuis l’historique réel."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from dataclasses import asdict
+from datetime import date
+from enum import Enum
+from pathlib import Path
+from typing import Any
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from scripts.build_athlete_profile import (  # noqa: E402
+    build_availability,
+    build_physiological,
+    load_activities,
+    load_competitions,
+    load_declared_profile,
+    optional_float,
+)
+from src.performance import AthleteProfileBuilder  # noqa: E402
+from src.performance.models import PerformanceGoal  # noqa: E402
+from src.training import (  # noqa: E402
+    ProgramGenerationSettings,
+    TrainingProgramGenerator,
+    WorkoutType,
+)
+
+
+def parse_arguments() -> argparse.Namespace:
+    """Lit les paramètres de génération."""
+    parser = argparse.ArgumentParser(
+        description=(
+            "Génère un programme Atlas Coach guidé "
+            "par Atlas Research."
+        )
+    )
+    parser.add_argument(
+        "--activities",
+        default="atlas-data/garmin/Activities.csv",
+        help="Historique CSV Garmin.",
+    )
+    parser.add_argument(
+        "--competitions",
+        default=(
+            "atlas-data/private/"
+            "competition-events.json"
+        ),
+        help="Compétitions confirmées.",
+    )
+    parser.add_argument(
+        "--profile-input",
+        default=(
+            "atlas-data/private/"
+            "athlete-profile-input.json"
+        ),
+        help="Informations déclarées par l’utilisateur.",
+    )
+    parser.add_argument(
+        "--output",
+        default=(
+            "atlas-data/private/"
+            "training-program.json"
+        ),
+        help="Programme privé à générer.",
+    )
+    parser.add_argument(
+        "--goal-name",
+        required=True,
+        help="Nom de la compétition cible.",
+    )
+    parser.add_argument(
+        "--event-date",
+        required=True,
+        help="Date de compétition au format AAAA-MM-JJ.",
+    )
+    parser.add_argument(
+        "--distance-km",
+        required=True,
+        type=float,
+        help="Distance de l’objectif en kilomètres.",
+    )
+    parser.add_argument(
+        "--target-time-minutes",
+        type=int,
+        help="Temps cible en minutes.",
+    )
+    parser.add_argument(
+        "--start-date",
+        default=date.today().isoformat(),
+        help="Début du programme au format AAAA-MM-JJ.",
+    )
+    parser.add_argument(
+        "--running-sessions",
+        type=int,
+        help="Nombre de séances de course par semaine.",
+    )
+    parser.add_argument(
+        "--strength-sessions",
+        type=int,
+        default=2,
+        help="Nombre de renforcements par semaine.",
+    )
+    parser.add_argument(
+        "--preferred-long-run-day",
+        default="sunday",
+        choices=[
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+        ],
+        help="Jour préféré de sortie longue.",
+    )
+    parser.add_argument(
+        "--recovery-status-available",
+        action="store_true",
+        help=(
+            "Indique que l’état de récupération du jour "
+            "est disponible."
+        ),
+    )
+    return parser.parse_args()
+
+
+def build_profile(arguments: argparse.Namespace):
+    """Reconstruit le profil longitudinal réel."""
+    declared = load_declared_profile(
+        arguments.profile_input
+    )
+    activities = load_activities(
+        arguments.activities
+    )
+    competitions = load_competitions(
+        arguments.competitions
+    )
+
+    profile = AthleteProfileBuilder().build(
+        athlete_id=str(declared["athlete_id"]),
+        declared_level=str(
+            declared["declared_level"]
+        ),
+        activities=activities,
+        competitions=competitions,
+        physiological=build_physiological(declared),
+        availability=build_availability(declared),
+        training_age_years=optional_float(
+            declared.get("training_age_years")
+        ),
+    )
+    profile.current_pain_or_injury = bool(
+        declared.get("current_pain_or_injury", False)
+    )
+    profile.pain_or_injury_notes = str(
+        declared.get("pain_or_injury_notes") or ""
+    )
+    profile.medical_constraints = list(
+        declared.get("medical_constraints", [])
+    )
+    return profile
+
+
+def build_settings(
+    arguments: argparse.Namespace,
+    profile,
+) -> ProgramGenerationSettings:
+    """Combine les préférences CLI et le profil."""
+    running_sessions = arguments.running_sessions
+
+    if running_sessions is None:
+        running_sessions = (
+            profile.availability.available_days_per_week
+            or round(
+                profile.tolerance
+                .usual_running_sessions_per_week
+                or 4
+            )
+        )
+
+    running_sessions = max(
+        2,
+        min(7, int(running_sessions)),
+    )
+
+    return ProgramGenerationSettings(
+        running_sessions_per_week=running_sessions,
+        strength_sessions_per_week=(
+            arguments.strength_sessions
+        ),
+        preferred_long_run_day=(
+            arguments.preferred_long_run_day
+        ),
+        include_mobility=True,
+        avoid_consecutive_intense_days=True,
+    )
+
+
+def json_default(value: Any) -> Any:
+    """Convertit les dates et énumérations en JSON."""
+    if isinstance(value, (date,)):
+        return value.isoformat()
+    if isinstance(value, Enum):
+        return value.value
+
+    raise TypeError(
+        f"Type non sérialisable : {type(value).__name__}"
+    )
+
+
+def write_program(
+    program,
+    output_path: str,
+) -> Path:
+    """Enregistre le programme dans l’espace privé."""
+    destination = Path(output_path)
+    destination.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    with destination.open(
+        "w",
+        encoding="utf-8",
+    ) as output_file:
+        json.dump(
+            asdict(program),
+            output_file,
+            ensure_ascii=False,
+            indent=2,
+            default=json_default,
+        )
+
+    return destination
+
+
+def display_program(
+    program,
+    destination: Path,
+) -> None:
+    """Affiche une synthèse lisible du programme."""
+    research_types = {
+        WorkoutType.HILL_SPRINTS,
+        WorkoutType.MIXED_THRESHOLD_VO2,
+        WorkoutType.TRIANGULAR_VO2,
+    }
+    research_count = sum(
+        workout.workout_type in research_types
+        for week in program.weeks
+        for workout in week.workouts
+    )
+
+    print("=" * 72)
+    print("ATLAS COACH - PROGRAMME GUIDÉ PAR ATLAS RESEARCH")
+    print("=" * 72)
+    print(f"Athlète : {program.athlete_id}")
+    print(f"Objectif : {program.goal.name}")
+    print(
+        f"Échéance : {program.goal.event_date.isoformat()}"
+    )
+    print(
+        f"Distance : {program.goal.distance_km} km"
+    )
+    print(
+        f"Temps cible : "
+        f"{program.goal.target_time_minutes} minutes"
+    )
+    print(f"Durée : {program.duration_weeks} semaines")
+    print(
+        f"Séances totales : {program.total_workouts}"
+    )
+    print(
+        f"Séances de course : "
+        f"{program.total_running_workouts}"
+    )
+    print(
+        f"Séances Atlas Research : {research_count}"
+    )
+
+    print()
+    print("PHASES")
+
+    for week in program.weeks:
+        print(
+            f"  S{week.week_number:02d} "
+            f"{week.phase.value:<12} "
+            f"{len(week.workouts)} séances"
+        )
+
+    print()
+    print("AVERTISSEMENTS")
+
+    if program.warnings:
+        for warning in program.warnings:
+            print(f"  ! {warning}")
+    else:
+        print("  Aucun avertissement.")
+
+    print()
+    print(f"Programme privé : {destination}")
+    print("=" * 72)
+
+
+def main() -> None:
+    """Lance la génération réelle."""
+    arguments = parse_arguments()
+    profile = build_profile(arguments)
+    goal = PerformanceGoal(
+        name=arguments.goal_name,
+        event_date=date.fromisoformat(
+            arguments.event_date
+        ),
+        distance_km=arguments.distance_km,
+        target_time_minutes=(
+            arguments.target_time_minutes
+        ),
+    )
+    settings = build_settings(
+        arguments,
+        profile,
+    )
+    dynamic_metrics = set()
+
+    if arguments.recovery_status_available:
+        dynamic_metrics.add("recovery_status")
+
+    program = TrainingProgramGenerator().generate(
+        profile=profile,
+        goal=goal,
+        start_date=date.fromisoformat(
+            arguments.start_date
+        ),
+        settings=settings,
+        available_dynamic_metrics=dynamic_metrics,
+    )
+    destination = write_program(
+        program,
+        arguments.output,
+    )
+    display_program(
+        program,
+        destination,
+    )
+
+
+if __name__ == "__main__":
+    main()
