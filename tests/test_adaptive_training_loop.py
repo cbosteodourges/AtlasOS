@@ -5,6 +5,7 @@ Test de bout en bout de la boucle adaptative Atlas Coach.
 import unittest
 from datetime import date
 
+from src.performance.athlete_profile import AthleteProfile
 from src.physiology import PhysiologyInput
 from src.training.adaptive_loop import AdaptiveTrainingLoop
 from src.training.decision_engine import (
@@ -160,6 +161,41 @@ class AdaptiveTrainingLoopTests(unittest.TestCase):
         )
         self.assertTrue(
             learning.usable_for_learning
+        )
+
+        profile = AthleteProfile(
+            athlete_id="christophe",
+            declared_level="competitive",
+            observed_level="competitive",
+        )
+        completed_learning = (
+            loop.learn_and_update_profile(
+                preparation,
+                observations,
+                profile,
+                pre_session_pain_0_10=2,
+            )
+        )
+
+        self.assertTrue(
+            completed_learning.profile_update.applied
+        )
+        self.assertEqual(
+            profile.tolerance
+            .learned_response_count,
+            0,
+        )
+        self.assertEqual(
+            completed_learning.profile_update
+            .updated_profile.tolerance
+            .learned_response_count,
+            1,
+        )
+        self.assertGreater(
+            completed_learning.profile_update
+            .updated_profile.tolerance
+            .learned_physiological_tolerance_score,
+            50,
         )
 
 

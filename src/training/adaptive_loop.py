@@ -12,6 +12,7 @@ from src.atlas_brain import (
     AtlasIndexEngine,
     AtlasIndexResult,
 )
+from src.performance.athlete_profile import AthleteProfile
 from src.physiology import (
     PhysiologyEngine,
     PhysiologyInput,
@@ -32,6 +33,10 @@ from .response_learning import (
     TrainingResponseObservation,
 )
 from .session_models import AdaptiveWorkout
+from .tolerance_learning import (
+    AthleteToleranceLearningEngine,
+    ToleranceLearningApplication,
+)
 
 
 @dataclass(slots=True)
@@ -44,6 +49,14 @@ class DailyAdaptiveTrainingResult:
     adaptation: AdaptedWorkoutResult
 
 
+@dataclass(slots=True)
+class AdaptiveLearningResult:
+    """Réponse analysée et profil mis à jour."""
+
+    response: TrainingResponseLearning
+    profile_update: ToleranceLearningApplication
+
+
 class AdaptiveTrainingLoop:
     """Relie récupération, indice, décision et apprentissage."""
 
@@ -54,6 +67,9 @@ class AdaptiveTrainingLoop:
         self.adaptation_engine = WorkoutAdaptationEngine()
         self.response_engine = (
             TrainingResponseLearningEngine()
+        )
+        self.tolerance_learning_engine = (
+            AthleteToleranceLearningEngine()
         )
 
     def prepare_session(
@@ -98,7 +114,7 @@ class AdaptiveTrainingLoop:
         *,
         pre_session_pain_0_10: Optional[float] = None,
     ) -> TrainingResponseLearning:
-        """Ferme la boucle à partir des réponses à 24–72 h."""
+        """Analyse la réponse à 24–72 heures."""
         return self.response_engine.analyze(
             preparation.adaptation.adapted_workout,
             observations,
@@ -111,4 +127,33 @@ class AdaptiveTrainingLoop:
             pre_session_pain_0_10=(
                 pre_session_pain_0_10
             ),
+        )
+
+    def learn_and_update_profile(
+        self,
+        preparation: DailyAdaptiveTrainingResult,
+        observations: list[TrainingResponseObservation],
+        profile: AthleteProfile,
+        *,
+        pre_session_pain_0_10: Optional[float] = None,
+    ) -> AdaptiveLearningResult:
+        """Ferme la boucle et mémorise la tolérance apprise."""
+        response = self.learn_from_response(
+            preparation,
+            observations,
+            pre_session_pain_0_10=(
+                pre_session_pain_0_10
+            ),
+        )
+        profile_update = (
+            self.tolerance_learning_engine.apply(
+                profile,
+                preparation.adaptation.adapted_workout,
+                response,
+            )
+        )
+
+        return AdaptiveLearningResult(
+            response=response,
+            profile_update=profile_update,
         )

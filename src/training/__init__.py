@@ -5,6 +5,7 @@ from .adaptation_engine import (
     WorkoutAdaptationEngine,
 )
 from .adaptive_loop import (
+    AdaptiveLearningResult,
     AdaptiveTrainingLoop,
     DailyAdaptiveTrainingResult,
 )
@@ -28,15 +29,22 @@ from .session_models import (
     WorkoutPriority,
     WorkoutType,
 )
+from .tolerance_learning import (
+    AthleteToleranceLearningEngine,
+    ToleranceLearningApplication,
+)
 
 __all__ = [
     "AdaptedWorkoutResult",
+    "AdaptiveLearningResult",
     "AdaptiveTrainingLoop",
     "AdaptiveWorkout",
+    "AthleteToleranceLearningEngine",
     "BlockType",
     "DailyAdaptiveTrainingResult",
     "ExpectedTrainingResponse",
     "IntensityTarget",
+    "ToleranceLearningApplication",
     "TrainingBlock",
     "TrainingDecision",
     "TrainingDecisionAction",

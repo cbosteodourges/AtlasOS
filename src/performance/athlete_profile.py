@@ -123,6 +123,21 @@ class TrainingTolerance:
 
     recent_load_change_percent: Optional[float] = None
 
+    learned_physiological_tolerance_score: float = 50.0
+    learned_biomechanical_tolerance_score: float = 50.0
+    learned_response_count: int = 0
+    positive_response_count: int = 0
+    delayed_response_count: int = 0
+    adverse_response_count: int = 0
+
+    session_type_tolerance_scores: dict[str, float] = field(
+        default_factory=dict
+    )
+    structure_tolerance_scores: dict[str, float] = field(
+        default_factory=dict
+    )
+    last_learning_update: Optional[datetime] = None
+
 
 @dataclass
 class AthleteProfile:
