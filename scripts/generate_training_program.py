@@ -175,13 +175,13 @@ def build_settings(
     running_sessions = arguments.running_sessions
 
     if running_sessions is None:
-        running_sessions = (
+        available_days = (
             profile.availability.available_days_per_week
-            or round(
-                profile.tolerance
-                .usual_running_sessions_per_week
-                or 4
-            )
+            or 4
+        )
+        running_sessions = min(
+            4,
+            int(available_days),
         )
 
     running_sessions = max(
@@ -191,6 +191,7 @@ def build_settings(
 
     return ProgramGenerationSettings(
         running_sessions_per_week=running_sessions,
+        optional_running_sessions_per_week=1,
         strength_sessions_per_week=(
             arguments.strength_sessions
         ),
@@ -214,8 +215,120 @@ def json_default(value: Any) -> Any:
     )
 
 
+def build_export_payload(
+    program,
+    profile,
+) -> dict[str, Any]:
+    """Ajoute les propriétés calculées utiles à l’interface."""
+    payload = asdict(program)
+    physiological = profile.physiological
+    vma_estimated_from_vo2 = (
+        round(physiological.vo2_max / 3.5, 2)
+        if physiological.vo2_max is not None
+        else None
+    )
+
+    sv1_speed = (
+        physiological.sv1.speed_kmh
+        or (
+            round(physiological.vma_kmh * 0.75, 1)
+            if physiological.vma_kmh is not None
+            else None
+        )
+    )
+    sv1_heart_rate = (
+        physiological.sv1.heart_rate_bpm
+        or (
+            round(
+                physiological.threshold_heart_rate_bpm
+                * 0.86
+            )
+            if (
+                physiological.threshold_heart_rate_bpm
+                is not None
+            )
+            else (
+                round(
+                    physiological.maximum_heart_rate_bpm
+                    * 0.75
+                )
+                if (
+                    physiological.maximum_heart_rate_bpm
+                    is not None
+                )
+                else None
+            )
+        )
+    )
+    sv2_speed = (
+        physiological.sv2.speed_kmh
+        or physiological.threshold_speed_kmh
+    )
+    sv2_heart_rate = (
+        physiological.sv2.heart_rate_bpm
+        or physiological.threshold_heart_rate_bpm
+    )
+
+    payload["duration_weeks"] = (
+        program.duration_weeks
+    )
+    payload["total_workouts"] = (
+        program.total_workouts
+    )
+    payload["total_running_workouts"] = (
+        program.total_running_workouts
+    )
+    payload["goal"]["target_pace_seconds_per_km"] = (
+        program.goal.target_pace_seconds_per_km
+    )
+    payload["athlete_snapshot"] = {
+        "age_years": physiological.age_years,
+        "sex": physiological.sex,
+        "vo2_max": physiological.vo2_max,
+        "vma_kmh": physiological.vma_kmh,
+        "vma_training_reference_kmh": (
+            physiological.vma_kmh
+        ),
+        "vma_estimated_from_vo2_kmh": (
+            vma_estimated_from_vo2
+        ),
+        "maximum_heart_rate_bpm": (
+            physiological.maximum_heart_rate_bpm
+        ),
+        "resting_heart_rate_bpm": (
+            physiological.resting_heart_rate_bpm
+        ),
+        "sv1": {
+            "speed_kmh": sv1_speed,
+            "heart_rate_bpm": sv1_heart_rate,
+            "status": (
+                "longitudinal"
+                if physiological.sv1.speed_kmh is not None
+                else "estimated"
+            ),
+        },
+        "sv2": {
+            "speed_kmh": sv2_speed,
+            "heart_rate_bpm": sv2_heart_rate,
+            "status": (
+                "longitudinal"
+                if sv2_speed is not None
+                else "missing"
+            ),
+        },
+        "profile_confidence_score": (
+            profile.profile_confidence_score
+        ),
+        "data_quality_score": (
+            profile.data_quality_score
+        ),
+    }
+    return payload
+
+
 def write_program(
     program,
+    profile,
     output_path: str,
 ) -> Path:
     """Enregistre le programme dans l’espace privé."""
@@ -224,13 +337,17 @@ def write_program(
         parents=True,
         exist_ok=True,
     )
+    payload = build_export_payload(
+        program,
+        profile,
+    )
 
     with destination.open(
         "w",
         encoding="utf-8",
     ) as output_file:
         json.dump(
-            asdict(program),
+            payload,
             output_file,
             ensure_ascii=False,
             indent=2,
@@ -341,6 +458,7 @@ def main() -> None:
     )
     destination = write_program(
         program,
+        profile,
         arguments.output,
     )
     display_program(

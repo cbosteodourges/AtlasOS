@@ -31,6 +31,7 @@ class ProgramGenerationSettings:
     """Préférences de génération du programme."""
 
     running_sessions_per_week: int = 4
+    optional_running_sessions_per_week: int = 1
     strength_sessions_per_week: int = 2
     cycling_sessions_per_week: int = 0
 
@@ -51,6 +52,13 @@ class ProgramGenerationSettings:
             raise ValueError(
                 "running_sessions_per_week doit être "
                 "compris entre 2 et 7."
+            )
+        if not 0 <= (
+            self.optional_running_sessions_per_week
+        ) <= 2:
+            raise ValueError(
+                "optional_running_sessions_per_week doit "
+                "être compris entre 0 et 2."
             )
         if not 0 <= self.strength_sessions_per_week <= 4:
             raise ValueError(

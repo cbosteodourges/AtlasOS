@@ -36,8 +36,38 @@ class StandardWorkoutBuilder:
             else WorkoutType.ENDURANCE_Z2
         )
         vma = profile.physiological.vma_kmh
-        minimum_percent = 55 if recovery else 60
-        maximum_percent = 65 if recovery else 75
+        minimum_percent = 63 if recovery else 68
+        maximum_percent = 68 if recovery else 72
+
+        threshold_heart_rate = (
+            profile.physiological.threshold_heart_rate_bpm
+            or profile.physiological.sv2.heart_rate_bpm
+        )
+        maximum_heart_rate = (
+            profile.physiological.maximum_heart_rate_bpm
+        )
+
+        if threshold_heart_rate is not None:
+            heart_rate_min = round(
+                threshold_heart_rate
+                * (0.66 if recovery else 0.75)
+            )
+            heart_rate_max = round(
+                threshold_heart_rate
+                * (0.75 if recovery else 0.86)
+            )
+        elif maximum_heart_rate is not None:
+            heart_rate_min = round(
+                maximum_heart_rate
+                * (0.57 if recovery else 0.65)
+            )
+            heart_rate_max = round(
+                maximum_heart_rate
+                * (0.65 if recovery else 0.75)
+            )
+        else:
+            heart_rate_min = None
+            heart_rate_max = None
 
         workout = AdaptiveWorkout(
             workout_id=self._workout_id(
@@ -74,7 +104,9 @@ class StandardWorkoutBuilder:
                             vma,
                             maximum_percent,
                         ),
-                        rpe_0_10=2.5 if recovery else 3.5,
+                        heart_rate_min_bpm=heart_rate_min,
+                    heart_rate_max_bpm=heart_rate_max,
+                    rpe_0_10=2.5 if recovery else 3.5,
                     ),
                     instructions=(
                         "Rester en aisance respiratoire et ralentir "

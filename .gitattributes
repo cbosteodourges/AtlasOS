@@ -1,2 +1,9 @@
-.gitattributes text eol=lf
-*.py text eol=lf
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.glb binary
+*.gltf text eol=lf

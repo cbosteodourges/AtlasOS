@@ -16,7 +16,21 @@
   const brainMainText = document.getElementById("brainMainText");
   const moduleToast = document.getElementById("moduleToast");
   const hubFinalImage = document.getElementById("hubFinalImage");
+  const hubPersistentAvatar = document.getElementById("hubPersistentAvatar");
   let selectedAvatar = null;
+
+  function syncHubAvatar() {
+    if (!hubPersistentAvatar) return;
+
+    const isFemale = selectedAvatar === "female";
+    hubPersistentAvatar.src = isFemale
+      ? "./assets/atlas-avatar-female-master.png"
+      : "./assets/atlas-avatar-male-master.png";
+
+    hubPersistentAvatar.dataset.avatar = isFemale
+      ? "female"
+      : "male";
+  }
 
   function showPage(name) {
     pages.forEach(page => page.classList.toggle("is-active", page.dataset.page === name));
@@ -27,15 +41,9 @@
 
   if (window.location.hash === "#hub") {
     selectedAvatar = localStorage.getItem("atlasPreselectedAvatar") || "male";
-    const isFemale = selectedAvatar === "female";
+  syncHubAvatar();
 
-    if (hubFinalImage) {
-      hubFinalImage.src = isFemale
-        ? "./assets/atlas-hub-female-final.png"
-        : "./assets/atlas-hub-male-final.png";
-    }
-
-    showPage("hub");
+    window.location.href = "./atlas-cockpit.html";
   }
 
   // ████████████████████████████████████████████████████████████
@@ -57,16 +65,9 @@
     if (!selectedAvatar) return;
 
     localStorage.setItem("atlasPreselectedAvatar", selectedAvatar);
+  syncHubAvatar();
 
-    const isFemale = selectedAvatar === "female";
-
-    if (hubFinalImage) {
-      hubFinalImage.src = isFemale
-        ? "./assets/atlas-hub-female-final.png"
-        : "./assets/atlas-hub-male-final.png";
-    }
-
-    showPage("hub");
+    window.location.href = "./atlas-cockpit.html";
   });
 
   // ████████████████████████████████████████████████████████████

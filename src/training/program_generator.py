@@ -102,11 +102,15 @@ class TrainingProgramGenerator:
                 + "."
             )
 
+        calendar_start = start_date - timedelta(
+            days=start_date.weekday()
+        )
+
         for index, planned_phase in enumerate(
             phase_plan.phases
         ):
             week_number = index + 1
-            week_start = start_date + timedelta(
+            week_start = calendar_start + timedelta(
                 days=index * 7
             )
             week_end = min(
@@ -129,6 +133,7 @@ class TrainingProgramGenerator:
                 week_number=week_number,
                 week_start=week_start,
                 week_end=week_end,
+                training_start=start_date,
                 phase=phase,
                 quality_cycle_index=quality_cycle_index,
                 available_dynamic_metrics=runtime_metrics,
@@ -172,12 +177,13 @@ class TrainingProgramGenerator:
         week_number: int,
         week_start: date,
         week_end: date,
+        training_start: date,
         phase: TrainingPhase,
         quality_cycle_index: int,
         available_dynamic_metrics: set[str],
     ) -> tuple[AdaptiveTrainingWeek, bool]:
         dates = self._available_dates(
-            week_start,
+            max(week_start, training_start),
             week_end,
             profile,
         )
@@ -255,12 +261,21 @@ class TrainingProgramGenerator:
             for workout in workouts
         )
 
-        for workout_date in dates:
-            if running_count >= running_target:
-                break
-            if workout_date in used_dates:
-                continue
+        remaining_dates = [
+            workout_date
+            for workout_date in dates
+            if workout_date not in used_dates
+        ]
+        needed_running_sessions = max(
+            0,
+            running_target - running_count,
+        )
+        easy_dates = self._spread_dates(
+            remaining_dates,
+            needed_running_sessions,
+        )
 
+        for workout_date in easy_dates:
             recovery = phase in {
                 TrainingPhase.RECOVERY,
                 TrainingPhase.TAPER,
@@ -281,7 +296,10 @@ class TrainingProgramGenerator:
 
         self._add_support_sessions(
             workouts=workouts,
-            week_start=week_start,
+            week_start=max(
+                week_start,
+                training_start,
+            ),
             week_end=week_end,
             settings=settings,
             phase=phase,
@@ -387,6 +405,32 @@ class TrainingProgramGenerator:
 
         return dates
 
+    @staticmethod
+    def _spread_dates(
+        dates: list[date],
+        count: int,
+    ) -> list[date]:
+        """Répartit les séances faciles sur les jours libres."""
+        if count <= 0 or not dates:
+            return []
+
+        if count >= len(dates):
+            return list(dates)
+
+        if count == 1:
+            return [dates[len(dates) // 2]]
+
+        last_index = len(dates) - 1
+        indices = [
+            round(index * last_index / (count - 1))
+            for index in range(count)
+        ]
+
+        return [
+            dates[index]
+            for index in dict.fromkeys(indices)
+        ]
+
     def _preferred_date(
         self,
         dates: list[date],
@@ -439,6 +483,8 @@ class TrainingProgramGenerator:
             return min(target, 2)
         if phase == TrainingPhase.TAPER:
             return min(target, 3)
+        if phase == TrainingPhase.RACE_WEEK:
+            return min(target, 3)
 
         return target
 
@@ -451,61 +497,18 @@ class TrainingProgramGenerator:
         settings: ProgramGenerationSettings,
         phase: TrainingPhase,
     ) -> None:
-        if phase in {
-            TrainingPhase.RECOVERY,
-            TrainingPhase.RACE_WEEK,
-        }:
-            strength_count = 0
-        elif phase == TrainingPhase.TAPER:
-            strength_count = min(
-                1,
-                settings.strength_sessions_per_week,
-            )
-        else:
-            strength_count = (
-                settings.strength_sessions_per_week
-            )
-
-        support_dates = []
-        current = week_start
-
-        while current <= week_end:
-            support_dates.append(current)
-            current += timedelta(days=1)
-
-        occupied = {
-            workout.workout_date
-            for workout in workouts
-        }
-        ordered_dates = [
-            *[
-                item
-                for item in support_dates
-                if item not in occupied
-            ],
-            *[
-                item
-                for item in support_dates
-                if item in occupied
-            ],
-        ]
-
-        for index in range(strength_count):
-            workout_date = ordered_dates[
-                index % len(ordered_dates)
-            ]
-            workouts.append(
-                self._standard_builder.build_strength(
-                    workout_date=workout_date,
-                )
-            )
-
-        if settings.include_mobility and support_dates:
+        # Les activités de soutien sont normalement ajoutées
+        # à la demande depuis le calendrier Atlas Coach.
+        if (
+            phase == TrainingPhase.RECOVERY
+            and settings.include_mobility
+        ):
             workouts.append(
                 self._standard_builder.build_mobility(
-                    workout_date=support_dates[-1],
+                    workout_date=week_end,
                 )
             )
+        return
 
     @staticmethod
     def _long_run_duration(

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#020713">
   <title>Atlas OS — Ouverture</title>
-  <link rel="stylesheet" href="./css/atlas-opening.css">
+  <link rel="stylesheet" href="./css/atlas-opening.css?v=8">
 </head>
 <body>
 <main class="atlas-opening-app" id="atlasOpeningApp">
@@ -14,16 +14,12 @@
        🟦 PARTIE A — A01 — PAGE D’OUVERTURE OFFICIELLE
        ████████████████████████████████████████████████████████ -->
   <section class="atlas-page atlas-page--welcome is-active" data-page="welcome" aria-label="Présentation d’Atlas OS">
-    <div class="atlas-image-stage atlas-image-stage--portrait atlas-opening-card">
-      <img src="./assets/atlas-opening-page-clean.jpg" alt="Atlas, votre jumeau biomécanique numérique">
-      <div class="atlas-breathing-light" aria-hidden="true"></div>
-
-      <button
-        class="atlas-enter-hotspot"
-        id="atlasEnterButton"
-        type="button"
-        aria-label="Entrer dans Atlas"
-      ></button>
+    <div class="atlas-welcome">
+      <div class="atlas-welcome-glow" aria-hidden="true"></div>
+      <img class="atlas-welcome-logo" src="./assets/atlas-os-human-digital-twin.png" alt="Atlas OS — Votre Jumeau Numérique Humain">
+      <button class="atlas-welcome-enter" id="atlasEnterButton" type="button">
+        Entrer dans Atlas <span aria-hidden="true">→</span>
+      </button>
     </div>
   </section>
 
@@ -35,18 +31,29 @@
       Tournez votre téléphone horizontalement pour profiter du visuel complet.
     </div>
 
-    <div class="atlas-image-stage atlas-image-stage--landscape" id="avatarStage">
-      <img src="./assets/atlas-avatar-choice-official.jpg" alt="Choisissez un avatar homme ou femme">
+    <div class="atlas-image-stage atlas-image-stage--landscape atlas-avatar-selector" id="avatarStage">
+  <div class="atlas-avatar-heading">
+    <span>ÉTAPE 1 SUR 5</span>
+    <h1>Choisissez votre avatar</h1>
+    <p>Il deviendra votre Jumeau Numérique dans tous les moteurs Atlas.</p>
+  </div>
 
-      <button class="atlas-hotspot atlas-hotspot--male" data-avatar="male" type="button" aria-label="Choisir l’avatar homme"></button>
-      <button class="atlas-hotspot atlas-hotspot--female" data-avatar="female" type="button" aria-label="Choisir l’avatar femme"></button>
-      <button class="atlas-hotspot atlas-hotspot--continue" id="avatarContinue" type="button" aria-label="Continuer" disabled></button>
+  <div class="atlas-avatar-grid">
+    <button class="atlas-hotspot atlas-hotspot--male atlas-avatar-card" data-avatar="male" type="button" aria-label="Choisir l’avatar homme">
+      <img src="./assets/atlas-avatar-male-master.png" alt="Jumeau Numérique Atlas homme">
+      <strong>HOMME</strong>
+    </button>
 
-      <div class="atlas-selection-ring atlas-selection-ring--male" aria-hidden="true"></div>
-      <div class="atlas-selection-ring atlas-selection-ring--female" aria-hidden="true"></div>
-    </div>
+    <button class="atlas-hotspot atlas-hotspot--female atlas-avatar-card" data-avatar="female" type="button" aria-label="Choisir l’avatar femme">
+      <img src="./assets/atlas-avatar-female-master.png" alt="Jumeau Numérique Atlas femme">
+      <strong>FEMME</strong>
+    </button>
+  </div>
 
-    <div class="atlas-selection-status" id="avatarStatus" aria-live="polite">
+  <button class="atlas-hotspot atlas-hotspot--continue atlas-avatar-continue" id="avatarContinue" type="button" disabled>
+    Continuer <span>→</span>
+  </button>
+</div><div class="atlas-selection-status" id="avatarStatus" aria-live="polite">
       Sélectionnez Homme ou Femme.
     </div>
   </section>
@@ -60,8 +67,14 @@
       <img
         id="hubFinalImage"
         class="hub-final-image"
-        src="./assets/atlas-hub-male-final.png"
-        alt="Interface Atlas OS autour du Digital Twin"
+        src="./assets/atlas-hub-cockpit-empty.png"
+        alt="Interface Atlas OS autour du Jumeau Numérique"
+      >
+      <img
+        id="hubPersistentAvatar"
+        class="hub-persistent-avatar"
+        src="./assets/atlas-avatar-male-master.png"
+        alt="Jumeau Numérique Atlas sélectionné"
       >
 
       <!-- Zones interactives exactement superposées à la maquette -->
@@ -105,6 +118,6 @@
   </section>
 
 </main>
-<script src="./js/atlas-opening.js"></script>
+<script src="./js/atlas-opening.js?v=3"></script>
 </body>
 </html>

@@ -24,6 +24,7 @@ def build_profile(
         observed_level="competitive",
         physiological=PhysiologicalReferences(
             vma_kmh=vma_kmh,
+            threshold_heart_rate_bpm=160,
         ),
     )
 
@@ -48,11 +49,19 @@ class StandardWorkoutBuilderTests(unittest.TestCase):
         )
         self.assertEqual(
             workout.blocks[0].target.speed_min_kmh,
-            8.4,
+            9.52,
         )
         self.assertEqual(
             workout.blocks[0].target.speed_max_kmh,
-            10.5,
+            10.08,
+        )
+        self.assertEqual(
+            workout.blocks[0].target.heart_rate_min_bpm,
+            120,
+        )
+        self.assertEqual(
+            workout.blocks[0].target.heart_rate_max_bpm,
+            138,
         )
         self.assertEqual(
             workout.estimated_duration_minutes,

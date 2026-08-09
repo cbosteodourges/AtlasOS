@@ -756,7 +756,23 @@
       const plan = generatePlan(profile, zones);
 
       renderZones(zones, thresholds);
-      renderPlan(profile, zones, plan);
+      window.dispatchEvent(new CustomEvent(
+        "atlas:zones-updated",
+        {
+          detail: {
+            zones,
+            thresholds,
+            profile: {
+              vma: profile.vma,
+              hrMax: profile.hrMax,
+              hrRest: profile.hrRest,
+              displayMode: profile.displayMode
+            }
+          }
+        }
+      ));
+      // Le programme privé Atlas Research est rendu par
+// atlas-training-calendar.js. Ne pas réinjecter l’ancien plan.
 
       elements.durationSummary.textContent = `${plan.totalWeeks} semaines`;
       elements.eventSummary.textContent =
@@ -1191,3 +1207,485 @@
   });
 })();
 /* FIN GESTION DES COMPÉTITIONS ATLAS COACH */
+
+/* PROGRAMME RÉEL ATLAS RESEARCH */
+(() => {
+  const planPanel = document.getElementById("planPanel");
+  const overview = document.getElementById("planOverview");
+  const calendar = document.getElementById("trainingCalendar");
+
+  if (!planPanel || !overview || !calendar) {
+    return;
+  }
+
+  const PHASE_LABELS = {
+    base: "Base aérobie",
+    development: "Développement",
+    specific: "Spécifique semi-marathon",
+    taper: "Affûtage",
+    race_week: "Semaine de course",
+    recovery: "Récupération"
+  };
+
+  const WORKOUT_LABELS = {
+    recovery_run: "Récupération",
+    endurance_z2: "Endurance Z2",
+    tempo_z3: "Tempo Z3",
+    threshold_sv2: "Seuil SV2",
+    vma_short: "VMA courte",
+    vma_long: "VMA longue",
+    hill_sprints: "Sprints en côte",
+    mixed_threshold_vo2: "Seuil + VO₂",
+    triangular_vo2: "VO₂ triangulaire",
+    race_specific: "Compétition",
+    long_run: "Sortie longue",
+    cycling: "Cyclisme",
+    strength: "Renforcement",
+    mobility: "Mobilité",
+    rest: "Repos"
+  };
+
+  const RESEARCH_TYPES = new Set([
+    "hill_sprints",
+    "mixed_threshold_vo2",
+    "triangular_vo2"
+  ]);
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function parseLocalDate(value) {
+    return new Date(`${value}T12:00:00`);
+  }
+
+  function formatDate(value, options = {}) {
+    if (!value) return "—";
+
+    return new Intl.DateTimeFormat("fr-FR", {
+      day: "numeric",
+      month: "short",
+      year: options.year ? "numeric" : undefined
+    }).format(parseLocalDate(value));
+  }
+
+  function formatMinutes(value) {
+    const total = Math.round(Number(value) || 0);
+
+    if (!total) return "Durée libre";
+
+    const hours = Math.floor(total / 60);
+    const minutes = total % 60;
+
+    if (!hours) return `${minutes} min`;
+    if (!minutes) return `${hours} h`;
+    return `${hours} h ${String(minutes).padStart(2, "0")}`;
+  }
+
+  function formatTargetTime(minutes) {
+    const total = Number(minutes);
+
+    if (!Number.isFinite(total)) return "Objectif libre";
+
+    const hours = Math.floor(total / 60);
+    const remaining = total % 60;
+
+    return `${hours} h ${String(remaining).padStart(2, "0")}`;
+  }
+
+  function formatPace(secondsPerKm) {
+    const total = Number(secondsPerKm);
+
+    if (!Number.isFinite(total)) return "—";
+
+    const minutes = Math.floor(total / 60);
+    const seconds = Math.round(total % 60);
+
+    return `${minutes}:${String(seconds).padStart(2, "0")}/km`;
+  }
+
+  function blockDuration(block) {
+    const repetitions = Number(block.repetitions) || 1;
+    const parts = [];
+
+    if (block.duration_minutes != null) {
+      parts.push(
+        `${repetitions > 1 ? `${repetitions} × ` : ""}` +
+        `${Number(block.duration_minutes).toLocaleString("fr-FR")} min`
+      );
+    } else if (block.distance_meters != null) {
+      parts.push(
+        `${repetitions > 1 ? `${repetitions} × ` : ""}` +
+        `${Number(block.distance_meters).toLocaleString("fr-FR")} m`
+      );
+    }
+
+    if (block.recovery_minutes != null) {
+      parts.push(
+        `récup. ${Number(block.recovery_minutes).toLocaleString("fr-FR")} min`
+      );
+    }
+
+    return parts.join(" · ") || "Durée individualisée";
+  }
+
+  function blockTarget(block) {
+    const target = block.target || {};
+    const parts = [];
+
+    if (target.zone) {
+      parts.push(`Zone ${target.zone}`);
+    }
+
+    if (
+      target.speed_min_kmh != null &&
+      target.speed_max_kmh != null
+    ) {
+      const minimum = Number(
+        target.speed_min_kmh
+      ).toLocaleString("fr-FR");
+      const maximum = Number(
+        target.speed_max_kmh
+      ).toLocaleString("fr-FR");
+
+      parts.push(
+        minimum === maximum
+          ? `${minimum} km/h`
+          : `${minimum}–${maximum} km/h`
+      );
+    }
+
+    if (target.pace_min_per_km) {
+      parts.push(`${target.pace_min_per_km}/km`);
+    }
+
+    if (target.heart_rate_min_bpm != null) {
+      parts.push(
+        `${target.heart_rate_min_bpm}–` +
+        `${target.heart_rate_max_bpm} bpm`
+      );
+    }
+
+    if (target.rpe_0_10 != null) {
+      parts.push(`RPE ${target.rpe_0_10}/10`);
+    }
+
+    if (target.gradient_min_percent != null) {
+      parts.push(
+        `pente ${target.gradient_min_percent}–` +
+        `${target.gradient_max_percent} %`
+      );
+    }
+
+    if (
+      target.intensity_pattern &&
+      target.intensity_pattern !== "constant"
+    ) {
+      parts.push(
+        `profil ${target.intensity_pattern.replaceAll("_", " ")}`
+      );
+    }
+
+    return parts.join(" · ") || "Cible guidée par les sensations";
+  }
+
+  function evidenceValue(workout) {
+    const note = (workout.coach_notes || []).find(
+      item => item.startsWith("Confiance scientifique")
+    );
+
+    return note ? note.split(":").slice(1).join(":").trim() : null;
+  }
+
+  function suitabilityValue(workout) {
+    const note = (workout.coach_notes || []).find(
+      item => item.startsWith("Adéquation individuelle")
+    );
+
+    return note ? note.split(":").slice(1).join(":").trim() : null;
+  }
+
+  function renderLoad(workout) {
+    const response = workout.expected_response;
+
+    if (!response) return "";
+
+    return `
+      <div class="atlas-load-grid">
+        <span>
+          <small>Charge physiologique</small>
+          <strong>${escapeHtml(response.physiological_load_0_100)}/100</strong>
+        </span>
+        <span>
+          <small>Charge biomécanique</small>
+          <strong>${escapeHtml(response.biomechanical_load_0_100)}/100</strong>
+        </span>
+        <span>
+          <small>Récupération estimée</small>
+          <strong>
+            ${escapeHtml(response.recovery_min_hours)}–${escapeHtml(response.recovery_max_hours)} h
+          </strong>
+        </span>
+      </div>
+    `;
+  }
+
+  function renderWorkout(workout) {
+    const isResearch = RESEARCH_TYPES.has(
+      workout.workout_type
+    );
+    const evidence = evidenceValue(workout);
+    const suitability = suitabilityValue(workout);
+
+    return `
+      <article class="session-card atlas-session ${isResearch ? "research-session" : ""}">
+        <div class="atlas-session-head">
+          <div>
+            <div class="session-date">
+              ${escapeHtml(formatDate(workout.workout_date, { year: true }))}
+            </div>
+            <h3>${escapeHtml(workout.title)}</h3>
+          </div>
+
+          <div class="atlas-session-badges">
+            <span class="workout-type-badge">
+              ${escapeHtml(
+                WORKOUT_LABELS[workout.workout_type] ||
+                workout.workout_type
+              )}
+            </span>
+            ${isResearch ? `
+              <span class="research-badge">Atlas Research</span>
+            ` : ""}
+          </div>
+        </div>
+
+        <div class="session-objective">
+          ${escapeHtml(workout.objective)}
+        </div>
+
+        <div class="atlas-session-meta">
+          <strong>${escapeHtml(formatMinutes(workout.planned_duration_minutes))}</strong>
+          ${evidence ? `<span>Preuve ${escapeHtml(evidence)}</span>` : ""}
+          ${suitability ? `<span>Adéquation ${escapeHtml(suitability)}</span>` : ""}
+        </div>
+
+        ${renderLoad(workout)}
+
+        <div class="session-blocks">
+          ${(workout.blocks || []).map(block => `
+            <div class="session-block atlas-rich-block">
+              <strong>${escapeHtml(block.name)}</strong>
+              <span>${escapeHtml(blockDuration(block))}</span>
+              <small>${escapeHtml(blockTarget(block))}</small>
+              ${block.instructions ? `
+                <p>${escapeHtml(block.instructions)}</p>
+              ` : ""}
+            </div>
+          `).join("")}
+        </div>
+
+        ${(workout.expected_response?.sensitive_structures || []).length ? `
+          <div class="sensitive-structures">
+            <span>Vigilance biomécanique</span>
+            ${workout.expected_response.sensitive_structures
+              .map(item => `<i>${escapeHtml(item)}</i>`)
+              .join("")}
+          </div>
+        ` : ""}
+      </article>
+    `;
+  }
+
+  function isCurrentWeek(week) {
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+
+    return (
+      today >= parseLocalDate(week.start_date) &&
+      today <= parseLocalDate(week.end_date)
+    );
+  }
+
+  function renderRealProgram(program) {
+    const researchCount = program.weeks.reduce(
+      (total, week) => total + week.workouts.filter(
+        workout => RESEARCH_TYPES.has(workout.workout_type)
+      ).length,
+      0
+    );
+    const targetPace = program.goal.target_pace_seconds_per_km;
+
+    overview.innerHTML = `
+      <article>
+        <span>Objectif</span>
+        <strong>${escapeHtml(program.goal.name)}</strong>
+      </article>
+      <article>
+        <span>Échéance</span>
+        <strong>${escapeHtml(formatDate(program.goal.event_date, { year: true }))}</strong>
+      </article>
+      <article>
+        <span>Temps cible</span>
+        <strong>${escapeHtml(formatTargetTime(program.goal.target_time_minutes))}</strong>
+        <small>${escapeHtml(formatPace(targetPace))}</small>
+      </article>
+      <article>
+        <span>Programme</span>
+        <strong>${escapeHtml(program.weeks.length)} semaines</strong>
+        <small>${escapeHtml(program.total_running_workouts)} courses · ${researchCount} Research</small>
+      </article>
+    `;
+
+    calendar.innerHTML = `
+      <div class="atlas-program-banner">
+        <div>
+          <span>ATLAS COACH × ATLAS RESEARCH</span>
+          <strong>Programme adaptatif personnel activé</strong>
+          <small>
+            Historique longitudinal, seuil individuel, VMA,
+            tolérance biomécanique et niveau de preuve combinés.
+          </small>
+        </div>
+        <i>${escapeHtml(program.athlete_id)}</i>
+      </div>
+
+      ${(program.warnings || []).length ? `
+        <div class="atlas-program-warnings">
+          ${program.warnings.map(
+            warning => `<p>⚠ ${escapeHtml(warning)}</p>`
+          ).join("")}
+        </div>
+      ` : ""}
+
+      ${program.weeks.map(week => `
+        <details
+          class="training-week atlas-real-week phase-${escapeHtml(week.phase)}"
+          ${isCurrentWeek(week) || week.week_number === 1 ? "open" : ""}
+        >
+          <summary class="week-header">
+            <div>
+              <strong>
+                Semaine ${escapeHtml(week.week_number)}
+                · ${escapeHtml(PHASE_LABELS[week.phase] || week.phase)}
+              </strong>
+              <small>${escapeHtml(week.objective)}</small>
+            </div>
+            <span>
+              ${escapeHtml(formatDate(week.start_date))}
+              →
+              ${escapeHtml(formatDate(week.end_date))}
+              · ${escapeHtml(formatMinutes(week.target_duration_minutes))}
+            </span>
+          </summary>
+
+          <div class="session-list">
+            ${(week.workouts || []).map(renderWorkout).join("")}
+          </div>
+        </details>
+      `).join("")}
+    `;
+
+    const heading = planPanel.querySelector(
+      ".section-title h1"
+    );
+
+    if (heading) {
+      heading.textContent =
+        "Votre programme adaptatif jusqu’au semi-marathon";
+    }
+
+    planPanel.hidden = false;
+    hydrateGoalFields(program);
+  }
+
+  function hydrateGoalFields(program) {
+    const distance = Number(program.goal.distance_km);
+    const type = (
+      distance >= 20 && distance <= 22
+        ? "half"
+        : distance >= 41
+          ? "marathon"
+          : distance >= 9 && distance <= 11
+            ? "10k"
+            : "5k"
+    );
+    const targetMinutes = Number(
+      program.goal.target_time_minutes
+    );
+    const targetHours = Math.floor(targetMinutes / 60);
+    const targetRemainingMinutes = targetMinutes % 60;
+    const targetTime = Number.isFinite(targetMinutes)
+      ? `${String(targetHours).padStart(2, "0")}:` +
+        `${String(targetRemainingMinutes).padStart(2, "0")}:00`
+      : "";
+
+    const values = {
+      eventType: type,
+      eventDate: program.goal.event_date,
+      competitionName: program.goal.name,
+      competitionType: type,
+      competitionDate: program.goal.event_date,
+      competitionTargetTime: targetTime,
+      daysPerWeek: String(
+        program.settings.running_sessions_per_week
+      )
+    };
+
+    Object.entries(values).forEach(([id, value]) => {
+      const field = document.getElementById(id);
+
+      if (field && value) {
+        field.value = value;
+      }
+    });
+  }
+
+  async function loadRealProgram() {
+    const candidates = [
+      window.ATLAS_TRAINING_PROGRAM_URL,
+      "../atlas-data/private/training-program.json",
+      "/atlas-data/private/training-program.json"
+    ].filter(Boolean);
+
+    for (const source of candidates) {
+      try {
+        const response = await fetch(source, {
+          cache: "no-store"
+        });
+
+        if (!response.ok) continue;
+
+        const program = await response.json();
+
+        if (
+          !program ||
+          !Array.isArray(program.weeks) ||
+          !program.goal
+        ) {
+          continue;
+        }
+
+        renderRealProgram(program);
+        document.body.classList.add(
+          "has-atlas-research-program"
+        );
+        return;
+      } catch (error) {
+        console.debug(
+          "Programme Atlas Research indisponible.",
+          source,
+          error
+        );
+      }
+    }
+  }
+
+  loadRealProgram();
+})();
+/* FIN PROGRAMME RÉEL ATLAS RESEARCH */

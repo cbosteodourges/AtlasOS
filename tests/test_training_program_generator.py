@@ -1,7 +1,7 @@
 """Tests de génération complète du programme Atlas Coach."""
 
 import unittest
-from datetime import date
+from datetime import date, timedelta
 
 from src.performance.athlete_profile import (
     AthleteProfile,
@@ -105,6 +105,15 @@ class TrainingProgramGeneratorTests(unittest.TestCase):
 
         self.assertEqual(program.duration_weeks, 12)
         self.assertEqual(
+            program.settings.running_sessions_per_week,
+            4,
+        )
+        self.assertEqual(
+            program.settings
+            .optional_running_sessions_per_week,
+            1,
+        )
+        self.assertEqual(
             program.weeks[0].start_date,
             self.start_date,
         )
@@ -204,6 +213,10 @@ class TrainingProgramGeneratorTests(unittest.TestCase):
             races[0].planned_distance_km,
             10.0,
         )
+        self.assertEqual(
+            program.weeks[-1].running_workout_count,
+            3,
+        )
 
     def test_respects_running_availability(self) -> None:
         program = self.generator.generate(
@@ -268,7 +281,7 @@ class TrainingProgramGeneratorTests(unittest.TestCase):
             )
         )
 
-    def test_includes_strength_and_mobility_support(
+    def test_support_sessions_remain_optional(
         self,
     ) -> None:
         program = self.generator.generate(
@@ -284,15 +297,86 @@ class TrainingProgramGeneratorTests(unittest.TestCase):
             for workout in week.workouts
         }
 
-        self.assertIn(
+        self.assertNotIn(
             WorkoutType.STRENGTH,
             workout_types,
         )
-        self.assertIn(
+        self.assertNotIn(
             WorkoutType.MOBILITY,
             workout_types,
         )
 
+    def test_calendar_weeks_run_monday_to_sunday(
+        self,
+    ) -> None:
+        program = self.generator.generate(
+            profile=build_profile(),
+            goal=build_goal(),
+            start_date=date(2026, 8, 8),
+            settings=build_settings(),
+            available_dynamic_metrics={"recovery_status"},
+        )
+        first_week = program.weeks[0]
+
+        self.assertEqual(
+            first_week.start_date,
+            date(2026, 8, 3),
+        )
+        self.assertEqual(
+            first_week.end_date,
+            date(2026, 8, 9),
+        )
+        self.assertTrue(
+            all(
+                workout.workout_date
+                >= date(2026, 8, 8)
+                for workout in first_week.workouts
+            )
+        )
+        self.assertEqual(
+            program.weeks[-1].end_date,
+            build_goal().event_date,
+        )
+
+    def test_spreads_easy_sessions_across_week(
+        self,
+    ) -> None:
+        monday = date(2026, 8, 10)
+        dates = [
+            monday + timedelta(days=index)
+            for index in range(7)
+        ]
+
+        result = self.generator._spread_dates(
+            dates,
+            4,
+        )
+
+        self.assertEqual(
+            result,
+            [
+                date(2026, 8, 10),
+                date(2026, 8, 12),
+                date(2026, 8, 14),
+                date(2026, 8, 16),
+            ],
+        )
+    def test_rejects_too_many_optional_sessions(
+        self,
+    ) -> None:
+        settings = build_settings()
+        settings.optional_running_sessions_per_week = 3
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "optional_running_sessions_per_week",
+        ):
+            self.generator.generate(
+                profile=build_profile(),
+                goal=build_goal(),
+                start_date=self.start_date,
+                settings=settings,
+            )
 
 if __name__ == "__main__":
     unittest.main()

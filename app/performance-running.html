@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#020713">
   <title>Atlas OS — Atlas Coach</title>
-  <link rel="stylesheet" href="./css/performance-running.css">
+  <link rel="stylesheet" href="./css/performance-running.css?v=5">
+  <link rel="stylesheet" href="./css/atlas-global-nav.css?v=4">
 </head>
 <body>
 <main class="performance-app">
@@ -158,8 +159,8 @@
        <section class="panel setup-panel">
     <div class="section-title">
       <p>ÉTAPE 1</p>
-      <h1>Définir le profil et l’échéance</h1>
-      <span>Les valeurs peuvent provenir d’un test, d’une montre ou d’une estimation Atlas.</span>
+      <h1>Définir le profil et l'échéance</h1>
+      <span>Les valeurs peuvent provenir d'un test, d'une montre ou d'une estimation Atlas.</span>
     </div>
 
     <div class="setup-grid">
@@ -177,7 +178,7 @@
       </label>
 
       <label>
-        <span>Date de l’événement</span>
+        <span>Date de l'événement</span>
         <input id="eventDate" type="date">
       </label>
 
@@ -206,7 +207,7 @@
       </label>
 
       <label>
-        <span>Jours d’entraînement par semaine</span>
+        <span>Jours d'entraînement par semaine</span>
         <select id="daysPerWeek">
           <option value="3">3 jours</option>
           <option value="4" selected>4 jours</option>
@@ -254,7 +255,7 @@
 
     <div class="setup-actions">
       <button class="primary-button" id="calculateButton" type="button">
-        Calculer mes zones et créer le plan
+        Actualiser mes zones physiologiques
       </button>
     </div>
   </section>
@@ -265,19 +266,19 @@
       <div>
         <p>COMPÉTITIONS</p>
         <h2>Ma prochaine échéance</h2>
-        <span>Cette épreuve servira de référence pour adapter la préparation et suivre la progression jusqu’au jour de la compétition.</span>
+        <span>Cette épreuve servira de référence pour adapter la préparation et suivre la progression jusqu'au jour de la compétition.</span>
       </div>
       <div class="competition-badge">Objectif principal</div>
     </div>
 
     <div class="competition-grid">
       <label>
-        <span>Nom de l’épreuve</span>
+        <span>Nom de l'épreuve</span>
         <input id="competitionName" type="text" placeholder="Ex. Semi-marathon de Lille">
       </label>
 
       <label>
-        <span>Type d’épreuve</span>
+        <span>Type d'épreuve</span>
         <select id="competitionType">
           <option value="5k">5 km</option>
           <option value="10k" selected>10 km</option>
@@ -328,7 +329,8 @@
   <!-- ████████████████████████████████████████████████████████
        🟨 PARTIE C — C01 — CARTE PHYSIOLOGIQUE
        ████████████████████████████████████████████████████████ -->
-  <section class="panel physiology-panel" id="physiologyPanel" hidden>
+    <div class="coach-workspace">
+  <section class="panel physiology-panel physiology-sidebar" id="physiologyPanel" hidden>
     <div class="section-title">
       <p>ÉTAPE 2</p>
       <h2>Carte physiologique personnelle</h2>
@@ -347,7 +349,7 @@
         <small>Juste après la Zone 3</small>
       </article>
       <article>
-        <span>Durée jusqu’à l’épreuve</span>
+        <span>Durée jusqu'à l'épreuve</span>
         <strong id="durationSummary">—</strong>
         <small id="eventSummary">—</small>
       </article>
@@ -387,7 +389,7 @@
     <div class="section-title plan-title">
       <div>
         <p>ÉTAPE 3</p>
-        <h2>Plan personnalisé jusqu’à l’échéance</h2>
+        <h2>Plan personnalisé jusqu'à l'échéance</h2>
         <span>Chaque séance comporte une date exacte, une zone, une cible en BPM et une cible en vitesse.</span>
       </div>
       <button class="secondary-button" id="printButton" type="button">Imprimer / PDF</button>
@@ -397,9 +399,13 @@
     <div class="training-calendar" id="trainingCalendar"></div>
   </section>
 
+    </div>
+
   <div class="validation-message" id="validationMessage" aria-live="polite"></div>
 </main>
 
+<script src="./js/atlas-global-nav.js?v=1"></script>
 <script src="./js/performance-running.js"></script>
+<script src="./js/atlas-training-calendar.js?v=8"></script>
 </body>
 </html>

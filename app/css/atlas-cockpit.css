@@ -1,0 +1,719 @@
+:root {
+  --bg: #010712;
+  --panel: rgba(5, 19, 35, .92);
+  --panel-soft: rgba(7, 27, 47, .78);
+  --line: rgba(55, 202, 255, .2);
+  --cyan: #35ccff;
+  --blue: #1977ff;
+  --green: #54eba5;
+  --orange: #ff9f43;
+  --violet: #9868ff;
+  --text: #f2f9ff;
+  --muted: #9eb6c8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+button,
+a {
+  font: inherit;
+}
+
+.atlas-cockpit {
+  min-height: 100dvh;
+  padding: 14px 18px 18px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(19, 94, 166, .16), transparent 37%),
+    linear-gradient(145deg, #03101e, #010711 62%);
+}
+
+.cockpit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 66px;
+  margin-bottom: 12px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(3, 14, 27, .88);
+}
+
+.cockpit-brand,
+.cockpit-profile {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.cockpit-brand-mark,
+.cockpit-profile-avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--cyan);
+  border-radius: 50%;
+  background: rgba(29, 112, 195, .15);
+  box-shadow: 0 0 18px rgba(50, 201, 255, .14);
+}
+
+.cockpit-brand strong,
+.cockpit-brand small,
+.cockpit-profile strong,
+.cockpit-profile small {
+  display: block;
+}
+
+.cockpit-brand strong {
+  letter-spacing: .12em;
+}
+
+.cockpit-brand small,
+.cockpit-profile small {
+  color: var(--muted);
+  font-size: .7rem;
+}
+
+.cockpit-profile small i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 10px var(--green);
+}
+
+.cockpit-dashboard {
+  display: grid;
+  grid-template-columns: minmax(220px, 270px) minmax(560px, 1fr) minmax(270px, 330px);
+  gap: 12px;
+  min-height: 690px;
+}
+
+.cockpit-column {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+}
+
+.cockpit-section-title span,
+.cockpit-section-title small {
+  display: block;
+}
+
+.cockpit-section-title span {
+  color: var(--cyan);
+  font-size: .7rem;
+  letter-spacing: .12em;
+}
+
+.cockpit-section-title small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: .66rem;
+}
+
+.daily-card,
+.objective-card,
+.brain-analysis,
+.brain-vigilance {
+  padding: 13px;
+  border: 1px solid rgba(55, 202, 255, .14);
+  border-radius: 12px;
+  background: var(--panel-soft);
+}
+
+.daily-card {
+  position: relative;
+  display: grid;
+  gap: 3px;
+  padding-left: 50px;
+}
+
+.daily-card::before {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  content: "•";
+  color: currentColor;
+  border: 1px solid currentColor;
+}
+
+.daily-card span,
+.daily-card small,
+.objective-card span,
+.objective-card small {
+  color: var(--muted);
+  font-size: .68rem;
+}
+
+.daily-card strong {
+  color: var(--green);
+  font-size: 1rem;
+}
+
+.daily-card.sleep strong {
+  color: var(--violet);
+}
+
+.daily-card.heart strong {
+  color: var(--cyan);
+}
+
+.objective-card {
+  display: grid;
+  gap: 7px;
+  margin-top: 4px;
+}
+
+.objective-card > strong {
+  font-size: 1.05rem;
+}
+
+.objective-card > div {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, .08);
+}
+
+.objective-card > div i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+}
+
+.cockpit-twin {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(55, 202, 255, .24);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(20, 105, 188, .23), transparent 44%),
+    linear-gradient(155deg, rgba(5, 25, 45, .96), rgba(1, 8, 19, .98));
+}
+
+.cockpit-orbits {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 52%;
+  width: min(74%, 680px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(43, 190, 255, .22);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow:
+    0 0 0 35px rgba(39, 178, 255, .035),
+    0 0 0 85px rgba(39, 178, 255, .025),
+    inset 0 0 45px rgba(28, 158, 255, .08);
+}
+
+.cockpit-orbits::before,
+.cockpit-orbits::after {
+  position: absolute;
+  inset: 13%;
+  border: 1px dashed rgba(87, 127, 255, .3);
+  border-radius: 50%;
+  content: "";
+}
+
+.cockpit-orbits::after {
+  inset: 29%;
+  border-style: solid;
+  border-color: rgba(55, 202, 255, .15);
+}
+
+.cockpit-avatar {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 17%;
+  width: 39%;
+  height: 68%;
+  object-fit: contain;
+  transform: translateX(-50%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  filter: saturate(1.12) contrast(1.08)
+    drop-shadow(0 0 18px rgba(50, 199, 255, .2));
+}
+
+.atlas-index {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  top: 3%;
+  display: grid;
+  place-items: center;
+  width: 110px;
+  height: 110px;
+  border: 3px solid var(--green);
+  border-radius: 50%;
+  transform: translateX(-50%);
+  background: rgba(4, 18, 32, .94);
+  box-shadow: 0 0 26px rgba(84, 235, 165, .25);
+}
+
+.atlas-index span,
+.atlas-index small {
+  font-size: .64rem;
+}
+
+.atlas-index strong {
+  font-size: 2.2rem;
+  line-height: .9;
+}
+
+.engine-node {
+  position: absolute;
+  z-index: 7;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  width: 142px;
+  padding: 5px;
+  color: var(--text);
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+}
+
+.engine-node b {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  color: var(--cyan);
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  background: rgba(3, 18, 34, .94);
+  box-shadow: 0 0 18px currentColor;
+}
+
+.engine-node strong {
+  font-size: .82rem;
+}
+
+.engine-node small {
+  color: var(--muted);
+  font-size: .58rem;
+}
+
+.engine-ai { left: 10%; top: 9%; }
+.engine-clinical { right: 10%; top: 9%; }
+.engine-physio { left: 1%; top: 41%; }
+.engine-coach { right: 1%; top: 41%; }
+.engine-physiology { left: 10%; bottom: 8%; }
+.engine-prevention { right: 10%; bottom: 8%; }
+.engine-memory { left: 50%; bottom: 0; transform: translateX(-50%); }
+
+.engine-clinical b { color: var(--violet); }
+.engine-coach b { color: var(--orange); }
+.engine-prevention b { color: var(--green); }
+.engine-physiology b { color: #ff6071; }
+.engine-memory b { color: var(--cyan); }
+
+.brain-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brain-heading > span {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: var(--cyan);
+  border-radius: 50%;
+  background: rgba(44, 179, 255, .13);
+}
+
+.brain-heading strong,
+.brain-heading small {
+  display: block;
+}
+
+.brain-heading small {
+  color: var(--muted);
+  font-size: .7rem;
+}
+
+.brain-analysis {
+  color: #dcebf4;
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.brain-analysis ul {
+  padding-left: 20px;
+  color: var(--green);
+}
+
+.brain-analysis > strong {
+  color: #fff;
+  font-weight: 500;
+}
+
+.brain-vigilance span {
+  color: var(--orange);
+  font-size: .68rem;
+  letter-spacing: .08em;
+}
+
+.brain-vigilance p {
+  margin: 9px 0 0;
+  color: #dcebf4;
+  font-size: .76rem;
+}
+
+.brain-primary,
+.brain-talk {
+  min-height: 46px;
+  color: #fff;
+  cursor: pointer;
+  border: 1px solid rgba(55, 202, 255, .35);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #0878df, #064da9);
+}
+
+.brain-talk {
+  color: var(--cyan);
+  background: rgba(5, 28, 49, .78);
+}
+
+.cockpit-timeline {
+  display: grid;
+  grid-template-columns: 170px repeat(5, minmax(130px, 1fr));
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 14px 18px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+.cockpit-timeline > strong {
+  color: var(--cyan);
+  font-size: .68rem;
+  letter-spacing: .1em;
+}
+
+.cockpit-timeline > div {
+  display: grid;
+  gap: 4px;
+  min-width: 130px;
+  padding-left: 13px;
+  border-left: 2px solid var(--cyan);
+}
+
+.cockpit-timeline span {
+  color: var(--muted);
+  font-size: .64rem;
+}
+
+.cockpit-timeline b {
+  font-size: .72rem;
+}
+
+/* Tablettes */
+@media (max-width: 1180px) {
+  .cockpit-dashboard {
+    grid-template-columns: minmax(0, 1fr) 280px;
+  }
+
+  .cockpit-column--daily {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .cockpit-section-title,
+  .objective-card {
+    grid-column: 1 / -1;
+  }
+
+  .cockpit-twin {
+    min-height: 680px;
+  }
+}
+
+/* Smartphones */
+@media (max-width: 720px) {
+  .atlas-cockpit {
+    padding: 8px 8px calc(82px + env(safe-area-inset-bottom));
+  }
+
+  .cockpit-header {
+    min-height: 58px;
+  }
+
+  .cockpit-brand small,
+  .cockpit-profile span:last-child {
+    display: none;
+  }
+
+  .cockpit-dashboard {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .cockpit-twin {
+    order: -1;
+    min-height: 620px;
+  }
+
+  .cockpit-column--daily {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cockpit-section-title,
+  .objective-card {
+    grid-column: 1 / -1;
+  }
+
+  .engine-node {
+    width: 105px;
+  }
+
+  .engine-node b {
+    width: 48px;
+    height: 48px;
+  }
+
+  .engine-node small {
+    display: none;
+  }
+
+  .cockpit-avatar {
+    width: 52%;
+    height: 62%;
+    top: 20%;
+  }
+
+  .cockpit-timeline {
+    grid-template-columns: repeat(6, 150px);
+  }
+}
+/* ATLAS — CONNEXIONS AVATAR / MOTEURS */
+.engine-links {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.engine-link {
+  fill: none;
+  stroke: rgba(67, 188, 255, .2);
+  stroke-width: .22;
+  stroke-dasharray: 1.1 1.5;
+  vector-effect: non-scaling-stroke;
+  transition:
+    stroke .2s ease,
+    stroke-width .2s ease,
+    filter .2s ease,
+    opacity .2s ease;
+}
+
+.link-clinical { stroke: rgba(152, 104, 255, .12); }
+.link-coach { stroke: rgba(255, 159, 67, .24); }
+.link-prevention { stroke: rgba(84, 235, 165, .22); }
+.link-physiology { stroke: rgba(255, 96, 113, .22); }
+
+.engine-node.is-functional b,
+.engine-node.is-functional strong {
+  transition:
+    transform .2s ease,
+    filter .2s ease,
+    color .2s ease,
+    text-shadow .2s ease;
+}
+
+.engine-node.is-functional:hover b,
+.engine-node.is-functional:focus-visible b {
+  transform: scale(1.1);
+  filter: brightness(1.35);
+}
+
+.engine-node.is-functional:hover strong,
+.engine-node.is-functional:focus-visible strong {
+  color: #fff;
+  text-shadow: 0 0 12px currentColor;
+}
+
+.engine-node.is-unavailable {
+  opacity: .43;
+  cursor: not-allowed;
+  filter: grayscale(.35);
+}
+
+.engine-node.is-unavailable::after {
+  content: "Prochainement";
+  color: #8196a6;
+  font-size: .5rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.cockpit-twin:has(.engine-ai.is-functional:hover) .link-ai,
+.cockpit-twin:has(.engine-ai.is-functional:focus-visible) .link-ai,
+.cockpit-twin:has(.engine-physio.is-functional:hover) .link-physio,
+.cockpit-twin:has(.engine-physio.is-functional:focus-visible) .link-physio {
+  stroke: #35ccff;
+  stroke-width: .7;
+  filter: drop-shadow(0 0 5px #35ccff);
+}
+
+.cockpit-twin:has(.engine-coach.is-functional:hover) .link-coach,
+.cockpit-twin:has(.engine-coach.is-functional:focus-visible) .link-coach {
+  stroke: #ff9f43;
+  stroke-width: .7;
+  filter: drop-shadow(0 0 5px #ff9f43);
+}
+
+.cockpit-twin:has(.engine-prevention.is-functional:hover) .link-prevention,
+.cockpit-twin:has(.engine-prevention.is-functional:focus-visible) .link-prevention {
+  stroke: #54eba5;
+  stroke-width: .7;
+  filter: drop-shadow(0 0 5px #54eba5);
+}
+
+.cockpit-twin:has(.engine-physiology.is-functional:hover) .link-physiology,
+.cockpit-twin:has(.engine-physiology.is-functional:focus-visible) .link-physiology {
+  stroke: #ff6071;
+  stroke-width: .7;
+  filter: drop-shadow(0 0 5px #ff6071);
+}
+
+.cockpit-twin:has(.engine-memory.is-functional:hover) .link-memory,
+.cockpit-twin:has(.engine-memory.is-functional:focus-visible) .link-memory {
+  stroke: #35ccff;
+  stroke-width: .7;
+  filter: drop-shadow(0 0 5px #35ccff);
+}
+/* ATLAS — INTENSITÉ PREMIUM DES CONNEXIONS */
+.engine-link {
+  stroke-width: .8;
+  stroke-dasharray: 5 4;
+  opacity: .62;
+}
+
+.link-clinical {
+  opacity: .16;
+}
+
+.engine-node.is-functional:hover b,
+.engine-node.is-functional:focus-visible b {
+  transform: scale(1.13);
+  filter: brightness(1.55) saturate(1.25);
+  box-shadow:
+    0 0 12px currentColor,
+    0 0 28px currentColor,
+    inset 0 0 18px rgba(255, 255, 255, .08);
+}
+
+.cockpit-twin:has(.engine-ai.is-functional:hover) .link-ai,
+.cockpit-twin:has(.engine-ai.is-functional:focus-visible) .link-ai,
+.cockpit-twin:has(.engine-physio.is-functional:hover) .link-physio,
+.cockpit-twin:has(.engine-physio.is-functional:focus-visible) .link-physio,
+.cockpit-twin:has(.engine-coach.is-functional:hover) .link-coach,
+.cockpit-twin:has(.engine-coach.is-functional:focus-visible) .link-coach,
+.cockpit-twin:has(.engine-prevention.is-functional:hover) .link-prevention,
+.cockpit-twin:has(.engine-prevention.is-functional:focus-visible) .link-prevention,
+.cockpit-twin:has(.engine-physiology.is-functional:hover) .link-physiology,
+.cockpit-twin:has(.engine-physiology.is-functional:focus-visible) .link-physiology,
+.cockpit-twin:has(.engine-memory.is-functional:hover) .link-memory,
+.cockpit-twin:has(.engine-memory.is-functional:focus-visible) .link-memory {
+  stroke-width: 2.4;
+  stroke-dasharray: 8 3;
+  opacity: 1;
+  filter:
+    drop-shadow(0 0 3px currentColor)
+    drop-shadow(0 0 8px currentColor)
+    drop-shadow(0 0 14px currentColor);
+}
+
+.cockpit-twin:has(.engine-coach.is-functional:hover) .link-coach,
+.cockpit-twin:has(.engine-coach.is-functional:focus-visible) .link-coach {
+  stroke: #ffb24f;
+  color: #ff9f43;
+}
+
+.cockpit-twin:has(.engine-physio.is-functional:hover) .link-physio,
+.cockpit-twin:has(.engine-physio.is-functional:focus-visible) .link-physio,
+.cockpit-twin:has(.engine-memory.is-functional:hover) .link-memory,
+.cockpit-twin:has(.engine-memory.is-functional:focus-visible) .link-memory {
+  stroke: #53dcff;
+  color: #35ccff;
+}
+
+.cockpit-twin:has(.engine-prevention.is-functional:hover) .link-prevention,
+.cockpit-twin:has(.engine-prevention.is-functional:focus-visible) .link-prevention {
+  stroke: #62ffc0;
+  color: #54eba5;
+}
+
+.cockpit-twin:has(.engine-physiology.is-functional:hover) .link-physiology,
+.cockpit-twin:has(.engine-physiology.is-functional:focus-visible) .link-physiology {
+  stroke: #ff7183;
+  color: #ff6071;
+}
+/* ATLAS — CONNEXIONS VISIBLES AU REPOS */
+.engine-link {
+  stroke: rgba(68, 205, 255, .48);
+  stroke-width: 1.05;
+  stroke-dasharray: 6 5;
+  opacity: .82;
+}
+
+.link-coach {
+  stroke: rgba(255, 159, 67, .5);
+}
+
+.link-prevention {
+  stroke: rgba(84, 235, 165, .46);
+}
+
+.link-physiology {
+  stroke: rgba(255, 96, 113, .46);
+}
+
+.link-ai,
+.link-clinical {
+  stroke: rgba(130, 151, 168, .18);
+  stroke-width: .7;
+  opacity: .28;
+}
