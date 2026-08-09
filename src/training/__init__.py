@@ -30,6 +30,13 @@ from .program_phase_planner import (
 from .research_workout_builder import (
     ResearchWorkoutBuilder,
 )
+from .training_program_loader import (
+    TrainingProgramLoader,
+)
+from .workout_execution_matcher import (
+    AtlasWorkoutExecutionMatch,
+    AtlasWorkoutExecutionMatcher,
+)
 from .response_learning import (
     TrainingResponseLearning,
     TrainingResponseLearningEngine,
@@ -55,6 +62,8 @@ from .tolerance_learning import (
 
 __all__ = [
     "AdaptedWorkoutResult",
+    "AtlasWorkoutExecutionMatch",
+    "AtlasWorkoutExecutionMatcher",
     "AdaptiveLearningResult",
     "AdaptiveTrainingLoop",
     "AdaptiveTrainingProgram",
@@ -77,6 +86,7 @@ __all__ = [
     "TrainingDecisionEngine",
     "TrainingPhase",
     "TrainingProgramGenerator",
+    "TrainingProgramLoader",
     "TrainingResponseLearning",
     "TrainingResponseLearningEngine",
     "TrainingResponseObservation",
