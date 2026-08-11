@@ -6,11 +6,11 @@
   // ████████████████████████████████████████████████████████████
 
   const ZONES = [
-    { id: 1, hr: [50, 60], vma: [55, 65], name: "Récupération", color: "#5aa8ff" },
-    { id: 2, hr: [60, 70], vma: [65, 75], name: "Endurance fondamentale", color: "#51d892" },
-    { id: 3, hr: [70, 80], vma: [75, 85], name: "Endurance active", color: "#e7d353" },
-    { id: 4, hr: [80, 90], vma: [85, 95], name: "Seuil", color: "#ff9a4f" },
-    { id: 5, hr: [90, 100], vma: [95, 105], name: "VMA / intensité", color: "#ff5d68" }
+    { id: 1, hr: [50, 65], vma: [55, 65], name: "Récupération", color: "#5aa8ff" },
+    { id: 2, hr: [65, 75], vma: [65, 75], name: "Endurance fondamentale", color: "#51d892" },
+    { id: 3, hr: [75, 87], vma: [75, 92], name: "Endurance active", color: "#e7d353" },
+    { id: 4, hr: [87, 95], vma: [92, 100], name: "VO₂max", color: "#ff9a4f" },
+    { id: 5, hr: [95, 100], vma: [100, 110], name: "VMA courte / Anaérobie", color: "#ff5d68" }
   ];
 
   const EVENT_LABELS = {

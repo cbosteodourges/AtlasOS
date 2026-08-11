@@ -55,6 +55,11 @@ from .session_models import (
 from .standard_workout_builder import (
     StandardWorkoutBuilder,
 )
+from .training_history_personalizer import (
+    SessionToleranceEvidence,
+    TrainingHistoryPersonalization,
+    TrainingHistoryPersonalizer,
+)
 from .tolerance_learning import (
     AthleteToleranceLearningEngine,
     ToleranceLearningApplication,
@@ -84,6 +89,9 @@ __all__ = [
     "TrainingDecision",
     "TrainingDecisionAction",
     "TrainingDecisionEngine",
+    "TrainingHistoryPersonalization",
+    "TrainingHistoryPersonalizer",
+    "SessionToleranceEvidence",
     "TrainingPhase",
     "TrainingProgramGenerator",
     "TrainingProgramLoader",

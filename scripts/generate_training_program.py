@@ -24,6 +24,9 @@ from scripts.build_athlete_profile import (  # noqa: E402
 )
 from src.performance import AthleteProfileBuilder  # noqa: E402
 from src.performance.models import PerformanceGoal  # noqa: E402
+from src.training.training_history_personalizer import (
+    TrainingHistoryPersonalizer,
+)
 from src.training import (  # noqa: E402
     ProgramGenerationSettings,
     TrainingProgramGenerator,
@@ -59,6 +62,14 @@ def parse_arguments() -> argparse.Namespace:
             "athlete-profile-input.json"
         ),
         help="Informations déclarées par l’utilisateur.",
+    )
+    parser.add_argument(
+        "--training-history-fusion",
+        default=(
+            "atlas-data/private/"
+            "training-history-fusion.json"
+        ),
+        help="Mémoire fusionnée FIT + Wellness.",
     )
     parser.add_argument(
         "--output",
@@ -167,9 +178,33 @@ def build_profile(arguments: argparse.Namespace):
     return profile
 
 
+def apply_training_history(
+    profile,
+    input_path: str,
+):
+    """Applique la mémoire FIT + Wellness au profil."""
+    source = Path(input_path)
+
+    if not source.is_file():
+        return None
+
+    with source.open("r", encoding="utf-8") as input_file:
+        payload = json.load(input_file)
+
+    if not isinstance(payload, dict):
+        raise ValueError(
+            "La mémoire FIT + Wellness doit être un objet JSON."
+        )
+
+    personalizer = TrainingHistoryPersonalizer()
+    personalization = personalizer.build(payload)
+    personalizer.apply(profile, personalization)
+    return personalization
+
 def build_settings(
     arguments: argparse.Namespace,
     profile,
+    personalization=None,
 ) -> ProgramGenerationSettings:
     """Combine les préférences CLI et le profil."""
     running_sessions = arguments.running_sessions
@@ -189,17 +224,30 @@ def build_settings(
         min(7, int(running_sessions)),
     )
 
+    cycling_sessions = (
+        personalization.cycling_sessions_per_week
+        if personalization is not None
+        else 0
+    )
+    progression = (
+        personalization.maximum_weekly_progression_percent
+        if personalization is not None
+        else 8.0
+    )
+
     return ProgramGenerationSettings(
         running_sessions_per_week=running_sessions,
         optional_running_sessions_per_week=1,
         strength_sessions_per_week=(
             arguments.strength_sessions
         ),
+        cycling_sessions_per_week=cycling_sessions,
         preferred_long_run_day=(
             arguments.preferred_long_run_day
         ),
         include_mobility=True,
         avoid_consecutive_intense_days=True,
+        maximum_weekly_progression_percent=progression,
     )
 
 
@@ -218,9 +266,15 @@ def json_default(value: Any) -> Any:
 def build_export_payload(
     program,
     profile,
+    personalization=None,
 ) -> dict[str, Any]:
     """Ajoute les propriétés calculées utiles à l’interface."""
     payload = asdict(program)
+    if personalization is not None:
+        payload["history_personalization"] = asdict(
+            personalization
+        )
+
     physiological = profile.physiological
     vma_estimated_from_vo2 = (
         round(physiological.vo2_max / 3.5, 2)
@@ -330,6 +384,7 @@ def write_program(
     program,
     profile,
     output_path: str,
+    personalization=None,
 ) -> Path:
     """Enregistre le programme dans l’espace privé."""
     destination = Path(output_path)
@@ -340,6 +395,7 @@ def write_program(
     payload = build_export_payload(
         program,
         profile,
+        personalization,
     )
 
     with destination.open(
@@ -428,6 +484,10 @@ def main() -> None:
     """Lance la génération réelle."""
     arguments = parse_arguments()
     profile = build_profile(arguments)
+    personalization = apply_training_history(
+        profile,
+        arguments.training_history_fusion,
+    )
     goal = PerformanceGoal(
         name=arguments.goal_name,
         event_date=date.fromisoformat(
@@ -441,6 +501,7 @@ def main() -> None:
     settings = build_settings(
         arguments,
         profile,
+        personalization,
     )
     dynamic_metrics = set()
 
@@ -456,10 +517,23 @@ def main() -> None:
         settings=settings,
         available_dynamic_metrics=dynamic_metrics,
     )
+    if personalization is not None:
+        program.explanation += (
+            " Programme personnalisé avec la mémoire FIT + "
+            "Wellness et les réponses observées à 24–72 heures."
+        )
+        program.warnings = list(dict.fromkeys(
+            program.warnings + personalization.warnings
+        ))
+        if program.weeks:
+            program.weeks[0].coach_notes.extend(
+                personalization.explanations
+            )
     destination = write_program(
         program,
         profile,
         arguments.output,
+        personalization,
     )
     display_program(
         program,

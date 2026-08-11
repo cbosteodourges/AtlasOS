@@ -203,6 +203,67 @@ class StandardWorkoutBuilder:
         workout.validate()
         return workout
 
+    def build_cycling(
+        self,
+        *,
+        workout_date: date,
+        duration_minutes: int = 60,
+    ) -> AdaptiveWorkout:
+        """Construit une séance de vélo en endurance aérobie."""
+        workout = AdaptiveWorkout(
+            workout_id=self._workout_id(
+                workout_date,
+                WorkoutType.CYCLING,
+            ),
+            workout_date=workout_date,
+            workout_type=WorkoutType.CYCLING,
+            title="Vélo endurance croisée",
+            objective=(
+                "Entretenir le volume aérobie avec une contrainte "
+                "mécanique réduite pour la course."
+            ),
+            blocks=[
+                TrainingBlock(
+                    name="Endurance continue à vélo",
+                    block_type=BlockType.CONTINUOUS,
+                    duration_minutes=duration_minutes,
+                    target=IntensityTarget(
+                        zone=2,
+                        rpe_0_10=3.5,
+                    ),
+                    instructions=(
+                        "Pédalage souple et régulier, respiration "
+                        "facile, sans rechercher la puissance."
+                    ),
+                )
+            ],
+            sport="cycling",
+            priority=WorkoutPriority.SUPPORT,
+            planned_duration_minutes=duration_minutes,
+            expected_response=ExpectedTrainingResponse(
+                physiological_load_0_100=40,
+                biomechanical_load_0_100=20,
+                recovery_min_hours=12,
+                recovery_max_hours=24,
+                sensitive_structures=[
+                    "quadriceps",
+                    "hanches",
+                ],
+            ),
+            movable=True,
+            replacement_types=[
+                WorkoutType.ENDURANCE_Z2,
+                WorkoutType.RECOVERY_RUN,
+            ],
+            coach_notes=[
+                (
+                    "Séance croisée retenue grâce à la tolérance "
+                    "observée dans l'historique individuel."
+                )
+            ],
+        )
+        workout.validate()
+        return workout
     def build_strength(
         self,
         *,

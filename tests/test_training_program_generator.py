@@ -281,7 +281,7 @@ class TrainingProgramGeneratorTests(unittest.TestCase):
             )
         )
 
-    def test_support_sessions_remain_optional(
+    def test_requested_strength_sessions_are_scheduled(
         self,
     ) -> None:
         program = self.generator.generate(
@@ -297,7 +297,7 @@ class TrainingProgramGeneratorTests(unittest.TestCase):
             for workout in week.workouts
         }
 
-        self.assertNotIn(
+        self.assertIn(
             WorkoutType.STRENGTH,
             workout_types,
         )
@@ -305,7 +305,6 @@ class TrainingProgramGeneratorTests(unittest.TestCase):
             WorkoutType.MOBILITY,
             workout_types,
         )
-
     def test_calendar_weeks_run_monday_to_sunday(
         self,
     ) -> None:

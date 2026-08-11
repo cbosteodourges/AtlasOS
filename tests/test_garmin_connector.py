@@ -2,6 +2,8 @@
 
 import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 from datetime import datetime, timezone
 
 from src.connectors import (
@@ -228,5 +230,45 @@ class GarminConnectorTests(unittest.TestCase):
         self.assertEqual(samples[0].longitude, -90.0)
 
 
+    def test_duplicate_fit_content_is_imported_once(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            nested = root / "marcq-2025"
+            nested.mkdir()
+
+            first = root / "activity.fit"
+            duplicate = nested / "activity-copy.fit"
+            first.write_bytes(b"same-fit-content")
+            duplicate.write_bytes(b"same-fit-content")
+
+            messages = {
+                "session_mesgs": [{
+                    "sport": "running",
+                    "start_time": datetime(
+                        2025,
+                        9,
+                        1,
+                        8,
+                        0,
+                        tzinfo=timezone.utc,
+                    ),
+                }],
+                "record_mesgs": [],
+            }
+
+            connector = GarminConnector(root)
+            connector.connect()
+
+            with patch.object(
+                connector,
+                "_decode",
+                return_value=(messages, []),
+            ) as decode:
+                activities = list(
+                    connector.fetch_activities()
+                )
+
+            self.assertEqual(len(activities), 1)
+            self.assertEqual(decode.call_count, 1)
 if __name__ == "__main__":
     unittest.main()

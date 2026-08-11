@@ -22,7 +22,11 @@ from .program_models import (
 )
 from .program_phase_planner import ProgramPhasePlanner
 from .research_workout_builder import ResearchWorkoutBuilder
-from .session_models import AdaptiveWorkout
+from .session_models import (
+    AdaptiveWorkout,
+    WorkoutPriority,
+    WorkoutType,
+)
 from .standard_workout_builder import StandardWorkoutBuilder
 
 
@@ -245,6 +249,7 @@ class TrainingProgramGenerator:
                                 self._long_run_duration(
                                     phase,
                                     week_number,
+                                    settings.maximum_weekly_progression_percent,
                                 )
                             ),
                         )
@@ -497,30 +502,117 @@ class TrainingProgramGenerator:
         settings: ProgramGenerationSettings,
         phase: TrainingPhase,
     ) -> None:
-        # Les activités de soutien sont normalement ajoutées
-        # à la demande depuis le calendrier Atlas Coach.
-        if (
-            phase == TrainingPhase.RECOVERY
-            and settings.include_mobility
-        ):
+        """Ajoute les soutiens sans les placer avant une séance clé."""
+        if phase == TrainingPhase.RECOVERY:
+            if settings.include_mobility:
+                workouts.append(
+                    self._standard_builder.build_mobility(
+                        workout_date=week_end,
+                    )
+                )
+            return
+
+        if phase == TrainingPhase.RACE_WEEK:
+            return
+
+        key_dates = {
+            workout.workout_date
+            for workout in workouts
+            if workout.priority == WorkoutPriority.KEY
+        }
+        occupied_dates = {
+            workout.workout_date
+            for workout in workouts
+        }
+        free_dates = []
+        current = week_start
+
+        while current <= week_end:
+            if current not in occupied_dates:
+                free_dates.append(current)
+            current += timedelta(days=1)
+
+        cycling_target = settings.cycling_sessions_per_week
+        if phase == TrainingPhase.TAPER:
+            cycling_target = 0
+
+        while cycling_target > 0 and free_dates:
+            if key_dates:
+                cycling_date = max(
+                    free_dates,
+                    key=lambda candidate: min(
+                        abs((candidate - key_date).days)
+                        for key_date in key_dates
+                    ),
+                )
+            else:
+                cycling_date = free_dates[len(free_dates) // 2]
+
             workouts.append(
-                self._standard_builder.build_mobility(
-                    workout_date=week_end,
+                self._standard_builder.build_cycling(
+                    workout_date=cycling_date,
+                    duration_minutes=60,
                 )
             )
-        return
+            free_dates.remove(cycling_date)
+            cycling_target -= 1
 
+        strength_target = settings.strength_sessions_per_week
+        if phase == TrainingPhase.TAPER:
+            strength_target = min(strength_target, 1)
+
+        support_types = {
+            WorkoutType.ENDURANCE_Z2,
+            WorkoutType.RECOVERY_RUN,
+            WorkoutType.CYCLING,
+        }
+        safe_support_dates = sorted({
+            workout.workout_date
+            for workout in workouts
+            if (
+                workout.workout_type in support_types
+                and (
+                    workout.workout_date + timedelta(days=1)
+                    not in key_dates
+                )
+            )
+        })
+
+        if len(safe_support_dates) > strength_target:
+            safe_support_dates = self._spread_dates(
+                safe_support_dates,
+                strength_target,
+            )
+
+        for workout_date in safe_support_dates[:strength_target]:
+            workouts.append(
+                self._standard_builder.build_strength(
+                    workout_date=workout_date,
+                    duration_minutes=20,
+                )
+            )
     @staticmethod
     def _long_run_duration(
         phase: TrainingPhase,
         week_number: int,
+        maximum_progression_percent: float,
     ) -> int:
-        if phase == TrainingPhase.BASE:
-            return min(90, 70 + week_number * 5)
-        if phase == TrainingPhase.DEVELOPMENT:
-            return 95
-        return 105
-
+        """Fait progresser la sortie longue sans dépasser la limite."""
+        progression = 1.0 + (
+            maximum_progression_percent / 100.0
+        )
+        progressive_duration = round(
+            70 * (progression ** week_number)
+        )
+        ceilings = {
+            TrainingPhase.BASE: 90,
+            TrainingPhase.DEVELOPMENT: 95,
+            TrainingPhase.SPECIFIC: 105,
+        }
+        return min(
+            ceilings.get(phase, 90),
+            progressive_duration,
+        )
     @staticmethod
     def _phase_objective(
         phase: TrainingPhase,

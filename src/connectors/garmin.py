@@ -3,6 +3,8 @@ ATLAS OS
 Connecteur Garmin fondé sur les fichiers d'activités FIT.
 """
 
+import hashlib
+
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
@@ -53,10 +55,20 @@ class GarminConnector(ActivityConnector):
             )
 
         activities: List[RawActivity] = []
+        seen_hashes: set[str] = set()
 
         for fit_path in sorted(
-            self.activities_directory.glob("*.fit")
+            self.activities_directory.rglob("*.fit")
         ):
+            file_hash = hashlib.sha256(
+                fit_path.read_bytes()
+            ).hexdigest()
+
+            if file_hash in seen_hashes:
+                continue
+
+            seen_hashes.add(file_hash)
+
             messages, errors = self._decode(fit_path)
 
             if errors:
