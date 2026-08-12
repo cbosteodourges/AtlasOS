@@ -53,8 +53,59 @@
   ]);
 
   const STORAGE_KEY = "atlasCoachOptionalSessions";
+  const DECISIONS_STORAGE_KEY = "atlasCoachWorkoutDecisions";
   const workoutIndex = new Map();
   let activeProgram = null;
+  let workoutDecisions = loadWorkoutDecisions();
+
+  function loadWorkoutDecisions() {
+    try {
+      return JSON.parse(
+        localStorage.getItem(DECISIONS_STORAGE_KEY) || "{}"
+      );
+    } catch {
+      return {};
+    }
+  }
+
+  function workoutDecision(workout) {
+    return workoutDecisions[workout.workout_id] || {
+      status: "planned"
+    };
+  }
+
+  function saveWorkoutDecision(workout, changes) {
+    workoutDecisions[workout.workout_id] = {
+      ...workoutDecision(workout),
+      ...changes,
+      updated_at: new Date().toISOString()
+    };
+    localStorage.setItem(
+      DECISIONS_STORAGE_KEY,
+      JSON.stringify(workoutDecisions)
+    );
+  }
+
+  function workoutStatusBadge(workout) {
+    const status = workoutDecision(workout).status;
+    const badges = {
+      completed: ["completed", "&#10003;", "Séance effectuée"],
+      skipped: ["skipped", "&#8212;", "Séance non effectuée"],
+      postponed: ["postponed", "&#8635;", "Séance reportée"],
+      replaced: ["replaced", "&#8644;", "Séance remplacée"],
+      modified: ["modified", "&#9998;", "Séance modifiée"],
+      planned: ["planned", "&#9679;", "Séance planifiée"]
+    };
+    const badge = badges[status] || badges.planned;
+
+    return `
+      <span
+        class="workout-status status-${badge[0]}"
+        title="${badge[2]}"
+        aria-label="${badge[2]}"
+      >${badge[1]}</span>
+    `;
+  }
 
   function escapeHtml(value) {
     return String(value ?? "")
@@ -686,11 +737,12 @@
     const level = difficulty(workout);
 const zone = workoutZone(workout);
 const target = compactTarget(workout, zone);
+      const status = workoutDecision(workout).status;
     workoutIndex.set(key, workout);
 
     return `
       <button
-        class="calendar-session difficulty-${level} zone-${zone || "none"}"
+        class="calendar-session difficulty-${level} zone-${zone || "none"} status-${escapeHtml(status)}"
         type="button"
         data-workout-key="${escapeHtml(key)}"
       >
@@ -699,6 +751,7 @@ const target = compactTarget(workout, zone);
           ${RESEARCH_TYPES.has(workout.workout_type) ? `
             <em>Research</em>
           ` : ""}
+            ${workoutStatusBadge(workout)}
         </span>
         <strong>${escapeHtml(workout.title)}</strong>
         <small>${escapeHtml(
@@ -1161,10 +1214,105 @@ const target = compactTarget(workout, zone);
     `;
   }
 
+  function workoutActionsHtml(workout) {
+    const decision = workoutDecision(workout);
+    const currentStatus = decision.status || "planned";
+
+    return `
+      <section class="workout-actions" data-current-status="${escapeHtml(currentStatus)}">
+        <div class="workout-actions-heading">
+          <div>
+            <span>SUIVI DE LA SÉANCE</span>
+            <strong>Qu’avez-vous décidé ?</strong>
+          </div>
+          ${workoutStatusBadge(workout)}
+        </div>
+
+        <div class="workout-primary-actions">
+          <button type="button" data-workout-action="completed">
+            <b>✓</b>
+            Séance effectuée
+          </button>
+          <button type="button" data-workout-action="skipped">
+            <b>—</b>
+            Je ne ferai pas cette séance
+          </button>
+        </div>
+
+        <p class="workout-actions-note">
+          Atlas conservera votre décision et l’utilisera pour adapter
+          les prochaines séances.
+        </p>
+      </section>
+    `;
+  }
+
   function openWorkout(workout) {
     const dialog = ensureDialog();
-    dialog.querySelector(".dialog-content").innerHTML =
-      detailHtml(workout);
+    const content = dialog.querySelector(".dialog-content");
+    content.innerHTML =
+      detailHtml(workout) + workoutActionsHtml(workout);
+
+    content.onclick = async event => {
+      const button = event.target.closest("[data-workout-action]");
+      if (!button) return;
+
+      const status = button.dataset.workoutAction;
+      let reason = "";
+
+      if (status === "skipped") {
+        const answer = window.prompt(
+          "Pourquoi cette séance ne sera-t-elle pas effectuée ?",
+          "Choix personnel"
+        );
+        if (answer === null) return;
+        reason = answer.trim() || "Non précisé";
+      }
+
+      button.disabled = true;
+
+      try {
+        const response = await fetch(
+          "/api/atlas-coach/workout-decision",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json; charset=utf-8"
+            },
+            body: JSON.stringify({
+              workout_id: workout.workout_id,
+              status,
+              reason
+            })
+          }
+        );
+        const payload = await response.json();
+
+        if (!response.ok || !payload.ok) {
+          throw new Error(
+            payload.error || "Décision Atlas indisponible."
+          );
+        }
+
+        saveWorkoutDecision(workout, payload.decision);
+        dialog.close();
+        render(activeProgram);
+
+        const explanations =
+          payload.decision.explanations || [];
+        if (explanations.length) {
+          window.alert(
+            `Décision Atlas\n\n${explanations.join("\n")}`
+          );
+        }
+      } catch (error) {
+        window.alert(
+          `Erreur Atlas :\n${error.message}`
+        );
+        button.disabled = false;
+      }
+    };
+
     dialog.showModal();
   }
 

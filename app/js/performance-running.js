@@ -1542,6 +1542,7 @@
       </article>
     `;
 
+      if (!document.body.classList.contains("has-premium-training-calendar")) {
     calendar.innerHTML = `
       <div class="atlas-program-banner">
         <div>
@@ -1590,6 +1591,7 @@
         </details>
       `).join("")}
     `;
+      }
 
     const heading = planPanel.querySelector(
       ".section-title h1"

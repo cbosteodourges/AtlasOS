@@ -3,7 +3,7 @@ ATLAS OS — serveur web local avec passerelle Atlas Brain.
 """
 
 from dataclasses import asdict, is_dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
@@ -18,6 +18,8 @@ if str(ROOT) not in sys.path:
 from src.atlas_brain import AtlasBrain
 from src.patient.patient import Patient
 from src.twin.digital_twin import DigitalTwin
+from src.training.training_program_loader import TrainingProgramLoader
+from src.training.user_workout_decision import UserWorkoutDecisionEngine
 
 
 def calculate_age(birth_date):
@@ -52,6 +54,112 @@ def serialize(value):
         return value.__dict__
 
     return str(value)
+
+
+PROGRAM_PATH = ROOT / "atlas-data" / "private" / "training-program.json"
+WORKOUT_DECISIONS_PATH = (
+    ROOT
+    / "atlas-data"
+    / "private"
+    / "atlas-coach-workout-decisions.json"
+)
+
+
+def record_workout_decision(payload):
+    """Enregistre et analyse une décision prise sur une séance."""
+
+    workout_id = str(payload.get("workout_id") or "").strip()
+    status = str(payload.get("status") or "").strip().lower()
+    reason = str(payload.get("reason") or "").strip()
+
+    if not workout_id:
+        raise ValueError("workout_id est obligatoire.")
+    if status not in {"completed", "skipped"}:
+        raise ValueError("Statut de séance non pris en charge.")
+
+    workouts = TrainingProgramLoader().load(PROGRAM_PATH)
+    workout = next(
+        (
+            item
+            for item in workouts
+            if item.workout_id == workout_id
+        ),
+        None,
+    )
+
+    if workout is None:
+        raise ValueError(
+            f"Séance Atlas introuvable : {workout_id}"
+        )
+
+    next_day = workout.workout_date + timedelta(days=1)
+    sessions_on_next_day = sum(
+        item.workout_date == next_day
+        for item in workouts
+    )
+
+    if status == "skipped":
+        impact = UserWorkoutDecisionEngine().skip(
+            workout,
+            reason=reason,
+            sessions_on_next_day=sessions_on_next_day,
+        ).to_dict()
+    else:
+        impact = {
+            "workout_id": workout.workout_id,
+            "status": "completed",
+            "action": "maintain",
+            "recalculate_future_program": False,
+            "removed_duration_minutes": 0,
+            "removed_physiological_load": 0,
+            "removed_biomechanical_load": 0,
+            "shift_days": 0,
+            "reason": reason,
+            "explanations": [
+                "La séance est déclarée effectuée.",
+                "Atlas attendra le fichier FIT pour analyser "
+                "la réalisation réelle et confirmer la correspondance.",
+            ],
+        }
+
+    record = {
+        "decided_at": datetime.now().astimezone().isoformat(
+            timespec="seconds"
+        ),
+        **impact,
+    }
+
+    history = []
+    if WORKOUT_DECISIONS_PATH.exists():
+        with WORKOUT_DECISIONS_PATH.open(
+            "r",
+            encoding="utf-8",
+        ) as input_file:
+            loaded = json.load(input_file)
+            if isinstance(loaded, list):
+                history = loaded
+
+    history.append(record)
+    WORKOUT_DECISIONS_PATH.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    temporary = WORKOUT_DECISIONS_PATH.with_suffix(".json.tmp")
+
+    with temporary.open(
+        "w",
+        encoding="utf-8",
+        newline="\n",
+    ) as output_file:
+        json.dump(
+            history,
+            output_file,
+            ensure_ascii=False,
+            indent=2,
+        )
+
+    temporary.replace(WORKOUT_DECISIONS_PATH)
+    return record
 
 
 def create_twin(payload):
@@ -153,7 +261,12 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
         self.wfile.write(content)
 
     def do_POST(self):
-        if self.path != "/api/atlas-brain/analyse":
+        allowed_routes = {
+            "/api/atlas-brain/analyse",
+            "/api/atlas-coach/workout-decision",
+        }
+
+        if self.path not in allowed_routes:
             self.send_json(
                 404,
                 {"ok": False, "error": "Route introuvable."},
@@ -164,15 +277,22 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             content_length = int(
                 self.headers.get("Content-Length", "0")
             )
-
             raw_body = self.rfile.read(content_length)
-            payload = json.loads(
-                raw_body.decode("utf-8")
-            )
+            payload = json.loads(raw_body.decode("utf-8"))
+
+            if self.path == "/api/atlas-coach/workout-decision":
+                decision = record_workout_decision(payload)
+                self.send_json(
+                    200,
+                    {
+                        "ok": True,
+                        "decision": decision,
+                    },
+                )
+                return
 
             twin = create_twin(payload)
             report = AtlasBrain().analyse(twin)
-
             self.send_json(
                 200,
                 {
@@ -182,15 +302,16 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
                 },
             )
 
+        except ValueError as error:
+            self.send_json(
+                400,
+                {"ok": False, "error": str(error)},
+            )
         except Exception as error:
             self.send_json(
                 500,
-                {
-                    "ok": False,
-                    "error": str(error),
-                },
+                {"ok": False, "error": str(error)},
             )
-
 
 if __name__ == "__main__":
     address = ("localhost", 8000)

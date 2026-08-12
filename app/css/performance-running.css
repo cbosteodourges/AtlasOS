@@ -2230,3 +2230,141 @@ select option:checked {
 .calendar-zone-legend .zone-3 { --zone-color: #f0cf4f; }
 .calendar-zone-legend .zone-4 { --zone-color: #ff9f43; }
 .calendar-zone-legend .zone-5 { --zone-color: #ff506c; }
+/* États des séances Atlas Coach */
+.workout-status {
+  display: inline-grid;
+  flex: 0 0 18px;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-left: auto;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.workout-status.status-planned {
+  color: #7894a8;
+  opacity: .7;
+}
+
+.workout-status.status-completed {
+  color: #41e991;
+  background: rgba(65, 233, 145, .15);
+  box-shadow: 0 0 12px rgba(65, 233, 145, .28);
+}
+
+.workout-status.status-skipped {
+  color: #ffad55;
+  background: rgba(255, 173, 85, .13);
+}
+
+.workout-status.status-postponed {
+  color: #4ccfff;
+  background: rgba(76, 207, 255, .13);
+}
+
+.workout-status.status-replaced,
+.workout-status.status-modified {
+  color: #b98cff;
+  background: rgba(185, 140, 255, .13);
+}
+
+.calendar-session.status-completed {
+  box-shadow: inset 0 0 0 1px rgba(65, 233, 145, .32);
+}
+
+.calendar-session.status-skipped {
+  opacity: .62;
+}
+/* Actions utilisateur dans le détail d'une séance */
+.workout-actions {
+  margin-top: 28px;
+  padding: 20px;
+  border: 1px solid rgba(76, 207, 255, .24);
+  border-radius: 14px;
+  background: rgba(5, 20, 34, .78);
+}
+
+.workout-actions-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.workout-actions-heading > div {
+  display: grid;
+  gap: 4px;
+}
+
+.workout-actions-heading span {
+  color: #5fd9ff;
+  font-size: .67rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.workout-actions-heading strong {
+  color: #f2f9fd;
+  font-size: 1.05rem;
+}
+
+.workout-primary-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.workout-primary-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 11px 14px;
+  color: #eaf7fd;
+  font: inherit;
+  font-size: .83rem;
+  font-weight: 750;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .055);
+}
+
+.workout-primary-actions button:first-child {
+  border-color: rgba(65, 233, 145, .42);
+  background: rgba(65, 233, 145, .1);
+}
+
+.workout-primary-actions button:last-child {
+  border-color: rgba(255, 173, 85, .4);
+  background: rgba(255, 173, 85, .08);
+}
+
+.workout-primary-actions button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.18);
+}
+
+.workout-primary-actions b {
+  font-size: 1.05rem;
+}
+
+.workout-actions-note {
+  margin: 13px 0 0;
+  color: #94adbd;
+  font-size: .73rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 620px) {
+  .workout-primary-actions {
+    grid-template-columns: 1fr;
+  }
+}
