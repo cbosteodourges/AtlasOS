@@ -7,11 +7,13 @@ from __future__ import annotations
 
 import argparse
 import re
+import shutil
 import subprocess
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -88,25 +90,34 @@ def fit_snapshot(directory: Path) -> dict[Path, tuple[int, int]]:
 
 
 def run_sync(
-    input_directory: Path,
+    fit_path: Path,
 ) -> subprocess.CompletedProcess[str]:
-    """Lance le moteur d'analyse Atlas Coach."""
-    command = [
-        sys.executable,
-        str(SYNC_SCRIPT),
-        "--input",
-        str(input_directory),
-    ]
-    return subprocess.run(
-        command,
-        cwd=PROJECT_ROOT,
-        check=False,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
+    """Analyse uniquement le nouveau fichier FIT."""
+    with TemporaryDirectory(
+        prefix="atlas-coach-fit-"
+    ) as temporary_directory:
+        temporary_path = Path(temporary_directory)
+        copied_fit = temporary_path / fit_path.name
+        shutil.copy2(fit_path, copied_fit)
 
+        command = [
+            sys.executable,
+            "-X",
+            "utf8",
+            str(SYNC_SCRIPT),
+            "--input",
+            str(temporary_path),
+        ]
+        return subprocess.run(
+            command,
+            cwd=PROJECT_ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=300,
+        )
 
 def notify_windows(title: str, message: str) -> None:
     """Affiche une notification locale sous Windows."""
@@ -222,7 +233,7 @@ def main() -> None:
                     )
                     continue
 
-                completed = run_sync(input_directory)
+                completed = run_sync(path)
 
                 if completed.stdout.strip():
                     write_log(completed.stdout.strip())

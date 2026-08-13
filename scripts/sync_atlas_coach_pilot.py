@@ -22,6 +22,9 @@ from src.connectors import (  # noqa: E402
     ConnectorRegistry,
     GarminConnector,
 )
+from src.performance.cardiac_drift_analyzer import (
+    CardiacDriftAnalyzer,
+)
 from src.performance import (  # noqa: E402
     DetailedSessionAnalyzer,
     LongitudinalActivityAdapter,
@@ -158,6 +161,10 @@ def build_record(
         longitudinal
     )
 
+    cardiac_drift = CardiacDriftAnalyzer().analyze(
+        longitudinal
+    )
+
     candidates = loader.candidates_for_activity(
         workouts,
         activity_date=longitudinal.start_time.date(),
@@ -192,6 +199,7 @@ def build_record(
         "processed_at": datetime.now(timezone.utc),
         "fingerprint": asdict(fingerprint),
         "detailed_analysis": asdict(analysis),
+        "cardiac_drift": asdict(cardiac_drift),
         "atlas_workout_match": (
             best_match.to_dict()
             if best_match is not None

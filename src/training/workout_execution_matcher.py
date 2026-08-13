@@ -76,6 +76,7 @@ class AtlasWorkoutExecutionMatcher:
         )
         target_score = self._target_compliance(
             planned_workout.blocks,
+            activity,
             analysis,
         )
 
@@ -188,58 +189,141 @@ class AtlasWorkoutExecutionMatcher:
     def _target_compliance(
         self,
         planned_blocks: list[TrainingBlock],
+        activity: LongitudinalActivity,
         analysis: DetailedSessionAnalysis,
     ) -> int:
+        planned_active = [
+            block
+            for block in planned_blocks
+            if (
+                block.target.zone is not None
+                or block.target.speed_min_kmh is not None
+                or block.target.heart_rate_min_bpm is not None
+            )
+        ]
+
+        if not planned_active:
+            return 50
+
+        if (
+            len(planned_active) == 1
+            and planned_active[0].block_type.value == "continuous"
+        ):
+            return self._continuous_target_score(
+                planned_active[0],
+                activity,
+                analysis,
+            )
+
         actual_blocks = [
             block
             for block in analysis.blocks
             if block.block_type
             not in {"recovery", "warm_up", "cool_down"}
         ]
-        planned_active = [
-            block
-            for block in planned_blocks
-            if block.target.zone is not None
-            or block.target.speed_min_kmh is not None
-            or block.target.heart_rate_min_bpm is not None
-        ]
-
-        if not planned_active or not actual_blocks:
+        if not actual_blocks:
             return 50
 
-        scores = []
+        weighted_scores = []
+        total_duration = 0.0
+
         for actual in actual_blocks:
-            scores.append(
-                max(
-                    self._block_target_score(
-                        planned,
-                        actual,
-                    )
-                    for planned in planned_active
+            score = max(
+                self._block_target_score(
+                    planned,
+                    actual,
                 )
+                for planned in planned_active
+            )
+            duration = max(
+                1.0,
+                float(
+                    getattr(
+                        actual,
+                        "duration_seconds",
+                        1.0,
+                    )
+                    or 1.0
+                ),
+            )
+            weighted_scores.append(score * duration)
+            total_duration += duration
+
+        return round(
+            sum(weighted_scores) / total_duration
+        )
+
+    def _continuous_target_score(
+        self,
+        planned: TrainingBlock,
+        activity: LongitudinalActivity,
+        analysis: DetailedSessionAnalysis,
+    ) -> int:
+        """Évalue une séance continue sur sa réponse globale."""
+        target = planned.target
+        weighted_scores: list[tuple[int, int]] = []
+
+        heart_rate = activity.average_heart_rate_bpm
+        if (
+            heart_rate is not None
+            and target.heart_rate_min_bpm is not None
+            and target.heart_rate_max_bpm is not None
+        ):
+            weighted_scores.append((
+                self._range_score(
+                    heart_rate,
+                    target.heart_rate_min_bpm,
+                    target.heart_rate_max_bpm,
+                ),
+                65,
+            ))
+
+        speed = activity.average_speed_kmh
+        if (
+            speed is not None
+            and target.speed_min_kmh is not None
+            and target.speed_max_kmh is not None
+        ):
+            weighted_scores.append((
+                self._range_score(
+                    speed,
+                    target.speed_min_kmh,
+                    target.speed_max_kmh,
+                ),
+                35,
+            ))
+
+        if not weighted_scores and target.zone is not None:
+            expected_type = f"z{target.zone}"
+            return (
+                100
+                if analysis.dominant_work_type == expected_type
+                else 50
             )
 
-        return round(sum(scores) / len(scores))
+        if not weighted_scores:
+            return 50
 
-    @staticmethod
+        total_weight = sum(
+            weight
+            for _, weight in weighted_scores
+        )
+        return round(
+            sum(
+                score * weight
+                for score, weight in weighted_scores
+            )
+            / total_weight
+        )
+
+    @classmethod
     def _block_target_score(
+        cls,
         planned: TrainingBlock,
         actual: object,
     ) -> int:
-        scores: list[int] = []
         target = planned.target
-
-        if target.zone is not None:
-            expected_type = f"z{target.zone}"
-            scores.append(
-                100
-                if getattr(
-                    actual,
-                    "block_type",
-                    "",
-                ) == expected_type
-                else 0
-            )
+        scores: list[int] = []
 
         speed = getattr(
             actual,
@@ -252,13 +336,11 @@ class AtlasWorkoutExecutionMatcher:
             and target.speed_max_kmh is not None
         ):
             scores.append(
-                100
-                if (
-                    target.speed_min_kmh
-                    <= speed
-                    <= target.speed_max_kmh
+                cls._range_score(
+                    speed,
+                    target.speed_min_kmh,
+                    target.speed_max_kmh,
                 )
-                else 0
             )
 
         heart_rate = getattr(
@@ -272,12 +354,22 @@ class AtlasWorkoutExecutionMatcher:
             and target.heart_rate_max_bpm is not None
         ):
             scores.append(
-                100
-                if (
-                    target.heart_rate_min_bpm
-                    <= heart_rate
-                    <= target.heart_rate_max_bpm
+                cls._range_score(
+                    heart_rate,
+                    target.heart_rate_min_bpm,
+                    target.heart_rate_max_bpm,
                 )
+            )
+
+        if not scores and target.zone is not None:
+            expected_type = f"z{target.zone}"
+            scores.append(
+                100
+                if getattr(
+                    actual,
+                    "block_type",
+                    "",
+                ) == expected_type
                 else 0
             )
 
@@ -286,6 +378,31 @@ class AtlasWorkoutExecutionMatcher:
 
         return round(sum(scores) / len(scores))
 
+    @staticmethod
+    def _range_score(
+        value: float,
+        minimum: float,
+        maximum: float,
+    ) -> int:
+        """Accorde une tolérance progressive autour d'une cible."""
+        if minimum <= value <= maximum:
+            return 100
+
+        difference = (
+            minimum - value
+            if value < minimum
+            else value - maximum
+        )
+        width = max(1.0, maximum - minimum)
+        relative_difference = difference / width
+
+        if relative_difference <= 0.25:
+            return 85
+        if relative_difference <= 0.50:
+            return 65
+        if relative_difference <= 1.00:
+            return 35
+        return 0
     @staticmethod
     def _date_score(difference_days: int) -> int:
         if difference_days == 0:

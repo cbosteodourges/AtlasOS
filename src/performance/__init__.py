@@ -21,6 +21,11 @@ from src.performance.athlete_profile import (
 from src.performance.athlete_profile_builder import (
     AthleteProfileBuilder,
 )
+from src.performance.cardiac_drift_analyzer import (
+    CardiacDriftAnalysis,
+    CardiacDriftAnalyzer,
+    CardiacDriftSegment,
+)
 from src.performance.competition_analyzer import (
     CompetitionPreparationAnalyzer,
 )
@@ -104,6 +109,9 @@ __all__ = [
     "DataIntegrityAssessment",
     "DetailedSessionAnalysis",
     "DetailedSessionAnalyzer",
+    "CardiacDriftAnalysis",
+    "CardiacDriftAnalyzer",
+    "CardiacDriftSegment",
     "CompetitionComparison",
     "CompetitionEvent",
     "CompetitionPreparationAnalysis",
