@@ -1,3 +1,5 @@
+param([switch]$BackgroundOnly)
+
 $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
@@ -84,4 +86,6 @@ if (-not (Test-AtlasProcess "watch_atlas_wellness.py")) {
         -ErrorLog "atlas-wellness-watcher-error.log"
 }
 
-Start-Process $atlasUrl
+if (-not $BackgroundOnly) {
+    Start-Process $atlasUrl
+}
