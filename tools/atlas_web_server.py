@@ -237,6 +237,28 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             **kwargs,
         )
 
+    def log_message(self, format, *args):
+        """Journalise les requêtes sans dépendre d'une console."""
+
+        log_path = (
+            ROOT
+            / "atlas-data"
+            / "private"
+            / "atlas-web-server.log"
+        )
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with log_path.open(
+            "a",
+            encoding="utf-8",
+            newline="\n",
+        ) as log_file:
+            log_file.write(
+                f"{datetime.now().astimezone().isoformat(timespec='seconds')}"
+                f" | {self.address_string()} | "
+                f"{format % args}\n"
+            )
+
     def send_json(self, status, data):
         content = json.dumps(
             data,
