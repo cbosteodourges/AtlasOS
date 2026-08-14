@@ -471,7 +471,7 @@
       ribbon.className = "atlas-physiology-topbar";
     }
 
-    header.insertAdjacentElement("afterend", ribbon);
+    header.insertBefore(ribbon, header.querySelector(".engine-status"));
 
     const age = Number(snapshot.age_years);
     const vo2 = Number(snapshot.vo2_max);
@@ -1718,10 +1718,114 @@ const target = compactTarget(workout, zone);
       </div>
     `;
   }
+  function renderCoachZones(program) {
+    const labels = {
+      1: "Récupération",
+      2: "Endurance fondamentale",
+      3: "Endurance active",
+      4: "Seuil",
+      5: "VO₂max"
+    };
+    const collected = new Map(
+      [1, 2, 3, 4, 5].map(zone => [
+        zone,
+        { speeds: [], heartRates: [], observations: 0 }
+      ])
+    );
+
+    (program.weeks || []).forEach(week => {
+      (week.workouts || []).forEach(workout => {
+        (workout.blocks || []).forEach(block => {
+          const target = block.target || {};
+          const zone = Number(target.zone);
+          const values = collected.get(zone);
+          if (!values) return;
+
+          [
+            target.speed_min_kmh,
+            target.speed_max_kmh
+          ].forEach(value => {
+            if (value !== null && value !== "" && Number.isFinite(Number(value))) {
+              values.speeds.push(Number(value));
+            }
+          });
+
+          [
+            target.heart_rate_min_bpm,
+            target.heart_rate_max_bpm
+          ].forEach(value => {
+            if (value !== null && value !== "" && Number.isFinite(Number(value))) {
+              values.heartRates.push(Number(value));
+            }
+          });
+
+          values.observations += 1;
+        });
+      });
+    });
+
+    const range = (values, digits = 0) => {
+      if (!values.length) return null;
+      const minimum = Math.min(...values);
+      const maximum = Math.max(...values);
+      const format = value => value.toLocaleString(
+        "fr-FR",
+        {
+          minimumFractionDigits: digits,
+          maximumFractionDigits: digits
+        }
+      );
+      return minimum === maximum
+        ? format(minimum)
+        : `${format(minimum)}–${format(maximum)}`;
+    };
+
+    const pace = speed => {
+      if (!speed || speed <= 0) return null;
+      const totalSeconds = Math.round(3600 / speed);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = String(totalSeconds % 60).padStart(2, "0");
+      return `${minutes}:${seconds}`;
+    };
+
+    collected.forEach((values, zone) => {
+      const summary = document.getElementById(
+        `coachZone${zone}`
+      );
+      if (!summary) return;
+
+      const speedRange = range(values.speeds, 2);
+      const heartRateRange = range(values.heartRates);
+      const minimumSpeed = values.speeds.length
+        ? Math.min(...values.speeds)
+        : null;
+      const maximumSpeed = values.speeds.length
+        ? Math.max(...values.speeds)
+        : null;
+      const paceRange = minimumSpeed && maximumSpeed
+        ? `${pace(maximumSpeed)}–${pace(minimumSpeed)} min/km`
+        : "Allure à confirmer";
+
+      summary.innerHTML = `
+        ${labels[zone]}
+        <small>
+          ${speedRange ? `${speedRange} km/h` : "Vitesse à confirmer"}
+          ·
+          ${heartRateRange ? `${heartRateRange} bpm` : "FC à confirmer"}
+          <br>
+          ${paceRange}
+        </small>
+      `;
+      summary.title =
+        `${values.observations} cible(s) du programme analysée(s)`;
+    });
+  }
+
   function render(program) {
     activeProgram = program;
     workoutIndex.clear();
     restoreOptional(program);
+    renderCoachZones(program);
     physiologicalRibbon(program.athlete_snapshot);
     renderOverview(program);
 
@@ -1737,10 +1841,7 @@ const target = compactTarget(workout, zone);
         </div>
         <i>Contour doré · difficulté progressive</i>
       </div>
-
-      ${calendarZoneLegend()}
-
-  ${program.weeks.map(
+${program.weeks.map(
         week => renderWeek(week, program)
       ).join("")}
     `;

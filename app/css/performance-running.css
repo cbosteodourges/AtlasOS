@@ -2368,3 +2368,132 @@ select option:checked {
     grid-template-columns: 1fr;
   }
 }
+/* Navigation par rubrique Atlas Coach */
+body[data-coach-section]
+.coach-section-panel:not(.is-coach-active) {
+  display: none !important;
+}
+
+.coach-history-panel {
+  min-height: 360px;
+}
+
+.coach-history-intro {
+  max-width: 760px;
+  margin: 0 0 22px;
+  color: #9db5c5;
+  line-height: 1.65;
+}
+
+.coach-history-empty {
+  display: grid;
+  place-items: center;
+  min-height: 230px;
+  padding: 30px;
+  text-align: center;
+  border: 1px dashed rgba(55, 207, 255, .25);
+  border-radius: 16px;
+  background:
+    radial-gradient(
+      circle at 50% 20%,
+      rgba(55, 207, 255, .08),
+      transparent 46%
+    ),
+    rgba(4, 16, 30, .62);
+}
+
+.coach-history-empty strong {
+  color: #eaf8ff;
+  font-size: 1.05rem;
+}
+
+.coach-history-empty span {
+  max-width: 520px;
+  color: #87a3b5;
+  font-size: .82rem;
+  line-height: 1.6;
+}
+/* ATLAS COACH - CONTEXT RAIL */
+.coach-context-rail {
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  top: 18px;
+  display: grid;
+  align-self: start;
+  gap: 14px;
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(67, 207, 255, .24);
+  border-radius: 18px;
+  background: linear-gradient(155deg, rgba(8, 30, 49, .96), rgba(3, 13, 25, .96));
+  box-shadow: 0 20px 55px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .035);
+}
+
+.coach-context-header {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+
+.coach-context-header span {
+  color: #54d8ff;
+  font-size: .61rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.coach-context-header strong {
+  color: #f4fbff;
+  font-size: 1rem;
+}
+
+#coachContextContent {
+  display: grid;
+  gap: 9px;
+  padding: 16px;
+  border-left: 3px solid #e0b35a;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .045);
+}
+
+#coachContextContent::before {
+  content: "DECISION ATLAS";
+  color: #e9be67;
+  font-size: .58rem;
+  font-weight: 900;
+  letter-spacing: .11em;
+}
+
+#coachContextContent strong {
+  color: #f6fbff;
+  font-size: .92rem;
+  line-height: 1.35;
+}
+
+#coachContextContent small {
+  color: #9db4c4;
+  font-size: .7rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 1120px) {
+  .coach-context-rail {
+    grid-column: 1;
+    grid-row: auto;
+    position: static;
+  }
+}
+/* CONTEXT RAIL STICKY FIX */.coach-context-rail{top:172px;max-height:calc(100dvh - 190px);overflow-x:hidden;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(74,204,255,.35) transparent}.coach-context-zones{width:auto;margin:0;padding:12px;background:rgba(3,16,29,.72)}.coach-context-zones .coach-zone{grid-template-columns:26px minmax(0,1fr)}@media(max-width:1120px){.coach-context-rail{top:auto;max-height:none;overflow:visible}}
+
+/* CALENDAR SEVEN COLUMNS FIX */.week-seven-grid,.calendar-day,.calendar-day-content,.calendar-session,.add-optional-session{box-sizing:border-box}.calendar-day,.calendar-day-content,.calendar-session{min-width:0;max-width:100%}.calendar-session{overflow:hidden}.calendar-session>*{min-width:0;max-width:100%}.calendar-session strong,.calendar-session small,.calendar-session b{overflow-wrap:anywhere;word-break:normal}.calendar-session-top{min-width:0;flex-wrap:wrap}
+
+/* CALENDAR COMPACT READABLE */.coach-workspace{grid-template-columns:minmax(0,1fr) 285px;gap:14px}.calendar-day-content{gap:6px;padding:6px}.calendar-session{gap:5px;padding:7px}.calendar-session strong,.calendar-session small,.calendar-session b{overflow-wrap:normal;word-break:normal;hyphens:none}.calendar-session>strong{font-size:.86rem;line-height:1.22}.calendar-session>small{font-size:.67rem;line-height:1.25}.calendar-session-target{font-size:.55rem!important;line-height:1.28!important}.calendar-session>b{font-size:.7rem;line-height:1.2;white-space:nowrap}.calendar-session-top i{font-size:.46rem}.calendar-session-top em{font-size:.43rem;padding:1px 4px}.add-optional-session{padding:8px 5px;font-size:.7rem;line-height:1.3}@media(max-width:1450px){.coach-workspace{grid-template-columns:minmax(0,1fr) 255px;gap:12px}}
+
+/* PHYSIOLOGY METRICS IN HEADER */.performance-app{padding-top:122px}.performance-header{grid-template-columns:auto auto minmax(440px,1fr) auto;gap:18px;min-height:102px;padding:8px 22px}#atlasPhysiologyRibbon{position:static!important;z-index:auto!important;top:auto!important;display:grid!important;grid-template-columns:repeat(5,minmax(78px,88px))!important;justify-content:center!important;gap:10px!important;width:auto!important;min-height:0!important;margin:0!important;padding:0!important;overflow:visible!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important}#atlasPhysiologyRibbon article{width:84px!important;height:84px!important;min-width:84px!important;margin:0!important;padding:7px!important}#atlasPhysiologyRibbon article>span{font-size:.46rem!important;letter-spacing:.07em!important}#atlasPhysiologyRibbon article>div{margin-top:3px!important;gap:3px!important}#atlasPhysiologyRibbon article>div strong{font-size:1.02rem!important}#atlasPhysiologyRibbon article>div small{font-size:.45rem!important}#atlasPhysiologyRibbon article>i{margin-top:4px!important;font-size:.42rem!important;line-height:1.15!important}.coach-context-rail{top:116px;max-height:calc(100dvh - 132px)}@media(max-width:1450px){#atlasPhysiologyRibbon{grid-template-columns:repeat(5,74px)!important;gap:7px!important}#atlasPhysiologyRibbon article{width:72px!important;height:72px!important;min-width:72px!important}.performance-header{gap:10px}}
+
+/* HEADER BRAND ALIGNMENT FIX */.performance-header>.back-link{display:none}.performance-header{grid-template-columns:auto minmax(440px,1fr) auto}.performance-brand{justify-self:start;min-width:150px}
+/* HEADER OUTSIDE GLOBAL NAV */body.has-atlas-global-nav .performance-header{left:320px}.performance-header .performance-brand{display:flex!important;visibility:visible!important;opacity:1!important;position:relative!important;grid-column:1!important}.performance-header #atlasPhysiologyRibbon{grid-column:2!important}.performance-header .engine-status{grid-column:3!important}@media(max-width:1100px){body.has-atlas-global-nav .performance-header{left:0}.performance-brand{min-width:auto}.performance-brand span{display:none}}
+/* COMPACT ATLAS DECISION AND FULL CONTEXT RAIL */.coach-context-rail{max-height:none!important;overflow:visible!important;padding:16px!important}.coach-context-header{margin-bottom:10px!important;padding-bottom:10px!important}.coach-context-header span{font-size:.62rem!important}.coach-context-header strong{font-size:1rem!important;margin-top:3px!important}#coachContextContent{min-height:0!important;margin:0 0 10px!important;padding:10px 12px!important;gap:3px!important;border-radius:12px!important}#coachContextContent strong{font-size:.78rem!important;line-height:1.2!important}#coachContextContent small{margin-top:2px!important;font-size:.58rem!important;line-height:1.3!important}.coach-context-zones{margin-top:6px!important;padding:10px!important}.coach-context-zones .coach-zone{min-height:43px!important;padding:5px 7px!important}.coach-context-zones .coach-zone span{font-size:.58rem!important}.coach-context-zones .coach-zone span small{font-size:.53rem!important;line-height:1.22!important}

@@ -29,6 +29,39 @@
     </a>
   `;
 
+  const coachSubnav = isCoach ? `
+    <div class="atlas-coach-subnav" aria-label="Rubriques Atlas Coach">
+      <a class="atlas-coach-back" href="./atlas-cockpit.html">
+        <span>←</span>
+        Retour au Hub
+      </a>
+      <button type="button" data-coach-nav="overview">
+        <span>⌂</span>
+        Vue d’ensemble
+      </button>
+      <button type="button" data-coach-nav="sensors">
+        <span>⌁</span>
+        Montres et capteurs
+      </button>
+      <button type="button" data-coach-nav="profile">
+        <span>◇</span>
+        Profil et objectif
+      </button>
+      <button type="button" data-coach-nav="deadline">
+        <span>◎</span>
+        Prochaine échéance
+      </button>
+      <button type="button" data-coach-nav="plan">
+        <span>▦</span>
+        Plan personnalisé
+      </button>
+      <button type="button" data-coach-nav="history">
+        <span>↝</span>
+        Historique des séances
+      </button>
+    </div>
+  ` : "";
+
   const markup = `
     <a class="atlas-nav-brand" href="./atlas-hub.html">
       <img src="./assets/atlas-logo-full.jpg" alt="Atlas OS">
@@ -54,6 +87,7 @@
         "Atlas Coach",
         isCoach
       )}
+        ${coachSubnav}
       ${hubItem("health", "♡", "Santé globale")}
       ${hubItem("injuries", "⌁", "Douleurs et blessures")}
       ${hubItem("analysis", "✦", "Analyse Atlas")}
@@ -94,6 +128,53 @@
     nav.innerHTML = markup;
     document.body.prepend(nav);
     document.body.classList.add("has-atlas-global-nav");
+  }
+
+  if (isCoach) {
+    const panels = [
+      ...document.querySelectorAll("[data-coach-section]")
+    ];
+    const buttons = [
+      ...nav.querySelectorAll("[data-coach-nav]")
+    ];
+
+    const showCoachSection = name => {
+      const available = panels.some(
+        panel => panel.dataset.coachSection === name
+      );
+      const selected = available ? name : "overview";
+
+      panels.forEach(panel => {
+        panel.classList.toggle(
+          "is-coach-active",
+          panel.dataset.coachSection === selected
+        );
+      });
+      buttons.forEach(button => {
+        const active = button.dataset.coachNav === selected;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+
+      document.body.dataset.coachSection = selected;
+      localStorage.setItem(
+        "atlasCoachActiveSection",
+        selected
+      );
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    buttons.forEach(button => {
+      button.addEventListener(
+        "click",
+        () => showCoachSection(button.dataset.coachNav)
+      );
+    });
+
+    showCoachSection(
+      localStorage.getItem("atlasCoachActiveSection")
+      || "overview"
+    );
   }
 
   nav.querySelector("[data-atlas-talk]")?.addEventListener(

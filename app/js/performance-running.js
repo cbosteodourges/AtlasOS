@@ -221,6 +221,12 @@
       </tr>
     `).join("");
 
+    zones.forEach(zone => {
+      const summary = document.getElementById(`coachZone${zone.id}`);
+      if (!summary) return;
+      summary.innerHTML = `${zone.name}<small>${zone.speedLow}–${zone.speedHigh} km/h · ${zone.hrLow}–${zone.hrHigh} bpm</small>`;
+    });
+
     elements.thresholdScale.innerHTML = zones.map(zone => {
       const marker = zone.id === 2
         ? `<i class="threshold-marker"><span>SV1</span></i>`

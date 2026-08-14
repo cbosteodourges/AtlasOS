@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#020713">
   <title>Atlas OS — Atlas Coach</title>
-  <link rel="stylesheet" href="./css/performance-running.css?v=5">
-  <link rel="stylesheet" href="./css/atlas-global-nav.css?v=4">
+  <link rel="stylesheet" href="./css/performance-running.css?v=6">
+  <link rel="stylesheet" href="./css/atlas-global-nav.css?v=6">
 </head>
 <body>
 <main class="performance-app">
@@ -31,7 +31,7 @@
     </div>
   </header>
 
-  <section class="coach-hero" aria-labelledby="coachTitle">
+  <section class="coach-hero coach-section-panel" data-coach-section="overview" aria-labelledby="coachTitle">
     <div class="coach-identity">
       <div class="coach-emblem" aria-hidden="true">AC</div>
 
@@ -64,7 +64,7 @@
   <!-- ████████████████████████████████████████████████████████
        🟩 PARTIE B — B01 — PROFIL DE COURSE
        ████████████████████████████████████████████████████████ -->
-    <section class="panel sync-panel" id="syncPanel">
+    <section class="panel sync-panel coach-section-panel" id="syncPanel" data-coach-section="sensors">
     <div class="section-title">
       <p>SYNCHRONISATION</p>
       <h2>Connecter mes montres et capteurs</h2>
@@ -156,7 +156,7 @@
     </article>
     </section>
 
-       <section class="panel setup-panel">
+       <section class="panel setup-panel coach-section-panel" data-coach-section="profile">
     <div class="section-title">
       <p>ÉTAPE 1</p>
       <h1>Définir le profil et l'échéance</h1>
@@ -261,7 +261,7 @@
   </section>
 
   <!-- 🟧 PARTIE B — B03 — ESPACE COMPÉTITIONS -->
-  <section class="panel competition-panel" id="competitionPanel">
+  <section class="panel competition-panel coach-section-panel" id="competitionPanel" data-coach-section="deadline">
     <div class="section-title competition-title">
       <div>
         <p>COMPÉTITIONS</p>
@@ -330,7 +330,7 @@
        🟨 PARTIE C — C01 — CARTE PHYSIOLOGIQUE
        ████████████████████████████████████████████████████████ -->
     <div class="coach-workspace">
-  <section class="panel physiology-panel physiology-sidebar" id="physiologyPanel" hidden>
+  <section class="panel physiology-panel physiology-sidebar coach-section-panel" id="physiologyPanel" data-coach-section="overview" hidden>
     <div class="section-title">
       <p>ÉTAPE 2</p>
       <h2>Carte physiologique personnelle</h2>
@@ -385,7 +385,7 @@
   <!-- ████████████████████████████████████████████████████████
        🟧 PARTIE D — D01 — PLAN DATÉ
        ████████████████████████████████████████████████████████ -->
-  <section class="panel plan-panel" id="planPanel" hidden>
+  <section class="panel plan-panel coach-section-panel" id="planPanel" data-coach-section="plan" hidden>
     <div class="section-title plan-title">
       <div>
         <p>ÉTAPE 3</p>
@@ -397,15 +397,39 @@
 
     <div class="plan-overview" id="planOverview"></div>
     <div class="training-calendar" id="trainingCalendar"></div>
-  </section>
+  </section><aside class="coach-context-rail" aria-label="Decisions Atlas Coach"><header class="coach-context-header"><span>ATLAS COACH - TEMPS REEL</span><strong id="coachContextDate">Aujourd hui</strong></header><div id="coachContextContent"><strong>Programme du jour maintenu</strong><small>Atlas analyse vos donnees et vos seances.</small></div><section class="atlas-coach-zones coach-context-zones" aria-label="Zones personnelles"><header><strong>Mes zones</strong><small>Vitesse · FC</small></header><div class="coach-zone zone-1"><b>Z1</b><span id="coachZone1">Récupération</span></div><div class="coach-zone zone-2"><b>Z2</b><span id="coachZone2">Endurance fondamentale</span></div><div class="coach-zone zone-3"><b>Z3</b><span id="coachZone3">Endurance active</span></div><div class="coach-zone zone-4"><b>Z4</b><span id="coachZone4">VO₂max</span></div><div class="coach-zone zone-5"><b>Z5</b><span id="coachZone5">VMA courte / Anaérobie</span></div></section></aside>
 
     </div>
+
+  <section
+    class="panel coach-history-panel coach-section-panel"
+    data-coach-section="history"
+    aria-labelledby="coachHistoryTitle"
+  >
+    <div class="section-title">
+      <div>
+        <span>ATLAS COACH · MÉMOIRE D’ENTRAÎNEMENT</span>
+        <h2 id="coachHistoryTitle">Historique des séances</h2>
+      </div>
+    </div>
+    <p class="coach-history-intro">
+      Retrouvez ici les séances réalisées, non effectuées, déplacées
+      ou remplacées, ainsi que leur analyse FIT et la réponse d’Atlas.
+    </p>
+    <div class="coach-history-empty">
+      <strong>Historique Atlas en préparation</strong>
+      <span>
+        Les prochaines activités Garmin importées apparaîtront
+        automatiquement dans cette rubrique.
+      </span>
+    </div>
+  </section>
 
   <div class="validation-message" id="validationMessage" aria-live="polite"></div>
 </main>
 
-<script src="./js/atlas-global-nav.js?v=1"></script>
-<script src="./js/performance-running.js"></script>
-<script src="./js/atlas-training-calendar.js?v=8"></script>
+<script src="./js/atlas-global-nav.js?v=3"></script>
+<script src="./js/performance-running.js?v=2"></script>
+<script src="./js/atlas-training-calendar.js?v=9"></script>
 </body>
 </html>
