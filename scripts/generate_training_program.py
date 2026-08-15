@@ -24,6 +24,15 @@ from scripts.build_athlete_profile import (  # noqa: E402
 )
 from src.performance import AthleteProfileBuilder  # noqa: E402
 from src.performance.models import PerformanceGoal  # noqa: E402
+from src.training.historical_workout_pattern_analyzer import (
+    HistoricalWorkoutPatternAnalyzer,
+)
+from src.training.historical_workout_progression_selector import (
+    HistoricalWorkoutProgressionSelector,
+)
+from src.training.competition_history_personalizer import (
+    CompetitionHistoryPersonalizer,
+)
 from src.training.training_history_personalizer import (
     TrainingHistoryPersonalizer,
 )
@@ -70,6 +79,22 @@ def parse_arguments() -> argparse.Namespace:
             "training-history-fusion.json"
         ),
         help="Mémoire fusionnée FIT + Wellness.",
+    )
+    parser.add_argument(
+        "--competition-comparison",
+        default=(
+            "atlas-data/private/"
+            "garmin-competition-comparison.json"
+        ),
+        help="Comparaison des préparations passées.",
+    )
+    parser.add_argument(
+        "--detailed-fit-history",
+        default=(
+            "atlas-data/private/"
+            "marcq-2025-fit-analysis.json"
+        ),
+        help="Historique FIT détaillé pour apprendre les séances.",
     )
     parser.add_argument(
         "--output",
@@ -201,10 +226,84 @@ def apply_training_history(
     personalizer.apply(profile, personalization)
     return personalization
 
+def build_competition_personalization(
+    input_path: str,
+    goal_distance_km: float,
+):
+    """Construit les préférences issues des compétitions comparables."""
+    source = Path(input_path)
+    if not source.is_file():
+        return None
+
+    with source.open("r", encoding="utf-8") as input_file:
+        payload = json.load(input_file)
+
+    if not isinstance(payload, dict):
+        raise ValueError(
+            "La comparaison des compétitions doit être un objet JSON."
+        )
+
+    return CompetitionHistoryPersonalizer().build(
+        payload,
+        goal_distance_km=goal_distance_km,
+    )
+
+
+def build_historical_progression(
+    fit_input_path: str,
+    competition_input_path: str,
+    profile,
+    goal: PerformanceGoal,
+):
+    """Construit la progression depuis tous les FIT détaillés."""
+    fit_source = Path(fit_input_path)
+    competition_source = Path(competition_input_path)
+
+    if not fit_source.is_file():
+        return None
+
+    with fit_source.open(
+        "r",
+        encoding="utf-8",
+    ) as input_file:
+        fit_payload = json.load(input_file)
+
+    competition_payload = None
+    if competition_source.is_file():
+        with competition_source.open(
+            "r",
+            encoding="utf-8",
+        ) as input_file:
+            competition_payload = json.load(input_file)
+
+    goal_speed_kmh = (
+        round(
+            goal.distance_km
+            / (goal.target_time_minutes / 60),
+            2,
+        )
+        if goal.target_time_minutes is not None
+        else None
+    )
+    memory = HistoricalWorkoutPatternAnalyzer().analyze(
+        fit_payload,
+        vma_kmh=profile.physiological.vma_kmh,
+        goal_speed_kmh=goal_speed_kmh,
+        goal_distance_km=goal.distance_km,
+        competition_payload=competition_payload,
+    )
+    progression = (
+        HistoricalWorkoutProgressionSelector().build(
+            memory.patterns
+        )
+    )
+    return progression if progression.available else None
+
 def build_settings(
     arguments: argparse.Namespace,
     profile,
     personalization=None,
+    competition_personalization=None,
 ) -> ProgramGenerationSettings:
     """Combine les préférences CLI et le profil."""
     running_sessions = arguments.running_sessions
@@ -248,6 +347,24 @@ def build_settings(
         include_mobility=True,
         avoid_consecutive_intense_days=True,
         maximum_weekly_progression_percent=progression,
+        prioritize_metabolic_quality=bool(
+            competition_personalization is not None
+            and competition_personalization
+            .prioritize_metabolic_quality
+        ),
+        race_week_sharpening_days_before=(
+            round(
+                competition_personalization
+                .target_days_since_last_intensity
+            )
+            if (
+                competition_personalization is not None
+                and competition_personalization
+                .target_days_since_last_intensity
+                is not None
+            )
+            else None
+        ),
     )
 
 
@@ -267,12 +384,18 @@ def build_export_payload(
     program,
     profile,
     personalization=None,
+    competition_personalization=None,
 ) -> dict[str, Any]:
     """Ajoute les propriétés calculées utiles à l’interface."""
     payload = asdict(program)
     if personalization is not None:
         payload["history_personalization"] = asdict(
             personalization
+        )
+
+    if competition_personalization is not None:
+        payload["competition_personalization"] = asdict(
+            competition_personalization
         )
 
     physiological = profile.physiological
@@ -385,6 +508,7 @@ def write_program(
     profile,
     output_path: str,
     personalization=None,
+    competition_personalization=None,
 ) -> Path:
     """Enregistre le programme dans l’espace privé."""
     destination = Path(output_path)
@@ -396,6 +520,7 @@ def write_program(
         program,
         profile,
         personalization,
+        competition_personalization,
     )
 
     with destination.open(
@@ -423,14 +548,33 @@ def display_program(
         WorkoutType.MIXED_THRESHOLD_VO2,
         WorkoutType.TRIANGULAR_VO2,
     }
+    historical_count = sum(
+        workout.sport == "running"
+        and any(
+            "histor" in note.lower()
+            or "préparation comparable réussie"
+            in note.lower()
+            for note in workout.coach_notes
+        )
+        for week in program.weeks
+        for workout in week.workouts
+    )
     research_count = sum(
         workout.workout_type in research_types
+        and not any(
+            "histor" in note.lower()
+            or "préparation comparable réussie"
+            in note.lower()
+            for note in workout.coach_notes
+        )
         for week in program.weeks
         for workout in week.workouts
     )
 
     print("=" * 72)
-    print("ATLAS COACH - PROGRAMME GUIDÉ PAR ATLAS RESEARCH")
+    print(
+        "ATLAS COACH - HISTORIQUE PERSONNEL + ATLAS RESEARCH"
+    )
     print("=" * 72)
     print(f"Athlète : {program.athlete_id}")
     print(f"Objectif : {program.goal.name}")
@@ -453,7 +597,11 @@ def display_program(
         f"{program.total_running_workouts}"
     )
     print(
-        f"Séances Atlas Research : {research_count}"
+        "Séances historiques personnalisées : "
+        f"{historical_count}"
+    )
+    print(
+        f"Séances Atlas Research génériques : {research_count}"
     )
 
     print()
@@ -498,10 +646,23 @@ def main() -> None:
             arguments.target_time_minutes
         ),
     )
+    competition_personalization = (
+        build_competition_personalization(
+            arguments.competition_comparison,
+            goal.distance_km,
+        )
+    )
+    historical_progression = build_historical_progression(
+        arguments.detailed_fit_history,
+        arguments.competition_comparison,
+        profile,
+        goal,
+    )
     settings = build_settings(
         arguments,
         profile,
         personalization,
+        competition_personalization,
     )
     dynamic_metrics = set()
 
@@ -516,6 +677,7 @@ def main() -> None:
         ),
         settings=settings,
         available_dynamic_metrics=dynamic_metrics,
+        historical_progression=historical_progression,
     )
     if personalization is not None:
         program.explanation += (
@@ -534,6 +696,7 @@ def main() -> None:
         profile,
         arguments.output,
         personalization,
+        competition_personalization,
     )
     display_program(
         program,

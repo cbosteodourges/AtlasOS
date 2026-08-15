@@ -133,6 +133,48 @@
     }, 3200);
   }
 
+  function showAtlasProfileNotification(message) {
+    let notification = document.getElementById(
+      "atlasProfileNotification"
+    );
+
+    if (!notification) {
+      notification = document.createElement("div");
+      notification.id = "atlasProfileNotification";
+      notification.setAttribute("role", "status");
+      notification.setAttribute("aria-live", "polite");
+      notification.style.cssText = [
+        "position:fixed",
+        "z-index:1000",
+        "right:24px",
+        "bottom:24px",
+        "max-width:390px",
+        "padding:14px 18px",
+        "color:#eafff7",
+        "font-size:.82rem",
+        "font-weight:700",
+        "line-height:1.4",
+        "border:1px solid rgba(72,217,154,.7)",
+        "border-radius:12px",
+        "background:rgba(5,29,36,.97)",
+        "box-shadow:0 12px 35px rgba(0,0,0,.38),0 0 18px rgba(72,217,154,.16)",
+        "opacity:0",
+        "transform:translateY(12px)",
+        "transition:opacity .25s ease,transform .25s ease"
+      ].join(";");
+      document.body.appendChild(notification);
+    }
+
+    notification.textContent = `✓ ${message}`;
+    notification.style.opacity = "1";
+    notification.style.transform = "translateY(0)";
+
+    clearTimeout(window.atlasProfileNotificationTimer);
+    window.atlasProfileNotificationTimer = setTimeout(() => {
+      notification.style.opacity = "0";
+      notification.style.transform = "translateY(12px)";
+    }, 5200);
+  }
   function getInputs() {
     const eventDate = elements.eventDate.value
       ? new Date(`${elements.eventDate.value}T12:00:00`)
@@ -143,7 +185,7 @@
       eventDate,
       vma: Number(elements.vma.value),
       hrMax: Number(elements.hrMax.value),
-      hrRest: Number(elements.hrRest.value),
+      hrRest: elements.hrRest.value.trim() ? Number(elements.hrRest.value) : null,
       daysPerWeek: Number(elements.daysPerWeek.value),
       displayMode: elements.displayMode.value,
       thresholdSource: elements.thresholdSource.value
@@ -174,7 +216,7 @@
   }
 
   function determineThresholds(profile, zones) {
-    if (profile.thresholdSource === "measured") {
+    if (["measured", "atlas_profile"].includes(profile.thresholdSource)) {
       const sv1Hr = Number(elements.sv1HrMeasured.value);
       const sv1Speed = Number(elements.sv1SpeedMeasured.value);
       const sv2Hr = Number(elements.sv2HrMeasured.value);
@@ -190,7 +232,7 @@
         sv1Speed,
         sv2Hr,
         sv2Speed,
-        label: "Seuils mesurés — confiance élevée"
+        label: profile.thresholdSource === "measured" ? "Seuils mesurés — confiance élevée" : "Profil Atlas évolutif"
       };
     }
 
@@ -753,7 +795,7 @@
         throw new Error("Renseignez une fréquence cardiaque maximale valide.");
       }
 
-      if (profile.hrRest >= profile.hrMax) {
+      if (Number.isFinite(profile.hrRest) && profile.hrRest >= profile.hrMax) {
         throw new Error("La fréquence cardiaque de repos doit être inférieure à la FC maximale.");
       }
 
@@ -813,7 +855,7 @@
 
   function syncMeasuredThresholdFields() {
     const showMeasuredFields =
-      elements.thresholdSource.value === "measured";
+      elements.thresholdSource.value !== "estimated";
 
     elements.measuredThresholds.hidden = !showMeasuredFields;
 
@@ -828,6 +870,162 @@
     });
   }
 
+  function setAtlasNumberField(field, value) {
+    if (value === null || value === undefined || value === "") return;
+    const number = Number(value);
+    if (field && Number.isFinite(number)) field.value = String(number);
+  }
+
+  function restoreAtlasRunningProfile() {
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem("atlasRunningProfile") || "null"
+      );
+
+      if (!saved) return null;
+
+      setAtlasNumberField(elements.vma, saved.vma);
+      setAtlasNumberField(elements.hrMax, saved.hrMax);
+      setAtlasNumberField(elements.hrRest, saved.hrRest);
+
+      if (saved.daysPerWeek) {
+        elements.daysPerWeek.value = String(saved.daysPerWeek);
+      }
+
+      if (saved.displayMode) {
+        elements.displayMode.value = saved.displayMode;
+      }
+
+      const validSource = [...elements.thresholdSource.options]
+        .some(option => option.value === saved.thresholdSource);
+
+      if (validSource) {
+        elements.thresholdSource.value = saved.thresholdSource;
+      }
+
+      if (saved.thresholds) {
+        setAtlasNumberField(
+          elements.sv1HrMeasured,
+          saved.thresholds.sv1Hr
+        );
+        setAtlasNumberField(
+          elements.sv1SpeedMeasured,
+          saved.thresholds.sv1Speed
+        );
+        setAtlasNumberField(
+          elements.sv2HrMeasured,
+          saved.thresholds.sv2Hr
+        );
+        setAtlasNumberField(
+          elements.sv2SpeedMeasured,
+          saved.thresholds.sv2Speed
+        );
+      }
+
+      return saved;
+    } catch (error) {
+      console.debug("Profil local Atlas illisible.", error);
+      return null;
+    }
+  }
+
+  async function loadAtlasAthleteProfile() {
+    const saved = restoreAtlasRunningProfile();
+    const preserveMeasured = saved?.thresholdSource === "measured";
+    const sources = [
+      window.ATLAS_ATHLETE_PROFILE_URL,
+      "../atlas-data/private/athlete-profile.json",
+      "/atlas-data/private/athlete-profile.json"
+    ].filter(Boolean);
+
+    for (const source of sources) {
+      try {
+        const response = await fetch(source, { cache: "no-store" });
+        if (!response.ok) continue;
+
+        const payload = await response.json();
+        const physiology = payload?.physiological || payload;
+
+        if (!physiology) continue;
+
+        setAtlasNumberField(
+          elements.vma,
+          physiology.vma_kmh
+        );
+        setAtlasNumberField(
+          elements.hrMax,
+          physiology.maximum_heart_rate_bpm
+        );
+        if (physiology.resting_heart_rate_bpm == null) {
+            elements.hrRest.value = "";
+          } else {
+            setAtlasNumberField(
+              elements.hrRest,
+              physiology.resting_heart_rate_bpm
+            );
+          }
+
+        const sv1 = physiology.sv1 || {};
+        const sv2 = physiology.sv2 || {};
+
+        if (!preserveMeasured) {
+          setAtlasNumberField(
+            elements.sv1HrMeasured,
+            sv1.heart_rate_bpm
+          );
+          setAtlasNumberField(
+            elements.sv1SpeedMeasured,
+            sv1.speed_kmh
+          );
+          setAtlasNumberField(
+            elements.sv2HrMeasured,
+            sv2.heart_rate_bpm
+          );
+          setAtlasNumberField(
+            elements.sv2SpeedMeasured,
+            sv2.speed_kmh
+          );
+
+          if (
+            [sv1.heart_rate_bpm, sv1.speed_kmh,
+             sv2.heart_rate_bpm, sv2.speed_kmh]
+              .every(value => Number.isFinite(Number(value)))
+          ) {
+            elements.thresholdSource.value = "atlas_profile";
+          }
+        }
+
+        syncMeasuredThresholdFields();
+
+        const summary = [
+          physiology.maximum_heart_rate_bpm
+            ? `FC max ${physiology.maximum_heart_rate_bpm} bpm`
+            : null,
+          sv1.heart_rate_bpm
+            ? `SV1 ${sv1.heart_rate_bpm} bpm`
+            : null,
+          sv2.heart_rate_bpm
+            ? `SV2 ${sv2.heart_rate_bpm} bpm`
+            : null
+        ].filter(Boolean).join(" · ");
+
+        showAtlasProfileNotification(
+          summary
+            ? `Profil Atlas chargé : ${summary}.`
+            : "Profil Atlas personnel chargé."
+        );
+        return;
+      } catch (error) {
+        console.debug(
+          "Profil Atlas indisponible.",
+          source,
+          error
+        );
+      }
+    }
+
+    syncMeasuredThresholdFields();
+  }
   elements.thresholdSource.addEventListener(
     "change",
     syncMeasuredThresholdFields
@@ -837,7 +1035,7 @@
   elements.printButton.addEventListener("click", () => window.print());
 
   setDefaultDate();
-  syncMeasuredThresholdFields();
+  loadAtlasAthleteProfile();
   const syncProviderButtons =
     document.querySelectorAll(".provider-button");
 

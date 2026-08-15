@@ -54,6 +54,14 @@ class PhysiologicalReferences:
     weight_kg: Optional[float] = None
 
     maximum_heart_rate_bpm: Optional[float] = None
+    maximum_heart_rate_confidence_score: int = 0
+    maximum_heart_rate_source: str = ""
+    maximum_heart_rate_evidence: List[str] = field(
+        default_factory=list
+    )
+    rejected_heart_rate_activity_ids: List[str] = field(
+        default_factory=list
+    )
     resting_heart_rate_bpm: Optional[float] = None
     threshold_heart_rate_bpm: Optional[float] = None
 

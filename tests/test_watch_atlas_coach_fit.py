@@ -32,15 +32,17 @@ class AtlasCoachFitWatcherTests(unittest.TestCase):
             0,
         )
 
-    def test_fit_snapshot_keeps_only_fit_files(self) -> None:
+    def test_fit_snapshot_keeps_fit_and_zip_files(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             fit_file = root / "activity.fit"
             upper_fit_file = root / "SECOND.FIT"
+            zip_file = root / "activity.zip"
             text_file = root / "notes.txt"
 
             fit_file.write_bytes(b"fit-data")
             upper_fit_file.write_bytes(b"other-fit-data")
+            zip_file.write_bytes(b"garmin-archive")
             text_file.write_text(
                 "ignore",
                 encoding="utf-8",
@@ -48,9 +50,10 @@ class AtlasCoachFitWatcherTests(unittest.TestCase):
 
             snapshot = fit_snapshot(root)
 
-            self.assertEqual(len(snapshot), 2)
+            self.assertEqual(len(snapshot), 3)
             self.assertIn(fit_file.resolve(), snapshot)
             self.assertIn(upper_fit_file.resolve(), snapshot)
+            self.assertIn(zip_file.resolve(), snapshot)
             self.assertNotIn(text_file.resolve(), snapshot)
 
     def test_fit_snapshot_accepts_missing_directory(

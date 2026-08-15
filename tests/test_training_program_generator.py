@@ -10,6 +10,10 @@ from src.performance.athlete_profile import (
     TrainingTolerance,
 )
 from src.performance.models import PerformanceGoal
+from src.training.historical_workout_progression_selector import (
+    HistoricalWorkoutPrescription,
+    HistoricalWorkoutProgression,
+)
 from src.training.program_generator import (
     TrainingProgramGenerator,
 )
@@ -185,6 +189,164 @@ class TrainingProgramGeneratorTests(unittest.TestCase):
             },
         )
 
+    def test_history_prioritizes_metabolic_quality_for_half_marathon(
+        self,
+    ) -> None:
+        settings = build_settings()
+        settings.prioritize_metabolic_quality = True
+        settings.race_week_sharpening_days_before = 5
+        goal = PerformanceGoal(
+            name="Semi-marathon objectif",
+            event_date=date(2026, 8, 23),
+            distance_km=21.1,
+            target_time_minutes=109,
+        )
+        program = self.generator.generate(
+            profile=build_profile(),
+            goal=goal,
+            start_date=self.start_date,
+            settings=settings,
+            available_dynamic_metrics={"recovery_status"},
+        )
+        specific_quality = [
+            workout
+            for week in program.weeks
+            if week.phase == TrainingPhase.SPECIFIC
+            for workout in week.workouts
+            if workout.workout_type in {
+                WorkoutType.HILL_SPRINTS,
+                WorkoutType.MIXED_THRESHOLD_VO2,
+            }
+        ]
+
+        self.assertTrue(specific_quality)
+        self.assertTrue(all(
+            workout.workout_type
+            == WorkoutType.MIXED_THRESHOLD_VO2
+            for workout in specific_quality
+        ))
+
+        sharpening = [
+            workout
+            for week in program.weeks
+            for workout in week.workouts
+            if (
+                workout.workout_type
+                == WorkoutType.TEMPO_Z3
+                and workout.title
+                == "Rappel allure spécifique semi"
+            )
+        ]
+
+        self.assertEqual(len(sharpening), 1)
+        self.assertEqual(
+            sharpening[0].workout_date,
+            goal.event_date - timedelta(days=5),
+        )
+    def test_integrates_varied_historical_progression(
+        self,
+    ) -> None:
+        settings = build_settings()
+        settings.prioritize_metabolic_quality = True
+        goal = PerformanceGoal(
+            name="Semi-marathon objectif",
+            event_date=date(2026, 8, 23),
+            distance_km=21.1,
+            target_time_minutes=109,
+        )
+        progression = HistoricalWorkoutProgression(
+            base=[
+                HistoricalWorkoutPrescription(
+                    kind="short_intervals",
+                    repetitions=8,
+                    work_distance_meters=400,
+                ),
+            ],
+            development=[
+                HistoricalWorkoutPrescription(
+                    kind="threshold_intervals",
+                    repetitions=4,
+                    work_distance_meters=1000,
+                ),
+                HistoricalWorkoutPrescription(
+                    kind="short_intervals",
+                    repetitions=10,
+                    work_distance_meters=400,
+                ),
+            ],
+            specific=[
+                HistoricalWorkoutPrescription(
+                    kind="mixed_intervals",
+                    repetitions=4,
+                    threshold_distance_meters=1000,
+                    vo2_distance_meters=400,
+                ),
+                HistoricalWorkoutPrescription(
+                    kind="threshold_intervals",
+                    repetitions=6,
+                    work_distance_meters=1000,
+                ),
+                HistoricalWorkoutPrescription(
+                    kind="short_intervals",
+                    repetitions=8,
+                    work_distance_meters=400,
+                ),
+                HistoricalWorkoutPrescription(
+                    kind="long_race_specific",
+                    group_distances_meters=[
+                        4000,
+                        3000,
+                        3000,
+                    ],
+                ),
+            ],
+        )
+
+        program = self.generator.generate(
+            profile=build_profile(),
+            goal=goal,
+            start_date=self.start_date,
+            settings=settings,
+            available_dynamic_metrics={"recovery_status"},
+            historical_progression=progression,
+        )
+        titles = [
+            workout.title
+            for week in program.weeks
+            for workout in week.workouts
+        ]
+
+        self.assertIn("8 × 400 m VO₂max", titles)
+        self.assertIn("4 × 1000 m au SV2", titles)
+        self.assertIn("10 × 400 m VO₂max", titles)
+        self.assertIn(
+            "4 × (1000 m SV2 + 400 m VO₂max)",
+            titles,
+        )
+        self.assertIn("6 × 1000 m au SV2", titles)
+        self.assertIn(
+            "Sortie longue spécifique semi",
+            titles,
+        )
+
+        specific_long_weeks = [
+            week
+            for week in program.weeks
+            if any(
+                workout.title
+                == "Sortie longue spécifique semi"
+                for workout in week.workouts
+            )
+        ]
+        self.assertEqual(len(specific_long_weeks), 1)
+        self.assertEqual(
+            sum(
+                workout.workout_type
+                == WorkoutType.LONG_RUN
+                for workout in specific_long_weeks[0].workouts
+            ),
+            1,
+        )
     def test_places_race_once_on_event_date(self) -> None:
         goal = build_goal()
         program = self.generator.generate(

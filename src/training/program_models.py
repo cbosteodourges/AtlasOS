@@ -46,6 +46,8 @@ class ProgramGenerationSettings:
     include_mobility: bool = True
     avoid_consecutive_intense_days: bool = True
     maximum_weekly_progression_percent: float = 8.0
+    prioritize_metabolic_quality: bool = False
+    race_week_sharpening_days_before: Optional[int] = None
 
     def validate(self) -> None:
         if not 2 <= self.running_sessions_per_week <= 7:
@@ -76,6 +78,15 @@ class ProgramGenerationSettings:
             raise ValueError(
                 "maximum_weekly_progression_percent doit "
                 "être compris entre 0 et 15."
+            )
+
+        if (
+            self.race_week_sharpening_days_before is not None
+            and not 3 <= self.race_week_sharpening_days_before <= 7
+        ):
+            raise ValueError(
+                "race_week_sharpening_days_before doit être "
+                "compris entre 3 et 7."
             )
 
 

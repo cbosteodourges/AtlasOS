@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 import time
+import zipfile
 from datetime import datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -85,7 +86,7 @@ def fit_snapshot(directory: Path) -> dict[Path, tuple[int, int]]:
         )
         for path in directory.rglob("*")
         if path.is_file()
-        and path.suffix.lower() == ".fit"
+        and path.suffix.lower() in {".fit", ".zip"}
     }
 
 
@@ -97,8 +98,19 @@ def run_sync(
         prefix="atlas-coach-fit-"
     ) as temporary_directory:
         temporary_path = Path(temporary_directory)
-        copied_fit = temporary_path / fit_path.name
-        shutil.copy2(fit_path, copied_fit)
+        if fit_path.suffix.lower() == ".zip":
+            with zipfile.ZipFile(fit_path) as archive:
+                for member in archive.infolist():
+                    if (
+                        not member.is_dir()
+                        and Path(member.filename).suffix.lower() == ".fit"
+                    ):
+                        destination = temporary_path / Path(member.filename).name
+                        with archive.open(member) as source, destination.open("wb") as target:
+                            shutil.copyfileobj(source, target)
+        else:
+            copied_fit = temporary_path / fit_path.name
+            shutil.copy2(fit_path, copied_fit)
 
         command = [
             sys.executable,

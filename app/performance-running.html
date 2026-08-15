@@ -193,7 +193,7 @@
       <label>
         <span>Fréquence cardiaque maximale</span>
         <div class="unit-input">
-          <input id="hrMax" type="number" min="120" max="230" step="1" value="185">
+          <input id="hrMax" type="number" min="120" max="230" step="1" placeholder="À déterminer">
           <em>bpm</em>
         </div>
       </label>
@@ -201,7 +201,7 @@
       <label>
         <span>Fréquence cardiaque de repos</span>
         <div class="unit-input">
-          <input id="hrRest" type="number" min="30" max="120" step="1" value="52">
+          <input id="hrRest" type="number" min="30" max="120" step="1" placeholder="À déterminer">
           <em>bpm</em>
         </div>
       </label>
@@ -228,7 +228,8 @@
       <label>
         <span>Origine des seuils</span>
         <select id="thresholdSource">
-          <option value="estimated" selected>Estimés par Atlas</option>
+          <option value="estimated" selected>Estimation initiale Atlas</option>
+            <option value="atlas_profile">Profil Atlas évolutif</option>
           <option value="measured">Mesurés par test</option>
         </select>
       </label>
@@ -236,19 +237,19 @@
 
     <div class="measured-thresholds" id="measuredThresholds" hidden>
       <label>
-        <span>SV1 mesuré — fréquence cardiaque</span>
+        <span>SV1 — fréquence cardiaque</span>
         <div class="unit-input"><input id="sv1HrMeasured" type="number" min="60" max="220"><em>bpm</em></div>
       </label>
       <label>
-        <span>SV1 mesuré — vitesse</span>
+        <span>SV1 — vitesse</span>
         <div class="unit-input"><input id="sv1SpeedMeasured" type="number" min="5" max="30" step="0.1"><em>km/h</em></div>
       </label>
       <label>
-        <span>SV2 mesuré — fréquence cardiaque</span>
+        <span>SV2 — fréquence cardiaque</span>
         <div class="unit-input"><input id="sv2HrMeasured" type="number" min="60" max="230"><em>bpm</em></div>
       </label>
       <label>
-        <span>SV2 mesuré — vitesse</span>
+        <span>SV2 — vitesse</span>
         <div class="unit-input"><input id="sv2SpeedMeasured" type="number" min="5" max="30" step="0.1"><em>km/h</em></div>
       </label>
     </div>

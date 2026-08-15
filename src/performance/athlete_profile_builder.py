@@ -14,6 +14,9 @@ from .athlete_profile import (
     TrainingTolerance,
 )
 from .competition_models import CompetitionEvent
+from .heart_rate_reference_analyzer import (
+    HeartRateReferenceAnalyzer,
+)
 from .longitudinal_models import LongitudinalActivity
 
 
@@ -55,6 +58,32 @@ class AthleteProfileBuilder:
             for activity in ordered
             if self._is_running(activity)
         ]
+
+        heart_rate_analysis = HeartRateReferenceAnalyzer().analyze(
+            running,
+            age_years=physiological.age_years,
+        )
+        if physiological.maximum_heart_rate_bpm is None:
+            physiological.maximum_heart_rate_bpm = (
+                heart_rate_analysis.maximum_heart_rate_bpm
+            )
+            physiological.maximum_heart_rate_confidence_score = (
+                heart_rate_analysis.confidence_score
+            )
+            physiological.maximum_heart_rate_source = (
+                heart_rate_analysis.source
+            )
+            physiological.maximum_heart_rate_evidence = list(
+                heart_rate_analysis.explanations
+            )
+            physiological.rejected_heart_rate_activity_ids = list(
+                heart_rate_analysis.rejected_activity_ids
+            )
+        elif not physiological.maximum_heart_rate_source:
+            physiological.maximum_heart_rate_source = "declared"
+            physiological.maximum_heart_rate_confidence_score = 100
+
+        self._complete_threshold_references(physiological)
 
         weekly_running = self._weekly_running(
             ordered,
@@ -335,6 +364,69 @@ class AthleteProfileBuilder:
             return "high_performance"
 
         return "advanced"
+    @staticmethod
+    def _complete_threshold_references(
+        physiological: PhysiologicalReferences,
+    ) -> None:
+        """Complète SV1 et SV2 sans écraser les mesures validées."""
+        sv2 = physiological.sv2
+        if sv2.speed_kmh is None:
+            sv2.speed_kmh = physiological.threshold_speed_kmh
+        if sv2.heart_rate_bpm is None:
+            sv2.heart_rate_bpm = (
+                physiological.threshold_heart_rate_bpm
+            )
+        if (
+            sv2.confidence_score == 0
+            and (
+                sv2.speed_kmh is not None
+                or sv2.heart_rate_bpm is not None
+            )
+        ):
+            sv2.confidence_score = 70
+            sv2.trend = "provisional"
+            sv2.evidence.append(
+                "Référence SV2 provisoire validée par l'utilisateur."
+            )
+
+        sv1 = physiological.sv1
+        if sv1.speed_kmh is None and sv2.speed_kmh is not None:
+            sv1.speed_kmh = round(sv2.speed_kmh * 0.815, 1)
+            sv1.minimum_speed_kmh = round(
+                sv1.speed_kmh - 0.3,
+                1,
+            )
+            sv1.maximum_speed_kmh = round(
+                sv1.speed_kmh + 0.3,
+                1,
+            )
+        if (
+            sv1.heart_rate_bpm is None
+            and sv2.heart_rate_bpm is not None
+        ):
+            sv1.heart_rate_bpm = round(
+                sv2.heart_rate_bpm * 0.90
+            )
+            sv1.minimum_heart_rate_bpm = (
+                sv1.heart_rate_bpm - 3
+            )
+            sv1.maximum_heart_rate_bpm = (
+                sv1.heart_rate_bpm + 3
+            )
+        if (
+            sv1.confidence_score == 0
+            and (
+                sv1.speed_kmh is not None
+                or sv1.heart_rate_bpm is not None
+            )
+        ):
+            sv1.confidence_score = 55
+            sv1.trend = "estimated"
+            sv1.evidence.append(
+                "SV1 estimé depuis le SV2 ; à confirmer par les données."
+            )
+
+
 
     def _describe_profile(
         self,

@@ -14,6 +14,10 @@ from src.research.training_protocol_selector import (
     TrainingProtocolSelector,
 )
 
+from .historical_workout_progression_selector import (
+    HistoricalWorkoutPrescription,
+    HistoricalWorkoutProgression,
+)
 from .program_models import (
     AdaptiveTrainingProgram,
     AdaptiveTrainingWeek,
@@ -75,6 +79,9 @@ class TrainingProgramGenerator:
         start_date: date,
         settings: ProgramGenerationSettings | None = None,
         available_dynamic_metrics: set[str] | None = None,
+        historical_progression: (
+            HistoricalWorkoutProgression | None
+        ) = None,
     ) -> AdaptiveTrainingProgram:
         """Génère le programme complet jusqu’à la compétition."""
         settings = settings or ProgramGenerationSettings()
@@ -92,6 +99,11 @@ class TrainingProgramGenerator:
         weeks = []
         warnings = []
         quality_cycle_index = 0
+        historical_phase_indices = {
+            TrainingPhase.BASE: 0,
+            TrainingPhase.DEVELOPMENT: 0,
+            TrainingPhase.SPECIFIC: 0,
+        }
 
         if profile.current_pain_or_injury:
             warnings.append(
@@ -132,8 +144,8 @@ class TrainingProgramGenerator:
 
             week, used_research = self._build_week(
                 profile=profile,
-                goal=goal,
                 settings=settings,
+                goal=goal,
                 week_number=week_number,
                 week_start=week_start,
                 week_end=week_end,
@@ -141,11 +153,21 @@ class TrainingProgramGenerator:
                 phase=phase,
                 quality_cycle_index=quality_cycle_index,
                 available_dynamic_metrics=runtime_metrics,
+                historical_progression=historical_progression,
+                historical_phase_index=historical_phase_indices.get(
+                    phase,
+                    0,
+                ),
             )
             weeks.append(week)
 
             if used_research:
                 quality_cycle_index += 1
+                if (
+                    historical_progression is not None
+                    and phase in historical_phase_indices
+                ):
+                    historical_phase_indices[phase] += 1
 
             for workout in week.workouts:
                 for note in workout.coach_notes:
@@ -185,6 +207,10 @@ class TrainingProgramGenerator:
         phase: TrainingPhase,
         quality_cycle_index: int,
         available_dynamic_metrics: set[str],
+        historical_progression: (
+            HistoricalWorkoutProgression | None
+        ),
+        historical_phase_index: int,
     ) -> tuple[AdaptiveTrainingWeek, bool]:
         dates = self._available_dates(
             max(week_start, training_start),
@@ -202,37 +228,108 @@ class TrainingProgramGenerator:
             workouts.append(race)
             used_dates.add(race.workout_date)
 
-        elif phase != TrainingPhase.RECOVERY:
-            selection = self._quality_selection(
-                profile=profile,
-                goal=goal,
-                phase=phase,
-                week_number=week_number,
-                quality_cycle_index=quality_cycle_index,
-                available_dynamic_metrics=(
-                    available_dynamic_metrics
-                ),
+            sharpening_days = (
+                settings.race_week_sharpening_days_before
             )
-
-            if selection is not None:
-                quality_date = self._preferred_date(
-                    dates,
-                    settings.preferred_quality_days,
-                    used_dates,
+            if sharpening_days is not None:
+                sharpening_date = (
+                    goal.event_date
+                    - timedelta(days=sharpening_days)
                 )
-
-                if quality_date is not None:
-                    workouts.append(
-                        self._research_builder.build(
-                            selection=selection,
+                if (
+                    sharpening_date in dates
+                    and sharpening_date not in used_dates
+                ):
+                    sharpening = (
+                        self._standard_builder
+                        .build_race_sharpening(
                             profile=profile,
-                            workout_date=quality_date,
+                            goal=goal,
+                            workout_date=sharpening_date,
                         )
                     )
-                    used_dates.add(quality_date)
-                    used_research = True
+                    workouts.append(sharpening)
+                    used_dates.add(sharpening_date)
 
-            if phase != TrainingPhase.TAPER:
+        elif phase != TrainingPhase.RECOVERY:
+            prescription = None
+
+            if (
+                settings.prioritize_metabolic_quality
+                and historical_progression is not None
+            ):
+                prescription = self._historical_prescription(
+                    historical_progression,
+                    phase=phase,
+                    phase_index=historical_phase_index,
+                    week_number=week_number,
+                )
+
+            replaces_long_run = bool(
+                prescription is not None
+                and prescription.kind
+                == "long_race_specific"
+            )
+
+            if prescription is not None:
+                preferred_days = (
+                    [settings.preferred_long_run_day]
+                    if replaces_long_run
+                    else settings.preferred_quality_days
+                )
+                historical_date = self._preferred_date(
+                    dates,
+                    preferred_days,
+                    used_dates,
+                    prefer_latest=replaces_long_run,
+                )
+
+                if historical_date is not None:
+                    workouts.append(
+                        self._build_historical_workout(
+                            prescription,
+                            profile=profile,
+                            goal=goal,
+                            workout_date=historical_date,
+                        )
+                    )
+                    used_dates.add(historical_date)
+                    used_research = True
+            else:
+                selection = self._quality_selection(
+                    profile=profile,
+                    settings=settings,
+                    goal=goal,
+                    phase=phase,
+                    week_number=week_number,
+                    quality_cycle_index=quality_cycle_index,
+                    available_dynamic_metrics=(
+                        available_dynamic_metrics
+                    ),
+                )
+
+                if selection is not None:
+                    quality_date = self._preferred_date(
+                        dates,
+                        settings.preferred_quality_days,
+                        used_dates,
+                    )
+
+                    if quality_date is not None:
+                        workouts.append(
+                            self._research_builder.build(
+                                selection=selection,
+                                profile=profile,
+                                workout_date=quality_date,
+                            )
+                        )
+                        used_dates.add(quality_date)
+                        used_research = True
+
+            if (
+                phase != TrainingPhase.TAPER
+                and not replaces_long_run
+            ):
                 long_date = self._preferred_date(
                     dates,
                     [settings.preferred_long_run_day],
@@ -255,7 +352,6 @@ class TrainingProgramGenerator:
                         )
                     )
                     used_dates.add(long_date)
-
         running_target = self._running_session_target(
             profile,
             settings,
@@ -341,10 +437,114 @@ class TrainingProgramGenerator:
             used_research,
         )
 
+    @staticmethod
+    def _historical_prescription(
+        progression: HistoricalWorkoutProgression,
+        *,
+        phase: TrainingPhase,
+        phase_index: int,
+        week_number: int,
+    ) -> HistoricalWorkoutPrescription | None:
+        if (
+            phase == TrainingPhase.BASE
+            and week_number % 2 == 1
+        ):
+            return None
+
+        prescriptions = {
+            TrainingPhase.BASE: progression.base,
+            TrainingPhase.DEVELOPMENT: (
+                progression.development
+            ),
+            TrainingPhase.SPECIFIC: progression.specific,
+        }.get(phase, [])
+
+        if not 0 <= phase_index < len(prescriptions):
+            return None
+
+        return prescriptions[phase_index]
+
+    def _build_historical_workout(
+        self,
+        prescription: HistoricalWorkoutPrescription,
+        *,
+        profile: AthleteProfile,
+        goal: PerformanceGoal,
+        workout_date: date,
+    ) -> AdaptiveWorkout:
+        if prescription.kind == "short_intervals":
+            workout = self._standard_builder.build_short_intervals(
+                profile=profile,
+                workout_date=workout_date,
+                repetitions=prescription.repetitions,
+                distance_meters=(
+                    prescription.work_distance_meters
+                    or 400
+                ),
+            )
+        elif prescription.kind == "threshold_intervals":
+            workout = (
+                self._standard_builder
+                .build_threshold_intervals(
+                    profile=profile,
+                    workout_date=workout_date,
+                    repetitions=prescription.repetitions,
+                    distance_meters=(
+                        prescription.work_distance_meters
+                        or 1000
+                    ),
+                )
+            )
+        elif prescription.kind == "mixed_intervals":
+            workout = self._standard_builder.build_mixed_intervals(
+                profile=profile,
+                workout_date=workout_date,
+                repetitions=prescription.repetitions,
+                threshold_distance_meters=(
+                    prescription.threshold_distance_meters
+                    or 1000
+                ),
+                vo2_distance_meters=(
+                    prescription.vo2_distance_meters
+                    or 400
+                ),
+            )
+        elif prescription.kind == "long_race_specific":
+            workout = (
+                self._standard_builder
+                .build_specific_long_run(
+                    profile=profile,
+                    goal=goal,
+                    workout_date=workout_date,
+                    group_distances_meters=list(
+                        prescription.group_distances_meters
+                    ),
+                )
+            )
+        else:
+            raise ValueError(
+                "Prescription historique inconnue : "
+                f"{prescription.kind}"
+            )
+
+        workout.coach_notes.append(
+            "Séance sélectionnée depuis une préparation "
+            "comparable réussie."
+        )
+        workout.coach_notes.extend(prescription.reasons)
+        if prescription.source_activity_ids:
+            workout.coach_notes.append(
+                "Sources FIT Atlas : "
+                + ", ".join(prescription.source_activity_ids)
+                + "."
+            )
+        return workout
+
     def _quality_selection(
         self,
         *,
         profile: AthleteProfile,
+        settings: ProgramGenerationSettings,
         goal: PerformanceGoal,
         phase: TrainingPhase,
         week_number: int,
@@ -375,6 +575,21 @@ class TrainingProgramGenerator:
 
         if not selections:
             return None
+
+        if (
+            settings.prioritize_metabolic_quality
+            and phase == TrainingPhase.SPECIFIC
+        ):
+            metabolic = [
+                selection
+                for selection in selections
+                if selection.protocol.workout_type_key
+                != "hill_sprints"
+            ]
+            if metabolic:
+                return metabolic[
+                    quality_cycle_index % len(metabolic)
+                ]
 
         return selections[
             quality_cycle_index % len(selections)

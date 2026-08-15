@@ -361,6 +361,571 @@ class StandardWorkoutBuilder:
         workout.validate()
         return workout
 
+    def build_short_intervals(
+        self,
+        *,
+        profile: AthleteProfile,
+        workout_date: date,
+        repetitions: int,
+        distance_meters: int = 400,
+    ) -> AdaptiveWorkout:
+        """Construit une séance courte VMA issue de l'historique."""
+        vma = profile.physiological.vma_kmh
+        minimum_speed = self._vma_speed(vma, 95)
+        maximum_speed = self._vma_speed(vma, 100)
+
+        workout = AdaptiveWorkout(
+            workout_id=self._workout_id(
+                workout_date,
+                WorkoutType.VMA_SHORT,
+            ),
+            workout_date=workout_date,
+            workout_type=WorkoutType.VMA_SHORT,
+            title=f"{repetitions} × {distance_meters} m VO₂max",
+            objective=(
+                "Développer la VO₂max avec une structure "
+                "historiquement bien tolérée."
+            ),
+            blocks=[
+                TrainingBlock(
+                    name="Échauffement progressif",
+                    block_type=BlockType.WARM_UP,
+                    duration_minutes=20,
+                    target=IntensityTarget(
+                        zone=2,
+                        rpe_0_10=3,
+                    ),
+                ),
+                TrainingBlock(
+                    name=(
+                        f"{repetitions} × {distance_meters} m"
+                    ),
+                    block_type=BlockType.WORK,
+                    repetitions=repetitions,
+                    distance_meters=distance_meters,
+                    recovery_minutes=1,
+                    target=IntensityTarget(
+                        zone=4,
+                        speed_min_kmh=minimum_speed,
+                        speed_max_kmh=maximum_speed,
+                        rpe_0_10=8,
+                    ),
+                    instructions=(
+                        "Courir régulièrement sans sprint final ; "
+                        "récupération active entre les répétitions."
+                    ),
+                ),
+                TrainingBlock(
+                    name="Retour au calme",
+                    block_type=BlockType.COOL_DOWN,
+                    duration_minutes=10,
+                    target=IntensityTarget(
+                        zone=1,
+                        rpe_0_10=2,
+                    ),
+                ),
+            ],
+            priority=WorkoutPriority.KEY,
+            planned_duration_minutes=55,
+            expected_response=ExpectedTrainingResponse(
+                physiological_load_0_100=72,
+                biomechanical_load_0_100=65,
+                recovery_min_hours=36,
+                recovery_max_hours=48,
+            ),
+            movable=True,
+            maximum_shift_days=1,
+            replacement_types=[WorkoutType.ENDURANCE_Z2],
+            coach_notes=[
+                "Structure apprise depuis les séances FIT réussies.",
+                "Réévaluation Wellness obligatoire le jour même.",
+            ],
+        )
+        workout.validate()
+        return workout
+
+    def build_threshold_intervals(
+        self,
+        *,
+        profile: AthleteProfile,
+        workout_date: date,
+        repetitions: int,
+        distance_meters: int = 1000,
+    ) -> AdaptiveWorkout:
+        """Construit des répétitions longues autour du SV2."""
+        physiological = profile.physiological
+        reference_speed = (
+            physiological.threshold_speed_kmh
+            or physiological.sv2.speed_kmh
+        )
+        minimum_speed = (
+            round(reference_speed * 0.98, 2)
+            if reference_speed is not None
+            else self._vma_speed(
+                physiological.vma_kmh,
+                90,
+            )
+        )
+        maximum_speed = (
+            round(reference_speed * 1.02, 2)
+            if reference_speed is not None
+            else self._vma_speed(
+                physiological.vma_kmh,
+                94,
+            )
+        )
+        threshold_hr = (
+            physiological.threshold_heart_rate_bpm
+            or physiological.sv2.heart_rate_bpm
+        )
+
+        workout = AdaptiveWorkout(
+            workout_id=self._workout_id(
+                workout_date,
+                WorkoutType.THRESHOLD_SV2,
+            ),
+            workout_date=workout_date,
+            workout_type=WorkoutType.THRESHOLD_SV2,
+            title=f"{repetitions} × {distance_meters} m au SV2",
+            objective=(
+                "Développer la vitesse soutenable au seuil "
+                "selon les séances historiquement efficaces."
+            ),
+            blocks=[
+                TrainingBlock(
+                    name="Échauffement progressif",
+                    block_type=BlockType.WARM_UP,
+                    duration_minutes=20,
+                    target=IntensityTarget(
+                        zone=2,
+                        rpe_0_10=3,
+                    ),
+                ),
+                TrainingBlock(
+                    name=(
+                        f"{repetitions} × {distance_meters} m "
+                        "au seuil"
+                    ),
+                    block_type=BlockType.WORK,
+                    repetitions=repetitions,
+                    distance_meters=distance_meters,
+                    recovery_minutes=2,
+                    target=IntensityTarget(
+                        zone=3,
+                        speed_min_kmh=minimum_speed,
+                        speed_max_kmh=maximum_speed,
+                        heart_rate_min_bpm=(
+                            round(threshold_hr * 0.94)
+                            if threshold_hr is not None
+                            else None
+                        ),
+                        heart_rate_max_bpm=threshold_hr,
+                        rpe_0_10=7,
+                    ),
+                    instructions=(
+                        "Rester proche du SV2 sans accélérer "
+                        "au-delà de la cible."
+                    ),
+                ),
+                TrainingBlock(
+                    name="Retour au calme",
+                    block_type=BlockType.COOL_DOWN,
+                    duration_minutes=10,
+                    target=IntensityTarget(
+                        zone=1,
+                        rpe_0_10=2,
+                    ),
+                ),
+            ],
+            priority=WorkoutPriority.KEY,
+            planned_duration_minutes=65,
+            expected_response=ExpectedTrainingResponse(
+                physiological_load_0_100=75,
+                biomechanical_load_0_100=62,
+                recovery_min_hours=36,
+                recovery_max_hours=48,
+            ),
+            movable=True,
+            maximum_shift_days=1,
+            replacement_types=[WorkoutType.ENDURANCE_Z2],
+            coach_notes=[
+                "Structure apprise depuis les séances FIT réussies.",
+                "Réévaluation Wellness obligatoire le jour même.",
+            ],
+        )
+        workout.validate()
+        return workout
+
+    def build_mixed_intervals(
+        self,
+        *,
+        profile: AthleteProfile,
+        workout_date: date,
+        repetitions: int = 4,
+        threshold_distance_meters: int = 1000,
+        vo2_distance_meters: int = 400,
+    ) -> AdaptiveWorkout:
+        """Construit des séries alternant SV2 et VO₂max."""
+        physiological = profile.physiological
+        threshold_speed = (
+            physiological.threshold_speed_kmh
+            or physiological.sv2.speed_kmh
+            or self._vma_speed(
+                physiological.vma_kmh,
+                92,
+            )
+        )
+        vma_min = self._vma_speed(
+            physiological.vma_kmh,
+            95,
+        )
+        vma_max = self._vma_speed(
+            physiological.vma_kmh,
+            100,
+        )
+        blocks = [
+            TrainingBlock(
+                name="Échauffement progressif",
+                block_type=BlockType.WARM_UP,
+                duration_minutes=20,
+                target=IntensityTarget(
+                    zone=2,
+                    rpe_0_10=3,
+                ),
+            )
+        ]
+
+        for index in range(1, repetitions + 1):
+            blocks.extend([
+                TrainingBlock(
+                    name=(
+                        f"Série {index} — "
+                        f"{threshold_distance_meters} m SV2"
+                    ),
+                    block_type=BlockType.WORK,
+                    distance_meters=threshold_distance_meters,
+                    recovery_minutes=1,
+                    target=IntensityTarget(
+                        zone=3,
+                        speed_min_kmh=threshold_speed,
+                        speed_max_kmh=threshold_speed,
+                        rpe_0_10=7,
+                    ),
+                ),
+                TrainingBlock(
+                    name=(
+                        f"Série {index} — "
+                        f"{vo2_distance_meters} m VO₂max"
+                    ),
+                    block_type=BlockType.WORK,
+                    distance_meters=vo2_distance_meters,
+                    recovery_minutes=2,
+                    target=IntensityTarget(
+                        zone=4,
+                        speed_min_kmh=vma_min,
+                        speed_max_kmh=vma_max,
+                        rpe_0_10=8,
+                    ),
+                ),
+            ])
+
+        blocks.append(
+            TrainingBlock(
+                name="Retour au calme",
+                block_type=BlockType.COOL_DOWN,
+                duration_minutes=10,
+                target=IntensityTarget(
+                    zone=1,
+                    rpe_0_10=2,
+                ),
+            )
+        )
+
+        workout = AdaptiveWorkout(
+            workout_id=self._workout_id(
+                workout_date,
+                WorkoutType.MIXED_THRESHOLD_VO2,
+            ),
+            workout_date=workout_date,
+            workout_type=WorkoutType.MIXED_THRESHOLD_VO2,
+            title=(
+                f"{repetitions} × "
+                f"({threshold_distance_meters} m SV2 + "
+                f"{vo2_distance_meters} m VO₂max)"
+            ),
+            objective=(
+                "Associer seuil et VO₂max selon une structure "
+                "déjà utilisée dans les préparations réussies."
+            ),
+            blocks=blocks,
+            priority=WorkoutPriority.KEY,
+            planned_duration_minutes=70,
+            expected_response=ExpectedTrainingResponse(
+                physiological_load_0_100=82,
+                biomechanical_load_0_100=70,
+                recovery_min_hours=48,
+                recovery_max_hours=60,
+            ),
+            movable=True,
+            maximum_shift_days=1,
+            replacement_types=[
+                WorkoutType.THRESHOLD_SV2,
+                WorkoutType.ENDURANCE_Z2,
+            ],
+            coach_notes=[
+                "Structure mixte apprise depuis l'historique FIT.",
+                "Réévaluation Wellness obligatoire le jour même.",
+            ],
+        )
+        workout.validate()
+        return workout
+
+    def build_specific_long_run(
+        self,
+        *,
+        profile: AthleteProfile,
+        goal: PerformanceGoal,
+        workout_date: date,
+        group_distances_meters: list[int],
+    ) -> AdaptiveWorkout:
+        """Construit une sortie longue avec blocs à allure objectif."""
+        target_speed = (
+            round(
+                goal.distance_km
+                / (goal.target_time_minutes / 60),
+                2,
+            )
+            if goal.target_time_minutes is not None
+            else self._vma_speed(
+                profile.physiological.vma_kmh,
+                82,
+            )
+        )
+        target_pace = (
+            self._format_pace(round(3600 / target_speed))
+            if target_speed is not None
+            else None
+        )
+        blocks = [
+            TrainingBlock(
+                name="Mise en route en Z2",
+                block_type=BlockType.WARM_UP,
+                distance_meters=3000,
+                target=IntensityTarget(
+                    zone=2,
+                    rpe_0_10=3,
+                ),
+            )
+        ]
+
+        for index, distance_meters in enumerate(
+            group_distances_meters,
+            start=1,
+        ):
+            blocks.append(
+                TrainingBlock(
+                    name=(
+                        f"Bloc spécifique {index} — "
+                        f"{distance_meters} m"
+                    ),
+                    block_type=BlockType.WORK,
+                    distance_meters=distance_meters,
+                    target=IntensityTarget(
+                        zone=3,
+                        pace_min_per_km=target_pace,
+                        pace_max_per_km=target_pace,
+                        speed_min_kmh=target_speed,
+                        speed_max_kmh=target_speed,
+                        rpe_0_10=6,
+                    ),
+                    instructions=(
+                        "Tenir l'allure semi avec une foulée "
+                        "relâchée et régulière."
+                    ),
+                )
+            )
+            if index < len(group_distances_meters):
+                blocks.append(
+                    TrainingBlock(
+                        name="Récupération en Z2",
+                        block_type=BlockType.RECOVERY,
+                        distance_meters=1000,
+                        target=IntensityTarget(
+                            zone=2,
+                            rpe_0_10=3,
+                        ),
+                    )
+                )
+
+        blocks.append(
+            TrainingBlock(
+                name="Retour au calme",
+                block_type=BlockType.COOL_DOWN,
+                distance_meters=2000,
+                target=IntensityTarget(
+                    zone=1,
+                    rpe_0_10=2,
+                ),
+            )
+        )
+        planned_distance = (
+            sum(group_distances_meters)
+            + 5000
+            + max(0, len(group_distances_meters) - 1)
+            * 1000
+        ) / 1000
+
+        workout = AdaptiveWorkout(
+            workout_id=self._workout_id(
+                workout_date,
+                WorkoutType.LONG_RUN,
+            ),
+            workout_date=workout_date,
+            workout_type=WorkoutType.LONG_RUN,
+            title="Sortie longue spécifique semi",
+            objective=(
+                "Développer l'endurance spécifique à l'allure "
+                "objectif selon les préparations réussies."
+            ),
+            blocks=blocks,
+            priority=WorkoutPriority.KEY,
+            planned_duration_minutes=round(
+                planned_distance * 5.8
+            ),
+            planned_distance_km=planned_distance,
+            expected_response=ExpectedTrainingResponse(
+                physiological_load_0_100=85,
+                biomechanical_load_0_100=78,
+                recovery_min_hours=48,
+                recovery_max_hours=72,
+            ),
+            movable=True,
+            maximum_shift_days=1,
+            replacement_types=[WorkoutType.LONG_RUN],
+            coach_notes=[
+                "Blocs spécifiques issus de l'historique FIT.",
+                "Cette séance remplace toute autre intensité majeure.",
+                "Réévaluation Wellness obligatoire le jour même.",
+            ],
+        )
+        workout.validate()
+        return workout
+
+    def build_race_sharpening(
+        self,
+        *,
+        profile: AthleteProfile,
+        goal: PerformanceGoal,
+        workout_date: date,
+    ) -> AdaptiveWorkout:
+        """Construit un rappel court à l'allure spécifique."""
+
+        target_speed = (
+            round(
+                goal.distance_km
+                / (goal.target_time_minutes / 60),
+                2,
+            )
+            if goal.target_time_minutes is not None
+            else None
+        )
+        target_pace = (
+            self._format_pace(round(3600 / target_speed))
+            if target_speed is not None
+            else None
+        )
+        threshold_heart_rate = (
+            profile.physiological.threshold_heart_rate_bpm
+            or profile.physiological.sv2.heart_rate_bpm
+        )
+        heart_rate_min = (
+            round(threshold_heart_rate * 0.90)
+            if threshold_heart_rate is not None
+            else None
+        )
+        heart_rate_max = (
+            round(threshold_heart_rate * 0.96)
+            if threshold_heart_rate is not None
+            else None
+        )
+
+        workout = AdaptiveWorkout(
+            workout_id=self._workout_id(
+                workout_date,
+                WorkoutType.TEMPO_Z3,
+            ),
+            workout_date=workout_date,
+            workout_type=WorkoutType.TEMPO_Z3,
+            title="Rappel allure spécifique semi",
+            objective=(
+                "Entretenir le rythme de compétition sans créer "
+                "de fatigue résiduelle."
+            ),
+            blocks=[
+                TrainingBlock(
+                    name="Échauffement progressif",
+                    block_type=BlockType.WARM_UP,
+                    duration_minutes=15,
+                    target=IntensityTarget(
+                        zone=2,
+                        rpe_0_10=3,
+                    ),
+                ),
+                TrainingBlock(
+                    name="Rappels à l'allure objectif",
+                    block_type=BlockType.WORK,
+                    repetitions=3,
+                    duration_minutes=5,
+                    recovery_minutes=2,
+                    target=IntensityTarget(
+                        zone=3,
+                        pace_min_per_km=target_pace,
+                        pace_max_per_km=target_pace,
+                        speed_min_kmh=target_speed,
+                        speed_max_kmh=target_speed,
+                        heart_rate_min_bpm=heart_rate_min,
+                        heart_rate_max_bpm=heart_rate_max,
+                        rpe_0_10=6,
+                    ),
+                    instructions=(
+                        "Rester relâché et interrompre le rappel "
+                        "si l'effort dépasse la cible."
+                    ),
+                ),
+                TrainingBlock(
+                    name="Retour au calme",
+                    block_type=BlockType.COOL_DOWN,
+                    duration_minutes=10,
+                    target=IntensityTarget(
+                        zone=1,
+                        rpe_0_10=2,
+                    ),
+                ),
+            ],
+            priority=WorkoutPriority.KEY,
+            planned_duration_minutes=44,
+            expected_response=ExpectedTrainingResponse(
+                physiological_load_0_100=48,
+                biomechanical_load_0_100=38,
+                recovery_min_hours=24,
+                recovery_max_hours=36,
+            ),
+            movable=True,
+            maximum_shift_days=1,
+            replacement_types=[
+                WorkoutType.ENDURANCE_Z2,
+            ],
+            coach_notes=[
+                (
+                    "Rappel placé selon les préparations de "
+                    "compétition historiquement réussies."
+                ),
+                "Réévaluation Wellness obligatoire le jour même.",
+            ],
+        )
+        workout.validate()
+        return workout
+
     def build_race(
         self,
         *,
