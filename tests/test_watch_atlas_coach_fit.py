@@ -2,13 +2,16 @@
 Tests du surveillant automatique Atlas Coach.
 """
 
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from scripts.watch_atlas_coach_fit import (
     fit_snapshot,
     imported_count,
+    run_feedback_cycle,
 )
 
 
@@ -64,6 +67,62 @@ class AtlasCoachFitWatcherTests(unittest.TestCase):
 
             self.assertEqual(fit_snapshot(missing), {})
 
+
+    @patch("scripts.watch_atlas_coach_fit.subprocess.run")
+    def test_feedback_cycle_runs_fusion_then_revision(
+        self,
+        mocked_run,
+    ) -> None:
+        mocked_run.side_effect = [
+            subprocess.CompletedProcess(
+                args=[],
+                returncode=0,
+                stdout="Fusion terminée",
+                stderr="",
+            ),
+            subprocess.CompletedProcess(
+                args=[],
+                returncode=0,
+                stdout="Statut : no_change",
+                stderr="",
+            ),
+        ]
+
+        fusion, revision = run_feedback_cycle()
+
+        self.assertEqual(fusion.returncode, 0)
+        self.assertIsNotNone(revision)
+        self.assertEqual(mocked_run.call_count, 2)
+        commands = [
+            call.args[0]
+            for call in mocked_run.call_args_list
+        ]
+        self.assertEqual(
+            Path(commands[0][-1]).name,
+            "analyze_training_history_fusion.py",
+        )
+        self.assertEqual(
+            Path(commands[1][-1]).name,
+            "refresh_training_program_proposal.py",
+        )
+
+    @patch("scripts.watch_atlas_coach_fit.subprocess.run")
+    def test_feedback_cycle_stops_when_fusion_fails(
+        self,
+        mocked_run,
+    ) -> None:
+        mocked_run.return_value = subprocess.CompletedProcess(
+            args=[],
+            returncode=1,
+            stdout="",
+            stderr="Fusion impossible",
+        )
+
+        fusion, revision = run_feedback_cycle()
+
+        self.assertEqual(fusion.returncode, 1)
+        self.assertIsNone(revision)
+        self.assertEqual(mocked_run.call_count, 1)
 
 if __name__ == "__main__":
     unittest.main()

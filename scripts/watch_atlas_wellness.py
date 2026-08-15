@@ -21,6 +21,11 @@ FUSION_SCRIPT = (
     / "scripts"
     / "analyze_training_history_fusion.py"
 )
+REVISION_SCRIPT = (
+    PROJECT_ROOT
+    / "scripts"
+    / "refresh_training_program_proposal.py"
+)
 LOG_FILE = (
     PROJECT_ROOT
     / "atlas-data"
@@ -126,6 +131,24 @@ def run_fusion() -> subprocess.CompletedProcess[str]:
     )
 
 
+def run_revision() -> subprocess.CompletedProcess[str]:
+    """Régénère un candidat et prépare sa proposition."""
+    return subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "utf8",
+            str(REVISION_SCRIPT),
+        ],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=600,
+    )
+
 def main() -> None:
     arguments = parse_arguments()
     input_directory = (
@@ -186,13 +209,45 @@ def main() -> None:
                 write_log(
                     "Fusion FIT + Wellness actualisée avec succès."
                 )
-                notify_windows(
-                    "Atlas Wellness",
-                    (
-                        f"{len(stable_archives)} nouvelle(s) journée(s) "
-                        "Wellness intégrée(s)."
-                    ),
-                )
+                revision = run_revision()
+
+                if revision.returncode != 0:
+                    write_log(
+                        "Échec de la réévaluation du programme : "
+                        f"{revision.stderr.strip()}"
+                    )
+                    notify_windows(
+                        "Atlas Coach",
+                        (
+                            "Wellness intégré, mais la réévaluation "
+                            "du programme a échoué."
+                        ),
+                    )
+                else:
+                    revision_proposed = (
+                        "Statut : proposed" in revision.stdout
+                    )
+                    write_log(
+                        "Programme Atlas réévalué : "
+                        + (
+                            "adaptation proposée."
+                            if revision_proposed
+                            else "aucune modification nécessaire."
+                        )
+                    )
+                    notify_windows(
+                        "Atlas Coach",
+                        (
+                            "Une adaptation du programme est "
+                            "disponible pour validation."
+                            if revision_proposed
+                            else (
+                                f"{len(stable_archives)} journée(s) "
+                                "Wellness intégrée(s) ; programme "
+                                "vérifié sans modification."
+                            )
+                        ),
+                    )
 
             known = archive_snapshot(input_directory)
 

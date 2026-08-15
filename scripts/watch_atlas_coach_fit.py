@@ -23,6 +23,16 @@ SYNC_SCRIPT = (
     / "scripts"
     / "sync_atlas_coach_pilot.py"
 )
+FUSION_SCRIPT = (
+    PROJECT_ROOT
+    / "scripts"
+    / "analyze_training_history_fusion.py"
+)
+REVISION_SCRIPT = (
+    PROJECT_ROOT
+    / "scripts"
+    / "refresh_training_program_proposal.py"
+)
 LOG_FILE = (
     PROJECT_ROOT
     / "atlas-data"
@@ -130,6 +140,44 @@ def run_sync(
             errors="replace",
             timeout=300,
         )
+
+def run_feedback_cycle() -> tuple[
+    subprocess.CompletedProcess[str],
+    subprocess.CompletedProcess[str] | None,
+]:
+    """Fusionne FIT + Wellness puis réévalue le programme."""
+    common_options = {
+        "cwd": PROJECT_ROOT,
+        "check": False,
+        "capture_output": True,
+        "text": True,
+        "encoding": "utf-8",
+        "errors": "replace",
+        "timeout": 600,
+    }
+    fusion = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "utf8",
+            str(FUSION_SCRIPT),
+        ],
+        **common_options,
+    )
+
+    if fusion.returncode != 0:
+        return fusion, None
+
+    revision = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "utf8",
+            str(REVISION_SCRIPT),
+        ],
+        **common_options,
+    )
+    return fusion, revision
 
 def notify_windows(title: str, message: str) -> None:
     """Affiche une notification locale sous Windows."""
@@ -272,11 +320,69 @@ def main() -> None:
                         f"{count} activité(s) importée(s) "
                         "et analysée(s)."
                     )
-                    notify_windows(
-                        "Atlas Coach",
-                        f"{count} nouvelle activité Garmin "
-                        "a été importée et analysée.",
-                    )
+                    fusion, revision = run_feedback_cycle()
+
+                    if fusion.returncode != 0:
+                        write_log(
+                            "Activité importée, mais échec de la "
+                            "fusion FIT + Wellness : "
+                            f"{fusion.stderr.strip()}"
+                        )
+                        notify_windows(
+                            "Atlas Coach",
+                            (
+                                f"{count} activité(s) importée(s), "
+                                "mais la fusion Wellness a échoué."
+                            ),
+                        )
+                    elif (
+                        revision is None
+                        or revision.returncode != 0
+                    ):
+                        error = (
+                            revision.stderr.strip()
+                            if revision is not None
+                            else "révision non exécutée"
+                        )
+                        write_log(
+                            "Fusion actualisée, mais échec de la "
+                            f"réévaluation : {error}"
+                        )
+                        notify_windows(
+                            "Atlas Coach",
+                            (
+                                f"{count} activité(s) importée(s), "
+                                "mais la réévaluation a échoué."
+                            ),
+                        )
+                    else:
+                        revision_proposed = (
+                            "Statut : proposed"
+                            in revision.stdout
+                        )
+                        write_log(
+                            "Boucle FIT + Wellness terminée : "
+                            + (
+                                "adaptation proposée."
+                                if revision_proposed
+                                else (
+                                    "programme vérifié sans "
+                                    "modification."
+                                )
+                            )
+                        )
+                        notify_windows(
+                            "Atlas Coach",
+                            (
+                                "Activité analysée : une adaptation "
+                                "du programme attend votre validation."
+                                if revision_proposed
+                                else (
+                                    f"{count} activité(s) analysée(s) ; "
+                                    "programme vérifié sans modification."
+                                )
+                            ),
+                        )
                 else:
                     write_log(
                         "Aucune nouvelle activité à importer."

@@ -27,6 +27,11 @@ from .program_phase_planner import (
     ProgramPhasePlan,
     ProgramPhasePlanner,
 )
+from .program_revision_engine import (
+    TrainingProgramChange,
+    TrainingProgramRevisionEngine,
+    TrainingProgramRevisionProposal,
+)
 from .research_workout_builder import (
     ResearchWorkoutBuilder,
 )
@@ -95,6 +100,9 @@ __all__ = [
     "TrainingPhase",
     "TrainingProgramGenerator",
     "TrainingProgramLoader",
+    "TrainingProgramChange",
+    "TrainingProgramRevisionEngine",
+    "TrainingProgramRevisionProposal",
     "TrainingResponseLearning",
     "TrainingResponseLearningEngine",
     "TrainingResponseObservation",
