@@ -3,8 +3,9 @@ ATLAS OS
 Connecteur des données quotidiennes de bien-être Garmin.
 """
 
-from dataclasses import dataclass, field
-from datetime import date
+import json
+from dataclasses import asdict, dataclass, field
+from datetime import date, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Dict, List, Optional
@@ -131,6 +132,173 @@ class GarminWellnessConnector:
             key=lambda snapshot: snapshot.day,
         )
 
+    def import_all_cached(
+        self,
+        cache_path: str | Path,
+    ) -> List[DailyRecoverySnapshot]:
+        """Réutilise les journées déjà décodées et actualise le cache."""
+        if not self.wellness_directory.is_dir():
+            raise FileNotFoundError(
+                "Dossier Garmin Wellness introuvable : "
+                f"{self.wellness_directory}"
+            )
+
+        cache_file = Path(cache_path)
+        cached_archives = self._load_cache(cache_file).get(
+            "archives",
+            {},
+        )
+        current_archives: Dict[str, Dict[str, Any]] = {}
+        snapshots: List[DailyRecoverySnapshot] = []
+
+        for archive_path in sorted(
+            self.wellness_directory.glob("*.zip")
+        ):
+            statistics = archive_path.stat()
+            signature = {
+                "size": statistics.st_size,
+                "mtime_ns": statistics.st_mtime_ns,
+            }
+            cached = cached_archives.get(archive_path.name)
+            snapshot = None
+
+            if (
+                isinstance(cached, dict)
+                and cached.get("signature") == signature
+            ):
+                try:
+                    snapshot = self._snapshot_from_dict(
+                        cached.get("snapshot")
+                    )
+                except (TypeError, ValueError):
+                    snapshot = None
+
+            if snapshot is None:
+                snapshot = self.import_archive(archive_path)
+
+            snapshots.append(snapshot)
+            current_archives[archive_path.name] = {
+                "signature": signature,
+                "snapshot": self._snapshot_to_dict(snapshot),
+            }
+
+        self._write_cache(
+            cache_file,
+            {
+                "version": 1,
+                "archives": current_archives,
+            },
+        )
+        return sorted(
+            snapshots,
+            key=lambda snapshot: snapshot.day,
+        )
+
+    @staticmethod
+    def _load_cache(cache_path: Path) -> Dict[str, Any]:
+        if not cache_path.is_file():
+            return {}
+
+        try:
+            with cache_path.open(
+                "r",
+                encoding="utf-8",
+            ) as input_file:
+                payload = json.load(
+                    input_file,
+                    object_hook=(
+                        GarminWellnessConnector
+                        ._json_object_hook
+                    ),
+                )
+        except (OSError, json.JSONDecodeError):
+            return {}
+
+        if (
+            not isinstance(payload, dict)
+            or payload.get("version") != 1
+            or not isinstance(payload.get("archives"), dict)
+        ):
+            return {}
+
+        return payload
+
+    @staticmethod
+    def _write_cache(
+        cache_path: Path,
+        payload: Dict[str, Any],
+    ) -> None:
+        cache_path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+        temporary = cache_path.with_suffix(
+            cache_path.suffix + ".tmp"
+        )
+
+        with temporary.open(
+            "w",
+            encoding="utf-8",
+        ) as output_file:
+            json.dump(
+                payload,
+                output_file,
+                ensure_ascii=False,
+                indent=2,
+                default=GarminWellnessConnector._json_default,
+            )
+            output_file.write("\n")
+
+        temporary.replace(cache_path)
+
+    @staticmethod
+    def _json_default(value: Any) -> Dict[str, str]:
+        if isinstance(value, datetime):
+            return {
+                "__atlas_datetime__": value.isoformat()
+            }
+        if isinstance(value, date):
+            return {
+                "__atlas_date__": value.isoformat()
+            }
+        raise TypeError(
+            f"Type Wellness non sérialisable : "
+            f"{type(value).__name__}"
+        )
+
+    @staticmethod
+    def _json_object_hook(
+        payload: Dict[str, Any],
+    ) -> Any:
+        if set(payload) == {"__atlas_datetime__"}:
+            return datetime.fromisoformat(
+                payload["__atlas_datetime__"]
+            )
+        if set(payload) == {"__atlas_date__"}:
+            return date.fromisoformat(
+                payload["__atlas_date__"]
+            )
+        return payload
+    @staticmethod
+    def _snapshot_to_dict(
+        snapshot: DailyRecoverySnapshot,
+    ) -> Dict[str, Any]:
+        payload = asdict(snapshot)
+        payload["day"] = snapshot.day.isoformat()
+        return payload
+
+    @staticmethod
+    def _snapshot_from_dict(
+        payload: Any,
+    ) -> DailyRecoverySnapshot:
+        if not isinstance(payload, dict):
+            raise TypeError("Snapshot Wellness en cache invalide.")
+
+        values = dict(payload)
+        values["day"] = date.fromisoformat(
+            str(values["day"])
+        )
+        return DailyRecoverySnapshot(**values)
     def build_snapshot(
         self,
         day: date,

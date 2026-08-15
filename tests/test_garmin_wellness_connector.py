@@ -225,5 +225,66 @@ class GarminWellnessConnectorTests(unittest.TestCase):
             )
 
 
+    def test_incremental_cache_reuses_unchanged_archives(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            wellness_directory = root / "wellness"
+            wellness_directory.mkdir()
+            cache_path = root / "wellness-cache.json"
+            archives = [
+                wellness_directory / "2026-08-04.zip",
+                wellness_directory / "2026-08-05.zip",
+            ]
+
+            for archive in archives:
+                archive.write_bytes(b"initial")
+
+            connector = GarminWellnessConnector(
+                str(wellness_directory)
+            )
+
+            def fake_import(
+                archive_path,
+            ) -> DailyRecoverySnapshot:
+                return DailyRecoverySnapshot(
+                    day=date.fromisoformat(
+                        Path(archive_path).stem
+                    ),
+                    hrv_last_night_ms=44.0,
+                    data_quality_score=90,
+                )
+
+            with patch.object(
+                connector,
+                "import_archive",
+                side_effect=fake_import,
+            ) as import_mock:
+                first = connector.import_all_cached(cache_path)
+                self.assertEqual(import_mock.call_count, 2)
+
+                import_mock.reset_mock()
+                second = connector.import_all_cached(cache_path)
+                self.assertEqual(import_mock.call_count, 0)
+
+                archives[1].write_bytes(b"modified archive")
+                import_mock.reset_mock()
+                third = connector.import_all_cached(cache_path)
+                self.assertEqual(import_mock.call_count, 1)
+
+            self.assertEqual(
+                [snapshot.day for snapshot in first],
+                [date(2026, 8, 4), date(2026, 8, 5)],
+            )
+            self.assertEqual(
+                [snapshot.day for snapshot in second],
+                [date(2026, 8, 4), date(2026, 8, 5)],
+            )
+            self.assertEqual(
+                [snapshot.day for snapshot in third],
+                [date(2026, 8, 4), date(2026, 8, 5)],
+            )
+
 if __name__ == "__main__":
     unittest.main()

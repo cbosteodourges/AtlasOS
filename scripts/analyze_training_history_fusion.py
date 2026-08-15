@@ -48,6 +48,14 @@ def parse_arguments() -> argparse.Namespace:
         help="Dossier des archives Wellness.",
     )
     parser.add_argument(
+        "--wellness-cache",
+        default=(
+            "atlas-data/private/"
+            "garmin-wellness-snapshot-cache.json"
+        ),
+        help="Cache privé des journées Wellness déjà décodées.",
+    )
+    parser.add_argument(
         "--contexts",
         default=(
             "atlas-data/private/"
@@ -139,7 +147,9 @@ def main() -> None:
 
     wellness = GarminWellnessConnector(
         arguments.wellness
-    ).import_all()
+    ).import_all_cached(
+        arguments.wellness_cache
+    )
 
     analysis_day = (
         date.fromisoformat(arguments.analysis_date)
