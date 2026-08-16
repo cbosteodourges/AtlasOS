@@ -2497,3 +2497,573 @@ body[data-coach-section]
 /* HEADER BRAND ALIGNMENT FIX */.performance-header>.back-link{display:none}.performance-header{grid-template-columns:auto minmax(440px,1fr) auto}.performance-brand{justify-self:start;min-width:150px}
 /* HEADER OUTSIDE GLOBAL NAV */body.has-atlas-global-nav .performance-header{left:320px}.performance-header .performance-brand{display:flex!important;visibility:visible!important;opacity:1!important;position:relative!important;grid-column:1!important}.performance-header #atlasPhysiologyRibbon{grid-column:2!important}.performance-header .engine-status{grid-column:3!important}@media(max-width:1100px){body.has-atlas-global-nav .performance-header{left:0}.performance-brand{min-width:auto}.performance-brand span{display:none}}
 /* COMPACT ATLAS DECISION AND FULL CONTEXT RAIL */.coach-context-rail{max-height:none!important;overflow:visible!important;padding:16px!important}.coach-context-header{margin-bottom:10px!important;padding-bottom:10px!important}.coach-context-header span{font-size:.62rem!important}.coach-context-header strong{font-size:1rem!important;margin-top:3px!important}#coachContextContent{min-height:0!important;margin:0 0 10px!important;padding:10px 12px!important;gap:3px!important;border-radius:12px!important}#coachContextContent strong{font-size:.78rem!important;line-height:1.2!important}#coachContextContent small{margin-top:2px!important;font-size:.58rem!important;line-height:1.3!important}.coach-context-zones{margin-top:6px!important;padding:10px!important}.coach-context-zones .coach-zone{min-height:43px!important;padding:5px 7px!important}.coach-context-zones .coach-zone span{font-size:.58rem!important}.coach-context-zones .coach-zone span small{font-size:.53rem!important;line-height:1.22!important}
+
+/* ATLAS COACH — BANDEAU PHYSIOLOGIQUE ET CALENDRIER PLEINE LARGEUR */
+.coach-workspace {
+  display: block !important;
+}
+
+.coach-workspace .plan-panel {
+  width: 100% !important;
+  min-width: 0;
+}
+
+.performance-app {
+  padding-top: 214px !important;
+}
+
+.performance-header {
+  align-items: start !important;
+  min-height: 194px !important;
+}
+
+#atlasPhysiologyRibbon {
+  position: static !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(88px, 1fr)) !important;
+  align-content: start;
+  gap: 8px 12px !important;
+  width: 100% !important;
+  max-width: 920px;
+  overflow: visible !important;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-ribbon {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin-top: 2px;
+  overflow: visible;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-ribbon table,
+#atlasPhysiologyRibbon .atlas-zone-ribbon tbody {
+  display: grid;
+  width: 100%;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-ribbon thead {
+  display: none;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-ribbon tbody {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7px;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-ribbon tr {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 9px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.1);
+  border-top: 3px solid var(--zone-accent);
+  border-radius: 10px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--zone-accent) 14%, #071827), #061522 72%);
+}
+
+#atlasPhysiologyRibbon .atlas-zone-ribbon tr:nth-child(1) { --zone-accent: #38a9ff; }
+#atlasPhysiologyRibbon .atlas-zone-ribbon tr:nth-child(2) { --zone-accent: #49d17d; }
+#atlasPhysiologyRibbon .atlas-zone-ribbon tr:nth-child(3) { --zone-accent: #f0cf4f; }
+#atlasPhysiologyRibbon .atlas-zone-ribbon tr:nth-child(4) { --zone-accent: #ff9f43; }
+#atlasPhysiologyRibbon .atlas-zone-ribbon tr:nth-child(5) { --zone-accent: #ff506c; }
+
+#atlasPhysiologyRibbon .atlas-zone-ribbon td {
+  display: block;
+  padding: 0;
+  border: 0;
+  color: #dcecf5;
+  font-size: .54rem;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-ribbon td:first-child {
+  margin-bottom: 2px;
+  color: #fff;
+  font-size: .6rem;
+  font-weight: 800;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-ribbon td:nth-child(2),
+#atlasPhysiologyRibbon .atlas-zone-ribbon td:nth-child(4) {
+  display: none;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-ribbon .zone-dot {
+  background: var(--zone-accent) !important;
+  box-shadow: 0 0 8px var(--zone-accent);
+}
+
+#atlasPhysiologyRibbon .atlas-zone-thresholds {
+  display: none;
+}
+
+.training-calendar {
+  width: 100%;
+}
+
+@media (max-width: 1180px) {
+  .performance-app {
+    padding-top: 122px !important;
+  }
+
+  .performance-header {
+    min-height: 102px !important;
+  }
+
+  #atlasPhysiologyRibbon .atlas-zone-ribbon {
+    display: none;
+  }
+}
+/* ATLAS COACH — LISIBILITÉ DU BANDEAU ET FRISE DIRECTE */
+#atlasPhysiologyRibbon article > span {
+  font-size: .58rem !important;
+  letter-spacing: .08em !important;
+}
+
+#atlasPhysiologyRibbon article > div strong {
+  font-size: 1.18rem !important;
+}
+
+#atlasPhysiologyRibbon article > div small {
+  font-size: .54rem !important;
+}
+
+#atlasPhysiologyRibbon article > i {
+  font-size: .5rem !important;
+  line-height: 1.22 !important;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-ribbon {
+  display: block !important;
+  grid-column: 1 / -1;
+  width: 100%;
+  margin-top: 2px;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-ribbon > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  color: #dcecf5;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-ribbon > header strong {
+  font-size: .66rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-ribbon > header span {
+  color: #7895a8;
+  font-size: .54rem;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7px;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article {
+  display: grid !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 64px;
+  margin: 0 !important;
+  padding: 7px 9px !important;
+  border: 1px solid color-mix(in srgb, var(--zone-accent) 45%, transparent) !important;
+  border-top: 3px solid var(--zone-accent) !important;
+  border-radius: 10px !important;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--zone-accent) 13%, #071827), #061522 72%) !important;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--zone-accent) 10%, transparent) !important;
+  text-align: left !important;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 !important;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article b {
+  color: var(--zone-accent);
+  font-size: .65rem;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article strong {
+  overflow: hidden;
+  font-size: .58rem !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article span,
+#atlasPhysiologyRibbon .atlas-zone-cards article small {
+  color: #c7dbe7;
+  font-size: .53rem !important;
+  line-height: 1.18;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article small {
+  color: #8eabba;
+}
+
+@media (max-width: 1180px) {
+  #atlasPhysiologyRibbon .atlas-zone-ribbon {
+    display: none !important;
+  }
+}
+/* ATLAS COACH — BANDEAU PHYSIOLOGIQUE ÉLARGI */
+@media (min-width: 1451px) {
+  #atlasPhysiologyRibbon {
+    grid-template-columns: repeat(5, minmax(96px, 1fr)) !important;
+    max-width: 1080px !important;
+    gap: 10px 16px !important;
+  }
+
+  #atlasPhysiologyRibbon > article {
+    width: 96px !important;
+    height: 96px !important;
+    min-width: 96px !important;
+    padding: 8px !important;
+  }
+
+  #atlasPhysiologyRibbon > article > span {
+    font-size: .65rem !important;
+    letter-spacing: .075em !important;
+    line-height: 1.12 !important;
+  }
+
+  #atlasPhysiologyRibbon > article > div strong {
+    font-size: 1.34rem !important;
+  }
+
+  #atlasPhysiologyRibbon > article > div small {
+    font-size: .57rem !important;
+  }
+
+  #atlasPhysiologyRibbon > article > i {
+    margin-top: 4px !important;
+    font-size: .56rem !important;
+    line-height: 1.18 !important;
+  }
+
+  #atlasPhysiologyRibbon .atlas-zone-ribbon {
+    width: calc(100% + 300px) !important;
+    margin-left: -150px !important;
+    margin-top: 4px !important;
+  }
+}
+
+#atlasPhysiologyRibbon .atlas-zone-ribbon > header {
+  margin-bottom: 7px;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-ribbon > header strong {
+  font-size: .76rem;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-ribbon > header span {
+  font-size: .63rem;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards {
+  gap: 9px;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article {
+  min-height: 76px;
+  padding: 9px 11px !important;
+  border-width: 1px !important;
+  border-top-width: 4px !important;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--zone-accent) 18%, transparent) !important;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article div {
+  gap: 8px;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article b {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  padding: 2px 6px;
+  border: 1px solid var(--zone-accent);
+  border-radius: 6px;
+  color: #04111b;
+  background: var(--zone-accent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--zone-accent) 55%, transparent);
+  font-size: .82rem;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article strong {
+  font-size: .68rem !important;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article span,
+#atlasPhysiologyRibbon .atlas-zone-cards article small {
+  font-size: .62rem !important;
+  line-height: 1.28;
+}
+/* ATLAS COACH — BANDEAUX COLORÉS DES ZONES */
+#atlasPhysiologyRibbon .atlas-zone-cards article {
+  display: flex !important;
+  min-height: 94px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  overflow: hidden;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article > span:first-of-type {
+  order: 1;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article > div {
+  order: 2;
+  width: calc(100% + 22px);
+  min-height: 27px;
+  margin: 3px -11px !important;
+  padding: 4px 10px;
+  justify-content: flex-start;
+  gap: 5px;
+  color: #03101a;
+  background: var(--zone-accent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--zone-accent) 42%, transparent);
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article > span:nth-of-type(2) {
+  order: 3;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article > small {
+  order: 4;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article b {
+  display: inline !important;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: #03101a;
+  background: transparent;
+  box-shadow: none;
+  font-size: .76rem;
+  font-weight: 950;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article strong {
+  overflow: visible;
+  color: #03101a !important;
+  font-size: .67rem !important;
+  font-weight: 900;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article span,
+#atlasPhysiologyRibbon .atlas-zone-cards article small {
+  font-size: .63rem !important;
+  line-height: 1.22;
+}
+/* ATLAS COACH — VALEURS SOUS LE BANDEAU DE ZONE */
+#atlasPhysiologyRibbon .atlas-zone-cards article > div {
+  order: 1;
+  margin-top: -9px !important;
+  margin-bottom: 5px !important;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article > span:first-of-type {
+  order: 2;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article > span:nth-of-type(2) {
+  order: 3;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article > small {
+  order: 4;
+}
+/* ATLAS COACH — CONTOUR NET DES CARTES DE ZONE */
+#atlasPhysiologyRibbon .atlas-zone-cards article {
+  border-top-width: 1px !important;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article > div {
+  margin-top: -9px !important;
+  border-radius: 8px 8px 0 0;
+}
+/* ATLAS COACH — TEXTE UNIFORME ET LISIBLE DES ZONES */
+#atlasPhysiologyRibbon .atlas-zone-cards article > span,
+#atlasPhysiologyRibbon .atlas-zone-cards article > small {
+  color: #d9e8f1 !important;
+  opacity: 1 !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  -webkit-text-fill-color: #d9e8f1 !important;
+  text-shadow: none !important;
+}
+/* ATLAS COACH — ESPACE SOUS LE BANDEAU PHYSIOLOGIQUE */
+@media (min-width: 1181px) {
+  .performance-app {
+    padding-top: 254px !important;
+  }
+
+  .performance-header {
+    min-height: 234px !important;
+  }
+}
+/* ATLAS COACH — BANDEAU DE ZONE AFFLEURANT */
+#atlasPhysiologyRibbon .atlas-zone-cards article {
+  justify-content: flex-start;
+  padding: 0 11px 9px !important;
+  border-top: 0 !important;
+}
+
+#atlasPhysiologyRibbon .atlas-zone-cards article > div {
+  width: calc(100% + 22px);
+  min-height: 31px;
+  margin: 0 -11px 6px !important;
+  padding: 6px 11px;
+  border-radius: 9px 9px 0 0;
+  box-shadow: none;
+}
+/* ATLAS COACH — EN-TÊTE DU PLAN COMPACT */
+#planPanel {
+  padding: 20px 30px 26px !important;
+}
+
+#planPanel .plan-title {
+  align-items: center;
+  gap: 14px;
+}
+
+#planPanel .plan-title p {
+  margin-bottom: 5px;
+  font-size: .64rem;
+}
+
+#planPanel .plan-title h2 {
+  margin: 0;
+  font-size: 1.55rem;
+  line-height: 1.15;
+}
+
+#planPanel .plan-title span {
+  display: block;
+  margin-top: 6px;
+  font-size: .88rem;
+  line-height: 1.3;
+}
+
+#planPanel .plan-title .secondary-button {
+  min-height: 46px;
+  padding: 9px 18px;
+  font-size: .94rem;
+}
+
+#planPanel .plan-overview {
+  gap: 10px;
+  margin: 14px 0 16px;
+}
+
+#planPanel .plan-overview article {
+  min-height: 0;
+  padding: 12px 16px;
+}
+
+#planPanel .plan-overview span {
+  font-size: .68rem;
+}
+
+#planPanel .plan-overview strong {
+  margin-top: 5px;
+  font-size: 1rem;
+}
+
+#planPanel .plan-overview article small {
+  margin-top: 4px;
+  font-size: .63rem;
+}
+/* ATLAS COACH — PLAN ENCORE PLUS COMPACT */
+#planPanel {
+  padding: 15px 24px 20px !important;
+}
+
+#planPanel .plan-title p {
+  margin-bottom: 3px;
+}
+
+#planPanel .plan-title h2 {
+  font-size: 1.42rem;
+}
+
+#planPanel .plan-title .secondary-button {
+  min-height: 40px;
+  padding: 7px 15px;
+  font-size: .88rem;
+}
+
+#planPanel .plan-overview {
+  gap: 9px;
+  margin: 10px 0 12px;
+}
+
+#planPanel .plan-overview article {
+  padding: 9px 14px;
+}
+
+#planPanel .plan-overview strong {
+  margin-top: 3px;
+  font-size: .94rem;
+}
+
+#planPanel .plan-overview article small {
+  margin-top: 2px;
+}
+/* ATLAS COACH — PROGRESSION VERS L’ÉCHÉANCE */
+#planPanel .program-progress-label {
+  margin-top: 3px;
+  color: #c9dce8;
+  font-size: .62rem;
+}
+
+#planPanel .program-progress-label b {
+  color: #35ccff;
+  font-size: .68rem;
+}
+
+#planPanel .program-progress-track {
+  width: 100%;
+  height: 5px;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.09);
+}
+
+#planPanel .program-progress-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #28b8ff, #43e2a2);
+  box-shadow: 0 0 8px rgba(53,204,255,.45);
+}
+
+#planPanel .program-progress-summary {
+  margin-top: 3px !important;
+  font-size: .56rem !important;
+}

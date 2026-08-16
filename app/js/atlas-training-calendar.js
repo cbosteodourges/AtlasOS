@@ -599,6 +599,64 @@
       snapshot.vma_kmh
     );
 
+      const heartRateMax = Number(
+        snapshot.maximum_heart_rate_bpm
+      );
+      const trainingVma = Number(
+        snapshot.vma_training_reference_kmh ?? snapshot.vma_kmh
+      );
+      const sv1HeartRate = Number(
+        snapshot.sv1?.heart_rate_bpm ?? heartRateMax * 0.81
+      );
+      const sv2HeartRate = Number(
+        snapshot.sv2?.heart_rate_bpm ?? heartRateMax * 0.90
+      );
+      const sv1Speed = Number(
+        snapshot.sv1?.speed_kmh ?? trainingVma * 0.75
+      );
+      const sv2Speed = Number(
+        snapshot.sv2?.speed_kmh ?? trainingVma * 0.92
+      );
+      const z2SpeedLow = Math.round(trainingVma * 0.65 * 10) / 10;
+
+      const zoneDefinitions = [
+        [1, "Récupération", Math.round(heartRateMax * 0.50), Math.round(heartRateMax * 0.65) - 1, Math.round(trainingVma * 0.55 * 10) / 10, z2SpeedLow - 0.1, "#5aa8ff"],
+        [2, "Endurance fondamentale", Math.round(heartRateMax * 0.65), Math.round(sv1HeartRate - 3), z2SpeedLow, sv1Speed, "#51d892"],
+        [3, "Endurance active", Math.round(sv1HeartRate - 2), Math.round(sv2HeartRate - 3), sv1Speed + 0.1, sv2Speed, "#e7d353"],
+        [4, "VO₂max", Math.round(sv2HeartRate - 2), Math.round(heartRateMax * 0.95), sv2Speed + 0.1, trainingVma, "#ff9a4f"],
+        [5, "VMA courte / Anaérobie", Math.round(heartRateMax * 0.95) + 1, heartRateMax, trainingVma + 0.1, Math.round(trainingVma * 1.10 * 10) / 10, "#ff5d68"]
+      ];
+      const paceFromKmh = speed => {
+        if (!Number.isFinite(speed) || speed <= 0) return "—";
+        const totalSeconds = Math.round(3600 / speed);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = String(totalSeconds % 60).padStart(2, "0");
+        return `${minutes}:${seconds}/km`;
+      };
+      const zoneRibbon = `
+        <section class="atlas-zone-ribbon" aria-label="Zones physiologiques personnelles">
+          <header>
+            <strong>Mes zones personnelles</strong>
+            <span>Fréquence cardiaque · vitesse · allure</span>
+          </header>
+          <div class="atlas-zone-cards">
+            ${zoneDefinitions.map(zone => {
+              const [id, name, hrLow, hrHigh, zoneSpeedLow, zoneSpeedHigh, color] = zone;
+              const speedLow = Math.round(zoneSpeedLow * 10) / 10;
+              const speedHigh = Math.round(zoneSpeedHigh * 10) / 10;
+              return `
+                <article style="--zone-accent:${color}">
+                  <div><b>Z${id}</b><strong>${escapeHtml(name)}</strong></div>
+                  <span>${hrLow}–${hrHigh} bpm</span>
+                  <span>${speedLow.toLocaleString("fr-FR", {maximumFractionDigits:1})}–${speedHigh.toLocaleString("fr-FR", {maximumFractionDigits:1})} km/h</span>
+                  <small>${paceFromKmh(speedHigh)} à ${paceFromKmh(speedLow)}</small>
+                </article>
+              `;
+            }).join("")}
+          </div>
+        </section>
+      `;
+
     const formattedVma = Number.isFinite(
       Number(vmaEstimated)
     )
@@ -685,7 +743,9 @@
         accent: "#e1b14e",
         glow: "rgba(225,177,78,.10)"
       })}
+        ${zoneRibbon}
     `;
+
   }
 
   function workoutZone(workout) {
@@ -893,6 +953,22 @@ const target = compactTarget(workout, zone);
     );
     const hours = Math.floor(targetMinutes / 60);
     const minutes = targetMinutes % 60;
+    const programStart = parseDate(program.start_date);
+    const eventDate = parseDate(program.goal.event_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const totalDuration = Math.max(1, eventDate - programStart);
+    const elapsedDuration = Math.min(totalDuration, Math.max(0, today - programStart));
+    const temporalProgress = Math.round(elapsedDuration / totalDuration * 100);
+    const currentWeekIndex = program.weeks.findIndex(week => (
+      today >= parseDate(week.start_date) &&
+      today <= parseDate(week.end_date)
+    ));
+    const currentWeekNumber = currentWeekIndex >= 0
+      ? currentWeekIndex + 1
+      : today < programStart
+        ? 0
+        : program.weeks.length;
 
     overview.innerHTML = `
       <article>
@@ -917,18 +993,22 @@ const target = compactTarget(workout, zone);
           )
         )}</small>
       </article>
-      <article>
-        <span>Programme</span>
-        <strong>${escapeHtml(program.duration_weeks)} semaines</strong>
-        <small>
-          ${escapeHtml(program.total_running_workouts)} courses
-          · ${researchCount} Research
-          · ${escapeHtml(
-            program.settings
-              .optional_running_sessions_per_week
-          )} facultative
-        </small>
-      </article>
+      <article class="program-progress-card">
+          <span>Programme</span>
+          <strong>${escapeHtml(program.duration_weeks)} semaines</strong>
+          <small class="program-progress-label">
+            Semaine ${currentWeekNumber} sur ${program.duration_weeks}
+            · <b>${temporalProgress} %</b>
+          </small>
+          <div class="program-progress-track" role="progressbar" aria-label="Avancement vers l’échéance" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${temporalProgress}">
+            <i style="width:${temporalProgress}%"></i>
+          </div>
+          <small class="program-progress-summary">
+            ${escapeHtml(program.total_running_workouts)} courses
+            · ${researchCount} Research
+            · ${escapeHtml(program.settings.optional_running_sessions_per_week)} facultative
+          </small>
+        </article>
     `;
   }
 
@@ -1830,17 +1910,7 @@ const target = compactTarget(workout, zone);
     renderOverview(program);
 
     calendar.innerHTML = `
-      <div class="calendar-premium-banner">
-        <div>
-          <span>ATLAS COACH × ATLAS RESEARCH</span>
-          <strong>Plan hebdomadaire adaptatif</strong>
-          <small>
-            Quatre séances principales et une séance
-            facultative revalidée par Atlas le jour même.
-          </small>
-        </div>
-        <i>Contour doré · difficulté progressive</i>
-      </div>
+
 ${program.weeks.map(
         week => renderWeek(week, program)
       ).join("")}
