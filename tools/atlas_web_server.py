@@ -19,6 +19,9 @@ if str(ROOT) not in sys.path:
 from src.atlas_brain import AtlasBrain
 from src.patient.patient import Patient
 from src.twin.digital_twin import DigitalTwin
+from src.training.daily_preparation_service import (
+    DailyPreparationService,
+)
 from src.training.training_program_loader import TrainingProgramLoader
 from src.training.user_workout_decision import UserWorkoutDecisionEngine
 
@@ -588,6 +591,43 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
 
         query = parse_qs(parsed.query)
 
+        if parsed.path == "/api/atlas-coach/daily-preparation":
+            try:
+                workout_id = str(
+                    (query.get("workout_id") or [""])[0]
+                ).strip()
+                if not workout_id:
+                    raise ValueError("workout_id est obligatoire.")
+
+                service = DailyPreparationService(ROOT)
+                preparation = service.latest(workout_id)
+                recorded = preparation is not None
+                if preparation is None:
+                    preparation = service.prepare(
+                        workout_id,
+                        {"checkpoint_type": "morning"},
+                    )
+
+                self.send_json(
+                    200,
+                    {
+                        "ok": True,
+                        "recorded": recorded,
+                        "preparation": preparation,
+                        "selection": service.latest_selection(workout_id),
+                    },
+                )
+            except ValueError as error:
+                self.send_json(
+                    400,
+                    {"ok": False, "error": str(error)},
+                )
+            except (OSError, json.JSONDecodeError) as error:
+                self.send_json(
+                    500,
+                    {"ok": False, "error": str(error)},
+                )
+            return
         if parsed.path == "/api/atlas-coach/workout-context":
             try:
                 workout_id = str(
@@ -684,6 +724,7 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             "/api/atlas-brain/analyse",
             "/api/atlas-coach/workout-decision",
             "/api/atlas-coach/workout-context",
+            "/api/atlas-coach/daily-preparation",
         }
 
         if self.path not in allowed_routes:
@@ -700,6 +741,33 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             raw_body = self.rfile.read(content_length)
             payload = json.loads(raw_body.decode("utf-8"))
 
+            if self.path == "/api/atlas-coach/daily-preparation":
+                service = DailyPreparationService(ROOT)
+                if payload.get("user_selection"):
+                    selection = service.record_selection(payload)
+                    self.send_json(
+                        200,
+                        {
+                            "ok": True,
+                            "selection": selection,
+                            "preparation": service.latest(
+                                selection["workout_id"]
+                            ),
+                        },
+                    )
+                else:
+                    preparation = service.record(payload)
+                    self.send_json(
+                        200,
+                        {
+                            "ok": True,
+                            "preparation": preparation,
+                            "selection": service.latest_selection(
+                                preparation["workout_id"]
+                            ),
+                        },
+                    )
+                return
             if self.path == "/api/atlas-coach/workout-context":
                 context = record_workout_context(payload)
                 self.send_json(

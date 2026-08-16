@@ -135,6 +135,158 @@
     workoutContextCache.set(workout.workout_id, payload.context);
     return payload.context;
   }
+  const dailyPreparationCache = new Map();
+  const dailySelectionCache = new Map();
+
+  async function loadDailyPreparation(workoutId) {
+    const response = await fetch(
+      `/api/atlas-coach/daily-preparation?workout_id=${encodeURIComponent(workoutId)}`,
+      { cache: "no-store" }
+    );
+    const payload = await response.json();
+
+    if (!response.ok || !payload.ok) {
+      throw new Error(
+        payload.error || "Décision quotidienne Atlas indisponible."
+      );
+    }
+
+    const preparation = payload.preparation || null;
+    const selection = payload.selection || null;
+    dailyPreparationCache.set(workoutId, preparation);
+    dailySelectionCache.set(workoutId, selection);
+    return preparation;
+  }
+
+  async function saveDailyPreparation(workoutId, values) {
+    const response = await fetch(
+      "/api/atlas-coach/daily-preparation",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8"
+        },
+        body: JSON.stringify({
+          workout_id: workoutId,
+          ...values
+        })
+      }
+    );
+    const payload = await response.json();
+
+    if (!response.ok || !payload.ok) {
+      throw new Error(
+        payload.error || "La réévaluation Atlas a échoué."
+      );
+    }
+
+    const preparation = payload.preparation || null;
+    dailyPreparationCache.set(workoutId, preparation);
+    dailySelectionCache.set(workoutId, payload.selection || null);
+    return preparation;
+  }
+
+  async function saveDailySelection(workoutId, selection, reason = "") {
+    const response = await fetch(
+      "/api/atlas-coach/daily-preparation",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8"
+        },
+        body: JSON.stringify({
+          workout_id: workoutId,
+          user_selection: selection,
+          reason
+        })
+      }
+    );
+    const payload = await response.json();
+
+    if (!response.ok || !payload.ok) {
+      throw new Error(
+        payload.error || "Le choix n’a pas pu être enregistré."
+      );
+    }
+
+    dailySelectionCache.set(workoutId, payload.selection || null);
+    return payload.selection || null;
+  }
+
+  function dailyPreparationLabel(action) {
+    return {
+      maintain: "Séance maintenue",
+      reduce: "Séance allégée",
+      replace: "Séance remplacée",
+      postpone: "Séance reportée",
+      cancel: "Repos recommandé"
+    }[action] || "Séance à revalider";
+  }
+
+  function applyDailyPreparation(preparation) {
+    if (!preparation) return;
+
+    const button = Array.from(
+      calendar.querySelectorAll("[data-workout-key]")
+    ).find(item => (
+      item.dataset.workoutKey === preparation.workout_id
+    ));
+    if (!button) return;
+
+    button.classList.add("has-daily-preparation");
+    button.querySelector(".daily-preparation-summary")?.remove();
+
+    const adaptation = preparation.adaptation || {};
+    const adapted = adaptation.adapted_workout || {};
+    const decision = preparation.decision || {};
+    const atlasIndex = preparation.atlas_index || {};
+    const declared = preparation.declared_state || {};
+    const summary = document.createElement("span");
+    summary.className =
+      `daily-preparation-summary action-${decision.action || "review"}`;
+    summary.innerHTML = `
+      <i>Décision Atlas · ${escapeHtml(
+        dailyPreparationLabel(decision.action)
+      )}</i>
+      <strong>${escapeHtml(
+        adapted.title || "Réévaluation nécessaire"
+      )}</strong>
+      <small>
+        ${escapeHtml(
+          formatMinutes(adapted.planned_duration_minutes)
+        )}
+        · Indice ${escapeHtml(atlasIndex.score ?? "—")}/100
+        ${preparation.checkpoint_type === "post_nap"
+          ? ` · Après sieste ${escapeHtml(
+              declared.nap_duration_minutes ?? "—"
+            )} min`
+          : " · Évaluation du matin"}
+      </small>
+      <b>Pourquoi cette adaptation ?</b>
+    `;
+    button.appendChild(summary);
+  }
+
+  async function loadTodayPreparations(program) {
+    const today = isoDate(new Date());
+    const workouts = (program.weeks || []).flatMap(
+      week => week.workouts || []
+    ).filter(workout => (
+      workout.workout_date === today &&
+      workout.sport === "running"
+    ));
+
+    await Promise.all(workouts.map(async workout => {
+      try {
+        const preparation = await loadDailyPreparation(
+          workout.workout_id
+        );
+        applyDailyPreparation(preparation);
+      } catch (error) {
+        console.warn(error);
+      }
+    }));
+  }
   function loadWorkoutDecisions() {
     try {
       return JSON.parse(
@@ -1089,6 +1241,55 @@ const target = compactTarget(workout, zone);
     `;
   }
 
+  function atlasConfirm(message) {
+    return new Promise(resolve => {
+      const overlay = document.createElement("div");
+      overlay.className = "atlas-confirm-overlay";
+      overlay.innerHTML = `
+        <section
+          class="atlas-confirm-panel"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="atlasConfirmTitle"
+        >
+          <span class="atlas-confirm-icon">×</span>
+          <div>
+            <small>ACTIVITÉ FACULTATIVE</small>
+            <h3 id="atlasConfirmTitle">Supprimer cette séance ?</h3>
+            <p>${escapeHtml(message)}</p>
+          </div>
+          <div class="atlas-confirm-actions">
+            <button type="button" data-confirm-cancel>Conserver</button>
+            <button type="button" data-confirm-accept>Supprimer</button>
+          </div>
+        </section>
+      `;
+
+      const finish = answer => {
+        overlay.remove();
+        resolve(answer);
+      };
+
+      overlay.addEventListener("click", event => {
+        event.stopPropagation();
+
+        if (
+          event.target === overlay ||
+          event.target.closest("[data-confirm-cancel]")
+        ) {
+          finish(false);
+        } else if (event.target.closest("[data-confirm-accept]")) {
+          finish(true);
+        }
+      });
+
+      const parentDialog = document.getElementById(
+        "atlasSessionDialog"
+      );
+      (parentDialog || document.body).appendChild(overlay);
+      overlay.querySelector("[data-confirm-cancel]").focus();
+    });
+  }
   function ensureDialog() {
     let dialog = document.getElementById(
       "atlasSessionDialog"
@@ -1771,6 +1972,16 @@ const target = compactTarget(workout, zone);
           </button>
         </div>
 
+        ${workout.priority === "optional" ? `
+          <button
+            class="remove-optional-workout"
+            type="button"
+            data-remove-optional-workout
+          >
+            Supprimer cette activité facultative
+          </button>
+        ` : ""}
+
         <p class="workout-actions-note">
           Atlas conservera votre décision et l’utilisera pour adapter
           les prochaines séances.
@@ -1779,12 +1990,160 @@ const target = compactTarget(workout, zone);
     `;
   }
 
-  function openWorkout(workout) {
+  function humanizeDecisionReason(reason) {
+    return Object.entries(TYPE_LABELS).reduce(
+      (text, [technicalName, label]) => (
+        text.replaceAll(technicalName, label)
+      ),
+      String(reason || "")
+    );
+  }
+  function dailyPreparationDetailHtml(preparation, originalWorkout) {
+    if (!preparation) return "";
+
+    const decision = preparation.decision || {};
+    const adapted = preparation.adaptation?.adapted_workout || {};
+    const atlasIndex = preparation.atlas_index || {};
+    const declared = preparation.declared_state || {};
+    const currentSelection = dailySelectionCache.get(
+      originalWorkout.workout_id
+    );
+    const selectionLabels = {
+      accept_adaptation: "Proposition Atlas acceptée",
+      keep_original: "Séance initiale conservée",
+      decide_later: "Décision différée"
+    };
+
+    return `
+      <section class="daily-preparation-detail action-${escapeHtml(
+        decision.action || "review"
+      )}">
+        <div class="daily-preparation-detail-heading">
+          <div>
+            <span>DÉCISION ADAPTATIVE ATLAS</span>
+            <h2>${escapeHtml(dailyPreparationLabel(decision.action))}</h2>
+            <p>
+              La prescription initiale reste conservée, mais la séance
+              ci-dessous tient compte de votre récupération actuelle.
+            </p>
+          </div>
+          <strong>
+            ${escapeHtml(atlasIndex.score ?? "—")}/100
+            <small>Indice Atlas</small>
+          </strong>
+        </div>
+        <div class="daily-preparation-comparison">
+          <article>
+            <span>Séance initiale</span>
+            <strong>${escapeHtml(originalWorkout.title)}</strong>
+            <small>${escapeHtml(
+              formatMinutes(originalWorkout.planned_duration_minutes)
+            )}</small>
+          </article>
+          <i>→</i>
+          <article class="adapted">
+            <span>Proposition actuelle</span>
+            <strong>${escapeHtml(
+              adapted.title || "Réévaluation nécessaire"
+            )}</strong>
+            <small>${escapeHtml(
+              formatMinutes(adapted.planned_duration_minutes)
+            )}</small>
+          </article>
+        </div>
+        <div class="daily-preparation-reasons">
+          <strong>Pourquoi Atlas modifie la séance</strong>
+          <p>${(decision.reasons || []).map(
+            reason => escapeHtml(humanizeDecisionReason(reason))
+          ).join(" ")}</p>
+          ${preparation.checkpoint_type === "post_nap" ? `
+            <small>
+              Après une sieste de
+              ${escapeHtml(declared.nap_duration_minutes ?? "—")} min :
+              énergie ${escapeHtml(declared.energy_0_to_10 ?? "—")}/10,
+              fatigue ${escapeHtml(
+                declared.subjective_fatigue_0_to_10 ?? "—"
+              )}/10.
+            </small>
+          ` : ""}
+        </div>
+        <div class="daily-preparation-controls">
+          <form data-daily-preparation-form>
+            <div class="daily-preparation-control-heading">
+              <div>
+                <span>RÉÉVALUATION DU JOUR</span>
+                <strong>Ma forme a-t-elle changé ?</strong>
+                <p>
+                  Une sieste, une évolution de la fatigue ou une douleur
+                  peuvent modifier la séance proposée sans effacer
+                  l’évaluation précédente.
+                </p>
+              </div>
+              <label>
+                Moment
+                <select name="checkpoint_type">
+                  <option value="pre_workout">Avant la séance</option>
+                  <option value="post_nap"${preparation.checkpoint_type === "post_nap" ? " selected" : ""}>Après une sieste</option>
+                  <option value="morning"${preparation.checkpoint_type === "morning" ? " selected" : ""}>Le matin</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="daily-preparation-input-grid">
+              <label><span>Sieste <small>minutes</small></span><input name="nap_duration_minutes" type="number" min="0" max="240" step="1" value="${escapeHtml(declared.nap_duration_minutes ?? "")}"></label>
+              <label><span>Énergie <small>0 à 10</small></span><input name="energy_0_to_10" type="number" min="0" max="10" step="1" value="${escapeHtml(declared.energy_0_to_10 ?? "")}"></label>
+              <label><span>Fatigue <small>0 à 10</small></span><input name="subjective_fatigue_0_to_10" type="number" min="0" max="10" step="1" value="${escapeHtml(declared.subjective_fatigue_0_to_10 ?? "")}"></label>
+              <label><span>Douleur <small>0 à 10</small></span><input name="pain_0_to_10" type="number" min="0" max="10" step="1" value="${escapeHtml(declared.pain_0_to_10 ?? "")}"></label>
+              <label><span>Courbatures <small>0 à 10</small></span><input name="muscle_soreness_0_to_10" type="number" min="0" max="10" step="1" value="${escapeHtml(declared.muscle_soreness_0_to_10 ?? "")}"></label>
+              <label><span>Body Battery <small>0 à 100</small></span><input name="body_battery_0_to_100" type="number" min="0" max="100" step="1" value="${escapeHtml(declared.body_battery_0_to_100 ?? "")}"></label>
+              <label><span>Récupération Garmin <small>heures restantes</small></span><input name="recovery_hours_remaining" type="number" min="0" max="168" step=".5" value="${escapeHtml(declared.recovery_hours_remaining ?? "")}"></label>
+            </div>
+
+            <label class="daily-preparation-comment">
+              <span>Ce qui a changé depuis la dernière évaluation</span>
+              <textarea name="comment" rows="2" placeholder="Ex. : sieste réparatrice, énergie remontée, jambes légères…">${escapeHtml(declared.comment || "")}</textarea>
+            </label>
+
+            <div class="daily-preparation-form-footer">
+              <p data-daily-preparation-status aria-live="polite"></p>
+              <button type="submit">Réévaluer ma forme</button>
+            </div>
+          </form>
+
+          <section class="daily-preparation-choice">
+            <div>
+              <span>MA DÉCISION</span>
+              <strong>Je garde la maîtrise de mon entraînement</strong>
+              <p>
+                Atlas conserve la prescription initiale et la proposition
+                adaptée. Aucun changement n’est validé silencieusement.
+              </p>
+            </div>
+            <div class="daily-preparation-choice-buttons">
+              <button type="button" data-daily-selection="accept_adaptation">✓ Accepter la proposition Atlas</button>
+              <button type="button" data-daily-selection="keep_original">Conserver la séance initiale</button>
+              <button type="button" data-daily-selection="decide_later">Réévaluer plus tard</button>
+            </div>
+            <p class="daily-selection-status" data-daily-selection-status aria-live="polite">
+              ${currentSelection
+                ? escapeHtml(
+                    selectionLabels[currentSelection.user_selection] ||
+                    "Choix enregistré"
+                  )
+                : "Aucun choix définitif enregistré."}
+            </p>
+          </section>
+        </div>
+      </section>
+    `;
+  }
+  function openWorkout(workout, preparation = null) {
     const dialog = ensureDialog();
     const content = dialog.querySelector(".dialog-content");
     dialog.dataset.workoutId = workout.workout_id;
     let loadedReport = null;
     let loadedContext = null;
+    const adaptedWorkout = preparation?.adaptation?.adapted_workout || workout;
 
     content.innerHTML = `
       <nav class="session-dialog-tabs" aria-label="Fiche de séance">
@@ -1810,8 +2169,9 @@ const target = compactTarget(workout, zone);
         class="session-tab-panel active"
         data-session-panel="planned"
       >
-        ${detailHtml(workout)}
-        ${workoutActionsHtml(workout)}
+        ${dailyPreparationDetailHtml(preparation, workout)}
+        ${detailHtml(adaptedWorkout)}
+        ${workoutActionsHtml(adaptedWorkout)}
       </section>
 
       <section
@@ -1844,6 +2204,89 @@ const target = compactTarget(workout, zone);
           panel.hidden = !active;
         });
 
+        return;
+      }
+
+      const selectionButton = event.target.closest(
+        "[data-daily-selection]"
+      );
+      if (selectionButton) {
+        const selection = selectionButton.dataset.dailySelection;
+        const statusElement = content.querySelector(
+          "[data-daily-selection-status]"
+        );
+        let reason = "";
+
+        if (selection === "keep_original") {
+          const confirmed = window.confirm(
+            "Conserver la séance initiale malgré la proposition adaptée d’Atlas ?"
+          );
+          if (!confirmed) return;
+          reason = "Choix explicite de conserver la prescription initiale.";
+        } else if (selection === "accept_adaptation") {
+          reason = "Proposition adaptée Atlas acceptée par l’utilisateur.";
+        } else {
+          reason = "Décision différée pour permettre une nouvelle réévaluation.";
+        }
+
+        content.querySelectorAll("[data-daily-selection]").forEach(
+          item => { item.disabled = true; }
+        );
+        if (statusElement) {
+          statusElement.textContent = "Enregistrement du choix…";
+          statusElement.className = "daily-selection-status saving";
+        }
+
+        try {
+          const saved = await saveDailySelection(
+            workout.workout_id,
+            selection,
+            reason
+          );
+          const labels = {
+            accept_adaptation: "Proposition Atlas acceptée.",
+            keep_original: "Séance initiale conservée.",
+            decide_later: "Décision différée : une nouvelle réévaluation restera possible."
+          };
+          if (statusElement) {
+            statusElement.textContent =
+              labels[saved?.user_selection] || "Choix enregistré.";
+            statusElement.className = "daily-selection-status success";
+          }
+          content.querySelectorAll("[data-daily-selection]").forEach(
+            item => {
+              item.disabled = false;
+              item.classList.toggle(
+                "selected",
+                item.dataset.dailySelection === saved?.user_selection
+              );
+            }
+          );
+        } catch (error) {
+          if (statusElement) {
+            statusElement.textContent = error.message;
+            statusElement.className = "daily-selection-status error";
+          }
+          content.querySelectorAll("[data-daily-selection]").forEach(
+            item => { item.disabled = false; }
+          );
+        }
+        return;
+      }
+
+      const removeButton = event.target.closest(
+        "[data-remove-optional-workout]"
+      );
+
+      if (removeButton) {
+        const confirmed = await atlasConfirm(
+          "Cette séance d’essai sera retirée du calendrier. Elle ne sera pas considérée comme abandonnée et n’influencera pas l’apprentissage d’Atlas."
+        );
+        if (!confirmed) return;
+
+        removeOptional(workout);
+        dialog.close();
+        render(activeProgram);
         return;
       }
 
@@ -1907,6 +2350,83 @@ const target = compactTarget(workout, zone);
     };
 
     content.onsubmit = async event => {
+      const readinessForm = event.target.closest(
+        "[data-daily-preparation-form]"
+      );
+
+      if (readinessForm) {
+        event.preventDefault();
+        const values = new FormData(readinessForm);
+        const submitButton = readinessForm.querySelector(
+          'button[type="submit"]'
+        );
+        const formStatus = readinessForm.querySelector(
+          "[data-daily-preparation-status]"
+        );
+        const previousState = preparation?.declared_state || {};
+        const plannedPanel = content.querySelector(
+          '[data-session-panel="planned"]'
+        );
+        const fieldValue = name => {
+          const field = plannedPanel?.querySelector(
+            `.daily-preparation-controls [name="${name}"]`
+          );
+          return field ? String(field.value).trim() : "";
+        };
+        const optionalNumber = name => {
+          const value = fieldValue(name);
+          if (value !== "") {
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : null;
+          }
+          return previousState[name] ?? null;
+        };
+
+        submitButton.disabled = true;
+        formStatus.textContent =
+          "Atlas recalcule votre disponibilité et la compatibilité de la séance…";
+        formStatus.className = "saving";
+
+        try {
+          const updatedPreparation = await saveDailyPreparation(
+            workout.workout_id,
+            {
+              checkpoint_type: String(
+                fieldValue("checkpoint_type") || "pre_workout"
+              ),
+              nap_duration_minutes: optionalNumber(
+                "nap_duration_minutes"
+              ),
+              energy_0_to_10: optionalNumber("energy_0_to_10"),
+              subjective_fatigue_0_to_10: optionalNumber(
+                "subjective_fatigue_0_to_10"
+              ),
+              pain_0_to_10: optionalNumber("pain_0_to_10"),
+              muscle_soreness_0_to_10: optionalNumber(
+                "muscle_soreness_0_to_10"
+              ),
+              body_battery_0_to_100: optionalNumber(
+                "body_battery_0_to_100"
+              ),
+              recovery_hours_remaining: optionalNumber(
+                "recovery_hours_remaining"
+              ),
+              comment: fieldValue("comment") || previousState.comment || ""
+            }
+          );
+
+          dialog.close();
+          render(activeProgram);
+          applyDailyPreparation(updatedPreparation);
+          openWorkout(workout, updatedPreparation);
+        } catch (error) {
+          formStatus.textContent = error.message;
+          formStatus.className = "error";
+          submitButton.disabled = false;
+        }
+        return;
+      }
+
       const form = event.target.closest("[data-workout-context-form]");
       if (!form) return;
 
@@ -2353,6 +2873,41 @@ const target = compactTarget(workout, zone);
     );
   }
 
+  function removeOptional(workout) {
+    let saved = [];
+
+    try {
+      saved = JSON.parse(
+        localStorage.getItem(STORAGE_KEY) || "[]"
+      );
+    } catch {
+      saved = [];
+    }
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(
+        saved.filter(
+          item => item.workout_id !== workout.workout_id
+        )
+      )
+    );
+
+    activeProgram.weeks.forEach(week => {
+      week.workouts = week.workouts.filter(
+        item => item.workout_id !== workout.workout_id
+      );
+    });
+
+    delete workoutDecisions[workout.workout_id];
+    localStorage.setItem(
+      DECISIONS_STORAGE_KEY,
+      JSON.stringify(workoutDecisions)
+    );
+    dailyPreparationCache.delete(workout.workout_id);
+    dailySelectionCache.delete(workout.workout_id);
+    workoutIndex.delete(workout.workout_id);
+  }
   function restoreOptional(program) {
     let saved = [];
 
@@ -2530,6 +3085,7 @@ ${program.weeks.map(
     document.body.classList.add(
       "has-premium-training-calendar"
     );
+    loadTodayPreparations(program);
   }
 
   calendar.addEventListener("click", event => {
@@ -2541,8 +3097,10 @@ ${program.weeks.map(
     );
 
     if (workoutButton) {
+      const workoutKey = workoutButton.dataset.workoutKey;
       openWorkout(
-        workoutIndex.get(workoutButton.dataset.workoutKey)
+        workoutIndex.get(workoutKey),
+        dailyPreparationCache.get(workoutKey) || null
       );
       return;
     }
