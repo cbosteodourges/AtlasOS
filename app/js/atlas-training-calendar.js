@@ -81,6 +81,60 @@
     return report;
   }
 
+  const workoutContextCache = new Map();
+
+  async function loadWorkoutContext(workoutId) {
+    if (workoutContextCache.has(workoutId)) {
+      return workoutContextCache.get(workoutId);
+    }
+
+    const response = await fetch(
+      `/api/atlas-coach/workout-context?workout_id=${encodeURIComponent(workoutId)}`,
+      { cache: "no-store" }
+    );
+    const payload = await response.json();
+
+    if (!response.ok || !payload.ok) {
+      throw new Error(
+        payload.error || "Contexte utilisateur indisponible."
+      );
+    }
+
+    const context = payload.context || null;
+    workoutContextCache.set(workoutId, context);
+    return context;
+  }
+
+  async function saveWorkoutContext(workout, report, values) {
+    const response = await fetch(
+      "/api/atlas-coach/workout-context",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8"
+        },
+        body: JSON.stringify({
+          workout_id: workout.workout_id,
+          activity_id: report?.activity_id || "",
+          heat: Boolean(values.heat),
+          relief: Boolean(values.relief),
+          pain_0_to_10: values.pain === "" ? null : Number(values.pain),
+          fatigue_0_to_10: values.fatigue === "" ? null : Number(values.fatigue),
+          comment: values.comment.trim()
+        })
+      }
+    );
+    const payload = await response.json();
+
+    if (!response.ok || !payload.ok) {
+      throw new Error(
+        payload.error || "Le contexte n’a pas pu être enregistré."
+      );
+    }
+
+    workoutContextCache.set(workout.workout_id, payload.context);
+    return payload.context;
+  }
   function loadWorkoutDecisions() {
     try {
       return JSON.parse(
@@ -1378,7 +1432,7 @@ const target = compactTarget(workout, zone);
     }[value] || value || "Séance analysée";
   }
 
-  function executionReportHtml(report, workout) {
+  function executionReportHtml(report, workout, userContext = null) {
     if (!report) {
       return `
         <section class="execution-report-empty">
@@ -1595,9 +1649,60 @@ const target = compactTarget(workout, zone);
                 allure volontairement maintenue permettent à Atlas de
                 mieux interpréter la hausse cardiaque.
               </p>
-              <div class="declared-context-placeholder">
-                La saisie chaleur, relief, douleur, fatigue et commentaire
-                libre sera intégrée ici à l’étape suivante.
+              <div class="declared-context-zone">
+                ${userContext ? `
+                  <div class="declared-context-reading">
+                    <strong>Ce que vous avez déclaré</strong>
+                    <p>
+                      ${userContext.heat ? "Vous signalez une chaleur importante. " : ""}
+                      ${userContext.relief ? "Le parcours comportait du relief ou des faux plats. " : ""}
+                      ${userContext.pain_0_to_10 != null ? `La douleur ressentie était évaluée à ${escapeHtml(userContext.pain_0_to_10)}/10. ` : ""}
+                      ${userContext.fatigue_0_to_10 != null ? `La fatigue était évaluée à ${escapeHtml(userContext.fatigue_0_to_10)}/10. ` : ""}
+                      ${userContext.comment ? escapeHtml(userContext.comment) : ""}
+                    </p>
+                    <p class="context-interpretation">
+                      ${userContext.heat || userContext.relief
+                        ? "Atlas tient compte de ces contraintes externes : elles peuvent expliquer une partie de la hausse cardiaque observée sans conclure trop rapidement à une mauvaise tolérance physiologique."
+                        : "Cette déclaration complète les données objectives et sera conservée dans l’historique longitudinal."}
+                    </p>
+                  </div>
+                ` : `
+                  <div class="declared-context-reading empty">
+                    Aucun contexte personnel n’a encore été déclaré pour cette séance.
+                  </div>
+                `}
+
+                <form class="workout-context-form" data-workout-context-form>
+                  <div class="context-toggle-grid">
+                    <label>
+                      <input type="checkbox" name="heat" ${userContext?.heat ? "checked" : ""}>
+                      <span><b>Chaleur ressentie</b><small>Température ou sensation thermique inhabituelle</small></span>
+                    </label>
+                    <label>
+                      <input type="checkbox" name="relief" ${userContext?.relief ? "checked" : ""}>
+                      <span><b>Relief contraignant</b><small>Bosses, faux plats ou terrain irrégulier</small></span>
+                    </label>
+                  </div>
+                  <div class="context-score-grid">
+                    <label>
+                      <span>Douleur ressentie <small>0 = aucune · 10 = maximale</small></span>
+                      <input type="number" name="pain" min="0" max="10" step="1" value="${userContext?.pain_0_to_10 ?? ""}">
+                    </label>
+                    <label>
+                      <span>Fatigue ressentie <small>0 = aucune · 10 = maximale</small></span>
+                      <input type="number" name="fatigue" min="0" max="10" step="1" value="${userContext?.fatigue_0_to_10 ?? ""}">
+                    </label>
+                  </div>
+                  <label class="context-comment-field">
+                    <span>Votre lecture de la séance</span>
+                    <textarea name="comment" maxlength="1200" rows="3" placeholder="Ex. allure volontairement constante, jambes lourdes, vent, mauvaise nuit…">${escapeHtml(userContext?.comment || "")}</textarea>
+                  </label>
+                  <div class="context-form-footer">
+                    <small>Cette déclaration est enregistrée séparément des données Garmin et reste historisée.</small>
+                    <button type="submit">Enregistrer mon contexte</button>
+                  </div>
+                  <p class="context-form-status" data-context-form-status aria-live="polite"></p>
+                </form>
               </div>
             </section>
           </main>
@@ -1678,6 +1783,8 @@ const target = compactTarget(workout, zone);
     const dialog = ensureDialog();
     const content = dialog.querySelector(".dialog-content");
     dialog.dataset.workoutId = workout.workout_id;
+    let loadedReport = null;
+    let loadedContext = null;
 
     content.innerHTML = `
       <nav class="session-dialog-tabs" aria-label="Fiche de séance">
@@ -1799,10 +1906,65 @@ const target = compactTarget(workout, zone);
       }
     };
 
+    content.onsubmit = async event => {
+      const form = event.target.closest("[data-workout-context-form]");
+      if (!form) return;
+
+      event.preventDefault();
+      const submitButton = form.querySelector('button[type="submit"]');
+      const formStatus = form.querySelector("[data-context-form-status]");
+      const values = new FormData(form);
+
+      submitButton.disabled = true;
+      formStatus.textContent = "Enregistrement en cours…";
+      formStatus.className = "context-form-status saving";
+
+      try {
+        loadedContext = await saveWorkoutContext(
+          workout,
+          loadedReport,
+          {
+            heat: values.get("heat") === "on",
+            relief: values.get("relief") === "on",
+            pain: values.get("pain") || "",
+            fatigue: values.get("fatigue") || "",
+            comment: String(values.get("comment") || "")
+          }
+        );
+
+        const panel = content.querySelector(
+          '[data-session-panel="report"]'
+        );
+        panel.innerHTML = executionReportHtml(
+          loadedReport,
+          workout,
+          loadedContext
+        );
+
+        const updatedStatus = panel.querySelector(
+          "[data-context-form-status]"
+        );
+        if (updatedStatus) {
+          updatedStatus.textContent =
+            "Votre contexte a bien été enregistré et intégré à la lecture Atlas.";
+          updatedStatus.className = "context-form-status success";
+        }
+      } catch (error) {
+        formStatus.textContent = error.message;
+        formStatus.className = "context-form-status error";
+        submitButton.disabled = false;
+      }
+    };
+
     dialog.showModal();
 
-    loadExecutionReport(workout.workout_id)
-      .then(report => {
+    Promise.all([
+      loadExecutionReport(workout.workout_id),
+      loadWorkoutContext(workout.workout_id)
+    ])
+      .then(([report, userContext]) => {
+        loadedReport = report;
+        loadedContext = userContext;
         if (dialog.dataset.workoutId !== workout.workout_id) return;
 
         const panel = content.querySelector(
@@ -1810,7 +1972,11 @@ const target = compactTarget(workout, zone);
         );
         const status = content.querySelector("[data-report-status]");
 
-        panel.innerHTML = executionReportHtml(report, workout);
+        panel.innerHTML = executionReportHtml(
+          report,
+          workout,
+          userContext
+        );
         status.textContent = report
           ? "Analyse disponible"
           : "En attente";

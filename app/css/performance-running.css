@@ -4199,3 +4199,194 @@ body[data-coach-section]
     padding: 12px;
   }
 }
+/* ATLAS COACH — CONTEXTE UTILISATEUR EXPLICABLE */
+.atlas-session-dialog .declared-context-zone {
+  display: grid;
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.atlas-session-dialog .declared-context-reading {
+  padding: 18px 20px;
+  border-left: 4px solid #ec6ed1;
+  background: linear-gradient(90deg, rgba(236,110,209,.13), rgba(236,110,209,.025));
+}
+
+.atlas-session-dialog .declared-context-reading.empty {
+  color: #9fb4c3;
+  border-left-color: #60788a;
+  background: rgba(255,255,255,.025);
+}
+
+.atlas-session-dialog .declared-context-reading strong {
+  display: block;
+  margin-bottom: 7px;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.atlas-session-dialog .declared-context-reading p {
+  margin: 0;
+  color: #dcecf5;
+  line-height: 1.65;
+}
+
+.atlas-session-dialog .declared-context-reading .context-interpretation {
+  margin-top: 10px;
+  color: #f0cceb;
+}
+
+.atlas-session-dialog .workout-context-form {
+  display: grid;
+  gap: 15px;
+  padding: 20px;
+  border: 1px solid rgba(236,110,209,.24);
+  border-radius: 16px;
+  background: rgba(8,22,37,.76);
+}
+
+.atlas-session-dialog .context-toggle-grid,
+.atlas-session-dialog .context-score-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.atlas-session-dialog .context-toggle-grid > label,
+.atlas-session-dialog .context-score-grid > label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 13px 15px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px;
+  background: rgba(255,255,255,.035);
+}
+
+.atlas-session-dialog .context-toggle-grid input {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  accent-color: #ec6ed1;
+}
+
+.atlas-session-dialog .context-toggle-grid span,
+.atlas-session-dialog .context-score-grid label > span {
+  display: grid;
+  gap: 3px;
+  color: #edf8ff;
+}
+
+.atlas-session-dialog .context-toggle-grid small,
+.atlas-session-dialog .context-score-grid small {
+  color: #91aabd;
+  font-size: .72rem;
+  font-weight: 400;
+}
+
+.atlas-session-dialog .context-score-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.atlas-session-dialog .context-score-grid > label {
+  justify-content: space-between;
+}
+
+.atlas-session-dialog .context-score-grid input {
+  width: 72px;
+  padding: 9px 10px;
+  color: #fff;
+  font-weight: 800;
+  text-align: center;
+  border: 1px solid rgba(53,204,255,.32);
+  border-radius: 9px;
+  background: #071827;
+}
+
+.atlas-session-dialog .context-comment-field {
+  display: grid;
+  gap: 8px;
+  color: #edf8ff;
+  font-weight: 700;
+}
+
+.atlas-session-dialog .context-comment-field textarea {
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
+  padding: 13px 15px;
+  color: #edf8ff;
+  font: inherit;
+  line-height: 1.5;
+  border: 1px solid rgba(236,110,209,.25);
+  border-radius: 11px;
+  outline: none;
+  background: rgba(2,12,22,.72);
+}
+
+.atlas-session-dialog .context-comment-field textarea:focus,
+.atlas-session-dialog .context-score-grid input:focus {
+  border-color: #ec6ed1;
+  box-shadow: 0 0 0 3px rgba(236,110,209,.11);
+}
+
+.atlas-session-dialog .context-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.atlas-session-dialog .context-form-footer small {
+  color: #8faabd;
+  line-height: 1.4;
+}
+
+.atlas-session-dialog .context-form-footer button {
+  flex: 0 0 auto;
+  padding: 11px 18px;
+  color: #06131f;
+  font-weight: 900;
+  cursor: pointer;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(105deg, #ec6ed1, #49e1c0);
+  box-shadow: 0 8px 24px rgba(236,110,209,.16);
+}
+
+.atlas-session-dialog .context-form-footer button:disabled {
+  cursor: wait;
+  opacity: .6;
+}
+
+.atlas-session-dialog .context-form-status {
+  min-height: 1.2em;
+  margin: 0;
+  color: #9fb4c3;
+  font-size: .78rem;
+}
+
+.atlas-session-dialog .context-form-status.success {
+  color: #58e5ad;
+}
+
+.atlas-session-dialog .context-form-status.error {
+  color: #ff7b8d;
+}
+
+@media (max-width: 760px) {
+  .atlas-session-dialog .context-toggle-grid,
+  .atlas-session-dialog .context-score-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .atlas-session-dialog .context-form-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .atlas-session-dialog .context-form-footer button {
+    width: 100%;
+  }
+}

@@ -73,6 +73,13 @@ EXECUTIONS_PATH = (
     / "atlas-coach-executions.json"
 )
 
+WORKOUT_CONTEXTS_PATH = (
+    ROOT
+    / "atlas-data"
+    / "private"
+    / "atlas-coach-workout-contexts.json"
+)
+
 def selected_fields(value, field_names):
     """Copie uniquement les champs explicitement autorisés."""
 
@@ -257,6 +264,107 @@ def load_execution_summaries():
         key=lambda item: str(item.get("start_time") or ""),
         reverse=True,
     )
+
+def load_workout_contexts():
+    """Charge l’historique des contextes déclarés."""
+
+    if not WORKOUT_CONTEXTS_PATH.exists():
+        return []
+
+    with WORKOUT_CONTEXTS_PATH.open("r", encoding="utf-8") as source:
+        loaded = json.load(source)
+
+    return loaded if isinstance(loaded, list) else []
+
+
+def latest_workout_context(workout_id):
+    """Retourne la déclaration la plus récente d’une séance."""
+
+    matches = [
+        item
+        for item in load_workout_contexts()
+        if str(item.get("workout_id") or "") == workout_id
+    ]
+
+    return matches[-1] if matches else None
+
+
+def context_score(value, field_name):
+    """Valide une échelle utilisateur comprise entre 0 et 10."""
+
+    if value in (None, ""):
+        return None
+
+    try:
+        score = int(value)
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            f"{field_name} doit être compris entre 0 et 10."
+        ) from error
+
+    if not 0 <= score <= 10:
+        raise ValueError(
+            f"{field_name} doit être compris entre 0 et 10."
+        )
+
+    return score
+
+
+def record_workout_context(payload):
+    """Enregistre le contexte déclaré sans modifier les données Garmin."""
+
+    workout_id = str(payload.get("workout_id") or "").strip()
+    activity_id = str(payload.get("activity_id") or "").strip()
+    comment = str(payload.get("comment") or "").strip()
+
+    if not workout_id:
+        raise ValueError("workout_id est obligatoire.")
+    if len(comment) > 1200:
+        raise ValueError(
+            "Le commentaire ne peut pas dépasser 1200 caractères."
+        )
+
+    record = {
+        "workout_id": workout_id,
+        "activity_id": activity_id or None,
+        "heat": bool(payload.get("heat")),
+        "relief": bool(payload.get("relief")),
+        "pain_0_to_10": context_score(
+            payload.get("pain_0_to_10"),
+            "La douleur",
+        ),
+        "fatigue_0_to_10": context_score(
+            payload.get("fatigue_0_to_10"),
+            "La fatigue",
+        ),
+        "comment": comment,
+        "recorded_at": datetime.now().astimezone().isoformat(
+            timespec="seconds"
+        ),
+    }
+
+    history = load_workout_contexts()
+    history.append(record)
+    WORKOUT_CONTEXTS_PATH.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    temporary = WORKOUT_CONTEXTS_PATH.with_suffix(".tmp")
+
+    with temporary.open(
+        "w",
+        encoding="utf-8",
+        newline="\n",
+    ) as output_file:
+        json.dump(
+            history,
+            output_file,
+            ensure_ascii=False,
+            indent=2,
+        )
+
+    temporary.replace(WORKOUT_CONTEXTS_PATH)
+    return record
 
 def record_workout_decision(payload):
     """Enregistre et analyse une décision prise sur une séance."""
@@ -478,12 +586,47 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
 
+        query = parse_qs(parsed.query)
+
+        if parsed.path == "/api/atlas-coach/workout-context":
+            try:
+                workout_id = str(
+                    (query.get("workout_id") or [""])[0]
+                ).strip()
+                if not workout_id:
+                    raise ValueError("workout_id est obligatoire.")
+
+                context = latest_workout_context(workout_id)
+                self.send_json(
+                    200,
+                    {
+                        "ok": True,
+                        "context": context,
+                    },
+                )
+            except ValueError as error:
+                self.send_json(
+                    400,
+                    {"ok": False, "error": str(error)},
+                )
+            except (OSError, json.JSONDecodeError) as error:
+                self.send_json(
+                    500,
+                    {
+                        "ok": False,
+                        "error": (
+                            "Le contexte utilisateur "
+                            f"ne peut pas être chargé : {error}"
+                        ),
+                    },
+                )
+            return
+
         if parsed.path != "/api/atlas-coach/executions":
             super().do_GET()
             return
 
         try:
-            query = parse_qs(parsed.query)
             workout_id = str(
                 (query.get("workout_id") or [""])[0]
             ).strip()
@@ -540,6 +683,7 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
         allowed_routes = {
             "/api/atlas-brain/analyse",
             "/api/atlas-coach/workout-decision",
+            "/api/atlas-coach/workout-context",
         }
 
         if self.path not in allowed_routes:
@@ -555,6 +699,17 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             )
             raw_body = self.rfile.read(content_length)
             payload = json.loads(raw_body.decode("utf-8"))
+
+            if self.path == "/api/atlas-coach/workout-context":
+                context = record_workout_context(payload)
+                self.send_json(
+                    200,
+                    {
+                        "ok": True,
+                        "context": context,
+                    },
+                )
+                return
 
             if self.path == "/api/atlas-coach/workout-decision":
                 decision = record_workout_decision(payload)
