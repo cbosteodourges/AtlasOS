@@ -57,6 +57,29 @@
   const workoutIndex = new Map();
   let activeProgram = null;
   let workoutDecisions = loadWorkoutDecisions();
+  const executionReportCache = new Map();
+
+  async function loadExecutionReport(workoutId) {
+    if (executionReportCache.has(workoutId)) {
+      return executionReportCache.get(workoutId);
+    }
+
+    const response = await fetch(
+      `/api/atlas-coach/executions?workout_id=${encodeURIComponent(workoutId)}&limit=1`,
+      { cache: "no-store" }
+    );
+    const payload = await response.json();
+
+    if (!response.ok || !payload.ok) {
+      throw new Error(
+        payload.error || "Compte-rendu Atlas indisponible."
+      );
+    }
+
+    const report = payload.executions?.[0] || null;
+    executionReportCache.set(workoutId, report);
+    return report;
+  }
 
   function loadWorkoutDecisions() {
     try {
@@ -1022,7 +1045,7 @@ const target = compactTarget(workout, zone);
     dialog = document.createElement("dialog");
     dialog.id = "atlasSessionDialog";
     dialog.className = "atlas-session-dialog";
-    dialog.style.cssText = "width:min(900px,calc(100vw - 40px));max-width:900px;max-height:88vh;padding:0;color:#eef9ff;border:1px solid rgba(225,177,78,.75);border-radius:24px;background:radial-gradient(circle at 85% 0%,rgba(30,190,255,.16),transparent 34%),linear-gradient(145deg,#0b2035,#061321 58%,#020914);box-shadow:0 35px 100px rgba(0,0,0,.8),0 0 35px rgba(225,177,78,.2);";
+    dialog.style.cssText = "width:calc(100vw - 24px);max-width:none;height:calc(100vh - 24px);max-height:calc(100vh - 24px);padding:0;color:#eef9ff;border:1px solid rgba(225,177,78,.75);border-radius:24px;background:radial-gradient(circle at 85% 0%,rgba(30,190,255,.16),transparent 34%),linear-gradient(145deg,#0b2035,#061321 58%,#020914);box-shadow:0 35px 100px rgba(0,0,0,.8),0 0 35px rgba(225,177,78,.2);";
     dialog.innerHTML = `
       <div class="session-dialog-shell" style="position:relative;padding:34px;color:#eef9ff;background:transparent;">
         <button
@@ -1294,6 +1317,330 @@ const target = compactTarget(workout, zone);
     `;
   }
 
+  function reportScore(value) {
+    const numeric = Number(value);
+    return Number.isFinite(numeric)
+      ? `${Math.round(numeric)}/100`
+      : "—";
+  }
+
+  function reportNumber(value, digits = 1) {
+    const numeric = Number(value);
+    return Number.isFinite(numeric)
+      ? numeric.toLocaleString("fr-FR", {
+          maximumFractionDigits: digits
+        })
+      : "—";
+  }
+
+  function reportPace(seconds) {
+    const numeric = Number(seconds);
+    if (!Number.isFinite(numeric) || numeric <= 0) return "—";
+    const minutes = Math.floor(numeric / 60);
+    const remainder = String(Math.round(numeric % 60)).padStart(2, "0");
+    return `${minutes}:${remainder}/km`;
+  }
+
+  function reportList(values, emptyText = "Aucun élément signalé") {
+    const items = Array.isArray(values)
+      ? values.filter(Boolean)
+      : values
+        ? [values]
+        : [];
+
+    if (!items.length) {
+      return `<p class="report-empty">${escapeHtml(emptyText)}</p>`;
+    }
+
+    return `
+      <ul class="report-list">
+        ${items.map(item => `<li>${escapeHtml(item)}</li>`).join("")}
+      </ul>
+    `;
+  }
+
+  function reportSignedNumber(value, digits = 1, unit = "") {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return "—";
+    const sign = numeric > 0 ? "+" : "";
+    return `${sign}${numeric.toLocaleString("fr-FR", {
+      maximumFractionDigits: digits
+    })}${unit}`;
+  }
+
+  function sessionTypeLabel(value) {
+    return {
+      easy: "Endurance facile",
+      recovery: "Récupération",
+      threshold: "Travail au seuil",
+      intervals: "Intervalles",
+      long_run: "Sortie longue"
+    }[value] || value || "Séance analysée";
+  }
+
+  function executionReportHtml(report, workout) {
+    if (!report) {
+      return `
+        <section class="execution-report-empty">
+          <strong>Aucun compte-rendu FIT associé</strong>
+          <p>
+            Après l’import Garmin, Atlas comparera ici la séance réalisée
+            avec la prescription et expliquera son raisonnement.
+          </p>
+        </section>
+      `;
+    }
+
+    const match = report.workout_match || {};
+    const execution = match.execution || {};
+    const activity = report.activity || {};
+    const drift = report.cardiac_drift || {};
+    const analysis = report.analysis || {};
+    const first = drift.first_segment || {};
+    const second = drift.second_segment || {};
+    const plannedDuration = Number(workout.planned_duration_minutes);
+    const actualDuration = Number(activity.duration_minutes);
+    const directPlannedDistance = Number(workout.planned_distance_km);
+    const estimatedPlannedDistance = (workout.blocks || []).reduce(
+      (total, block) => {
+        const repetitions = Number(block.repetitions) || 1;
+
+        if (block.distance_meters != null) {
+          return total +
+            Number(block.distance_meters) * repetitions / 1000;
+        }
+
+        const duration = Number(block.duration_minutes) || 0;
+        const speedMinimum = Number(block.target?.speed_min_kmh);
+        const speedMaximum = Number(block.target?.speed_max_kmh);
+
+        if (
+          duration > 0 &&
+          Number.isFinite(speedMinimum) &&
+          Number.isFinite(speedMaximum)
+        ) {
+          return total +
+            duration *
+            repetitions *
+            ((speedMinimum + speedMaximum) / 2) /
+            60;
+        }
+
+        return total;
+      },
+      0
+    );
+    const plannedDistanceRaw = directPlannedDistance > 0
+      ? directPlannedDistance
+      : estimatedPlannedDistance || Number.NaN;
+    const plannedDistance = Number.isFinite(plannedDistanceRaw)
+      ? Math.round(plannedDistanceRaw * 10) / 10
+      : Number.NaN;
+    const actualDistance = Number(activity.distance_km);
+    const durationDelta = actualDuration - plannedDuration;
+    const distanceDelta = actualDistance - plannedDistance;
+    const executionScore = Number(execution.execution_score);
+    const targetScore = Number(match.target_compliance_score);
+    const temperature = Number(activity.temperature_c);
+    const elevation = Number(activity.elevation_gain_m);
+    const hillSamples = Number(drift.excluded_hill_sample_count);
+    const learningAllowed =
+      report.automatic_learning_allowed === true;
+
+    const executionConclusion = executionScore >= 80
+      ? "La séance est globalement bien exécutée."
+      : executionScore >= 60
+        ? "La séance est exploitable, avec quelques écarts à surveiller."
+        : "La séance présente des écarts importants par rapport au plan.";
+
+    const targetConclusion = targetScore >= 85
+      ? "Les cibles physiologiques ont été bien respectées."
+      : targetScore >= 65
+        ? "Les cibles ont été partiellement respectées."
+        : "Les cibles prévues ont été peu respectées.";
+
+    return `
+      <section class="execution-report execution-report-narrative">
+        <header class="report-cockpit-header">
+          <div>
+            <span>ANALYSE ATLAS · DONNÉES RÉELLES</span>
+            <h2>${escapeHtml(execution.workout_name || workout.title)}</h2>
+            <p>
+              ${escapeHtml(sessionTypeLabel(activity.session_type))}
+              · séance Garmin reconnue avec une confiance de
+              ${reportScore(match.match_confidence_score)}.
+            </p>
+          </div>
+          <div class="report-main-score">
+            <strong>${reportScore(execution.execution_score)}</strong>
+            <span>Score d’exécution</span>
+          </div>
+        </header>
+
+        <section class="atlas-reading">
+          <span class="report-kicker">LECTURE IMMÉDIATE</span>
+          <h3>${executionConclusion}</h3>
+          <p>
+            Vous avez couru ${reportNumber(actualDuration)} minutes,
+            soit ${reportSignedNumber(durationDelta, 1, " min")} par
+            rapport aux ${reportNumber(plannedDuration)} minutes prévues.
+            ${targetConclusion} La qualité des données atteint
+            ${reportScore(activity.data_quality_score)} et la séance
+            correspond au programme avec une confiance de
+            ${reportScore(match.match_confidence_score)}.
+          </p>
+          <div class="report-confidence-line">
+            <span>Données <strong>${reportScore(activity.data_quality_score)}</strong></span>
+            <span>Classification <strong>${reportScore(activity.fingerprint_confidence_score)}</strong></span>
+            <span>Correspondance <strong>${reportScore(match.match_confidence_score)}</strong></span>
+            <span>Cibles <strong>${reportScore(targetScore)}</strong></span>
+          </div>
+        </section>
+
+        <section class="planned-realized-section">
+          <div class="report-heading">
+            <span class="report-kicker">COMPARAISON</span>
+            <h3>Ce qui était prévu et ce qui a été réalisé</h3>
+            <p>
+              Cette comparaison permet de distinguer une séance plus
+              longue d’une séance réellement trop intense.
+            </p>
+          </div>
+          <div class="planned-realized-table">
+            <div class="comparison-row comparison-header">
+              <span>Mesure</span><span>Prévu</span>
+              <span>Réalisé</span><span>Écart ou lecture</span>
+            </div>
+            <div class="comparison-row">
+              <strong>Durée</strong>
+              <span>${reportNumber(plannedDuration)} min</span>
+              <span>${reportNumber(actualDuration)} min</span>
+              <b>${reportSignedNumber(durationDelta, 1, " min")}</b>
+            </div>
+            <div class="comparison-row">
+              <strong>Distance</strong>
+              <span>${Number.isFinite(plannedDistance) ? `${reportNumber(plannedDistance)} km` : "Non fixée"}</span>
+              <span>${reportNumber(actualDistance, 2)} km</span>
+              <b>${Number.isFinite(distanceDelta) ? reportSignedNumber(distanceDelta, 2, " km") : "À interpréter"}</b>
+            </div>
+            <div class="comparison-row">
+              <strong>Allure et vitesse</strong>
+              <span>${escapeHtml(compactTarget(workout, workoutZone(workout)))}</span>
+              <span>${reportPace(activity.pace_seconds_per_km)} · ${reportNumber(activity.average_speed_kmh)} km/h</span>
+              <b>${targetConclusion}</b>
+            </div>
+            <div class="comparison-row">
+              <strong>Fréquence cardiaque</strong>
+              <span>Cible programmée</span>
+              <span>${reportNumber(activity.average_heart_rate_bpm, 0)} bpm · max. ${reportNumber(activity.maximum_heart_rate_bpm, 0)} bpm</span>
+              <b>Conformité ${reportScore(targetScore)}</b>
+            </div>
+          </div>
+        </section>
+
+        <div class="report-analysis-layout">
+          <main>
+            <section class="narrative-analysis-section">
+              <div class="report-heading">
+                <span class="report-kicker">RAISONNEMENT PHYSIOLOGIQUE</span>
+                <h3>Ce qu’Atlas observe pendant l’effort</h3>
+              </div>
+              ${drift.analyzable ? `
+                <p>
+                  Après avoir exclu les ${reportNumber(drift.warmup_excluded_minutes, 0)}
+                  premières minutes, Atlas observe une vitesse presque
+                  stable : ${reportNumber(first.average_speed_kmh)} km/h
+                  dans la première partie contre
+                  ${reportNumber(second.average_speed_kmh)} km/h dans la
+                  seconde (${reportSignedNumber(drift.speed_change_percent, 1, " %")}).
+                  Dans le même temps, la fréquence cardiaque passe de
+                  ${reportNumber(first.average_heart_rate_bpm)} à
+                  ${reportNumber(second.average_heart_rate_bpm)} bpm.
+                </p>
+                <div class="drift-reading-line">
+                  <div><span>Première partie</span><strong>${reportNumber(first.average_speed_kmh)} km/h</strong><small>${reportNumber(first.average_heart_rate_bpm)} bpm</small></div>
+                  <i>→</i>
+                  <div><span>Deuxième partie</span><strong>${reportNumber(second.average_speed_kmh)} km/h</strong><small>${reportNumber(second.average_heart_rate_bpm)} bpm</small></div>
+                  <i>→</i>
+                  <div class="drift-result"><span>Évolution</span><strong>${reportSignedNumber(drift.heart_rate_change_bpm, 1, " bpm")}</strong><small>${reportSignedNumber(drift.speed_change_percent, 1, " % vitesse")}</small></div>
+                </div>
+                <p>
+                  Le découplage aérobie atteint
+                  <strong>${reportNumber(drift.aerobic_decoupling_percent)} %</strong>,
+                  classé « ${escapeHtml(drift.drift_classification || "non classé")} ».
+                  Il s’agit d’un signal à suivre, mais pas d’une preuve
+                  isolée de mauvaise tolérance.
+                </p>
+              ` : `
+                <p>Cette séance ne permet pas une mesure suffisamment fiable de la dérive cardiaque.</p>
+              `}
+              <p>
+                ${Number.isFinite(temperature) ? `La température était d’environ ${reportNumber(temperature)} °C. ` : ""}
+                ${Number.isFinite(elevation) ? `Le parcours comportait ${reportNumber(elevation, 0)} m de dénivelé positif. ` : ""}
+                ${Number.isFinite(hillSamples) && hillSamples > 0 ? `${reportNumber(hillSamples, 0)} points de pente marquée ont été retirés du calcul. ` : ""}
+                Ces contraintes peuvent augmenter le coût cardiaque sans
+                traduire à elles seules une baisse de condition physique.
+              </p>
+            </section>
+
+            <section class="narrative-analysis-section context-story">
+              <div class="report-heading">
+                <span class="report-kicker">CONTEXTE UTILISATEUR</span>
+                <h3>Votre ressenti donne du sens aux données</h3>
+              </div>
+              <p>
+                La montre décrit ce qui s’est produit, mais elle ne connaît
+                pas toujours la cause. La chaleur ressentie, les bosses,
+                les faux plats, une douleur, la fatigue musculaire ou une
+                allure volontairement maintenue permettent à Atlas de
+                mieux interpréter la hausse cardiaque.
+              </p>
+              <div class="declared-context-placeholder">
+                La saisie chaleur, relief, douleur, fatigue et commentaire
+                libre sera intégrée ici à l’étape suivante.
+              </div>
+            </section>
+          </main>
+
+          <aside class="atlas-decision-column">
+            <span class="report-kicker">DÉCISION ATLAS</span>
+            <h3>${learningAllowed ? "Séance retenue pour l’apprentissage" : "Analyse conservée avec prudence"}</h3>
+            <p>
+              ${learningAllowed
+                ? "La qualité des données et la correspondance sont suffisantes pour enrichir votre profil longitudinal."
+                : "Cette analyse est conservée, mais elle ne modifiera pas automatiquement le profil."}
+            </p>
+            <p>
+              Atlas ne modifie pas silencieusement le programme actif.
+              Toute adaptation future devra présenter les observations,
+              la raison du changement et les séances concernées.
+            </p>
+            <div class="decision-metrics">
+              <span>Charge physiologique <strong>${reportScore(analysis.physiological_load_score)}</strong></span>
+              <span>Charge biomécanique <strong>${reportScore(analysis.biomechanical_load_score)}</strong></span>
+            </div>
+          </aside>
+        </div>
+
+        <section class="recovery-story">
+          <div class="report-heading">
+            <span class="report-kicker">APRÈS LA SÉANCE</span>
+            <h3>La récupération confirmera cette interprétation</h3>
+            <p>
+              Les données Wellness et votre ressenti à 24, 48 et 72 heures
+              permettront de vérifier si la charge a été réellement bien
+              tolérée avant toute adaptation.
+            </p>
+          </div>
+          <div class="recovery-timeline">
+            <span><b>24 h</b> Première réponse</span>
+            <span><b>48 h</b> Retour vers la référence</span>
+            <span><b>72 h</b> Tolérance confirmée</span>
+          </div>
+        </section>
+      </section>
+    `;
+  }
   function workoutActionsHtml(workout) {
     const decision = workoutDecision(workout);
     const currentStatus = decision.status || "planned";
@@ -1330,10 +1677,69 @@ const target = compactTarget(workout, zone);
   function openWorkout(workout) {
     const dialog = ensureDialog();
     const content = dialog.querySelector(".dialog-content");
-    content.innerHTML =
-      detailHtml(workout) + workoutActionsHtml(workout);
+    dialog.dataset.workoutId = workout.workout_id;
+
+    content.innerHTML = `
+      <nav class="session-dialog-tabs" aria-label="Fiche de séance">
+        <button
+          type="button"
+          class="active"
+          data-session-tab="planned"
+          aria-selected="true"
+        >
+          Séance prévue
+        </button>
+        <button
+          type="button"
+          data-session-tab="report"
+          aria-selected="false"
+        >
+          Compte-rendu Atlas
+          <i data-report-status>Chargement…</i>
+        </button>
+      </nav>
+
+      <section
+        class="session-tab-panel active"
+        data-session-panel="planned"
+      >
+        ${detailHtml(workout)}
+        ${workoutActionsHtml(workout)}
+      </section>
+
+      <section
+        class="session-tab-panel"
+        data-session-panel="report"
+        hidden
+      >
+        <div class="report-loading">
+          <span></span>
+          Atlas recherche l’analyse FIT correspondante…
+        </div>
+      </section>
+    `;
 
     content.onclick = async event => {
+      const tab = event.target.closest("[data-session-tab]");
+
+      if (tab) {
+        const selected = tab.dataset.sessionTab;
+
+        content.querySelectorAll("[data-session-tab]").forEach(button => {
+          const active = button.dataset.sessionTab === selected;
+          button.classList.toggle("active", active);
+          button.setAttribute("aria-selected", String(active));
+        });
+
+        content.querySelectorAll("[data-session-panel]").forEach(panel => {
+          const active = panel.dataset.sessionPanel === selected;
+          panel.classList.toggle("active", active);
+          panel.hidden = !active;
+        });
+
+        return;
+      }
+
       const button = event.target.closest("[data-workout-action]");
       if (!button) return;
 
@@ -1394,6 +1800,44 @@ const target = compactTarget(workout, zone);
     };
 
     dialog.showModal();
+
+    loadExecutionReport(workout.workout_id)
+      .then(report => {
+        if (dialog.dataset.workoutId !== workout.workout_id) return;
+
+        const panel = content.querySelector(
+          '[data-session-panel="report"]'
+        );
+        const status = content.querySelector("[data-report-status]");
+
+        panel.innerHTML = executionReportHtml(report, workout);
+        status.textContent = report
+          ? "Analyse disponible"
+          : "En attente";
+        status.dataset.available = String(Boolean(report));
+
+        if (report) {
+          content.querySelector(
+            '[data-session-tab="report"]'
+          )?.click();
+        }
+      })
+      .catch(error => {
+        if (dialog.dataset.workoutId !== workout.workout_id) return;
+
+        const panel = content.querySelector(
+          '[data-session-panel="report"]'
+        );
+        const status = content.querySelector("[data-report-status]");
+
+        panel.innerHTML = `
+          <section class="execution-report-empty error">
+            <strong>Compte-rendu indisponible</strong>
+            <p>${escapeHtml(error.message)}</p>
+          </section>
+        `;
+        status.textContent = "Indisponible";
+      });
   }
 
   const OPTIONAL_ACTIVITY_TYPES = [

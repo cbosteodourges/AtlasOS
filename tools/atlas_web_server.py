@@ -8,6 +8,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 import sys
+from urllib.parse import parse_qs, urlparse
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,6 +65,198 @@ WORKOUT_DECISIONS_PATH = (
     / "atlas-coach-workout-decisions.json"
 )
 
+
+EXECUTIONS_PATH = (
+    ROOT
+    / "atlas-data"
+    / "private"
+    / "atlas-coach-executions.json"
+)
+
+def selected_fields(value, field_names):
+    """Copie uniquement les champs explicitement autorisés."""
+
+    if not isinstance(value, dict):
+        return {}
+
+    return {
+        field: value.get(field)
+        for field in field_names
+        if field in value
+    }
+
+
+def execution_summary(item):
+    """Construit un compte-rendu navigateur sans exposer le fichier privé."""
+
+    if not isinstance(item, dict):
+        return None
+
+    match = item.get("atlas_workout_match") or {}
+    execution = match.get("execution") or {}
+    drift = item.get("cardiac_drift") or {}
+    analysis = item.get("detailed_analysis") or {}
+    integrity = analysis.get("data_integrity") or {}
+    fingerprint = item.get("fingerprint") or {}
+
+    return {
+        "activity_id": item.get("activity_id"),
+        "provider": item.get("provider"),
+        "start_time": item.get("start_time"),
+        "processed_at": item.get("processed_at"),
+        "automatic_learning_allowed": item.get(
+            "automatic_learning_allowed"
+        ),
+        "workout_match": {
+            **selected_fields(
+                match,
+                (
+                    "workout_id",
+                    "matched",
+                    "match_confidence_score",
+                    "date_difference_days",
+                    "duration_compliance_score",
+                    "distance_compliance_score",
+                    "target_compliance_score",
+                    "physiological_load_score",
+                    "biomechanical_load_score",
+                    "reasons",
+                ),
+            ),
+            "execution": selected_fields(
+                execution,
+                (
+                    "workout_name",
+                    "workout_origin",
+                    "origin_confidence_score",
+                    "origin_reasons",
+                    "execution_score",
+                    "target_compliance_score",
+                    "planned_step_count",
+                    "executed_block_count",
+                    "planned_repetition_count",
+                    "completed_repetition_count",
+                    "observations",
+                ),
+            ),
+        },
+        "cardiac_drift": {
+            **selected_fields(
+                drift,
+                (
+                    "analyzable",
+                    "aerobic_decoupling_percent",
+                    "confidence_score",
+                    "drift_classification",
+                    "heart_rate_change_bpm",
+                    "speed_change_percent",
+                    "warmup_excluded_minutes",
+                    "valid_sample_count",
+                    "excluded_hill_sample_count",
+                    "interpretation",
+                    "limitations",
+                    "planning_influences",
+                ),
+            ),
+            "first_segment": selected_fields(
+                drift.get("first_segment"),
+                (
+                    "average_heart_rate_bpm",
+                    "average_speed_kmh",
+                    "average_temperature_c",
+                    "duration_minutes",
+                    "sample_count",
+                ),
+            ),
+            "second_segment": selected_fields(
+                drift.get("second_segment"),
+                (
+                    "average_heart_rate_bpm",
+                    "average_speed_kmh",
+                    "average_temperature_c",
+                    "duration_minutes",
+                    "sample_count",
+                ),
+            ),
+        },
+        "analysis": {
+            **selected_fields(
+                analysis,
+                (
+                    "analysis_confidence_score",
+                    "dominant_work_type",
+                    "physiological_load_score",
+                    "biomechanical_load_score",
+                    "work_duration_seconds",
+                    "work_distance_meters",
+                    "recovery_duration_seconds",
+                    "recovery_distance_meters",
+                    "interpretation",
+                    "planning_influences",
+                    "threshold_observations",
+                ),
+            ),
+            "data_integrity": selected_fields(
+                integrity,
+                (
+                    "sensor_quality_score",
+                    "identity_confidence_score",
+                    "heart_rate_reliable",
+                    "physiological_data_usable",
+                    "recommended_action",
+                    "warnings",
+                    "anomalies",
+                ),
+            ),
+        },
+        "activity": selected_fields(
+            fingerprint,
+            (
+                "sport",
+                "session_type",
+                "distance_km",
+                "duration_minutes",
+                "pace_seconds_per_km",
+                "average_speed_kmh",
+                "average_heart_rate_bpm",
+                "maximum_heart_rate_bpm",
+                "elevation_gain_m",
+                "temperature_c",
+                "training_load",
+                "data_quality_score",
+                "fingerprint_confidence_score",
+                "perceived_effort_1_to_10",
+                "feeling_score_0_to_100",
+                "aerobic_training_effect",
+                "anaerobic_training_effect",
+                "classification_reasons",
+                "missing_data",
+            ),
+        ),
+    }
+
+
+def load_execution_summaries():
+    """Charge les comptes-rendus synthétiques du plus récent au plus ancien."""
+
+    if not EXECUTIONS_PATH.exists():
+        return []
+
+    with EXECUTIONS_PATH.open("r", encoding="utf-8") as source:
+        data = json.load(source)
+
+    items = data if isinstance(data, list) else [data]
+    summaries = [
+        summary
+        for summary in (execution_summary(item) for item in items)
+        if summary is not None
+    ]
+
+    return sorted(
+        summaries,
+        key=lambda item: str(item.get("start_time") or ""),
+        reverse=True,
+    )
 
 def record_workout_decision(payload):
     """Enregistre et analyse une décision prise sur une séance."""
@@ -282,6 +475,67 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(content)
 
+    def do_GET(self):
+        parsed = urlparse(self.path)
+
+        if parsed.path != "/api/atlas-coach/executions":
+            super().do_GET()
+            return
+
+        try:
+            query = parse_qs(parsed.query)
+            workout_id = str(
+                (query.get("workout_id") or [""])[0]
+            ).strip()
+            activity_id = str(
+                (query.get("activity_id") or [""])[0]
+            ).strip()
+
+            try:
+                limit = int((query.get("limit") or ["25"])[0])
+            except (TypeError, ValueError):
+                limit = 25
+
+            limit = max(1, min(limit, 100))
+            summaries = load_execution_summaries()
+
+            if workout_id:
+                summaries = [
+                    item
+                    for item in summaries
+                    if str(
+                        item.get("workout_match", {}).get("workout_id")
+                        or ""
+                    ) == workout_id
+                ]
+
+            if activity_id:
+                summaries = [
+                    item
+                    for item in summaries
+                    if str(item.get("activity_id") or "") == activity_id
+                ]
+
+            summaries = summaries[:limit]
+            self.send_json(
+                200,
+                {
+                    "ok": True,
+                    "count": len(summaries),
+                    "executions": summaries,
+                },
+            )
+        except (OSError, json.JSONDecodeError) as error:
+            self.send_json(
+                500,
+                {
+                    "ok": False,
+                    "error": (
+                        "Les comptes-rendus Atlas "
+                        f"ne peuvent pas être chargés : {error}"
+                    ),
+                },
+            )
     def do_POST(self):
         allowed_routes = {
             "/api/atlas-brain/analyse",
