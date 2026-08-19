@@ -6,7 +6,7 @@
   const image = document.querySelector("[data-atlas-avatar-image]");
   if (!image) return;
   image.src = selected === "female"
-    ? "./assets/atlas-avatar-femme-clean-final.png?v=1"
-    : "./assets/atlas-avatar-homme-clean-final.png?v=1";
+    ? "./assets/atlas-avatar-femme-clean-final.png?v=2"
+    : "./assets/atlas-avatar-homme-clean-final.png?v=2";
   image.dataset.avatar = selected;
 })();
