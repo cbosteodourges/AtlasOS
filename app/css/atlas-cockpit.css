@@ -1,719 +1,177 @@
 :root {
-  --bg: #010712;
-  --panel: rgba(5, 19, 35, .92);
-  --panel-soft: rgba(7, 27, 47, .78);
-  --line: rgba(55, 202, 255, .2);
-  --cyan: #35ccff;
-  --blue: #1977ff;
-  --green: #54eba5;
-  --orange: #ff9f43;
-  --violet: #9868ff;
-  --text: #f2f9ff;
-  --muted: #9eb6c8;
+  --bg: #010711;
+  --panel: rgba(5, 20, 35, .82);
+  --panel-strong: rgba(6, 25, 43, .96);
+  --line: rgba(62, 201, 255, .18);
+  --cyan: #38d1ff;
+  --blue: #1c82ff;
+  --green: #51e7a6;
+  --text: #f3f9fd;
+  --muted: #91aabd;
+  --sidebar: 224px;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html,
+* { box-sizing: border-box; }
+html, body { min-height: 100%; margin: 0; }
 body {
-  min-height: 100%;
-  margin: 0;
   color: var(--text);
   background: var(--bg);
-  font-family: Inter, system-ui, sans-serif;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
+a, button { color: inherit; font: inherit; }
+a { text-decoration: none; }
 
-button,
-a {
-  font: inherit;
+.atlas-shell { min-height: 100dvh; }
+.atlas-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: var(--sidebar);
+  padding: 24px 18px;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(4, 20, 36, .99), rgba(1, 8, 18, .99));
 }
-
-.atlas-cockpit {
-  min-height: 100dvh;
-  padding: 14px 18px 18px;
-  background:
-    radial-gradient(circle at 50% 35%, rgba(19, 94, 166, .16), transparent 37%),
-    linear-gradient(145deg, #03101e, #010711 62%);
-}
-
-.cockpit-header {
+.atlas-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 54px; }
+.atlas-brand img { width: 46px; height: 46px; border-radius: 12px; object-fit: cover; }
+.atlas-brand strong, .atlas-brand small { display: block; }
+.atlas-brand strong { letter-spacing: .1em; }
+.atlas-brand small { margin-top: 3px; color: var(--muted); font-size: .68rem; }
+.atlas-main-nav { display: grid; gap: 9px; }
+.atlas-main-nav a {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  min-height: 66px;
-  margin-bottom: 12px;
-  padding: 8px 14px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: rgba(3, 14, 27, .88);
-}
-
-.cockpit-brand,
-.cockpit-profile {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  color: inherit;
-  text-decoration: none;
-}
-
-.cockpit-brand-mark,
-.cockpit-profile-avatar {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--cyan);
-  border-radius: 50%;
-  background: rgba(29, 112, 195, .15);
-  box-shadow: 0 0 18px rgba(50, 201, 255, .14);
-}
-
-.cockpit-brand strong,
-.cockpit-brand small,
-.cockpit-profile strong,
-.cockpit-profile small {
-  display: block;
-}
-
-.cockpit-brand strong {
-  letter-spacing: .12em;
-}
-
-.cockpit-brand small,
-.cockpit-profile small {
-  color: var(--muted);
-  font-size: .7rem;
-}
-
-.cockpit-profile small i {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 10px var(--green);
-}
-
-.cockpit-dashboard {
-  display: grid;
-  grid-template-columns: minmax(220px, 270px) minmax(560px, 1fr) minmax(270px, 330px);
-  gap: 12px;
-  min-height: 690px;
-}
-
-.cockpit-column {
-  display: grid;
-  align-content: start;
-  gap: 9px;
-  min-width: 0;
-  padding: 13px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--panel);
-}
-
-.cockpit-section-title span,
-.cockpit-section-title small {
-  display: block;
-}
-
-.cockpit-section-title span {
-  color: var(--cyan);
-  font-size: .7rem;
-  letter-spacing: .12em;
-}
-
-.cockpit-section-title small {
-  margin-top: 3px;
-  color: var(--muted);
-  font-size: .66rem;
-}
-
-.daily-card,
-.objective-card,
-.brain-analysis,
-.brain-vigilance {
-  padding: 13px;
-  border: 1px solid rgba(55, 202, 255, .14);
+  gap: 14px;
+  min-height: 50px;
+  padding: 0 16px;
+  color: #a9bdca;
+  border: 1px solid transparent;
   border-radius: 12px;
-  background: var(--panel-soft);
 }
-
-.daily-card {
-  position: relative;
-  display: grid;
-  gap: 3px;
-  padding-left: 50px;
+.atlas-main-nav a:hover, .atlas-main-nav a.active {
+  color: #fff;
+  border-color: rgba(56, 209, 255, .3);
+  background: linear-gradient(90deg, rgba(28, 130, 255, .25), rgba(56, 209, 255, .08));
 }
-
-.daily-card::before {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  transform: translateY(-50%);
-  content: "•";
-  color: currentColor;
-  border: 1px solid currentColor;
-}
-
-.daily-card span,
-.daily-card small,
-.objective-card span,
-.objective-card small {
-  color: var(--muted);
-  font-size: .68rem;
-}
-
-.daily-card strong {
-  color: var(--green);
-  font-size: 1rem;
-}
-
-.daily-card.sleep strong {
-  color: var(--violet);
-}
-
-.daily-card.heart strong {
-  color: var(--cyan);
-}
-
-.objective-card {
-  display: grid;
-  gap: 7px;
-  margin-top: 4px;
-}
-
-.objective-card > strong {
-  font-size: 1.05rem;
-}
-
-.objective-card > div {
-  height: 6px;
-  overflow: hidden;
-  border-radius: 99px;
-  background: rgba(255, 255, 255, .08);
-}
-
-.objective-card > div i {
-  display: block;
-  height: 100%;
-  background: linear-gradient(90deg, var(--blue), var(--cyan));
-}
-
-.cockpit-twin {
-  position: relative;
-  min-width: 0;
-  overflow: hidden;
-  border: 1px solid rgba(55, 202, 255, .24);
-  border-radius: 20px;
-  background:
-    radial-gradient(circle at 50% 48%, rgba(20, 105, 188, .23), transparent 44%),
-    linear-gradient(155deg, rgba(5, 25, 45, .96), rgba(1, 8, 19, .98));
-}
-
-.cockpit-orbits {
-  position: absolute;
-  z-index: 1;
-  left: 50%;
-  top: 52%;
-  width: min(74%, 680px);
-  aspect-ratio: 1;
-  border: 1px solid rgba(43, 190, 255, .22);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  box-shadow:
-    0 0 0 35px rgba(39, 178, 255, .035),
-    0 0 0 85px rgba(39, 178, 255, .025),
-    inset 0 0 45px rgba(28, 158, 255, .08);
-}
-
-.cockpit-orbits::before,
-.cockpit-orbits::after {
-  position: absolute;
-  inset: 13%;
-  border: 1px dashed rgba(87, 127, 255, .3);
-  border-radius: 50%;
-  content: "";
-}
-
-.cockpit-orbits::after {
-  inset: 29%;
-  border-style: solid;
-  border-color: rgba(55, 202, 255, .15);
-}
-
-.cockpit-avatar {
-  position: absolute;
-  z-index: 3;
-  left: 50%;
-  top: 17%;
-  width: 39%;
-  height: 68%;
-  object-fit: contain;
-  transform: translateX(-50%);
-  mix-blend-mode: screen;
-  pointer-events: none;
-  filter: saturate(1.12) contrast(1.08)
-    drop-shadow(0 0 18px rgba(50, 199, 255, .2));
-}
-
-.atlas-index {
-  position: absolute;
-  z-index: 6;
-  left: 50%;
-  top: 3%;
-  display: grid;
-  place-items: center;
-  width: 110px;
-  height: 110px;
-  border: 3px solid var(--green);
-  border-radius: 50%;
-  transform: translateX(-50%);
-  background: rgba(4, 18, 32, .94);
-  box-shadow: 0 0 26px rgba(84, 235, 165, .25);
-}
-
-.atlas-index span,
-.atlas-index small {
-  font-size: .64rem;
-}
-
-.atlas-index strong {
-  font-size: 2.2rem;
-  line-height: .9;
-}
-
-.engine-node {
-  position: absolute;
-  z-index: 7;
-  display: grid;
-  place-items: center;
-  gap: 2px;
-  width: 142px;
-  padding: 5px;
-  color: var(--text);
-  cursor: pointer;
-  border: 0;
-  background: transparent;
-}
-
-.engine-node b {
-  display: grid;
-  place-items: center;
-  width: 58px;
-  height: 58px;
-  color: var(--cyan);
-  border: 2px solid currentColor;
-  border-radius: 50%;
-  background: rgba(3, 18, 34, .94);
-  box-shadow: 0 0 18px currentColor;
-}
-
-.engine-node strong {
-  font-size: .82rem;
-}
-
-.engine-node small {
-  color: var(--muted);
-  font-size: .58rem;
-}
-
-.engine-ai { left: 10%; top: 9%; }
-.engine-clinical { right: 10%; top: 9%; }
-.engine-physio { left: 1%; top: 41%; }
-.engine-coach { right: 1%; top: 41%; }
-.engine-physiology { left: 10%; bottom: 8%; }
-.engine-prevention { right: 10%; bottom: 8%; }
-.engine-memory { left: 50%; bottom: 0; transform: translateX(-50%); }
-
-.engine-clinical b { color: var(--violet); }
-.engine-coach b { color: var(--orange); }
-.engine-prevention b { color: var(--green); }
-.engine-physiology b { color: #ff6071; }
-.engine-memory b { color: var(--cyan); }
-
-.brain-heading {
+.atlas-main-nav i { width: 20px; color: var(--cyan); font-style: normal; text-align: center; }
+.atlas-talk {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  min-height: 54px;
+  margin-top: auto;
+  padding: 8px 12px;
+  cursor: pointer;
+  border: 1px solid rgba(107, 116, 255, .5);
+  border-radius: 14px;
+  background: rgba(10, 28, 47, .82);
 }
-
-.brain-heading > span {
+.atlas-talk span {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  color: var(--cyan);
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  background: rgba(44, 179, 255, .13);
+  background: linear-gradient(145deg, #3dbfff, #7d5bff 65%, #e865c4);
+  box-shadow: 0 0 18px rgba(91, 120, 255, .45);
 }
+.atlas-user { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
+.atlas-user > span { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--cyan); border-radius: 50%; }
+.atlas-user strong, .atlas-user small { display: block; }
+.atlas-user small { color: var(--muted); font-size: .68rem; }
 
-.brain-heading strong,
-.brain-heading small {
-  display: block;
+.atlas-home {
+  min-height: 100dvh;
+  margin-left: var(--sidebar);
+  padding: clamp(24px, 3vw, 48px);
+  background: radial-gradient(circle at 78% 34%, rgba(20, 109, 175, .15), transparent 34%);
 }
-
-.brain-heading small {
-  color: var(--muted);
-  font-size: .7rem;
-}
-
-.brain-analysis {
-  color: #dcebf4;
-  font-size: .78rem;
-  line-height: 1.45;
-}
-
-.brain-analysis ul {
-  padding-left: 20px;
-  color: var(--green);
-}
-
-.brain-analysis > strong {
-  color: #fff;
-  font-weight: 500;
-}
-
-.brain-vigilance span {
-  color: var(--orange);
-  font-size: .68rem;
-  letter-spacing: .08em;
-}
-
-.brain-vigilance p {
-  margin: 9px 0 0;
-  color: #dcebf4;
-  font-size: .76rem;
-}
-
-.brain-primary,
-.brain-talk {
-  min-height: 46px;
-  color: #fff;
-  cursor: pointer;
-  border: 1px solid rgba(55, 202, 255, .35);
-  border-radius: 10px;
-  background: linear-gradient(180deg, #0878df, #064da9);
-}
-
-.brain-talk {
-  color: var(--cyan);
-  background: rgba(5, 28, 49, .78);
-}
-
-.cockpit-timeline {
-  display: grid;
-  grid-template-columns: 170px repeat(5, minmax(130px, 1fr));
-  align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-  padding: 14px 18px;
-  overflow-x: auto;
+.home-header { display: flex; justify-content: space-between; align-items: flex-start; max-width: 1440px; margin: 0 auto 28px; }
+.eyebrow { color: var(--cyan); font-size: .72rem; font-weight: 700; letter-spacing: .13em; }
+h1 { margin: 8px 0 5px; font-size: clamp(1.9rem, 3vw, 3rem); }
+.home-header p { margin: 0; color: var(--muted); }
+.sync-state { display: flex; align-items: center; gap: 8px; padding: 10px 14px; color: var(--muted); font-size: .76rem; border: 1px solid var(--line); border-radius: 99px; }
+.sync-state i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 9px var(--green); }
+.home-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 410px); gap: clamp(22px, 3vw, 46px); max-width: 1440px; margin: auto; }
+.home-content { display: grid; align-content: start; gap: 18px; }
+.readiness-card, .next-session, .focus-card, .goal-card, .metrics article {
   border: 1px solid var(--line);
-  border-radius: 14px;
   background: var(--panel);
 }
+.readiness-card { display: flex; align-items: center; gap: 24px; min-height: 150px; padding: 24px 28px; border-radius: 20px; }
+.readiness-score { display: grid; flex: 0 0 96px; place-items: center; width: 96px; height: 96px; border: 3px solid var(--green); border-radius: 50%; background: rgba(4, 20, 32, .9); box-shadow: 0 0 24px rgba(81, 231, 166, .18); }
+.readiness-score strong { font-size: 2.25rem; line-height: .9; }
+.readiness-score span { color: var(--muted); font-size: .68rem; }
+.readiness-card h2, .next-session h2 { margin: 7px 0; font-size: clamp(1.3rem, 2vw, 1.8rem); }
+.readiness-card p, .next-session p, .focus-card p, .goal-card p { margin: 0; color: var(--muted); line-height: 1.55; }
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.metrics article { display: grid; gap: 7px; min-height: 112px; padding: 18px; border-radius: 16px; }
+.metrics span, .metrics small { color: var(--muted); font-size: .74rem; }
+.metrics strong { font-size: 1.08rem; }
+.metrics strong.positive { color: var(--green); }
+.next-session { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 26px 28px; border-left: 4px solid var(--cyan); border-radius: 18px; }
+.next-session a { flex: 0 0 auto; padding: 13px 17px; font-weight: 700; border-radius: 10px; background: linear-gradient(135deg, #197cff, #32cbdf); }
+.home-lower-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.focus-card, .goal-card { min-height: 160px; padding: 22px; border-radius: 17px; }
+.focus-card h3, .goal-card h3 { margin: 9px 0; }
+.focus-card a { display: inline-block; margin-top: 16px; color: var(--cyan); font-weight: 700; }
+.goal-card > div { height: 6px; margin: 18px 0 8px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.08); }
+.goal-card > div i { display: block; height: 100%; background: linear-gradient(90deg, var(--blue), var(--cyan), var(--green)); }
+.goal-card small { color: var(--muted); }
 
-.cockpit-timeline > strong {
-  color: var(--cyan);
-  font-size: .68rem;
-  letter-spacing: .1em;
+.twin-panel { position: relative; min-height: 650px; overflow: hidden; border: 1px solid var(--line); border-radius: 26px; background: linear-gradient(155deg, rgba(7, 31, 53, .72), rgba(1, 9, 18, .94)); }
+.twin-panel::after { position: absolute; inset: auto 8% 18% 8%; height: 1px; content: ""; background: linear-gradient(90deg, transparent, var(--cyan), transparent); box-shadow: 0 0 22px var(--cyan); }
+.twin-halo { position: absolute; left: 50%; top: 42%; width: 88%; aspect-ratio: 1; border: 1px solid rgba(56,209,255,.2); border-radius: 50%; transform: translate(-50%,-50%); box-shadow: 0 0 0 42px rgba(56,209,255,.025), 0 0 0 94px rgba(56,209,255,.015), inset 0 0 70px rgba(28,130,255,.08); }
+.twin-halo::before, .twin-halo::after { position: absolute; inset: 18%; content: ""; border: 1px dashed rgba(94,135,255,.23); border-radius: 50%; }
+.twin-halo::after { inset: 36%; border-style: solid; }
+.twin-panel img { position: absolute; z-index: 2; inset: 3% 0 auto 50%; width: 88%; height: 77%; object-fit: contain; transform: translateX(-50%); mix-blend-mode: screen; filter: brightness(1.18) saturate(1.18) drop-shadow(0 0 25px rgba(49,198,255,.28)); }
+.twin-caption { position: absolute; z-index: 4; inset: auto 28px 24px; text-align: center; }
+.twin-caption span, .twin-caption strong, .twin-caption small { display: block; }
+.twin-caption span { color: var(--cyan); font-size: .66rem; letter-spacing: .14em; }
+.twin-caption strong { margin: 7px 0; font-size: 1.25rem; }
+.twin-caption small { color: var(--muted); line-height: 1.45; }
+body[data-avatar="female"] { --cyan: #e46bd0; --blue: #8b63ff; --green: #f497c9; }
+body[data-avatar="female"] .twin-panel img { filter: hue-rotate(70deg) brightness(1.28) saturate(1.3) drop-shadow(0 0 28px rgba(231,86,202,.35)); }
+
+@media (max-width: 1050px) {
+  :root { --sidebar: 92px; }
+  .atlas-sidebar { align-items: center; padding-inline: 12px; }
+  .atlas-brand span, .atlas-main-nav span, .atlas-talk strong, .atlas-user div { display: none; }
+  .atlas-brand { margin-bottom: 40px; }
+  .atlas-main-nav a { justify-content: center; width: 58px; padding: 0; }
+  .atlas-main-nav i { font-size: 1.15rem; }
+  .atlas-talk { justify-content: center; width: 58px; padding: 0; }
+  .home-grid { grid-template-columns: minmax(0,1fr) 300px; }
+  .metrics { grid-template-columns: 1fr 1fr; }
 }
 
-.cockpit-timeline > div {
-  display: grid;
-  gap: 4px;
-  min-width: 130px;
-  padding-left: 13px;
-  border-left: 2px solid var(--cyan);
+@media (max-width: 760px) {
+  :root { --sidebar: 0px; }
+  .atlas-sidebar { position: fixed; inset: auto 0 0 0; flex-direction: row; justify-content: space-around; width: auto; height: calc(68px + env(safe-area-inset-bottom)); padding: 7px 8px env(safe-area-inset-bottom); border: 1px solid var(--line); border-radius: 18px 18px 0 0; }
+  .atlas-brand, .atlas-talk, .atlas-user { display: none; }
+  .atlas-main-nav { display: contents; }
+  .atlas-main-nav a { display: grid; justify-items: center; gap: 2px; width: 72px; min-height: 52px; font-size: .66rem; }
+  .atlas-main-nav span { display: block; }
+  .atlas-home { margin: 0; padding: 20px 14px calc(86px + env(safe-area-inset-bottom)); }
+  .home-header { margin-bottom: 20px; }
+  .sync-state { display: none; }
+  .home-grid { display: flex; flex-direction: column; }
+  .twin-panel { order: -1; min-height: 430px; }
+  .twin-panel img { height: 76%; width: 78%; }
+  .twin-caption { inset-inline: 18px; }
+  .readiness-card { align-items: flex-start; padding: 20px; }
+  .readiness-score { flex-basis: 78px; width: 78px; height: 78px; }
+  .readiness-score strong { font-size: 1.8rem; }
+  .metrics { grid-template-columns: 1fr 1fr; }
+  .metrics article { min-height: 100px; padding: 14px; }
+  .next-session { display: grid; padding: 21px; }
+  .next-session a { text-align: center; }
+  .home-lower-grid { grid-template-columns: 1fr; }
 }
 
-.cockpit-timeline span {
-  color: var(--muted);
-  font-size: .64rem;
-}
-
-.cockpit-timeline b {
-  font-size: .72rem;
-}
-
-/* Tablettes */
-@media (max-width: 1180px) {
-  .cockpit-dashboard {
-    grid-template-columns: minmax(0, 1fr) 280px;
-  }
-
-  .cockpit-column--daily {
-    grid-column: 1 / -1;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .cockpit-section-title,
-  .objective-card {
-    grid-column: 1 / -1;
-  }
-
-  .cockpit-twin {
-    min-height: 680px;
-  }
-}
-
-/* Smartphones */
-@media (max-width: 720px) {
-  .atlas-cockpit {
-    padding: 8px 8px calc(82px + env(safe-area-inset-bottom));
-  }
-
-  .cockpit-header {
-    min-height: 58px;
-  }
-
-  .cockpit-brand small,
-  .cockpit-profile span:last-child {
-    display: none;
-  }
-
-  .cockpit-dashboard {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  .cockpit-twin {
-    order: -1;
-    min-height: 620px;
-  }
-
-  .cockpit-column--daily {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .cockpit-section-title,
-  .objective-card {
-    grid-column: 1 / -1;
-  }
-
-  .engine-node {
-    width: 105px;
-  }
-
-  .engine-node b {
-    width: 48px;
-    height: 48px;
-  }
-
-  .engine-node small {
-    display: none;
-  }
-
-  .cockpit-avatar {
-    width: 52%;
-    height: 62%;
-    top: 20%;
-  }
-
-  .cockpit-timeline {
-    grid-template-columns: repeat(6, 150px);
-  }
-}
-/* ATLAS — CONNEXIONS AVATAR / MOTEURS */
-.engine-links {
-  position: absolute;
-  z-index: 2;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-.engine-link {
-  fill: none;
-  stroke: rgba(67, 188, 255, .2);
-  stroke-width: .22;
-  stroke-dasharray: 1.1 1.5;
-  vector-effect: non-scaling-stroke;
-  transition:
-    stroke .2s ease,
-    stroke-width .2s ease,
-    filter .2s ease,
-    opacity .2s ease;
-}
-
-.link-clinical { stroke: rgba(152, 104, 255, .12); }
-.link-coach { stroke: rgba(255, 159, 67, .24); }
-.link-prevention { stroke: rgba(84, 235, 165, .22); }
-.link-physiology { stroke: rgba(255, 96, 113, .22); }
-
-.engine-node.is-functional b,
-.engine-node.is-functional strong {
-  transition:
-    transform .2s ease,
-    filter .2s ease,
-    color .2s ease,
-    text-shadow .2s ease;
-}
-
-.engine-node.is-functional:hover b,
-.engine-node.is-functional:focus-visible b {
-  transform: scale(1.1);
-  filter: brightness(1.35);
-}
-
-.engine-node.is-functional:hover strong,
-.engine-node.is-functional:focus-visible strong {
-  color: #fff;
-  text-shadow: 0 0 12px currentColor;
-}
-
-.engine-node.is-unavailable {
-  opacity: .43;
-  cursor: not-allowed;
-  filter: grayscale(.35);
-}
-
-.engine-node.is-unavailable::after {
-  content: "Prochainement";
-  color: #8196a6;
-  font-size: .5rem;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-}
-
-.cockpit-twin:has(.engine-ai.is-functional:hover) .link-ai,
-.cockpit-twin:has(.engine-ai.is-functional:focus-visible) .link-ai,
-.cockpit-twin:has(.engine-physio.is-functional:hover) .link-physio,
-.cockpit-twin:has(.engine-physio.is-functional:focus-visible) .link-physio {
-  stroke: #35ccff;
-  stroke-width: .7;
-  filter: drop-shadow(0 0 5px #35ccff);
-}
-
-.cockpit-twin:has(.engine-coach.is-functional:hover) .link-coach,
-.cockpit-twin:has(.engine-coach.is-functional:focus-visible) .link-coach {
-  stroke: #ff9f43;
-  stroke-width: .7;
-  filter: drop-shadow(0 0 5px #ff9f43);
-}
-
-.cockpit-twin:has(.engine-prevention.is-functional:hover) .link-prevention,
-.cockpit-twin:has(.engine-prevention.is-functional:focus-visible) .link-prevention {
-  stroke: #54eba5;
-  stroke-width: .7;
-  filter: drop-shadow(0 0 5px #54eba5);
-}
-
-.cockpit-twin:has(.engine-physiology.is-functional:hover) .link-physiology,
-.cockpit-twin:has(.engine-physiology.is-functional:focus-visible) .link-physiology {
-  stroke: #ff6071;
-  stroke-width: .7;
-  filter: drop-shadow(0 0 5px #ff6071);
-}
-
-.cockpit-twin:has(.engine-memory.is-functional:hover) .link-memory,
-.cockpit-twin:has(.engine-memory.is-functional:focus-visible) .link-memory {
-  stroke: #35ccff;
-  stroke-width: .7;
-  filter: drop-shadow(0 0 5px #35ccff);
-}
-/* ATLAS — INTENSITÉ PREMIUM DES CONNEXIONS */
-.engine-link {
-  stroke-width: .8;
-  stroke-dasharray: 5 4;
-  opacity: .62;
-}
-
-.link-clinical {
-  opacity: .16;
-}
-
-.engine-node.is-functional:hover b,
-.engine-node.is-functional:focus-visible b {
-  transform: scale(1.13);
-  filter: brightness(1.55) saturate(1.25);
-  box-shadow:
-    0 0 12px currentColor,
-    0 0 28px currentColor,
-    inset 0 0 18px rgba(255, 255, 255, .08);
-}
-
-.cockpit-twin:has(.engine-ai.is-functional:hover) .link-ai,
-.cockpit-twin:has(.engine-ai.is-functional:focus-visible) .link-ai,
-.cockpit-twin:has(.engine-physio.is-functional:hover) .link-physio,
-.cockpit-twin:has(.engine-physio.is-functional:focus-visible) .link-physio,
-.cockpit-twin:has(.engine-coach.is-functional:hover) .link-coach,
-.cockpit-twin:has(.engine-coach.is-functional:focus-visible) .link-coach,
-.cockpit-twin:has(.engine-prevention.is-functional:hover) .link-prevention,
-.cockpit-twin:has(.engine-prevention.is-functional:focus-visible) .link-prevention,
-.cockpit-twin:has(.engine-physiology.is-functional:hover) .link-physiology,
-.cockpit-twin:has(.engine-physiology.is-functional:focus-visible) .link-physiology,
-.cockpit-twin:has(.engine-memory.is-functional:hover) .link-memory,
-.cockpit-twin:has(.engine-memory.is-functional:focus-visible) .link-memory {
-  stroke-width: 2.4;
-  stroke-dasharray: 8 3;
-  opacity: 1;
-  filter:
-    drop-shadow(0 0 3px currentColor)
-    drop-shadow(0 0 8px currentColor)
-    drop-shadow(0 0 14px currentColor);
-}
-
-.cockpit-twin:has(.engine-coach.is-functional:hover) .link-coach,
-.cockpit-twin:has(.engine-coach.is-functional:focus-visible) .link-coach {
-  stroke: #ffb24f;
-  color: #ff9f43;
-}
-
-.cockpit-twin:has(.engine-physio.is-functional:hover) .link-physio,
-.cockpit-twin:has(.engine-physio.is-functional:focus-visible) .link-physio,
-.cockpit-twin:has(.engine-memory.is-functional:hover) .link-memory,
-.cockpit-twin:has(.engine-memory.is-functional:focus-visible) .link-memory {
-  stroke: #53dcff;
-  color: #35ccff;
-}
-
-.cockpit-twin:has(.engine-prevention.is-functional:hover) .link-prevention,
-.cockpit-twin:has(.engine-prevention.is-functional:focus-visible) .link-prevention {
-  stroke: #62ffc0;
-  color: #54eba5;
-}
-
-.cockpit-twin:has(.engine-physiology.is-functional:hover) .link-physiology,
-.cockpit-twin:has(.engine-physiology.is-functional:focus-visible) .link-physiology {
-  stroke: #ff7183;
-  color: #ff6071;
-}
-/* ATLAS — CONNEXIONS VISIBLES AU REPOS */
-.engine-link {
-  stroke: rgba(68, 205, 255, .48);
-  stroke-width: 1.05;
-  stroke-dasharray: 6 5;
-  opacity: .82;
-}
-
-.link-coach {
-  stroke: rgba(255, 159, 67, .5);
-}
-
-.link-prevention {
-  stroke: rgba(84, 235, 165, .46);
-}
-
-.link-physiology {
-  stroke: rgba(255, 96, 113, .46);
-}
-
-.link-ai,
-.link-clinical {
-  stroke: rgba(130, 151, 168, .18);
-  stroke-width: .7;
-  opacity: .28;
+@media (max-width: 430px) {
+  .readiness-card { display: grid; }
+  .metrics { grid-template-columns: 1fr; }
+  .twin-panel { min-height: 390px; }
 }

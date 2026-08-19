@@ -4,167 +4,99 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#020914">
-  <title>Atlas OS — Cockpit</title>
-  <link rel="stylesheet" href="./css/atlas-global-nav.css?v=4">
-  <link rel="stylesheet" href="./css/atlas-cockpit.css?v=5">
+  <title>Atlas OS — Aujourd’hui</title>
+  <link rel="stylesheet" href="./css/atlas-cockpit.css?v=6">
 </head>
 <body>
-  <main class="atlas-cockpit">
-    <header class="cockpit-header">
-      <a class="cockpit-brand" href="./atlas-opening.html">
-        <span class="cockpit-brand-mark">A</span>
-        <span>
-          <strong>ATLAS OS</strong>
-          <small>Jumeau Numérique Humain</small>
-        </span>
+  <div class="atlas-shell">
+    <aside class="atlas-sidebar" aria-label="Navigation principale">
+      <a class="atlas-brand" href="./atlas-opening.html" aria-label="Atlas OS">
+        <img src="./assets/atlas-logo-full.jpg" alt="">
+        <span><strong>ATLAS OS</strong><small>Jumeau numérique humain</small></span>
       </a>
 
-      <div class="cockpit-profile">
-        <span class="cockpit-profile-avatar">CB</span>
-        <span>
-          <strong>Christophe</strong>
-          <small><i></i> Jumeau synchronisé</small>
-        </span>
+      <nav class="atlas-main-nav">
+        <a class="active" href="./atlas-cockpit.html" aria-current="page"><i>⌂</i><span>Aujourd’hui</span></a>
+        <a href="./performance-running.html"><i>◉</i><span>Entraînement</span></a>
+        <a href="./atlas-hub.html#health"><i>♡</i><span>Santé</span></a>
+        <a href="./atlas-hub.html#timeline"><i>↝</i><span>Historique</span></a>
+      </nav>
+
+      <button class="atlas-talk" type="button" data-atlas-talk>
+        <span>✦</span><strong>Parler à Atlas</strong>
+      </button>
+
+      <div class="atlas-user">
+        <span>CB</span><div><strong>Christophe</strong><small>Jumeau synchronisé</small></div>
       </div>
-    </header>
+    </aside>
 
-    <section class="cockpit-dashboard">
-      <aside class="cockpit-column cockpit-column--daily">
-        <div class="cockpit-section-title">
-          <span>AUJOURD’HUI</span>
-          <small>Mis à jour il y a 5 min</small>
+    <main class="atlas-home">
+      <header class="home-header">
+        <div>
+          <span class="eyebrow">MERCREDI 19 AOÛT</span>
+          <h1>Bonjour Christophe</h1>
+          <p>Voici l’essentiel pour votre journée.</p>
+        </div>
+        <div class="sync-state"><i></i> Données actualisées</div>
+      </header>
+
+      <section class="home-grid">
+        <div class="home-content">
+          <article class="readiness-card">
+            <div class="readiness-score"><strong>82</strong><span>/100</span></div>
+            <div>
+              <span class="eyebrow">ÉTAT DU JOUR</span>
+              <h2>Vous êtes prêt à vous entraîner</h2>
+              <p>Récupération élevée, sommeil satisfaisant et charge bien maîtrisée.</p>
+            </div>
+          </article>
+
+          <section class="metrics" aria-label="Indicateurs essentiels">
+            <article><span>Récupération</span><strong class="positive">Excellente</strong><small>↑ tendance favorable</small></article>
+            <article><span>Sommeil</span><strong>7 h 42</strong><small>Qualité 87 %</small></article>
+            <article><span>VFC</span><strong>61 ms</strong><small>Dans votre référence</small></article>
+            <article><span>Charge</span><strong>Optimale</strong><small>Progression maîtrisée</small></article>
+          </section>
+
+          <article class="next-session">
+            <div class="session-copy">
+              <span class="eyebrow">PROCHAINE SÉANCE</span>
+              <h2>Endurance fondamentale · Zone 2</h2>
+              <p>45 min · 9,52 à 10,08 km/h · RPE 3,5/10</p>
+            </div>
+            <a href="./performance-running.html">Voir mon programme <span>→</span></a>
+          </article>
+
+          <section class="home-lower-grid">
+            <article class="focus-card">
+              <span class="eyebrow">À SURVEILLER</span>
+              <h3>Aucune alerte importante</h3>
+              <p>Votre tolérance à la charge reste cohérente. Signalez seulement une douleur nouvelle.</p>
+              <a href="./atlas-hub.html#injuries">Ouvrir Santé →</a>
+            </article>
+            <article class="goal-card">
+              <span class="eyebrow">OBJECTIF</span>
+              <h3>Semi-marathon de Lille</h3>
+              <p>25 octobre 2026 · objectif 1 h 49</p>
+              <div><i style="width: 48%"></i></div>
+              <small>Programme réalisé à 48 %</small>
+            </article>
+          </section>
         </div>
 
-        <article class="daily-card recovery">
-          <span>Récupération</span>
-          <strong>Excellente</strong>
-          <small>Prêt à performer</small>
-        </article>
-
-        <article class="daily-card load">
-          <span>Charge aiguë</span>
-          <strong>Optimale</strong>
-          <small>956 TL</small>
-        </article>
-
-        <article class="daily-card sleep">
-          <span>Sommeil</span>
-          <strong>7 h 42</strong>
-          <small>Qualité 87 %</small>
-        </article>
-
-        <article class="daily-card heart">
-          <span>FC au repos</span>
-          <strong>48 bpm</strong>
-          <small>Très bonne</small>
-        </article>
-
-        <article class="daily-card hrv">
-          <span>VFC</span>
-          <strong>61 ms</strong>
-          <small>Excellente</small>
-        </article>
-
-        <article class="objective-card">
-          <span>OBJECTIF PRINCIPAL</span>
-          <strong>Semi-marathon</strong>
-          <small>25 octobre 2026 · 12 semaines restantes</small>
-          <div><i style="width:48%"></i></div>
-        </article>
-      </aside>
-
-      <section class="cockpit-twin" aria-label="Jumeau Numérique et moteurs Atlas">
-        <div class="atlas-index">
-          <span>ATLAS INDEX</span>
-          <strong>82</strong>
-          <small>/100</small>
-        </div>
-
-        <button class="engine-node engine-ai is-unavailable" aria-disabled="true" type="button">
-          <b>✦</b><strong>Atlas IA</strong><small>Décider · Expliquer</small>
-        </button>
-
-        <button class="engine-node engine-clinical is-unavailable" aria-disabled="true" type="button">
-          <b>♧</b><strong>Clinique</strong><small>Symptômes · Antécédents</small>
-        </button>
-
-        <button class="engine-node engine-coach is-functional" type="button">
-          <b>AC</b><strong>Atlas Coach</strong><small>Entraînement · Performance</small>
-        </button>
-
-        <button class="engine-node engine-prevention is-functional" type="button">
-          <b>◇</b><strong>Prévention</strong><small>Risque · Tolérance</small>
-        </button>
-
-        <button class="engine-node engine-memory is-functional" type="button">
-          <b>▤</b><strong>Mémoire</strong><small>Chronologie · Documents</small>
-        </button>
-
-        <button class="engine-node engine-physiology is-functional" type="button">
-          <b>♡</b><strong>Physiologie</strong><small>FC · VFC · VO₂max</small>
-        </button>
-
-        <button class="engine-node engine-physio is-functional" type="button">
-          <b>◎</b><strong>Atlas Physio</strong><small>Corps · Biomécanique</small>
-        </button>
-
-        <div class="cockpit-orbits" aria-hidden="true"></div>
-
-        <svg class="engine-links" viewBox="0 0 100 100"
-          preserveAspectRatio="none" aria-hidden="true">
-          <line class="engine-link link-ai" x1="50" y1="43" x2="18" y2="18"></line>
-          <line class="engine-link link-clinical" x1="50" y1="43" x2="82" y2="18"></line>
-          <line class="engine-link link-physio" x1="50" y1="43" x2="9" y2="49"></line>
-          <line class="engine-link link-coach" x1="50" y1="43" x2="91" y2="49"></line>
-          <line class="engine-link link-physiology" x1="50" y1="43" x2="18" y2="84"></line>
-          <line class="engine-link link-prevention" x1="50" y1="43" x2="82" y2="84"></line>
-          <line class="engine-link link-memory" x1="50" y1="43" x2="50" y2="94"></line>
-        </svg>
-        <img id="cockpitAvatar" class="cockpit-avatar"
-          src="./assets/atlas-avatar-male-transparent.png"
-          alt="Jumeau Numérique Atlas">
+        <aside class="twin-panel">
+          <div class="twin-halo" aria-hidden="true"></div>
+          <img id="cockpitAvatar" src="./assets/atlas-avatar-male-transparent.png" alt="Votre jumeau numérique Atlas">
+          <div class="twin-caption">
+            <span>VOTRE JUMEAU NUMÉRIQUE</span>
+            <strong>Équilibre stable</strong>
+            <small>Analyse croisée de vos données physiologiques, sportives et déclarées.</small>
+          </div>
+        </aside>
       </section>
-
-      <aside class="cockpit-column cockpit-column--brain">
-        <div class="brain-heading">
-          <span>✦</span>
-          <div><strong>ATLAS BRAIN</strong><small>Votre assistant intelligent</small></div>
-        </div>
-
-        <article class="brain-analysis">
-          <p>Bonjour Christophe.</p>
-          <p>Votre récupération est excellente aujourd’hui.</p>
-          <ul>
-            <li>VFC en hausse de 8 %</li>
-            <li>Sommeil profond +41 min</li>
-            <li>Charge aiguë stable</li>
-            <li>FC de repos en baisse</li>
-          </ul>
-          <strong>Une séance de seuil est compatible avec votre état du jour.</strong>
-        </article>
-
-        <article class="brain-vigilance">
-          <span>POINTS DE VIGILANCE</span>
-          <p>Mobilité cheville droite</p>
-          <p>Charge tendineuse à surveiller</p>
-        </article>
-
-        <button class="brain-primary" type="button">Ouvrir l’analyse détaillée →</button>
-        <button class="brain-talk" type="button" data-atlas-talk>Parler à Atlas</button>
-      </aside>
-    </section>
-
-    <section class="cockpit-timeline">
-      <strong>CHRONOLOGIE DU JUMEAU</strong>
-      <div><span>2018</span><b>Début de la course</b></div>
-      <div><span>2024</span><b>Tendinite d’Achille</b></div>
-      <div><span>2025</span><b>Reprise du renforcement</b></div>
-      <div><span>Aujourd’hui</span><b>Récupération excellente</b></div>
-      <div><span>25 oct. 2026</span><b>Semi-marathon</b></div>
-    </section>
-  </main>
-
-  <script src="./js/atlas-global-nav.js"></script>
-  <script src="./js/atlas-cockpit.js?v=3"></script>
+    </main>
+  </div>
+  <script src="./js/atlas-cockpit.js?v=4"></script>
 </body>
 </html>
