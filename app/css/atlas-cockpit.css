@@ -216,3 +216,49 @@ body[data-avatar="female"] .twin-panel img {
 body[data-avatar="female"] .twin-panel img {
   filter: drop-shadow(0 0 24px rgba(224, 84, 224, .42));
 }
+
+
+/* Jumeau final : luminosité homogène et intégration au fond */
+.twin-panel img,
+body[data-avatar="female"] .twin-panel img {
+  object-fit: contain;
+  object-position: center;
+  mix-blend-mode: screen;
+  filter:
+    brightness(1.58)
+    contrast(1.14)
+    saturate(1.34)
+    drop-shadow(0 0 28px rgba(48, 203, 255, .46));
+}
+
+body[data-avatar="female"] .twin-panel img {
+  filter:
+    brightness(1.66)
+    contrast(1.12)
+    saturate(1.42)
+    drop-shadow(0 0 30px rgba(229, 83, 222, .54));
+}
+
+.next-session h2 {
+  text-wrap: balance;
+}
+
+.athlete-profile-link {
+  display: inline-flex;
+  justify-content: center;
+  margin-top: 14px;
+  padding: 10px 14px;
+  color: #eafaff;
+  border: 1px solid color-mix(in srgb, var(--cyan) 55%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--cyan) 12%, transparent);
+  font-size: .78rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.athlete-profile-link:hover,
+.athlete-profile-link:focus-visible {
+  background: color-mix(in srgb, var(--cyan) 20%, transparent);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--cyan) 28%, transparent);
+}

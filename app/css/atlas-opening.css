@@ -1486,3 +1486,51 @@ button {
 .hub-persistent-avatar[data-avatar="female"] {
   filter: drop-shadow(0 0 18px rgba(224, 84, 224, .4));
 }
+
+
+/* Sélection simplifiée et avatars plus lumineux */
+.atlas-avatar-heading > span,
+.atlas-avatar-heading > p,
+.atlas-selection-status {
+  display: none !important;
+}
+
+.atlas-avatar-heading h1 {
+  margin: 0;
+  font-weight: 650;
+}
+
+.atlas-avatar-selector .atlas-avatar-card img {
+  mix-blend-mode: screen;
+  filter:
+    brightness(1.55)
+    contrast(1.12)
+    saturate(1.32)
+    drop-shadow(0 0 18px rgba(55, 207, 255, .38));
+}
+
+.atlas-avatar-selector .atlas-hotspot--female img {
+  filter:
+    brightness(1.62)
+    contrast(1.1)
+    saturate(1.38)
+    drop-shadow(0 0 20px rgba(221, 82, 226, .48));
+}
+
+.hub-persistent-avatar,
+.hub-persistent-avatar[data-avatar="female"] {
+  mix-blend-mode: screen;
+  filter:
+    brightness(1.58)
+    contrast(1.12)
+    saturate(1.34)
+    drop-shadow(0 0 22px rgba(75, 214, 255, .42));
+}
+
+.hub-persistent-avatar[data-avatar="female"] {
+  filter:
+    brightness(1.64)
+    contrast(1.1)
+    saturate(1.4)
+    drop-shadow(0 0 24px rgba(225, 84, 226, .5));
+}
