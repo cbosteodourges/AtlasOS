@@ -17,6 +17,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.atlas_brain import AtlasBrain
+from src.connectors.garmin_wellness import GarminWellnessConnector
 from src.patient.patient import Patient
 from src.twin.digital_twin import DigitalTwin
 from src.training.daily_preparation_service import (
@@ -590,6 +591,184 @@ def create_twin(payload):
     return twin
 
 
+
+WELLNESS_DIRECTORY = (
+    ROOT / "atlas-data" / "garmin" / "wellness-archives"
+)
+WELLNESS_CACHE_PATH = (
+    ROOT / "atlas-data" / "private"
+    / "garmin-wellness-snapshot-cache.json"
+)
+
+
+def _wellness_number(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _sleep_duration_minutes(snapshot):
+    """Estime le temps réellement dormi depuis les niveaux Garmin."""
+    total_seconds = 0.0
+    found = False
+    for level in snapshot.sleep_levels or []:
+        if not isinstance(level, dict):
+            continue
+        name = str(
+            level.get("sleep_level")
+            or level.get("level")
+            or level.get("activity_type")
+            or ""
+        ).lower()
+        if "awake" in name or "éveil" in name:
+            continue
+        duration = _wellness_number(
+            level.get("duration")
+            or level.get("duration_seconds")
+            or level.get("message_index_duration")
+        )
+        if duration and duration > 0:
+            total_seconds += duration
+            found = True
+    return round(total_seconds / 60) if found else None
+
+
+def _atlas_recovery_index(snapshot):
+    """Indice Atlas transparent, normalisé uniquement sur les données disponibles."""
+    components = []
+
+    if snapshot.sleep_recovery_score is not None:
+        components.append(("Récupération du sommeil", snapshot.sleep_recovery_score, 30))
+    if snapshot.sleep_score is not None:
+        components.append(("Sommeil", snapshot.sleep_score, 25))
+
+    hrv = _wellness_number(snapshot.hrv_last_night_ms)
+    lower = _wellness_number(snapshot.hrv_baseline_lower_ms)
+    upper = _wellness_number(snapshot.hrv_baseline_upper_ms)
+    if hrv is not None:
+        if lower is not None and upper is not None and upper > lower:
+            hrv_score = 70 + 30 * (hrv - lower) / (upper - lower)
+        elif snapshot.hrv_weekly_average_ms:
+            weekly = max(_wellness_number(snapshot.hrv_weekly_average_ms) or 1, 1)
+            hrv_score = 80 + 20 * (hrv / weekly - 1)
+        else:
+            hrv_score = 75
+        components.append(("VFC nocturne", max(0, min(100, hrv_score)), 30))
+
+    stress = _wellness_number(snapshot.sleep_average_stress)
+    if stress is not None:
+        components.append(("Stress nocturne", max(0, 100 - stress * 2), 10))
+
+    if snapshot.data_quality_score is not None:
+        components.append(("Qualité des données", snapshot.data_quality_score, 5))
+
+    total_weight = sum(weight for _, _, weight in components)
+    score = (
+        round(sum(value * weight for _, value, weight in components) / total_weight)
+        if total_weight
+        else None
+    )
+    return {
+        "score": score,
+        "components": [
+            {"label": label, "score": round(value), "weight": weight}
+            for label, value, weight in components
+        ],
+    }
+
+
+def _daily_training_loads():
+    """Agrège la charge Garmin des activités analysées, sans exposer le privé."""
+    if not EXECUTIONS_PATH.exists():
+        return {}
+    with EXECUTIONS_PATH.open("r", encoding="utf-8") as source:
+        payload = json.load(source)
+    loads = {}
+    for item in payload if isinstance(payload, list) else []:
+        if not isinstance(item, dict):
+            continue
+        day = str(item.get("start_time") or "")[:10]
+        fingerprint = item.get("fingerprint") or {}
+        value = _wellness_number(fingerprint.get("training_load"))
+        if day and value is not None:
+            loads[day] = round(loads.get(day, 0.0) + value, 1)
+    return loads
+
+
+def _program_progress():
+    """Calcule l'avancement temporel du plan réellement chargé."""
+    if not PROGRAM_PATH.exists():
+        return None
+    workouts = TrainingProgramLoader().load(PROGRAM_PATH)
+    dates = sorted(
+        workout.workout_date
+        for workout in workouts
+        if getattr(workout, "workout_date", None) is not None
+    )
+    if not dates:
+        return None
+    today = date.today()
+    elapsed = sum(day <= today for day in dates)
+    percent = round(100 * elapsed / len(dates))
+    return {
+        "percent": max(0, min(100, percent)),
+        "elapsed_sessions": elapsed,
+        "total_sessions": len(dates),
+        "start_date": dates[0].isoformat(),
+        "end_date": dates[-1].isoformat(),
+    }
+
+
+def load_wellness_history():
+    """Retourne uniquement les mesures utiles au navigateur."""
+    snapshots = GarminWellnessConnector(
+        str(WELLNESS_DIRECTORY)
+    ).import_all_cached(str(WELLNESS_CACHE_PATH))
+    training_loads = _daily_training_loads()
+    history = []
+    for snapshot in snapshots:
+        atlas_index = _atlas_recovery_index(snapshot)
+        day = snapshot.day.isoformat()
+        history.append({
+            "day": day,
+            "atlas_index": atlas_index["score"],
+            "atlas_index_components": atlas_index["components"],
+            "sleep_duration_minutes": _sleep_duration_minutes(snapshot),
+            "sleep_score": snapshot.sleep_score,
+            "sleep_quality_score": snapshot.sleep_quality_score,
+            "sleep_recovery_score": snapshot.sleep_recovery_score,
+            "hrv_last_night_ms": snapshot.hrv_last_night_ms,
+            "hrv_weekly_average_ms": snapshot.hrv_weekly_average_ms,
+            "hrv_baseline_lower_ms": snapshot.hrv_baseline_lower_ms,
+            "hrv_baseline_upper_ms": snapshot.hrv_baseline_upper_ms,
+            "hrv_status": snapshot.hrv_status,
+            "resting_heart_rate_bpm": snapshot.resting_heart_rate_bpm,
+            "sleep_average_stress": snapshot.sleep_average_stress,
+            "training_load": training_loads.get(day),
+            "data_quality_score": snapshot.data_quality_score,
+        })
+    return {
+        "ok": True,
+        "count": len(history),
+        "latest": history[-1] if history else None,
+        "history": history,
+        "program_progress": _program_progress(),
+        "index_explanation": {
+            "title": "Indice Atlas de disponibilité",
+            "summary": (
+                "Synthèse quotidienne sur 100 de la récupération du sommeil, "
+                "du sommeil global, de la VFC par rapport à votre référence, "
+                "du stress nocturne et de la qualité des données."
+            ),
+            "warning": (
+                "Cet indice guide l'entraînement ; il ne constitue pas "
+                "un diagnostic médical."
+            ),
+        },
+    }
+
+
 class AtlasRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(
@@ -647,6 +826,22 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
 
         query = parse_qs(parsed.query)
+
+        if parsed.path == "/api/atlas/wellness-history":
+            try:
+                self.send_json(200, load_wellness_history())
+            except (OSError, ValueError, json.JSONDecodeError) as error:
+                self.send_json(
+                    500,
+                    {
+                        "ok": False,
+                        "error": (
+                            "Les données Wellness ne peuvent pas "
+                            f"être chargées : {error}"
+                        ),
+                    },
+                )
+            return
 
         if parsed.path == "/api/atlas-coach/workout-decisions":
             try:

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#020914">
   <title>Atlas OS — Aujourd’hui</title>
-  <link rel="stylesheet" href="./css/atlas-cockpit.css?v=11">
+  <link rel="stylesheet" href="./css/atlas-cockpit.css?v=12">
 </head>
 <body>
   <div class="atlas-shell">
@@ -44,7 +44,7 @@
       <section class="home-grid">
         <div class="home-content">
           <article class="readiness-card">
-            <div class="readiness-score"><strong>82</strong><span>/100</span></div>
+            <div class="readiness-score"><strong data-atlas-index>82</strong><span>/100</span><button class="atlas-index-info" type="button" data-index-info aria-label="Comment est calculé l’indice Atlas ?">i</button></div>
             <div>
               <span class="eyebrow">ÉTAT DU JOUR</span>
               <h2>Vous êtes prêt à vous entraîner</h2>
@@ -53,10 +53,10 @@
           </article>
 
           <section class="metrics" aria-label="Indicateurs essentiels">
-            <article><span>Récupération</span><strong class="positive">Excellente</strong><small>↑ tendance favorable</small></article>
-            <article><span>Sommeil</span><strong>7 h 42</strong><small>Qualité 87 %</small></article>
-            <article><span>VFC</span><strong>61 ms</strong><small>Dans votre référence</small></article>
-            <article><span>Charge</span><strong>Optimale</strong><small>Progression maîtrisée</small></article>
+            <a href="./atlas-metric-history.html?metric=recovery" aria-label="Voir l’évolution de la récupération"><span>Récupération</span><strong class="positive" data-recovery-label>—</strong><small data-recovery-detail>Chargement…</small></a>
+            <a href="./atlas-metric-history.html?metric=sleep" aria-label="Voir l’évolution du sommeil"><span>Sommeil</span><strong data-sleep-value>—</strong><small data-sleep-detail>Chargement…</small></a>
+            <a href="./atlas-metric-history.html?metric=hrv" aria-label="Voir l’évolution de la VFC"><span>VFC</span><strong data-hrv-value>—</strong><small data-hrv-detail>Chargement…</small></a>
+            <a href="./atlas-metric-history.html?metric=load" aria-label="Voir l’évolution de la charge"><span>Charge</span><strong data-load-value>—</strong><small data-load-detail>Chargement…</small></a>
           </section>
 
           <article class="next-session">
@@ -79,8 +79,8 @@
               <span class="eyebrow">OBJECTIF</span>
               <h3>Semi-marathon de Lille</h3>
               <p>25 octobre 2026 · objectif 1 h 49</p>
-              <div><i style="width: 48%"></i></div>
-              <small>Programme réalisé à 48 %</small>
+              <div><i data-program-progress-bar style="width: 10%"></i></div>
+              <small><a class="program-progress-link" href="./performance-running.html#plan"><span data-program-progress>10</span> % du plan personnalisé · Voir le programme →</a></small>
             </article>
           </section>
         </div>
@@ -98,6 +98,13 @@
       </section>
     </main>
   </div>
-  <script src="./js/atlas-cockpit.js?v=9"></script>
+  <section class="atlas-index-popover" data-index-popover hidden aria-live="polite">
+    <button type="button" data-index-close aria-label="Fermer">×</button>
+    <h2>Indice Atlas de disponibilité</h2>
+    <p data-index-summary>Il synthétise votre récupération quotidienne.</p>
+    <div data-index-components></div>
+    <small>Indicateur d’aide à l’entraînement, sans valeur de diagnostic médical.</small>
+  </section>
+  <script src="./js/atlas-cockpit.js?v=10"></script>
 </body>
 </html>

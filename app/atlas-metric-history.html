@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#020914">
+  <title>Atlas OS — Évolution physiologique</title>
+  <link rel="stylesheet" href="./css/atlas-metric-history.css?v=1">
+</head>
+<body>
+  <aside class="history-sidebar">
+    <a class="brand" href="./atlas-cockpit.html">
+      <img src="./assets/atlas-logo-full.jpg" alt="">
+      <span><strong>ATLAS OS</strong><small>Historique physiologique</small></span>
+    </a>
+    <a class="back" href="./atlas-cockpit.html">← Retour à Aujourd’hui</a>
+    <nav aria-label="Indicateurs">
+      <a data-metric-link="recovery" href="?metric=recovery">Récupération</a>
+      <a data-metric-link="sleep" href="?metric=sleep">Sommeil</a>
+      <a data-metric-link="hrv" href="?metric=hrv">VFC</a>
+      <a data-metric-link="load" href="?metric=load">Charge</a>
+    </nav>
+  </aside>
+
+  <main>
+    <header>
+      <div>
+        <span class="eyebrow" data-metric-eyebrow>ÉVOLUTION ATLAS</span>
+        <h1 data-metric-title>Récupération</h1>
+        <p data-metric-description>Chargement de votre historique…</p>
+      </div>
+      <div class="latest">
+        <span>DERNIÈRE VALEUR</span>
+        <strong data-latest-value>—</strong>
+        <small data-latest-date>—</small>
+      </div>
+    </header>
+
+    <section class="periods" aria-label="Période du graphique">
+      <button data-range="7">1 semaine</button>
+      <button data-range="30">1 mois</button>
+      <button data-range="90" class="active">3 mois</button>
+      <button data-range="180">6 mois</button>
+      <button data-range="270">9 mois</button>
+      <button data-range="365">1 an</button>
+      <button data-range="1095">3 ans</button>
+      <button data-range="all">Historique complet</button>
+    </section>
+
+    <section class="chart-card">
+      <div class="chart-head">
+        <div><span data-chart-label>Indice Atlas</span><small data-data-count>0 mesure</small></div>
+        <div class="legend"><i></i><span>Valeur quotidienne</span><i class="average"></i><span>Moyenne</span></div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="metricChart" aria-label="Graphique d’évolution"></canvas>
+        <p class="empty" data-empty hidden>Aucune donnée disponible pour cette période.</p>
+      </div>
+    </section>
+
+    <section class="summary-grid">
+      <article><span>Moyenne</span><strong data-average>—</strong></article>
+      <article><span>Minimum</span><strong data-minimum>—</strong></article>
+      <article><span>Maximum</span><strong data-maximum>—</strong></article>
+      <article><span>Tendance</span><strong data-trend>—</strong></article>
+    </section>
+
+    <section class="understanding">
+      <span class="eyebrow">COMPRENDRE CET INDICATEUR</span>
+      <h2 data-understanding-title>Indice Atlas de disponibilité</h2>
+      <p data-understanding-text></p>
+      <div data-index-composition hidden>
+        <h3>Composition de la dernière journée</h3>
+        <div class="composition-grid" data-composition-grid></div>
+      </div>
+      <small>Les tendances Atlas constituent une aide au suivi sportif et ne remplacent pas un avis médical.</small>
+    </section>
+  </main>
+
+  <script src="./js/atlas-metric-history.js?v=1"></script>
+</body>
+</html>
