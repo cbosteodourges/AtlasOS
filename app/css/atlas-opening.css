@@ -1441,3 +1441,36 @@ button {
 .hub-persistent-avatar[data-avatar="female"] {
   filter: hue-rotate(315deg) saturate(1.42) contrast(1.08) brightness(1.08);
 }
+
+
+/* Canonical source avatars: preserve anatomy, adjust only light and color. */
+.atlas-avatar-card > img {
+  object-fit: contain;
+  object-position: center;
+  transform: none;
+  mix-blend-mode: screen;
+}
+
+.atlas-avatar-card[data-avatar="male"] > img {
+  filter: brightness(1.42) contrast(1.12) saturate(1.28)
+    drop-shadow(0 0 16px rgba(41, 194, 255, .3));
+}
+
+.atlas-avatar-card[data-avatar="female"] > img {
+  filter: hue-rotate(96deg) brightness(1.48) contrast(1.1) saturate(1.38)
+    drop-shadow(0 0 18px rgba(224, 84, 224, .34));
+}
+
+.hub-persistent-avatar {
+  object-fit: contain;
+  object-position: center;
+  transform: none;
+  mix-blend-mode: screen;
+  filter: brightness(1.42) contrast(1.12) saturate(1.28)
+    drop-shadow(0 0 18px rgba(41, 194, 255, .3));
+}
+
+.hub-persistent-avatar[data-avatar="female"] {
+  filter: hue-rotate(96deg) brightness(1.48) contrast(1.1) saturate(1.38)
+    drop-shadow(0 0 20px rgba(224, 84, 224, .38));
+}

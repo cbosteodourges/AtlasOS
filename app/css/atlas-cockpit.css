@@ -191,3 +191,18 @@ body[data-avatar="female"] .cockpit-twin img,
 body[data-avatar="female"] [data-cockpit-avatar] {
   filter: hue-rotate(315deg) saturate(1.42) contrast(1.08) brightness(1.08);
 }
+
+
+/* Canonical source avatars: identical silhouette from onboarding to cockpit. */
+.twin-panel img {
+  object-fit: contain;
+  object-position: center;
+  mix-blend-mode: screen;
+  filter: brightness(1.42) contrast(1.12) saturate(1.28)
+    drop-shadow(0 0 22px rgba(41, 194, 255, .32));
+}
+
+body[data-avatar="female"] .twin-panel img {
+  filter: hue-rotate(96deg) brightness(1.48) contrast(1.1) saturate(1.38)
+    drop-shadow(0 0 24px rgba(224, 84, 224, .4));
+}
