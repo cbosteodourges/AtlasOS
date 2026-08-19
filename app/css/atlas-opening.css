@@ -1474,3 +1474,15 @@ button {
   filter: hue-rotate(96deg) brightness(1.48) contrast(1.1) saturate(1.38)
     drop-shadow(0 0 20px rgba(224, 84, 224, .38));
 }
+
+
+/* Final embedded avatar colors: no page-dependent recoloring. */
+.atlas-avatar-card[data-avatar="male"] > img,
+.hub-persistent-avatar[data-avatar="male"] {
+  filter: drop-shadow(0 0 16px rgba(41, 194, 255, .34));
+}
+
+.atlas-avatar-card[data-avatar="female"] > img,
+.hub-persistent-avatar[data-avatar="female"] {
+  filter: drop-shadow(0 0 18px rgba(224, 84, 224, .4));
+}

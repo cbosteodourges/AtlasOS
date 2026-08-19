@@ -30,8 +30,8 @@
 
   function avatarSource() {
     return state.avatar === "female"
-      ? "./assets/avatar-female.jpg"
-      : "./assets/avatar-male.jpg";
+      ? "./assets/atlas-avatar-femme-sport-final.png?v=1"
+      : "./assets/atlas-avatar-homme-sport-final.png?v=1";
   }
 
   function avatarImage(alt) {

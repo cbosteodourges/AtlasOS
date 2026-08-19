@@ -206,3 +206,13 @@ body[data-avatar="female"] .twin-panel img {
   filter: hue-rotate(96deg) brightness(1.48) contrast(1.1) saturate(1.38)
     drop-shadow(0 0 24px rgba(224, 84, 224, .4));
 }
+
+
+/* Final embedded avatar colors: preserve the same palette on every page. */
+.twin-panel img {
+  filter: drop-shadow(0 0 22px rgba(41, 194, 255, .34));
+}
+
+body[data-avatar="female"] .twin-panel img {
+  filter: drop-shadow(0 0 24px rgba(224, 84, 224, .42));
+}
