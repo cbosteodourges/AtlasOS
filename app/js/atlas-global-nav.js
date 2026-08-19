@@ -39,6 +39,24 @@
       </div>
     </div>` : "";
 
+  const healthSubnav = isHub ? `
+    <div class="atlas-context-subnav atlas-health-subnav"
+      data-context-title="ESPACE SANTÉ" aria-label="Sous-menu Santé">
+      <button type="button" data-tab="health" data-health-nav="health">
+        <span class="atlas-context-icon">♡</span><span>Santé globale</span>
+      </button>
+      <button type="button" data-tab="injuries" data-health-nav="injuries">
+        <span class="atlas-context-icon">⌁</span><span>Douleurs et blessures</span>
+      </button>
+      <button type="button" data-tab="analysis" data-health-nav="analysis">
+        <span class="atlas-context-icon">✦</span><span>Analyse Atlas</span>
+      </button>
+      <button type="button" data-tab="timeline" data-health-nav="timeline">
+        <span class="atlas-context-icon">↝</span><span>Chronologie</span>
+      </button>
+      ${healthModules}
+    </div>` : "";
+
   const nav = document.createElement("aside");
   nav.className = "atlas-global-nav";
   nav.setAttribute("aria-label", "Navigation Atlas");
@@ -52,11 +70,8 @@
       ${primaryItem({ href: "./atlas-cockpit.html", icon: "⌂", label: "Aujourd’hui", active: page === "atlas-cockpit.html" })}
       ${primaryItem({ href: "./performance-running.html", icon: "◎", label: "Entraînement", active: isCoach })}
       ${coachSubnav}
-      ${primaryItem({ href: "./atlas-hub.html#health", tab: "health", icon: "♡", label: "Santé globale", active: isHub, extra: 'data-primary-health="health"' })}
-      ${primaryItem({ href: "./atlas-hub.html#injuries", tab: "injuries", icon: "⌁", label: "Douleurs et blessures", extra: 'data-primary-health="injuries"' })}
-      ${primaryItem({ href: "./atlas-hub.html#analysis", tab: "analysis", icon: "✦", label: "Analyse Atlas", extra: 'data-primary-health="analysis"' })}
-      ${primaryItem({ href: "./atlas-hub.html#timeline", tab: "timeline", icon: "↝", label: "Chronologie", extra: 'data-primary-health="timeline"' })}
-      ${healthModules}
+      ${primaryItem({ href: "./atlas-hub.html#health", tab: "health", icon: "♡", label: "Santé", active: isHub, extra: 'data-health-root="true"' })}
+      ${healthSubnav}
     </nav>
 
     <button class="atlas-talk" type="button" data-atlas-talk>
@@ -125,13 +140,17 @@
 
   if (isHub) {
     setExpandedLayout();
-    const primaryButtons = [...nav.querySelectorAll("[data-primary-health]")];
+    const contextButtons = [...nav.querySelectorAll("[data-health-nav]")];
+    const healthRoot = nav.querySelector("[data-health-root]");
 
     const syncHealthNavigation = selected => {
-      primaryButtons.forEach(button => {
-        const active = button.dataset.primaryHealth === selected;
+      contextButtons.forEach(button => {
+        const active = button.dataset.healthNav === selected;
         button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
       });
+      healthRoot?.classList.add("active");
+      healthRoot?.setAttribute("aria-expanded", "true");
     };
 
     nav.querySelectorAll("[data-tab]").forEach(button => {
@@ -151,7 +170,7 @@
       const selected = ["health", "injuries", "analysis", "timeline"].includes(requested)
         ? requested
         : "health";
-      nav.querySelector(`[data-primary-health="${selected}"]`)?.click();
+      nav.querySelector(`[data-health-nav="${selected}"]`)?.click();
       syncHealthNavigation(selected);
     });
   }

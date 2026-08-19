@@ -777,3 +777,25 @@ body.has-atlas-global-nav > .atlas-global-nav {
     display: none;
   }
 }
+
+
+/* Arborescence Santé : un seul parent, quatre sous-catégories */
+.atlas-health-subnav {
+  margin-top: -3px;
+}
+
+.atlas-health-subnav > .atlas-health-modules {
+  margin: 5px 0 0;
+  padding-top: 7px;
+  border-top: 1px solid rgba(255, 255, 255, .055);
+}
+
+.atlas-health-subnav > .atlas-health-modules .atlas-health-modules-toggle {
+  font-size: .7rem;
+}
+
+@media (max-width: 820px) {
+  .atlas-health-subnav {
+    display: none;
+  }
+}
