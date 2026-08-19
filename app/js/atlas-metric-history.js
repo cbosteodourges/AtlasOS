@@ -62,14 +62,20 @@
   setText("[data-understanding-text]", definition.understanding);
   document.title = `Atlas OS — ${definition.title}`;
 
+  const isAvailable = value =>
+    value !== null &&
+    value !== undefined &&
+    value !== "" &&
+    Number.isFinite(Number(value));
+
   const formatValue = value => {
-    if (!Number.isFinite(Number(value))) return "—";
+    if (!isAvailable(value)) return "—";
     const rounded = Math.round(Number(value) * 10) / 10;
     return `${String(rounded).replace(".", ",")}${definition.unit}`;
   };
 
   const filteredHistory = () => {
-    const valid = history.filter(item => Number.isFinite(Number(item[definition.field])));
+    const valid = history.filter(item => isAvailable(item[definition.field]));
     if (selectedRange === "all" || !valid.length) return valid;
     const last = new Date(valid[valid.length - 1].day + "T12:00:00");
     const start = new Date(last);

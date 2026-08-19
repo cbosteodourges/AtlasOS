@@ -22,6 +22,7 @@
   };
 
   const formatDuration = minutes => {
+    if (minutes === null || minutes === undefined || minutes === "") return null;
     if (!Number.isFinite(Number(minutes))) return null;
     const total = Math.round(Number(minutes));
     return `${Math.floor(total / 60)} h ${String(total % 60).padStart(2, "0")}`;
@@ -36,6 +37,7 @@
   };
 
   const loadLabel = value => {
+    if (value === null || value === undefined || value === "") return "Aucune donnée";
     if (!Number.isFinite(Number(value))) return "À synchroniser";
     if (value < 50) return "Légère";
     if (value < 100) return "Modérée";
