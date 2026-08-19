@@ -33,6 +33,12 @@ REVISION_SCRIPT = (
     / "scripts"
     / "refresh_training_program_proposal.py"
 )
+FIT_ARCHIVE_DIRECTORY = (
+    PROJECT_ROOT
+    / "atlas-data"
+    / "garmin"
+    / "recent"
+)
 LOG_FILE = (
     PROJECT_ROOT
     / "atlas-data"
@@ -122,6 +128,15 @@ def run_sync(
             copied_fit = temporary_path / fit_path.name
             shutil.copy2(fit_path, copied_fit)
 
+        FIT_ARCHIVE_DIRECTORY.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+        for copied_fit in temporary_path.glob("*.fit"):
+            archived_fit = (
+                FIT_ARCHIVE_DIRECTORY / copied_fit.name
+            )
+            shutil.copy2(copied_fit, archived_fit)
         command = [
             sys.executable,
             "-X",

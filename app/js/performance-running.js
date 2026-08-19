@@ -1298,6 +1298,31 @@
 
       setActiveButton(button);
 
+        const sectionBySpace = {
+          analysis: "sensors",
+          training: "plan",
+          competitions: "deadline",
+          performance: "profile"
+        };
+        const statusBySpace = {
+          analysis: "Espace Analyse : données, capteurs et activités.",
+          training: "Espace Entraînement : plan personnalisé.",
+          competitions: "Espace Compétitions : prochaine échéance et objectif.",
+          performance: "Espace Performance : profil et zones personnelles."
+        };
+        const requestedSection = sectionBySpace[space];
+
+        if (requestedSection) {
+          window.dispatchEvent(
+            new CustomEvent(
+              "atlas:coach-section-request",
+              { detail: { section: requestedSection } }
+            )
+          );
+          showStatus(statusBySpace[space]);
+          return;
+        }
+
       if (space === "analysis") {
         scrollToPanel(analysisPanel);
         showStatus("Espace Analyse : données, capteurs et activités.");

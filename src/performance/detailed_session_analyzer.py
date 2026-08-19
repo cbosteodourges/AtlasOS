@@ -925,7 +925,7 @@ class DetailedSessionAnalyzer:
         )
 
         if (
-            trigger == "manual"
+            trigger in {"manual", "time"}
             and previous_type
             in {
                 "acceleration",

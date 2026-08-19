@@ -8,7 +8,6 @@
   const enterButton = document.getElementById("atlasEnterButton");
   const avatarStage = document.getElementById("avatarStage");
   const avatarStatus = document.getElementById("avatarStatus");
-  const continueButton = document.getElementById("avatarContinue");
   const hubBackButton = document.getElementById("hubBackButton");
   const hubProfileName = document.getElementById("hubProfileName");
   const hubProfileInitials = document.getElementById("hubProfileInitials");
@@ -53,21 +52,18 @@
     button.addEventListener("click", () => {
       selectedAvatar = button.dataset.avatar;
       avatarStage.dataset.selected = selectedAvatar;
-      continueButton.disabled = false;
       avatarStatus.classList.add("is-ready");
       avatarStatus.textContent = selectedAvatar === "female"
-        ? "Avatar Femme sélectionné."
-        : "Avatar Homme sélectionné.";
+        ? "Ouverture du profil Femme…"
+        : "Ouverture du profil Homme…";
+
+      localStorage.setItem(
+        "atlasPreselectedAvatar",
+        selectedAvatar
+      );
+      syncHubAvatar();
+      window.location.href = "./atlas-cockpit.html";
     });
-  });
-
-  continueButton.addEventListener("click", () => {
-    if (!selectedAvatar) return;
-
-    localStorage.setItem("atlasPreselectedAvatar", selectedAvatar);
-  syncHubAvatar();
-
-    window.location.href = "./atlas-cockpit.html";
   });
 
   // ████████████████████████████████████████████████████████████

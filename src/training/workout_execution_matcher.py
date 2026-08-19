@@ -14,7 +14,12 @@ from src.performance import (
     WorkoutExecutionSummary,
 )
 
-from .session_models import AdaptiveWorkout, TrainingBlock
+from .session_models import (
+    AdaptiveWorkout,
+    BlockType,
+    TrainingBlock,
+    WorkoutType,
+)
 
 
 @dataclass(slots=True)
@@ -106,15 +111,32 @@ class AtlasWorkoutExecutionMatcher:
             execution_scores
         )
 
+        planned_active_blocks = [
+            block
+            for block in planned_workout.blocks
+            if block.block_type
+            not in {
+                BlockType.WARM_UP,
+                BlockType.RECOVERY,
+                BlockType.COOL_DOWN,
+            }
+        ]
         planned_repetitions = sum(
             block.repetitions
-            for block in planned_workout.blocks
+            for block in planned_active_blocks
+        )
+        expected_types = self._expected_execution_types(
+            planned_workout
         )
         executed_active_blocks = [
             block
             for block in analysis.blocks
             if block.block_type
             not in {"recovery", "warm_up", "cool_down"}
+            and (
+                expected_types is None
+                or block.block_type in expected_types
+            )
         ]
 
         reasons = [
@@ -186,6 +208,44 @@ class AtlasWorkoutExecutionMatcher:
             reasons=reasons,
         )
 
+    @staticmethod
+    def _expected_execution_types(
+        planned_workout: AdaptiveWorkout,
+    ) -> set[str] | None:
+        """Types FIT correspondant au travail principal prévu."""
+
+        workout_type = getattr(
+            planned_workout.workout_type,
+            "value",
+            planned_workout.workout_type,
+        )
+        mapping = {
+            WorkoutType.RECOVERY_RUN.value: {"z1"},
+            WorkoutType.ENDURANCE_Z2.value: {"z2"},
+            WorkoutType.TEMPO_Z3.value: {"z3"},
+            WorkoutType.THRESHOLD_SV2.value: {"sv2"},
+            WorkoutType.VMA_SHORT.value: {"vma"},
+            WorkoutType.VMA_LONG.value: {"vma"},
+            WorkoutType.HILL_SPRINTS.value: {
+                "acceleration",
+                "sprint",
+            },
+            WorkoutType.MIXED_THRESHOLD_VO2.value: {
+                "sv2",
+                "vma",
+            },
+            WorkoutType.TRIANGULAR_VO2.value: {
+                "z3",
+                "sv2",
+                "vma",
+            },
+            WorkoutType.RACE_SPECIFIC.value: {
+                "z3",
+                "sv2",
+            },
+            WorkoutType.LONG_RUN.value: {"z2", "z3"},
+        }
+        return mapping.get(str(workout_type))
     def _target_compliance(
         self,
         planned_blocks: list[TrainingBlock],

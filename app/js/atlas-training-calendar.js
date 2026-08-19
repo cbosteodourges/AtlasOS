@@ -233,6 +233,18 @@
     ));
     if (!button) return;
 
+    if (workoutDecisions[preparation.workout_id]?.status === "skipped") {
+      button.classList.remove("has-daily-preparation");
+      button.querySelector(".daily-preparation-summary")?.remove();
+      return;
+    }
+
+    if (workoutDecisions[preparation.workout_id]?.status === "skipped") {
+      button.classList.remove("has-daily-preparation");
+      button.querySelector(".daily-preparation-summary")?.remove();
+      return;
+    }
+
     button.classList.add("has-daily-preparation");
     button.querySelector(".daily-preparation-summary")?.remove();
 
@@ -313,6 +325,31 @@
       DECISIONS_STORAGE_KEY,
       JSON.stringify(workoutDecisions)
     );
+  }
+
+  async function syncWorkoutDecisions() {
+    try {
+      const response = await fetch(
+        `/api/atlas-coach/workout-decisions?v=${Date.now()}`,
+        { cache: "no-store" }
+      );
+      const payload = await response.json();
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "Mémoire Atlas indisponible.");
+      }
+
+      workoutDecisions = {
+        ...workoutDecisions,
+        ...(payload.decisions || {})
+      };
+      localStorage.setItem(
+        DECISIONS_STORAGE_KEY,
+        JSON.stringify(workoutDecisions)
+      );
+    } catch (error) {
+      console.warn("Décisions Atlas non synchronisées :", error);
+    }
   }
 
   function workoutStatusBadge(workout) {
@@ -454,88 +491,50 @@
 
   function targetCards(block) {
     const target = block.target || {};
-    const cards = [];
-
-    const addCard = (label, value, accent) => {
+    const rows = [];
+    const addRow = (label, value) => {
       if (!value) return;
-
-      cards.push(`
-        <article style="
-          padding:12px 14px;
-          border:1px solid ${accent};
-          border-radius:12px;
-          background:rgba(7,25,43,.88);
-          box-shadow:inset 0 0 18px rgba(47,196,255,.025);
-        ">
-          <span style="
-            display:block;
-            margin-bottom:5px;
-            color:#84acc5;
-            font-size:.68rem;
-            letter-spacing:.08em;
-            text-transform:uppercase;
-          ">${escapeHtml(label)}</span>
-          <strong style="
-            display:block;
-            color:#f4fbff;
-            font-size:.92rem;
-          ">${escapeHtml(value)}</strong>
-        </article>
+      rows.push(`
+        <div>
+          <dt>${escapeHtml(label)}</dt>
+          <dd>${escapeHtml(value)}</dd>
+        </div>
       `);
     };
+    const number = value => Number(value).toLocaleString(
+      "fr-FR",
+      { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+    );
 
     if (target.zone != null) {
-      addCard(
-        "Zone physiologique",
-        `Zone ${target.zone}`,
-        "rgba(47,199,255,.35)"
-      );
+      addRow("Zone", `Zone ${target.zone}`);
     }
 
     if (
       target.speed_min_kmh != null &&
       target.speed_max_kmh != null
     ) {
-      const minimum = Number(
-        target.speed_min_kmh
-      ).toLocaleString("fr-FR");
-      const maximum = Number(
-        target.speed_max_kmh
-      ).toLocaleString("fr-FR");
-
-      addCard(
-        "Vitesse cible",
-        minimum === maximum
-          ? `${minimum} km/h`
-          : `${minimum} à ${maximum} km/h`,
-        "rgba(44,203,255,.42)"
+      addRow(
+        "Vitesse",
+        `${number(target.speed_min_kmh)} à ${number(target.speed_max_kmh)} km/h`
       );
 
-      const slowPace = paceFromSpeed(
-        target.speed_min_kmh
-      );
-      const fastPace = paceFromSpeed(
-        target.speed_max_kmh
-      );
-
+      const slowPace = paceFromSpeed(target.speed_min_kmh);
+      const fastPace = paceFromSpeed(target.speed_max_kmh);
       if (slowPace && fastPace) {
-        addCard(
-          "Allure cible",
-          slowPace === fastPace
-            ? slowPace
-            : `${fastPace.replace("/km", "")} à ${slowPace}`,
-          "rgba(77,218,154,.42)"
+        addRow(
+          "Allure",
+          fastPace === slowPace
+            ? fastPace
+            : `${fastPace.replace("/km", "")} à ${slowPace}`
         );
       }
     } else if (target.pace_min_per_km) {
-      const maximumPace = target.pace_max_per_km
-        ? ` à ${target.pace_max_per_km}/km`
-        : "";
-
-      addCard(
-        "Allure cible",
-        `${target.pace_min_per_km}/km${maximumPace}`,
-        "rgba(77,218,154,.42)"
+      addRow(
+        "Allure",
+        target.pace_max_per_km
+          ? `${target.pace_min_per_km}/km à ${target.pace_max_per_km}/km`
+          : `${target.pace_min_per_km}/km`
       );
     }
 
@@ -543,54 +542,36 @@
       target.heart_rate_min_bpm != null ||
       target.heart_rate_max_bpm != null
     ) {
-      const minimum = target.heart_rate_min_bpm;
-      const maximum = target.heart_rate_max_bpm;
-
-      addCard(
+      addRow(
         "Fréquence cardiaque",
-        minimum != null && maximum != null
-          ? `${minimum} à ${maximum} bpm`
-          : `${minimum ?? maximum} bpm`,
-        "rgba(255,94,103,.42)"
+        `${target.heart_rate_min_bpm ?? target.heart_rate_max_bpm} à ${target.heart_rate_max_bpm ?? target.heart_rate_min_bpm} bpm`
       );
     }
 
     if (target.rpe_0_10 != null) {
-      addCard(
-        "Effort ressenti",
-        `RPE ${target.rpe_0_10}/10`,
-        "rgba(240,211,78,.42)"
-      );
+      addRow("Effort ressenti", `RPE ${target.rpe_0_10}/10`);
     }
 
     if (
       target.gradient_min_percent != null ||
       target.gradient_max_percent != null
     ) {
-      addCard(
-        "Pente cible",
-        `${target.gradient_min_percent ?? 0} à ` +
-          `${target.gradient_max_percent ?? target.gradient_min_percent} %`,
-        "rgba(255,156,72,.42)"
+      addRow(
+        "Pente",
+        `${target.gradient_min_percent ?? 0} à ${target.gradient_max_percent ?? target.gradient_min_percent} %`
       );
     }
 
     if (block.recovery_minutes != null) {
-      addCard(
-        "Récupération entre efforts",
-        `${Number(block.recovery_minutes).toLocaleString("fr-FR")} min`,
-        "rgba(135,114,255,.42)"
+      addRow(
+        "Récupération",
+        `${Number(block.recovery_minutes).toLocaleString("fr-FR")} min`
       );
     }
 
-    return cards.length
-      ? `<div style="
-          display:grid;
-          grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-          gap:9px;
-          margin:13px 0;
-        ">${cards.join("")}</div>`
-      : `<p style="color:#9fc5dc;">Cible individualisée selon les sensations du jour.</p>`;
+    return rows.length
+      ? `<dl class="session-target-list">${rows.join("")}</dl>`
+      : `<p class="session-target-empty">Cible individualisée selon les sensations du jour.</p>`;
   }
   function readableWorkTime(minutes) {
     const totalSeconds = Math.round(
@@ -1073,7 +1054,8 @@ const target = compactTarget(workout, zone);
     value,
     dayIndex,
     workouts,
-    program
+    program,
+    mobileSelected = false
   ) {
     const active = (
       value >= program.start_date &&
@@ -1088,6 +1070,7 @@ const target = compactTarget(workout, zone);
         calendar-day
         ${isToday(value) ? "is-today" : ""}
         ${!active ? "is-outside-program" : ""}
+        ${mobileSelected ? "is-mobile-selected" : ""}
       ">
         <header>
           <span>${DAY_LABELS[dayIndex]}</span>
@@ -1113,6 +1096,24 @@ const target = compactTarget(workout, zone);
     `;
   }
 
+  function mobileDayIcons(workouts) {
+    const icons = {
+      running: ["🏃", "Course"],
+      cycling: ["🚴", "Vélo"],
+      strength: ["◆", "Renforcement"]
+    };
+    const sports = [...new Set(workouts.map(workout => workout.sport))];
+
+    if (!sports.length) {
+      return '<span class="mobile-day-rest" aria-label="Repos">•</span>';
+    }
+
+    return sports.map(sport => {
+      const icon = icons[sport] || ["•", sport];
+      return `<span class="mobile-day-sport sport-${escapeHtml(sport)}" title="${escapeHtml(icon[1])}" aria-label="${escapeHtml(icon[1])}">${icon[0]}</span>`;
+    }).join("");
+  }
+
   function renderWeek(week, program) {
     const start = parseDate(week.start_date);
     const workoutsByDate = new Map();
@@ -1125,23 +1126,46 @@ const target = compactTarget(workout, zone);
       workoutsByDate.set(workout.workout_date, existing);
     });
 
+    const todayIndex = Array.from({ length: 7 }, (_, index) =>
+      isoDate(addDays(start, index))
+    ).findIndex(isToday);
+    const selectedDayIndex = todayIndex >= 0 ? todayIndex : 0;
+    const dayTabs = Array.from({ length: 7 }, (_, index) => {
+      const date = addDays(start, index);
+      const value = isoDate(date);
+      const workouts = workoutsByDate.get(value) || [];
+      const selected = index === selectedDayIndex;
+
+      return `
+        <button
+          type="button"
+          class="mobile-day-tab ${selected ? "is-selected" : ""} ${isToday(value) ? "is-today" : ""}"
+          data-mobile-day="${index}"
+          aria-selected="${selected}"
+          aria-label="${escapeHtml(DAY_LABELS[index])} ${escapeHtml(formatDate(value))}"
+        >
+          <b>${escapeHtml(DAY_LABELS[index].charAt(0))}</b>
+          <small>${date.getDate()}</small>
+          <span class="mobile-day-icons">${mobileDayIcons(workouts)}</span>
+        </button>
+      `;
+    }).join("");
+
     const days = Array.from({ length: 7 }, (_, index) => {
       const value = isoDate(addDays(start, index));
       return calendarDay(
         value,
         index,
         workoutsByDate.get(value) || [],
-        program
+        program,
+        index === selectedDayIndex
       );
     });
 
     return `
       <details
         class="premium-week phase-${escapeHtml(week.phase)}"
-        ${week.week_number === 1 ||
-          days.some(item => item.includes("is-today"))
-          ? "open"
-          : ""}
+        ${days.some(item => item.includes("is-today")) ? "open" : ""}
       >
         <summary>
           <div>
@@ -1162,6 +1186,10 @@ const target = compactTarget(workout, zone);
             )}
           </span>
         </summary>
+
+        <nav class="mobile-week-days" aria-label="Jours de la semaine">
+          ${dayTabs}
+        </nav>
 
         <div class="week-seven-grid">
           ${days.join("")}
@@ -1398,9 +1426,9 @@ const target = compactTarget(workout, zone);
     );
 
     return `
-      <header class="dialog-session-header">
+      <header class="dialog-session-header" style="--session-accent:${mainBlock ? accentFor(mainBlock) : '#39d98a'}">
         <div>
-          <span>${escapeHtml(formatDate(workout.workout_date, true))}</span>
+          <span>${escapeHtml(new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(parseDate(workout.workout_date)).replace(/^./, letter => letter.toUpperCase()))}</span>
           <h2>${escapeHtml(workout.title)}</h2>
           <p>${escapeHtml(workout.objective)}</p>
         </div>
@@ -1409,145 +1437,84 @@ const target = compactTarget(workout, zone);
         </i>
       </header>
 
-      <section style="margin-top:26px">
-        <h3 style="margin-bottom:16px">Aperçu</h3>
-        <div style="
-          display:grid;
-          grid-template-columns:repeat(4,minmax(0,1fr));
-          gap:1px;
-          overflow:hidden;
-          border-top:1px solid rgba(255,255,255,.16);
-          border-bottom:1px solid rgba(255,255,255,.16);
-          background:rgba(255,255,255,.08);
-        ">
-          <article style="padding:18px;background:#071827">
-            <strong style="display:block;font-size:1.45rem">
-              ${escapeHtml(formatMinutes(workout.planned_duration_minutes))}
-            </strong>
-            <span style="color:#8faabd">Durée totale</span>
-          </article>
-          <article style="padding:18px;background:#071827">
-            <strong style="display:block;font-size:1.45rem">
-              ${estimatedDistance ? estimatedDistance.toLocaleString(
-                "fr-FR",
-                { maximumFractionDigits: 1 }
-              ) + " km" : "—"}
-            </strong>
-            <span style="color:#8faabd">Distance estimée</span>
-          </article>
-          <article style="padding:18px;background:#071827">
-            <strong style="display:block;font-size:1.45rem">
-              ${escapeHtml(response.physiological_load_0_100 ?? "—")}/100
-            </strong>
-            <span style="color:#8faabd">Charge physiologique</span>
-          </article>
-          <article style="padding:18px;background:#071827">
-            <strong style="display:block;font-size:1.45rem">
-              ${escapeHtml(response.recovery_min_hours ?? "—")}–${escapeHtml(
-                response.recovery_max_hours ?? "—"
-              )} h
-            </strong>
-            <span style="color:#8faabd">Récupération estimée</span>
-          </article>
-        </div>
-      </section>
-
-      ${mainBlock ? `
-        <section style="
-          margin-top:24px;
-          padding:17px 19px;
-          border-left:4px solid ${accentFor(mainBlock)};
-          background:rgba(255,255,255,.035);
-        ">
-          <span style="
-            display:block;
-            margin-bottom:6px;
-            color:#8faabd;
-            font-size:.72rem;
-            letter-spacing:.09em;
-            text-transform:uppercase;
-          ">Cible principale</span>
-          <strong>${escapeHtml(targetLine(mainBlock))}</strong>
+              <section class="session-overview">
+          <h3>Aperçu</h3>
+          <div class="session-overview-grid">
+            <article>
+              <strong>${escapeHtml(formatMinutes(workout.planned_duration_minutes))}</strong>
+              <span>Durée</span>
+            </article>
+            <article>
+              <strong>
+                ${estimatedDistance ? estimatedDistance.toLocaleString(
+                  "fr-FR",
+                  { maximumFractionDigits: 1 }
+                ) + " km" : "—"}
+              </strong>
+              <span>Distance estimée</span>
+            </article>
+            <article>
+              <strong>${escapeHtml(response.physiological_load_0_100 ?? "—")}/100</strong>
+              <span>Charge physiologique</span>
+            </article>
+            <article>
+              <strong>
+                ${escapeHtml(response.recovery_min_hours ?? "—")}–${escapeHtml(
+                  response.recovery_max_hours ?? "—"
+                )} h
+              </strong>
+              <span>Récupération</span>
+            </article>
+          </div>
         </section>
-      ` : ""}
 
-      <section style="margin-top:28px">
-        <h3 style="margin-bottom:14px">Étapes</h3>
-        <div style="display:grid;gap:10px">
-          ${blocks.map(block => {
-            const distance = blockDistance(block);
+        <section class="session-steps ${blocks.length === 1 ? "is-simple" : ""}">
+          <h3>Étapes</h3>
+          <div class="session-step-list">
+            ${blocks.map(block => {
+              const distance = blockDistance(block);
+              const name = stepName(block);
+              const secondaryName = block.name && block.name !== name
+                ? block.name
+                : "";
 
-            return `
-              <article style="
-                padding:16px 18px;
-                border-left:7px solid ${accentFor(block)};
-                border-radius:8px;
-                background:rgba(255,255,255,.065);
-              ">
-                <div style="
-                  display:flex;
-                  justify-content:space-between;
-                  gap:18px;
-                  align-items:flex-start;
-                ">
-                  <div>
-                    <strong style="display:block;font-size:1.05rem">
-                      ${escapeHtml(stepName(block))}
-                    </strong>
-                    <span style="display:block;margin-top:3px;color:#a9bdca">
-                      ${escapeHtml(block.name)}
-                    </span>
+              return `
+                <article
+                  class="session-step"
+                  style="--step-accent:${accentFor(block)}"
+                >
+                  <div class="session-step-heading">
+                    <div>
+                      <strong>${escapeHtml(name)}</strong>
+                      ${secondaryName ? `<span>${escapeHtml(secondaryName)}</span>` : ""}
+                    </div>
+                    <b>${escapeHtml(blockDuration(block))}</b>
                   </div>
-                  <b style="white-space:nowrap">
-                    ${escapeHtml(blockDuration(block))}
-                  </b>
-                </div>
+                  ${targetCards(block)}
 
-                <p style="margin:11px 0 0;color:#dcecf5">
-                  ${escapeHtml(targetLine(block))}
-                </p>
+                  ${distance ? `
+                    <small>
+                      Distance estimée :
+                      ${distance.toLocaleString(
+                        "fr-FR",
+                        { maximumFractionDigits: 1 }
+                      )} km
+                    </small>
+                  ` : ""}
 
-                ${distance ? `
-                  <small style="display:block;margin-top:5px;color:#86a5b9">
-                    Distance estimée :
-                    ${distance.toLocaleString(
-                      "fr-FR",
-                      { maximumFractionDigits: 1 }
-                    )} km
-                  </small>
-                ` : ""}
+                  ${block.instructions ? `
+                    <details class="session-step-advice">
+                      <summary>Conseil Atlas</summary>
+                      <p>${escapeHtml(block.instructions)}</p>
+                    </details>
+                  ` : ""}
+                </article>
+              `;
+            }).join("")}
+          </div>
+        </section>
 
-                ${block.instructions ? `
-                  <p style="margin:11px 0 0;color:#9eb5c4">
-                    ${escapeHtml(block.instructions)}
-                  </p>
-                ` : ""}
-              </article>
-            `;
-          }).join("")}
-        </div>
-      </section>
-
-      ${(response.sensitive_structures || []).length ? `
-        <details style="
-          margin-top:20px;
-          padding:15px 17px;
-          border:1px solid rgba(53,204,255,.18);
-          border-radius:10px;
-          background:rgba(5,20,34,.7);
-        ">
-          <summary style="cursor:pointer;font-weight:700">
-            ⓘ Vigilance biomécanique
-          </summary>
-          <p style="margin:13px 0 0;color:#b5c9d5">
-            ${response.sensitive_structures.map(
-              item => escapeHtml(item)
-            ).join(" · ")}
-          </p>
-        </details>
-      ` : ""}
-
-      ${RESEARCH_TYPES.has(workout.workout_type) ? `
+${RESEARCH_TYPES.has(workout.workout_type) ? `
         <details style="
           margin-top:12px;
           padding:15px 17px;
@@ -1633,6 +1600,28 @@ const target = compactTarget(workout, zone);
     }[value] || value || "Séance analysée";
   }
 
+  function reportBlockTime(seconds) {
+    const numeric = Number(seconds);
+    if (!Number.isFinite(numeric)) return "—";
+
+    const minutes = Math.floor(numeric / 60);
+    const remainder = numeric - minutes * 60;
+    const formatted = remainder.toLocaleString("fr-FR", {
+      minimumIntegerDigits: 2,
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1
+    });
+
+    return `${minutes}:${formatted}`;
+  }
+
+  function reportMean(values, digits = 1) {
+    const valid = values.map(Number).filter(Number.isFinite);
+    if (!valid.length) return Number.NaN;
+
+    return valid.reduce((total, value) => total + value, 0) /
+      valid.length;
+  }
   function executionReportHtml(report, workout, userContext = null) {
     if (!report) {
       return `
@@ -1651,6 +1640,89 @@ const target = compactTarget(workout, zone);
     const activity = report.activity || {};
     const drift = report.cardiac_drift || {};
     const analysis = report.analysis || {};
+    const detailedBlocks = Array.isArray(analysis.blocks)
+      ? analysis.blocks
+      : [];
+    const dominantType = String(
+      analysis.dominant_work_type || ""
+    );
+    const plannedMainBlock = (workout.blocks || []).find(
+      block => block.block_type === "work"
+    );
+    const plannedRepetitions = Number(
+      execution.planned_repetition_count ||
+      plannedMainBlock?.repetitions ||
+      1
+    );
+    const matchingWorkBlocks = detailedBlocks.filter(
+      block => block.block_type === dominantType
+    );
+    const workBlocks = matchingWorkBlocks.length
+      ? matchingWorkBlocks
+      : detailedBlocks.filter(block => ![
+          "warm_up",
+          "cool_down",
+          "recovery",
+          "z1"
+        ].includes(block.block_type));
+    const recoveryBlocks = detailedBlocks.filter(
+      block => block.block_type === "recovery"
+    );
+    const workDistanceKm = workBlocks.reduce(
+      (total, block) => total + Number(block.distance_meters || 0),
+      0
+    ) / 1000;
+    const workDurationSeconds = workBlocks.reduce(
+      (total, block) => total + Number(block.duration_seconds || 0),
+      0
+    );
+    const averageWorkSpeed = reportMean(
+      workBlocks.map(block => block.average_speed_kmh)
+    );
+    const averageWorkHeartRate = reportMean(
+      workBlocks.map(block => block.average_heart_rate_bpm)
+    );
+    const workMaximumHeartRates = workBlocks.map(
+      block => Number(block.maximum_heart_rate_bpm)
+    ).filter(Number.isFinite);
+    const maximumWorkHeartRate = workMaximumHeartRates.length
+      ? Math.max(...workMaximumHeartRates)
+      : Number.NaN;
+    const averageWorkPower = reportMean(
+      workBlocks.map(block => block.average_power_watts)
+    );
+    const averageWorkCadence = reportMean(
+      workBlocks.map(block => block.average_cadence_spm)
+    );
+    const workDurations = workBlocks.map(
+      block => Number(block.duration_seconds)
+    ).filter(Number.isFinite);
+    const repetitionSpread = workDurations.length
+      ? Math.max(...workDurations) - Math.min(...workDurations)
+      : Number.NaN;
+    const isIntervalSession = plannedRepetitions > 1 &&
+      workBlocks.length > 1;
+    const firstWorkBlock = workBlocks[0] || {};
+    const lastWorkBlock = workBlocks[workBlocks.length - 1] || {};
+    const fastestWorkBlock = workBlocks.reduce(
+      (fastest, block) => (
+        Number(block.duration_seconds) <
+        Number(fastest?.duration_seconds ?? Infinity)
+          ? block
+          : fastest
+      ),
+      null
+    );
+    const intervalHeartRateChange =
+      Number(lastWorkBlock.average_heart_rate_bpm) -
+      Number(firstWorkBlock.average_heart_rate_bpm);
+    const intervalSpeedChangePercent =
+      Number(firstWorkBlock.average_speed_kmh) > 0
+        ? (
+            Number(lastWorkBlock.average_speed_kmh) /
+            Number(firstWorkBlock.average_speed_kmh) - 1
+          ) * 100
+        : Number.NaN;
     const first = drift.first_segment || {};
     const second = drift.second_segment || {};
     const plannedDuration = Number(workout.planned_duration_minutes);
@@ -1691,7 +1763,27 @@ const target = compactTarget(workout, zone);
     const plannedDistance = Number.isFinite(plannedDistanceRaw)
       ? Math.round(plannedDistanceRaw * 10) / 10
       : Number.NaN;
-    const actualDistance = Number(activity.distance_km);
+    const actualDistance = isIntervalSession
+      ? workDistanceKm
+      : Number(activity.distance_km);
+    const actualComparisonSpeed = isIntervalSession
+      ? averageWorkSpeed
+      : Number(activity.average_speed_kmh);
+    const actualComparisonHeartRate = isIntervalSession
+      ? averageWorkHeartRate
+      : Number(activity.average_heart_rate_bpm);
+    const actualComparisonMaximumHeartRate = isIntervalSession
+      ? maximumWorkHeartRate
+      : Number(activity.maximum_heart_rate_bpm);
+    const analyzedSessionLabel = {
+      vma: "Intervalles VO₂max",
+      sv2: "Travail au seuil",
+      z3: "Tempo",
+      z2: "Endurance fondamentale",
+      z1: "Récupération",
+      sprint: "Sprints",
+      acceleration: "Accélérations"
+    }[dominantType] || sessionTypeLabel(activity.session_type);
     const durationDelta = actualDuration - plannedDuration;
     const distanceDelta = actualDistance - plannedDistance;
     const executionScore = Number(execution.execution_score);
@@ -1713,6 +1805,31 @@ const target = compactTarget(workout, zone);
       : targetScore >= 65
         ? "Les cibles ont été partiellement respectées."
         : "Les cibles prévues ont été peu respectées.";
+    const intervalRows = workBlocks.map((block, index) => {
+      const speed = Number(block.average_speed_kmh);
+      const recovery = recoveryBlocks[index] || null;
+
+      return `
+        <div class="interval-detail-row">
+          <strong>${index + 1}</strong>
+          <span>${reportNumber(Number(block.distance_meters), 0)} m</span>
+          <span>${reportBlockTime(block.duration_seconds)}</span>
+          <span>${reportPace(3600 / speed)}</span>
+          <span>${reportNumber(speed, 2)} km/h</span>
+          <span>
+            ${reportNumber(block.average_heart_rate_bpm, 0)}
+            <small>max. ${reportNumber(block.maximum_heart_rate_bpm, 0)}</small>
+          </span>
+          <span>${reportNumber(block.average_power_watts, 0)} W</span>
+          <span>${reportNumber(block.average_cadence_spm, 0)} ppm</span>
+          <span>
+            ${recovery
+              ? `${reportBlockTime(recovery.duration_seconds)} · ${reportNumber(recovery.distance_meters, 0)} m`
+              : "—"}
+          </span>
+        </div>
+      `;
+    }).join("");
 
     return `
       <section class="execution-report execution-report-narrative">
@@ -1721,7 +1838,7 @@ const target = compactTarget(workout, zone);
             <span>ANALYSE ATLAS · DONNÉES RÉELLES</span>
             <h2>${escapeHtml(execution.workout_name || workout.title)}</h2>
             <p>
-              ${escapeHtml(sessionTypeLabel(activity.session_type))}
+              ${escapeHtml(analyzedSessionLabel)}
               · séance Garmin reconnue avec une confiance de
               ${reportScore(match.match_confidence_score)}.
             </p>
@@ -1732,70 +1849,117 @@ const target = compactTarget(workout, zone);
           </div>
         </header>
 
-        <section class="atlas-reading">
-          <span class="report-kicker">LECTURE IMMÉDIATE</span>
-          <h3>${executionConclusion}</h3>
-          <p>
-            Vous avez couru ${reportNumber(actualDuration)} minutes,
-            soit ${reportSignedNumber(durationDelta, 1, " min")} par
-            rapport aux ${reportNumber(plannedDuration)} minutes prévues.
-            ${targetConclusion} La qualité des données atteint
-            ${reportScore(activity.data_quality_score)} et la séance
-            correspond au programme avec une confiance de
-            ${reportScore(match.match_confidence_score)}.
-          </p>
-          <div class="report-confidence-line">
-            <span>Données <strong>${reportScore(activity.data_quality_score)}</strong></span>
-            <span>Classification <strong>${reportScore(activity.fingerprint_confidence_score)}</strong></span>
-            <span>Correspondance <strong>${reportScore(match.match_confidence_score)}</strong></span>
-            <span>Cibles <strong>${reportScore(targetScore)}</strong></span>
-          </div>
-        </section>
-
-        <section class="planned-realized-section">
+        <section class="interval-result-summary">
           <div class="report-heading">
-            <span class="report-kicker">COMPARAISON</span>
-            <h3>Ce qui était prévu et ce qui a été réalisé</h3>
+            <span class="report-kicker">RÉSULTAT</span>
+            <h3>
+              ${isIntervalSession
+                ? `${workBlocks.length} répétitions réalisées sur ${plannedRepetitions}`
+                : executionConclusion}
+            </h3>
             <p>
-              Cette comparaison permet de distinguer une séance plus
-              longue d’une séance réellement trop intense.
+              ${isIntervalSession
+                ? `Bloc principal exécuté avec une conformité de ${reportScore(targetScore)}.`
+                : targetConclusion}
             </p>
           </div>
-          <div class="planned-realized-table">
-            <div class="comparison-row comparison-header">
-              <span>Mesure</span><span>Prévu</span>
-              <span>Réalisé</span><span>Écart ou lecture</span>
-            </div>
-            <div class="comparison-row">
-              <strong>Durée</strong>
-              <span>${reportNumber(plannedDuration)} min</span>
-              <span>${reportNumber(actualDuration)} min</span>
-              <b>${reportSignedNumber(durationDelta, 1, " min")}</b>
-            </div>
-            <div class="comparison-row">
-              <strong>Distance</strong>
-              <span>${Number.isFinite(plannedDistance) ? `${reportNumber(plannedDistance)} km` : "Non fixée"}</span>
-              <span>${reportNumber(actualDistance, 2)} km</span>
-              <b>${Number.isFinite(distanceDelta) ? reportSignedNumber(distanceDelta, 2, " km") : "À interpréter"}</b>
-            </div>
-            <div class="comparison-row">
-              <strong>Allure et vitesse</strong>
-              <span>${escapeHtml(compactTarget(workout, workoutZone(workout)))}</span>
-              <span>${reportPace(activity.pace_seconds_per_km)} · ${reportNumber(activity.average_speed_kmh)} km/h</span>
-              <b>${targetConclusion}</b>
-            </div>
-            <div class="comparison-row">
-              <strong>Fréquence cardiaque</strong>
-              <span>Cible programmée</span>
-              <span>${reportNumber(activity.average_heart_rate_bpm, 0)} bpm · max. ${reportNumber(activity.maximum_heart_rate_bpm, 0)} bpm</span>
-              <b>Conformité ${reportScore(targetScore)}</b>
-            </div>
+
+          <div class="interval-result-grid">
+            <article>
+              <span>Travail rapide</span>
+              <strong>${reportBlockTime(workDurationSeconds)}</strong>
+              <small>${reportNumber(workDistanceKm, 2)} km</small>
+            </article>
+            <article>
+              <span>Allure moyenne</span>
+              <strong>${reportPace(3600 / averageWorkSpeed)}</strong>
+              <small>${reportNumber(averageWorkSpeed, 2)} km/h</small>
+            </article>
+            <article>
+              <span>Régularité</span>
+              <strong>${reportNumber(repetitionSpread, 1)} s</strong>
+              <small>écart rapide/lente</small>
+            </article>
+            <article>
+              <span>Fréquence cardiaque</span>
+              <strong>${reportNumber(averageWorkHeartRate, 0)} bpm</strong>
+              <small>max. ${reportNumber(maximumWorkHeartRate, 0)} bpm</small>
+            </article>
+            <article>
+              <span>Puissance moyenne</span>
+              <strong>${reportNumber(averageWorkPower, 0)} W</strong>
+              <small>répétitions</small>
+            </article>
+            <article>
+              <span>Cadence moyenne</span>
+              <strong>${reportNumber(averageWorkCadence, 0)} ppm</strong>
+              <small>répétitions</small>
+            </article>
           </div>
         </section>
 
+        ${isIntervalSession ? `
+          <section class="interval-details-section">
+            <div class="report-heading">
+              <span class="report-kicker">CIRCUITS</span>
+              <h3>Détail des ${workBlocks.length} répétitions</h3>
+            </div>
+            <div class="interval-detail-table">
+              <div class="interval-detail-row interval-detail-header">
+                <span>N°</span><span>Distance</span><span>Temps</span>
+                <span>Allure</span><span>Vitesse</span><span>FC moy.</span>
+                <span>Puissance</span><span>Cadence</span>
+                <span>Récupération</span>
+              </div>
+              ${intervalRows}
+            </div>
+          </section>
+        ` : ""}
         <div class="report-analysis-layout">
           <main>
-            <section class="narrative-analysis-section">
+              ${isIntervalSession ? `
+                <section class="narrative-analysis-section interval-analysis-section">
+                  <div class="report-heading">
+                    <span class="report-kicker">LECTURE ATLAS</span>
+                    <h3>Une série régulière jusqu’à la dernière répétition</h3>
+                  </div>
+                  <p>
+                    Les ${workBlocks.length} ×
+                    ${reportNumber(firstWorkBlock.distance_meters, 0)} m
+                    ont été réalisés à ${reportPace(3600 / averageWorkSpeed)}
+                    de moyenne. L’écart total de ${reportNumber(repetitionSpread, 1)} s
+                    confirme une exécution homogène.
+                  </p>
+                  <div class="drift-reading-line">
+                    <div>
+                      <span>Première</span>
+                      <strong>${reportBlockTime(firstWorkBlock.duration_seconds)}</strong>
+                      <small>${reportNumber(firstWorkBlock.average_heart_rate_bpm, 0)} bpm</small>
+                    </div>
+                    <i>→</i>
+                    <div>
+                      <span>Plus rapide</span>
+                      <strong>${reportBlockTime(fastestWorkBlock?.duration_seconds)}</strong>
+                      <small>${reportNumber(fastestWorkBlock?.average_speed_kmh, 2)} km/h</small>
+                    </div>
+                    <i>→</i>
+                    <div>
+                      <span>Dernière</span>
+                      <strong>${reportBlockTime(lastWorkBlock.duration_seconds)}</strong>
+                      <small>${reportNumber(lastWorkBlock.average_heart_rate_bpm, 0)} bpm</small>
+                    </div>
+                  </div>
+                  <p>
+                    Entre la première et la dernière répétition, la vitesse évolue de
+                    ${reportSignedNumber(intervalSpeedChangePercent, 1, " %")}
+                    et la fréquence cardiaque de
+                    ${reportSignedNumber(intervalHeartRateChange, 0, " bpm")}.
+                    Les récupérations ralenties n’ont pas dégradé la qualité des 400 m.
+                  </p>
+                </section>
+              ` : ""}
+
+              <section class="narrative-analysis-section ${isIntervalSession ? "is-interval-hidden" : ""}">
               <div class="report-heading">
                 <span class="report-kicker">RAISONNEMENT PHYSIOLOGIQUE</span>
                 <h3>Ce qu’Atlas observe pendant l’effort</h3>
@@ -1961,16 +2125,27 @@ const target = compactTarget(workout, zone);
           ${workoutStatusBadge(workout)}
         </div>
 
-        <div class="workout-primary-actions">
-          <button type="button" data-workout-action="completed">
-            <b>✓</b>
-            Séance effectuée
-          </button>
-          <button type="button" data-workout-action="skipped">
-            <b>—</b>
-            Je ne ferai pas cette séance
-          </button>
-        </div>
+        ${currentStatus === "skipped" ? `
+          <div class="workout-cancelled-decision">
+            <span>SÉANCE ANNULÉE</span>
+            <strong>Votre décision est enregistrée</strong>
+            <p>Motif : ${escapeHtml(decision.reason || "Non précisé")}</p>
+            <button type="button" data-workout-action="planned">
+              Modifier ma décision
+            </button>
+          </div>
+        ` : `
+          <div class="workout-primary-actions">
+            <button type="button" data-workout-action="completed">
+              <b>✓</b>
+              Séance effectuée
+            </button>
+            <button type="button" data-workout-action="skipped">
+              <b>—</b>
+              Annuler la séance du jour
+            </button>
+          </div>
+        `}
 
         ${workout.priority === "optional" ? `
           <button
@@ -2000,6 +2175,9 @@ const target = compactTarget(workout, zone);
   }
   function dailyPreparationDetailHtml(preparation, originalWorkout) {
     if (!preparation) return "";
+    if (workoutDecision(originalWorkout).status === "skipped") {
+      return "";
+    }
 
     const decision = preparation.decision || {};
     const adapted = preparation.adaptation?.adapted_workout || {};
@@ -2143,7 +2321,10 @@ const target = compactTarget(workout, zone);
     dialog.dataset.workoutId = workout.workout_id;
     let loadedReport = null;
     let loadedContext = null;
-    const adaptedWorkout = preparation?.adaptation?.adapted_workout || workout;
+    const cancelled = workoutDecision(workout).status === "skipped";
+    const adaptedWorkout = cancelled
+      ? workout
+      : preparation?.adaptation?.adapted_workout || workout;
 
     content.innerHTML = `
       <nav class="session-dialog-tabs" aria-label="Fiche de séance">
@@ -2169,9 +2350,9 @@ const target = compactTarget(workout, zone);
         class="session-tab-panel active"
         data-session-panel="planned"
       >
-        ${dailyPreparationDetailHtml(preparation, workout)}
-        ${detailHtml(adaptedWorkout)}
-        ${workoutActionsHtml(adaptedWorkout)}
+          ${detailHtml(adaptedWorkout)}
+          ${dailyPreparationDetailHtml(preparation, workout)}
+          ${workoutActionsHtml(adaptedWorkout)}
       </section>
 
       <section
@@ -2262,6 +2443,13 @@ const target = compactTarget(workout, zone);
               );
             }
           );
+            if (
+              saved?.user_selection === "accept_adaptation" ||
+              saved?.user_selection === "keep_original"
+            ) {
+              dialog.close();
+              render(activeProgram);
+            }
         } catch (error) {
           if (statusElement) {
             statusElement.textContent = error.message;
@@ -2292,6 +2480,18 @@ const target = compactTarget(workout, zone);
 
       const button = event.target.closest("[data-workout-action]");
       if (!button) return;
+
+    if (workoutDecisions[preparation.workout_id]?.status === "skipped") {
+      button.classList.remove("has-daily-preparation");
+      button.querySelector(".daily-preparation-summary")?.remove();
+      return;
+    }
+
+    if (workoutDecisions[preparation.workout_id]?.status === "skipped") {
+      button.classList.remove("has-daily-preparation");
+      button.querySelector(".daily-preparation-summary")?.remove();
+      return;
+    }
 
       const status = button.dataset.workoutAction;
       let reason = "";
@@ -2477,6 +2677,15 @@ const target = compactTarget(workout, zone);
     };
 
     dialog.showModal();
+    dialog.scrollTop = 0;
+    content.scrollTop = 0;
+    const dialogShell = dialog.querySelector(".session-dialog-shell");
+    if (dialogShell) dialogShell.scrollTop = 0;
+    requestAnimationFrame(() => {
+      dialog.scrollTop = 0;
+      content.scrollTop = 0;
+      if (dialogShell) dialogShell.scrollTop = 0;
+    });
 
     Promise.all([
       loadExecutionReport(workout.workout_id),
@@ -2808,6 +3017,15 @@ const target = compactTarget(workout, zone);
       }
     );
     dialog.showModal();
+    dialog.scrollTop = 0;
+    content.scrollTop = 0;
+    const dialogShell = dialog.querySelector(".session-dialog-shell");
+    if (dialogShell) dialogShell.scrollTop = 0;
+    requestAnimationFrame(() => {
+      dialog.scrollTop = 0;
+      content.scrollTop = 0;
+      if (dialogShell) dialogShell.scrollTop = 0;
+    });
   }
   function optionalWorkout(value, type = "recovery_run") {
     const snapshot = activeProgram.athlete_snapshot || {};
@@ -3085,10 +3303,50 @@ ${program.weeks.map(
     document.body.classList.add(
       "has-premium-training-calendar"
     );
+    if (window.matchMedia("(max-width: 620px)").matches) {
+      window.requestAnimationFrame(() => {
+        const todayCard = calendar.querySelector(
+          ".calendar-day.is-today"
+        );
+        const weekGrid = todayCard?.closest(".week-seven-grid");
+
+        if (todayCard && weekGrid) {
+          weekGrid.scrollTo({
+            left: Math.max(
+              0,
+              todayCard.offsetLeft - weekGrid.offsetLeft - 8
+            ),
+            behavior: "auto"
+          });
+        }
+      });
+    }
     loadTodayPreparations(program);
   }
 
   calendar.addEventListener("click", event => {
+    const mobileDay = event.target.closest("[data-mobile-day]");
+
+    if (mobileDay) {
+      const week = mobileDay.closest(".premium-week");
+      const selectedIndex = Number(mobileDay.dataset.mobileDay);
+      const tabs = week.querySelectorAll("[data-mobile-day]");
+      const dayCards = week.querySelectorAll(".calendar-day");
+
+      tabs.forEach((tab, index) => {
+        const selected = index === selectedIndex;
+        tab.classList.toggle("is-selected", selected);
+        tab.setAttribute("aria-selected", String(selected));
+      });
+
+      dayCards.forEach((dayCard, index) => {
+        dayCard.classList.toggle(
+          "is-mobile-selected",
+          index === selectedIndex
+        );
+      });
+      return;
+    }
     const workoutButton = event.target.closest(
       "[data-workout-key]"
     );
@@ -3111,6 +3369,7 @@ ${program.weeks.map(
   });
 
   async function loadProgram() {
+    await syncWorkoutDecisions();
     const sources = [
       window.ATLAS_TRAINING_PROGRAM_URL,
       "../atlas-data/private/training-program.json",

@@ -204,6 +204,7 @@ def execution_summary(item):
                     "interpretation",
                     "planning_influences",
                     "threshold_observations",
+                    "blocks",
                 ),
             ),
             "data_integrity": selected_fields(
@@ -327,6 +328,21 @@ def record_workout_context(payload):
             "Le commentaire ne peut pas dépasser 1200 caractères."
         )
 
+    else:
+        impact = {
+            "workout_id": workout.workout_id,
+            "status": "planned",
+            "action": "restore",
+            "recalculate_future_program": False,
+            "removed_duration_minutes": 0,
+            "removed_physiological_load": 0,
+            "removed_biomechanical_load": 0,
+            "shift_days": 0,
+            "reason": reason or "Decision modifiee par l'utilisateur",
+            "explanations": [
+                "La seance est reactivee dans le programme.",
+            ],
+        }
     record = {
         "workout_id": workout_id,
         "activity_id": activity_id or None,
@@ -378,7 +394,7 @@ def record_workout_decision(payload):
 
     if not workout_id:
         raise ValueError("workout_id est obligatoire.")
-    if status not in {"completed", "skipped"}:
+    if status not in {"completed", "skipped", "planned"}:
         raise ValueError("Statut de séance non pris en charge.")
 
     workouts = TrainingProgramLoader().load(PROGRAM_PATH)
@@ -408,7 +424,7 @@ def record_workout_decision(payload):
             reason=reason,
             sessions_on_next_day=sessions_on_next_day,
         ).to_dict()
-    else:
+    elif status == "completed":
         impact = {
             "workout_id": workout.workout_id,
             "status": "completed",
@@ -426,6 +442,21 @@ def record_workout_decision(payload):
             ],
         }
 
+    else:
+        impact = {
+            "workout_id": workout.workout_id,
+            "status": "planned",
+            "action": "restore",
+            "recalculate_future_program": False,
+            "removed_duration_minutes": 0,
+            "removed_physiological_load": 0,
+            "removed_biomechanical_load": 0,
+            "shift_days": 0,
+            "reason": reason or "Decision modifiee par l'utilisateur",
+            "explanations": [
+                "La seance est reactivee dans le programme.",
+            ],
+        }
     record = {
         "decided_at": datetime.now().astimezone().isoformat(
             timespec="seconds"
@@ -464,6 +495,32 @@ def record_workout_decision(payload):
 
     temporary.replace(WORKOUT_DECISIONS_PATH)
     return record
+
+
+def load_latest_workout_decisions():
+    """Retourne la dernière décision enregistrée pour chaque séance."""
+
+    if not WORKOUT_DECISIONS_PATH.exists():
+        return {}
+
+    with WORKOUT_DECISIONS_PATH.open(
+        "r",
+        encoding="utf-8",
+    ) as input_file:
+        history = json.load(input_file)
+
+    if not isinstance(history, list):
+        return {}
+
+    latest = {}
+    for decision in history:
+        if not isinstance(decision, dict):
+            continue
+        workout_id = str(decision.get("workout_id") or "").strip()
+        if workout_id:
+            latest[workout_id] = decision
+
+    return latest
 
 
 def create_twin(payload):
@@ -590,6 +647,22 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
 
         query = parse_qs(parsed.query)
+
+        if parsed.path == "/api/atlas-coach/workout-decisions":
+            try:
+                self.send_json(
+                    200,
+                    {
+                        "ok": True,
+                        "decisions": load_latest_workout_decisions(),
+                    },
+                )
+            except (OSError, json.JSONDecodeError) as error:
+                self.send_json(
+                    500,
+                    {"ok": False, "error": str(error)},
+                )
+            return
 
         if parsed.path == "/api/atlas-coach/daily-preparation":
             try:
@@ -813,7 +886,7 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             )
 
 if __name__ == "__main__":
-    address = ("localhost", 8000)
+    address = ("0.0.0.0", 8000)
     server = ThreadingHTTPServer(
         address,
         AtlasRequestHandler,

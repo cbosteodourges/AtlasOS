@@ -26,8 +26,10 @@ from src.performance.cardiac_drift_analyzer import (
     CardiacDriftAnalyzer,
 )
 from src.performance import (  # noqa: E402
+    AthleteProfile,
     DetailedSessionAnalyzer,
     LongitudinalActivityAdapter,
+    PhysiologicalReferences,
     SessionFingerprintBuilder,
 )
 from src.training import (  # noqa: E402
@@ -145,10 +147,48 @@ def json_default(value: Any) -> Any:
     )
 
 
+def load_analysis_profile(program_path: str | Path) -> AthleteProfile:
+    """Construit le profil utilisé pour classifier les blocs FIT."""
+
+    with Path(program_path).open(
+        "r",
+        encoding="utf-8",
+    ) as input_file:
+        program = json.load(input_file)
+
+    snapshot = program.get("athlete_snapshot") or {}
+    sv2 = snapshot.get("sv2") or {}
+
+    return AthleteProfile(
+        athlete_id=str(snapshot.get("athlete_id") or "atlas-user"),
+        declared_level="individualized",
+        observed_level="individualized",
+        physiological=PhysiologicalReferences(
+            age_years=snapshot.get("age_years"),
+            sex=snapshot.get("sex"),
+            maximum_heart_rate_bpm=snapshot.get(
+                "maximum_heart_rate_bpm"
+            ),
+            resting_heart_rate_bpm=snapshot.get(
+                "resting_heart_rate_bpm"
+            ),
+            threshold_heart_rate_bpm=sv2.get(
+                "heart_rate_bpm"
+            ),
+            vma_kmh=(
+                snapshot.get("vma_training_reference_kmh")
+                or snapshot.get("vma_kmh")
+            ),
+            vo2_max=snapshot.get("vo2_max"),
+            threshold_speed_kmh=sv2.get("speed_kmh"),
+        ),
+    )
+
 def build_record(
     normalized_activity,
     workouts,
     loader: TrainingProgramLoader,
+    profile: AthleteProfile,
 ) -> dict[str, Any]:
     """Analyse une activité et cherche sa séance Atlas."""
     longitudinal = LongitudinalActivityAdapter().adapt(
@@ -158,7 +198,8 @@ def build_record(
         longitudinal
     )
     analysis = DetailedSessionAnalyzer().analyze(
-        longitudinal
+        longitudinal,
+        profile,
     )
 
     cardiac_drift = CardiacDriftAnalyzer().analyze(
@@ -217,6 +258,7 @@ def main() -> None:
     arguments = parse_arguments()
     loader = TrainingProgramLoader()
     workouts = loader.load(arguments.program)
+    profile = load_analysis_profile(arguments.program)
     activities = synchronize_garmin(arguments.input)
     history = load_history(arguments.output)
 
@@ -237,6 +279,7 @@ def main() -> None:
             activity,
             workouts,
             loader,
+            profile,
         )
 
         if arguments.force:
