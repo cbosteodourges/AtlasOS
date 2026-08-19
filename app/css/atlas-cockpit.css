@@ -262,3 +262,33 @@ body[data-avatar="female"] .twin-panel img {
   background: color-mix(in srgb, var(--cyan) 20%, transparent);
   box-shadow: 0 0 22px color-mix(in srgb, var(--cyan) 28%, transparent);
 }
+
+
+/* Ajustement final du cockpit : jumeau lisible sans chevaucher son résumé. */
+@media (min-width: 761px) {
+  .twin-panel img,
+  body[data-avatar="female"] .twin-panel img {
+    top: 2%;
+    width: 80%;
+    height: 65%;
+  }
+
+  .twin-caption {
+    inset: auto 28px 18px;
+    padding-top: 16px;
+    border-top: 1px solid color-mix(in srgb, var(--cyan) 22%, transparent);
+  }
+
+  .next-session h2 {
+    font-size: clamp(1.35rem, 1.45vw, 1.7rem);
+    white-space: nowrap;
+    text-wrap: nowrap;
+  }
+}
+
+@media (max-width: 1050px) {
+  .next-session h2 {
+    white-space: normal;
+    text-wrap: balance;
+  }
+}
