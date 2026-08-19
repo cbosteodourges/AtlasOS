@@ -642,3 +642,54 @@ body.has-atlas-global-nav > .atlas-global-nav {
     display: none;
   }
 }
+
+
+/* Navigation contextuelle structurée — Entraînement et Santé */
+.atlas-context-subnav {
+  margin: 2px 8px 12px 22px;
+  padding: 10px 8px 9px 12px;
+  border: 1px solid rgba(55, 207, 255, .13);
+  border-left: 2px solid rgba(55, 207, 255, .42);
+  border-radius: 0 12px 12px 0;
+  background: rgba(2, 13, 25, .46);
+}
+
+.atlas-context-subnav::before {
+  content: attr(data-context-title);
+  display: block;
+  margin: 0 8px 7px;
+  color: #5e8298;
+  font-size: .58rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.atlas-context-subnav > button {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+}
+
+.atlas-context-subnav .atlas-context-icon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  color: #39cfff;
+  border: 1px solid rgba(57, 207, 255, .15);
+  border-radius: 7px;
+  background: rgba(57, 207, 255, .055);
+  font-size: .68rem;
+}
+
+.atlas-context-subnav > button.active {
+  box-shadow: inset 3px 0 0 #39cfff;
+}
+
+.atlas-context-subnav > button.active .atlas-context-icon {
+  color: #fff;
+  border-color: rgba(57, 207, 255, .5);
+  background: rgba(57, 207, 255, .2);
+}

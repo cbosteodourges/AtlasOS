@@ -14,21 +14,21 @@
   };
 
   const coachSubnav = isCoach ? `
-    <div class="atlas-context-subnav" aria-label="Sous-menu Entraînement">
-      <button type="button" data-coach-nav="overview"><span>Vue d’ensemble</span></button>
-      <button type="button" data-coach-nav="sensors"><span>Montres et capteurs</span></button>
-      <button type="button" data-coach-nav="profile"><span>Profil et objectif</span></button>
-      <button type="button" data-coach-nav="deadline"><span>Prochaine échéance</span></button>
-      <button type="button" data-coach-nav="plan"><span>Plan personnalisé</span></button>
-      <button type="button" data-coach-nav="history"><span>Historique des séances</span></button>
+    <div class="atlas-context-subnav" data-context-title="ESPACE ENTRAÎNEMENT" aria-label="Sous-menu Entraînement">
+      <button type="button" data-coach-nav="overview"><span class="atlas-context-icon">⌂</span><span>Vue d’ensemble</span></button>
+      <button type="button" data-coach-nav="sensors"><span class="atlas-context-icon">⌁</span><span>Montres et capteurs</span></button>
+      <button type="button" data-coach-nav="profile"><span class="atlas-context-icon">◇</span><span>Profil et objectif</span></button>
+      <button type="button" data-coach-nav="deadline"><span class="atlas-context-icon">◎</span><span>Prochaine échéance</span></button>
+      <button type="button" data-coach-nav="plan"><span class="atlas-context-icon">▦</span><span>Plan personnalisé</span></button>
+      <button type="button" data-coach-nav="history"><span class="atlas-context-icon">↝</span><span>Historique des séances</span></button>
     </div>` : "";
 
   const healthSubnav = isHub ? `
-    <div class="atlas-context-subnav" aria-label="Sous-menu Santé">
-      <button type="button" data-tab="balance" data-health-nav="balance"><span>Équilibre</span></button>
-      <button type="button" data-tab="health" data-health-nav="health"><span>Santé</span></button>
-      <button type="button" data-tab="injuries" data-health-nav="injuries"><span>Blessures</span></button>
-      <button type="button" data-tab="timeline" data-health-nav="timeline"><span>Chronologie</span></button>
+    <div class="atlas-context-subnav" data-context-title="ESPACE SANTÉ" aria-label="Sous-menu Santé">
+      <button type="button" data-tab="balance" data-health-nav="balance"><span class="atlas-context-icon">◉</span><span>Équilibre</span></button>
+      <button type="button" data-tab="health" data-health-nav="health"><span class="atlas-context-icon">♡</span><span>Paramètres physiologiques</span></button>
+      <button type="button" data-tab="injuries" data-health-nav="injuries"><span class="atlas-context-icon">⌁</span><span>Douleurs et blessures</span></button>
+      <button type="button" data-tab="timeline" data-health-nav="timeline"><span class="atlas-context-icon">↝</span><span>Chronologie</span></button>
     </div>` : "";
 
   const nav = document.createElement("aside");
