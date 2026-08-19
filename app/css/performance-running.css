@@ -5877,3 +5877,75 @@ body[data-coach-section]
     transform: rotate(90deg);
   }
 }
+
+/* Explication de la confiance du profil. */
+.atlas-confidence-card {
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.atlas-confidence-card:hover,
+.atlas-confidence-card:focus-visible {
+  box-shadow: 0 0 26px rgba(225, 177, 78, .3) !important;
+  transform: translateY(-2px);
+  outline: 2px solid rgba(225, 177, 78, .6);
+}
+
+.atlas-confidence-panel {
+  position: fixed;
+  z-index: 950;
+  inset: 50% auto auto 50%;
+  width: min(600px, calc(100vw - 28px));
+  max-height: calc(100dvh - 30px);
+  padding: 26px;
+  overflow: auto;
+  color: #edf8ff;
+  border: 1px solid rgba(225, 177, 78, .48);
+  border-radius: 20px;
+  background: rgba(4, 16, 29, .98);
+  box-shadow: 0 32px 100px rgba(0,0,0,.72);
+  transform: translate(-50%, -50%);
+}
+
+.atlas-confidence-panel[hidden] { display: none; }
+.atlas-confidence-panel > button {
+  position: absolute;
+  right: 14px;
+  top: 10px;
+  color: #91aabd;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  font-size: 1.6rem;
+}
+.atlas-confidence-panel > span {
+  color: #e1b14e;
+  font-size: .68rem;
+  font-weight: 850;
+  letter-spacing: .12em;
+}
+.atlas-confidence-panel h2 {
+  margin: 6px 0;
+  color: #e1b14e;
+  font-size: 2.4rem;
+}
+.atlas-confidence-panel p {
+  color: #b7cbd8;
+  line-height: 1.55;
+}
+.atlas-confidence-panel > div {
+  display: grid;
+  gap: 4px;
+  margin: 10px 0;
+  padding: 12px;
+  border: 1px solid rgba(225,177,78,.16);
+  border-radius: 10px;
+  background: rgba(255,255,255,.025);
+}
+.atlas-confidence-panel small { color: #91aabd; }
+.atlas-confidence-warning {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  font-size: .75rem;
+}

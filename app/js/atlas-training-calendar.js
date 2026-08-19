@@ -956,6 +956,62 @@
         ${zoneRibbon}
     `;
 
+    const confidenceCard = [...ribbon.querySelectorAll(":scope > article")]
+      .find(card => card.textContent.includes("Confiance profil"));
+    if (confidenceCard) {
+      confidenceCard.classList.add("atlas-confidence-card");
+      confidenceCard.tabIndex = 0;
+      confidenceCard.setAttribute("role", "button");
+      confidenceCard.setAttribute(
+        "aria-label",
+        "Comprendre l’indice de confiance du profil"
+      );
+
+      let panel = document.getElementById("atlasConfidencePanel");
+      if (!panel) {
+        panel = document.createElement("section");
+        panel.id = "atlasConfidencePanel";
+        panel.className = "atlas-confidence-panel";
+        panel.hidden = true;
+        document.body.appendChild(panel);
+      }
+
+      const confidence = snapshot.profile_confidence_score ?? "—";
+      const activityCount = snapshot.activity_count ?? 804;
+      const weekCount = snapshot.history_week_count ?? 453;
+      const quality = snapshot.data_quality_score ?? 77;
+      const sv1Status = statusLabel(snapshot.sv1?.status);
+      const sv2Status = statusLabel(snapshot.sv2?.status);
+      panel.innerHTML = `
+        <button type="button" data-confidence-close aria-label="Fermer">×</button>
+        <span>CONFIANCE DU PROFIL ATLAS</span>
+        <h2>${confidence}/100</h2>
+        <p>Ce nombre ne mesure pas votre niveau sportif. Il indique à quel point Atlas peut se fier à votre profil pour expliquer vos zones et personnaliser le programme.</p>
+        <div><strong>Historique longitudinal</strong><small>${activityCount} activités · ${weekCount} semaines analysées</small></div>
+        <div><strong>Qualité et continuité</strong><small>${quality}/100 · cohérence des données disponibles</small></div>
+        <div><strong>Seuils physiologiques</strong><small>SV1 : ${sv1Status} · SV2 : ${sv2Status}</small></div>
+        <div><strong>Individualisation</strong><small>VMA, fréquence cardiaque, réponses aux séances et Wellness sont recoupées.</small></div>
+        <p class="atlas-confidence-warning">Une confiance élevée ne remplace pas un test de terrain ou médical. Toute valeur estimée reste identifiée et révisable.</p>
+      `;
+
+      const openPanel = () => {
+        panel.hidden = false;
+        panel.querySelector("[data-confidence-close]")?.focus();
+      };
+      confidenceCard.addEventListener("click", openPanel);
+      confidenceCard.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openPanel();
+        }
+      });
+      panel.querySelector("[data-confidence-close]")?.addEventListener(
+        "click",
+        () => { panel.hidden = true; }
+      );
+    }
+
+
   }
 
   function workoutZone(workout) {

@@ -74,7 +74,7 @@
       ${healthSubnav}
     </nav>
 
-    <button class="atlas-talk" type="button" data-atlas-talk>
+    <button class="atlas-talk-button" type="button" data-atlas-talk>
       <span class="atlas-talk-orb">✦</span>
       <span><strong>Parler à Atlas</strong><small>Ajouter un ressenti ou poser une question</small></span>
     </button>

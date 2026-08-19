@@ -679,52 +679,76 @@ def _atlas_recovery_index(snapshot):
 
 
 def _daily_training_loads():
-    """Agrège la charge Garmin des activités analysées, sans exposer le privé."""
+    """Agrège la charge Garmin sans bloquer les autres indicateurs."""
     if not EXECUTIONS_PATH.exists():
         return {}
-    with EXECUTIONS_PATH.open("r", encoding="utf-8") as source:
-        payload = json.load(source)
-    loads = {}
-    for item in payload if isinstance(payload, list) else []:
-        if not isinstance(item, dict):
-            continue
-        day = str(item.get("start_time") or "")[:10]
-        fingerprint = item.get("fingerprint") or {}
-        value = _wellness_number(fingerprint.get("training_load"))
-        if day and value is not None:
-            loads[day] = round(loads.get(day, 0.0) + value, 1)
-    return loads
+    try:
+        with EXECUTIONS_PATH.open("r", encoding="utf-8") as source:
+            payload = json.load(source)
+        loads = {}
+        for item in payload if isinstance(payload, list) else []:
+            if not isinstance(item, dict):
+                continue
+            day = str(item.get("start_time") or "")[:10]
+            fingerprint = item.get("fingerprint") or {}
+            value = _wellness_number(fingerprint.get("training_load"))
+            if day and value is not None:
+                loads[day] = round(loads.get(day, 0.0) + value, 1)
+        return loads
+    except (OSError, json.JSONDecodeError, TypeError):
+        return {}
 
 
 def _program_progress():
-    """Calcule l'avancement temporel du plan réellement chargé."""
+    """Calcule l'avancement du plan sans bloquer Wellness."""
     if not PROGRAM_PATH.exists():
         return None
-    workouts = TrainingProgramLoader().load(PROGRAM_PATH)
-    dates = sorted(
-        workout.workout_date
-        for workout in workouts
-        if getattr(workout, "workout_date", None) is not None
-    )
-    if not dates:
+    try:
+        workouts = TrainingProgramLoader().load(PROGRAM_PATH)
+        dates = sorted(
+            workout.workout_date
+            for workout in workouts
+            if getattr(workout, "workout_date", None) is not None
+        )
+        if not dates:
+            return None
+        today = date.today()
+        elapsed = sum(day <= today for day in dates)
+        percent = round(100 * elapsed / len(dates))
+        return {
+            "percent": max(0, min(100, percent)),
+            "elapsed_sessions": elapsed,
+            "total_sessions": len(dates),
+            "start_date": dates[0].isoformat(),
+            "end_date": dates[-1].isoformat(),
+        }
+    except (OSError, ValueError, json.JSONDecodeError, TypeError):
         return None
-    today = date.today()
-    elapsed = sum(day <= today for day in dates)
-    percent = round(100 * elapsed / len(dates))
-    return {
-        "percent": max(0, min(100, percent)),
-        "elapsed_sessions": elapsed,
-        "total_sessions": len(dates),
-        "start_date": dates[0].isoformat(),
-        "end_date": dates[-1].isoformat(),
-    }
 
 
 def load_wellness_history():
     """Retourne uniquement les mesures utiles au navigateur."""
-    snapshots = GarminWellnessConnector(
-        str(WELLNESS_DIRECTORY)
-    ).import_all_cached(str(WELLNESS_CACHE_PATH))
+    connector = GarminWellnessConnector(str(WELLNESS_DIRECTORY))
+    snapshots = []
+    source_status = "cache"
+
+    if WELLNESS_CACHE_PATH.is_file():
+        cached = connector._load_cache(WELLNESS_CACHE_PATH)
+        for item in (cached.get("archives") or {}).values():
+            if not isinstance(item, dict):
+                continue
+            try:
+                snapshots.append(
+                    connector._snapshot_from_dict(item.get("snapshot"))
+                )
+            except (TypeError, ValueError):
+                continue
+
+    if not snapshots:
+        source_status = "archives"
+        snapshots = connector.import_all_cached(WELLNESS_CACHE_PATH)
+
+    snapshots = sorted(snapshots, key=lambda item: item.day)
     training_loads = _daily_training_loads()
     history = []
     for snapshot in snapshots:
@@ -751,6 +775,7 @@ def load_wellness_history():
     return {
         "ok": True,
         "count": len(history),
+        "source_status": source_status,
         "latest": history[-1] if history else None,
         "history": history,
         "program_progress": _program_progress(),
@@ -766,6 +791,107 @@ def load_wellness_history():
                 "un diagnostic médical."
             ),
         },
+    }
+
+
+CONVERSATION_JOURNAL_PATH = (
+    ROOT / "atlas-data" / "private" / "atlas-conversation-journal.json"
+)
+
+
+def atlas_conversation(payload):
+    """Dialogue local explicable, fondé sur les données Atlas disponibles."""
+    message = str(payload.get("message") or "").strip()
+    feeling = payload.get("feeling") or {}
+    if len(message) > 1200:
+        raise ValueError("La question est limitée à 1 200 caractères.")
+
+    wellness = None
+    try:
+        wellness = load_wellness_history().get("latest")
+    except (OSError, ValueError, json.JSONDecodeError):
+        wellness = None
+
+    lowered = message.lower()
+    if any(word in lowered for word in ("fatigu", "récup", "forme", "prêt")):
+        if wellness:
+            response = (
+                f"Votre indice Atlas est de {wellness.get('atlas_index')}/100. "
+                f"Sommeil : {wellness.get('sleep_score') or 'non renseigné'}/100 ; "
+                f"VFC nocturne : {wellness.get('hrv_last_night_ms') or 'non renseignée'} ms. "
+                "Je peux vous aider à interpréter la tendance avant de modifier une séance."
+            )
+        else:
+            response = (
+                "Je n'accède pas encore à la dernière journée Wellness. "
+                "Je peux enregistrer votre ressenti, mais je ne proposerai pas "
+                "d'adaptation sans données suffisantes."
+            )
+    elif any(word in lowered for word in ("séance", "entrain", "entraîn", "programme")):
+        response = (
+            "Je peux expliquer la prochaine séance, ses zones, sa charge attendue "
+            "et sa cohérence avec votre récupération. Toute adaptation du programme "
+            "reste une proposition qui demande votre validation."
+        )
+    elif any(word in lowered for word in ("douleur", "bless", "gêne")):
+        response = (
+            "Je peux enregistrer la localisation, l'intensité et l'évolution de la douleur, "
+            "puis signaler les séances potentiellement incompatibles. En cas de douleur "
+            "importante, inhabituelle ou accompagnée de signes d'alerte, un avis médical "
+            "reste prioritaire."
+        )
+    elif any(word in lowered for word in ("vfc", "sommeil", "stress", "charge")):
+        response = (
+            "Je peux comparer cet indicateur à votre référence personnelle sur plusieurs "
+            "périodes et expliquer son poids dans l'indice Atlas. Ouvrez également la carte "
+            "correspondante pour voir sa courbe."
+        )
+    elif message:
+        response = (
+            "J'ai enregistré votre question. Mon moteur local sait aujourd'hui expliquer "
+            "vos données, votre programme et vos ressentis. Il ne s'agit pas encore d'un "
+            "modèle conversationnel général : je privilégie des réponses traçables à partir "
+            "de vos données Atlas."
+        )
+    else:
+        response = (
+            "Choisissez une suggestion ou décrivez votre forme, votre sommeil, une douleur "
+            "ou une question sur la prochaine séance."
+        )
+
+    record = {
+        "recorded_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "message": message or None,
+        "feeling": feeling if isinstance(feeling, dict) else {},
+        "response": response,
+    }
+    history = []
+    if CONVERSATION_JOURNAL_PATH.exists():
+        try:
+            with CONVERSATION_JOURNAL_PATH.open("r", encoding="utf-8") as source:
+                loaded = json.load(source)
+                if isinstance(loaded, list):
+                    history = loaded
+        except (OSError, json.JSONDecodeError):
+            history = []
+    history.append(record)
+    CONVERSATION_JOURNAL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    temporary = CONVERSATION_JOURNAL_PATH.with_suffix(".json.tmp")
+    with temporary.open("w", encoding="utf-8", newline="\n") as output:
+        json.dump(history[-500:], output, ensure_ascii=False, indent=2)
+    temporary.replace(CONVERSATION_JOURNAL_PATH)
+
+    return {
+        "response": response,
+        "mode": "Atlas local explicable",
+        "data_available": wellness is not None,
+        "suggestions": [
+            "Suis-je suffisamment récupéré pour ma prochaine séance ?",
+            "Explique-moi l’objectif de la séance du jour.",
+            "Pourquoi ma VFC a-t-elle évolué ?",
+            "Je ressens une douleur : que dois-je renseigner ?",
+            "Sur quoi dois-je travailler cette semaine ?",
+        ],
     }
 
 
@@ -993,6 +1119,7 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             "/api/atlas-coach/workout-decision",
             "/api/atlas-coach/workout-context",
             "/api/atlas-coach/daily-preparation",
+            "/api/atlas/conversation",
         }
 
         if self.path not in allowed_routes:
@@ -1008,6 +1135,11 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             )
             raw_body = self.rfile.read(content_length)
             payload = json.loads(raw_body.decode("utf-8"))
+
+            if self.path == "/api/atlas/conversation":
+                result = atlas_conversation(payload)
+                self.send_json(200, {"ok": True, **result})
+                return
 
             if self.path == "/api/atlas-coach/daily-preparation":
                 service = DailyPreparationService(ROOT)

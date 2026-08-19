@@ -220,9 +220,19 @@
   });
 
   fetch("/api/atlas/wellness-history", {cache:"no-store"})
-    .then(response => {
-      if (!response.ok) throw new Error("Historique indisponible");
-      return response.json();
+    .then(async response => {
+      const contentType = response.headers.get("content-type") || "";
+      const payload = contentType.includes("application/json")
+        ? await response.json()
+        : null;
+      if (!response.ok) {
+        throw new Error(
+          response.status === 404
+            ? "Le serveur en cours doit être redémarré après la mise à jour."
+            : (payload?.error || `Erreur Wellness ${response.status}`)
+        );
+      }
+      return payload;
     })
     .then(payload => {
       history = payload.history || [];
@@ -230,7 +240,7 @@
     })
     .catch(error => {
       console.warn("Atlas Wellness :", error);
-      setText("[data-metric-description]", "Le serveur Atlas doit être actif pour consulter votre historique privé.");
+      setText("[data-metric-description]", error.message);
       drawChart([]);
     });
 

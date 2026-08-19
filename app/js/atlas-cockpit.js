@@ -131,18 +131,33 @@
   };
 
   fetch("/api/atlas/wellness-history", { cache: "no-store" })
-    .then(response => {
-      if (!response.ok) throw new Error("Wellness indisponible");
-      return response.json();
+    .then(async response => {
+      const contentType = response.headers.get("content-type") || "";
+      const payload = contentType.includes("application/json")
+        ? await response.json()
+        : null;
+      if (!response.ok) {
+        const message = response.status === 404
+          ? "Redémarrez le serveur Atlas mis à jour"
+          : (payload?.error || `Erreur Wellness ${response.status}`);
+        throw new Error(message);
+      }
+      return payload;
     })
     .then(updateCockpit)
     .catch(error => {
       console.warn("Atlas Wellness :", error);
       document.querySelectorAll(".metrics small").forEach(element => {
         if (element.textContent === "Chargement…") {
-          element.textContent = "Lancez le serveur Atlas pour actualiser";
+          element.textContent = error.message;
         }
       });
+      const sync = document.querySelector(".sync-state");
+      if (sync) {
+        sync.classList.add("is-stale");
+        sync.lastChild.textContent = " API Wellness indisponible";
+        sync.title = error.message;
+      }
     });
 
   const popover = document.querySelector("[data-index-popover]");
