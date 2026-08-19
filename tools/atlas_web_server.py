@@ -609,8 +609,12 @@ def _wellness_number(value):
 
 
 def _sleep_duration_minutes(snapshot):
-    """Estime le temps réellement dormi depuis les niveaux Garmin."""
-    total_seconds = 0.0
+    """Retourne la durée Garmin normalisée, avec compatibilité ancien cache."""
+    stored = getattr(snapshot, "sleep_duration_minutes", None)
+    if stored is not None:
+        return int(stored)
+
+    total = 0
     found = False
     for level in snapshot.sleep_levels or []:
         if not isinstance(level, dict):
@@ -623,16 +627,21 @@ def _sleep_duration_minutes(snapshot):
         ).lower()
         if "awake" in name or "éveil" in name:
             continue
-        duration = _wellness_number(
+        raw = (
             level.get("duration")
             or level.get("duration_seconds")
             or level.get("message_index_duration")
         )
-        if duration and duration > 0:
-            total_seconds += duration
-            found = True
-    return round(total_seconds / 60) if found else None
-
+        duration = _wellness_number(raw)
+        if duration is None or duration <= 0:
+            continue
+        if duration > 172800:
+            duration /= 1000
+        if duration > 1440:
+            duration /= 60
+        total += round(duration)
+        found = True
+    return total if found and total > 0 else None
 
 def _atlas_recovery_index(snapshot):
     """Indice Atlas transparent, normalisé uniquement sur les données disponibles."""
@@ -700,31 +709,180 @@ def _daily_training_loads():
 
 
 def _program_progress():
-    """Calcule l'avancement du plan sans bloquer Wellness."""
+    """Calcule l'avancement du plan et identifie la prochaine séance."""
     if not PROGRAM_PATH.exists():
         return None
     try:
         workouts = TrainingProgramLoader().load(PROGRAM_PATH)
-        dates = sorted(
-            workout.workout_date
+        dated = sorted(
+            (
+                workout.workout_date,
+                workout,
+            )
             for workout in workouts
             if getattr(workout, "workout_date", None) is not None
         )
-        if not dates:
+        if not dated:
             return None
         today = date.today()
-        elapsed = sum(day <= today for day in dates)
-        percent = round(100 * elapsed / len(dates))
+        elapsed = sum(day < today for day, _workout in dated)
+        percent = round(100 * elapsed / len(dated))
+        upcoming = next(
+            ((day, workout) for day, workout in dated if day >= today),
+            None,
+        )
+        next_workout = None
+        if upcoming:
+            workout_day, workout = upcoming
+            next_workout = {
+                "date": workout_day.isoformat(),
+                "title": getattr(workout, "title", "Séance planifiée"),
+                "duration_minutes": getattr(
+                    workout,
+                    "estimated_duration_minutes",
+                    None,
+                ),
+                "sport": getattr(workout, "sport", None),
+                "objective": getattr(workout, "objective", None),
+            }
         return {
             "percent": max(0, min(100, percent)),
             "elapsed_sessions": elapsed,
-            "total_sessions": len(dates),
-            "start_date": dates[0].isoformat(),
-            "end_date": dates[-1].isoformat(),
+            "total_sessions": len(dated),
+            "start_date": dated[0][0].isoformat(),
+            "end_date": dated[-1][0].isoformat(),
+            "next_workout": next_workout,
         }
     except (OSError, ValueError, json.JSONDecodeError, TypeError):
         return None
 
+
+def _athlete_analysis(history):
+    """Construit un rapport longitudinal factuel, sans diagnostic médical."""
+    if not history:
+        return None
+
+    latest = history[-1]
+    recent = history[-28:]
+    valid_hrv = [
+        item["hrv_last_night_ms"]
+        for item in recent
+        if item.get("hrv_last_night_ms") is not None
+    ]
+    valid_sleep = [
+        item["sleep_score"]
+        for item in recent
+        if item.get("sleep_score") is not None
+    ]
+    valid_resting = [
+        item["resting_heart_rate_bpm"]
+        for item in recent
+        if item.get("resting_heart_rate_bpm") is not None
+    ]
+    quality = [
+        item["data_quality_score"]
+        for item in recent
+        if item.get("data_quality_score") is not None
+    ]
+
+    mean = lambda values: round(sum(values) / len(values), 1) if values else None
+    hrv_mean = mean(valid_hrv)
+    sleep_mean = mean(valid_sleep)
+    resting_mean = mean(valid_resting)
+    coverage = round(
+        100 * sum(
+            item.get("hrv_last_night_ms") is not None
+            and item.get("sleep_score") is not None
+            for item in recent
+        ) / max(1, len(recent))
+    )
+    confidence = round((mean(quality) or 0) * 0.7 + coverage * 0.3)
+
+    strengths = []
+    vigilance = []
+    priorities = []
+
+    latest_hrv = latest.get("hrv_last_night_ms")
+    latest_weekly = latest.get("hrv_weekly_average_ms")
+    if latest_hrv is not None and latest_weekly is not None:
+        if latest_hrv >= latest_weekly:
+            strengths.append(
+                f"VFC nocturne favorable : {round(latest_hrv)} ms, "
+                f"au-dessus de la moyenne 7 jours ({round(latest_weekly)} ms)."
+            )
+        else:
+            vigilance.append(
+                f"VFC nocturne à {round(latest_hrv)} ms, sous la moyenne "
+                f"7 jours ({round(latest_weekly)} ms) : surveiller la tendance."
+            )
+
+    if sleep_mean is not None and sleep_mean >= 75:
+        strengths.append(
+            f"Sommeil globalement solide sur 28 jours : score moyen {round(sleep_mean)}/100."
+        )
+    elif sleep_mean is not None:
+        vigilance.append(
+            f"Sommeil perfectible sur 28 jours : score moyen {round(sleep_mean)}/100."
+        )
+
+    if resting_mean is not None:
+        strengths.append(
+            f"Fréquence cardiaque de repos stable autour de {round(resting_mean)} bpm "
+            "sur les données récentes."
+        )
+
+    if latest.get("sleep_duration_minutes") is None:
+        vigilance.append(
+            "Durée de sommeil absente du dernier instantané : le score est disponible, "
+            "mais la durée doit être relue dans l’archive Garmin."
+        )
+    if latest.get("training_load") is None:
+        vigilance.append(
+            "Charge du jour non mesurée : aucune conclusion de surcharge n’est formulée."
+        )
+
+    priorities.extend([
+        "Préserver la majorité du volume en endurance fondamentale et suivre la dérive cardiaque.",
+        "Conserver un renforcement utile au coureur, progressif et compatible avec la récupération.",
+        "N’augmenter l’intensité que si sommeil, VFC et ressenti convergent favorablement.",
+    ])
+
+    if not strengths:
+        strengths.append("Historique Wellness suffisamment dense pour établir une référence personnelle.")
+    if not vigilance:
+        vigilance.append("Aucun signal isolé majeur ; continuer à observer les tendances plutôt qu’une seule journée.")
+
+    return {
+        "generated_for": latest.get("day"),
+        "profile": "Profil d’endurance en construction longitudinale",
+        "summary": (
+            "Atlas croise les tendances de sommeil, VFC, fréquence cardiaque de repos, "
+            "récupération et charge disponible. Les conclusions ci-dessous sont reliées "
+            "aux données observées et distinguent clairement les informations manquantes."
+        ),
+        "strengths": strengths[:3],
+        "vigilance": vigilance[:3],
+        "priorities": priorities,
+        "confidence": {
+            "score": max(0, min(100, confidence)),
+            "coverage_28d": coverage,
+            "wellness_days": len(history),
+            "quality_28d": round(mean(quality) or 0),
+            "explanation": (
+                "Confiance fondée sur la couverture sommeil + VFC des 28 derniers jours "
+                "et sur la qualité technique des fichiers Garmin."
+            ),
+        },
+        "benchmarks": {
+            "hrv_28d": hrv_mean,
+            "sleep_score_28d": sleep_mean,
+            "resting_hr_28d": resting_mean,
+        },
+        "medical_notice": (
+            "Analyse d’aide à l’entraînement, non diagnostique. Une douleur persistante "
+            "ou un symptôme inhabituel nécessite un avis professionnel."
+        ),
+    }
 
 def load_wellness_history():
     """Retourne uniquement les mesures utiles au navigateur."""
@@ -749,6 +907,19 @@ def load_wellness_history():
         snapshots = connector.import_all_cached(WELLNESS_CACHE_PATH)
 
     snapshots = sorted(snapshots, key=lambda item: item.day)
+
+    # Les anciens caches ne contenaient pas la durée : relire seulement
+    # l’archive la plus récente, sans retraiter tout l’historique.
+    if snapshots and getattr(snapshots[-1], "sleep_duration_minutes", None) is None:
+        latest_archive = WELLNESS_DIRECTORY / f"{snapshots[-1].day.isoformat()}.zip"
+        if latest_archive.is_file():
+            try:
+                refreshed = connector.import_archive(latest_archive)
+                snapshots[-1] = refreshed
+                source_status = "cache + dernière archive"
+            except (OSError, ValueError):
+                pass
+
     training_loads = _daily_training_loads()
     history = []
     for snapshot in snapshots:
@@ -779,6 +950,7 @@ def load_wellness_history():
         "latest": history[-1] if history else None,
         "history": history,
         "program_progress": _program_progress(),
+        "athlete_analysis": _athlete_analysis(history),
         "index_explanation": {
             "title": "Indice Atlas de disponibilité",
             "summary": (

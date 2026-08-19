@@ -48,9 +48,9 @@
       <button type="button" data-tab="injuries" data-health-nav="injuries">
         <span class="atlas-context-icon">⌁</span><span>Douleurs et blessures</span>
       </button>
-      <button type="button" data-tab="analysis" data-health-nav="analysis">
+      <a href="./atlas-cockpit.html#athlete-analysis" data-health-nav="analysis">
         <span class="atlas-context-icon">✦</span><span>Analyse Atlas</span>
-      </button>
+      </a>
       <button type="button" data-tab="timeline" data-health-nav="timeline">
         <span class="atlas-context-icon">↝</span><span>Chronologie</span>
       </button>

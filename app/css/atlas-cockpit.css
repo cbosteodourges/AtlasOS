@@ -433,3 +433,22 @@ body[data-avatar="female"] .twin-panel img {
   background: #ffb24f;
   box-shadow: 0 0 9px #ffb24f;
 }
+
+
+/* Rapport physiologique longitudinal intégré à Aujourd’hui */
+.athlete-analysis-home{margin-top:34px;padding:34px;border:1px solid var(--line);border-radius:28px;background:linear-gradient(145deg,rgba(7,29,48,.95),rgba(3,14,27,.96));scroll-margin-top:24px}
+.athlete-analysis-home>header{display:flex;justify-content:space-between;gap:28px;align-items:center;margin-bottom:24px}
+.athlete-analysis-home h2{font-size:clamp(28px,3vw,44px);margin:8px 0 10px}
+.athlete-analysis-home header p{max-width:850px;color:var(--muted);line-height:1.6;margin:0}
+.analysis-confidence{min-width:150px;padding:18px 22px;text-align:center;border:1px solid rgba(81,231,166,.45);border-radius:22px;background:rgba(81,231,166,.07)}
+.analysis-confidence strong{font-size:40px;color:var(--green)}.analysis-confidence span{color:var(--muted)}.analysis-confidence small{display:block;margin-top:5px;color:var(--muted)}
+.analysis-benchmarks{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.analysis-benchmarks article,.analysis-columns article{padding:22px;border:1px solid var(--line);border-radius:20px;background:rgba(3,15,28,.68)}
+.analysis-benchmarks span{display:block;color:var(--muted);font-size:13px}.analysis-benchmarks strong{display:block;margin-top:8px;font-size:22px;color:var(--cyan)}
+.analysis-columns{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.analysis-columns h3{font-size:22px;margin:8px 0 14px}
+.analysis-columns li{margin:0 0 12px;color:#c5d7e6;line-height:1.5}.analysis-vigilance{border-color:rgba(255,178,70,.3)!important}.analysis-priorities{border-color:rgba(121,107,255,.32)!important}
+.athlete-analysis-home footer{display:grid;grid-template-columns:1fr auto;gap:8px 20px;align-items:center;margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}
+.athlete-analysis-home footer p,.athlete-analysis-home footer small{margin:0;color:var(--muted)}.athlete-analysis-home footer button{grid-row:1/3;grid-column:2;padding:12px 18px;border:1px solid var(--cyan);border-radius:14px;background:transparent;color:var(--text);font-weight:700;cursor:pointer}
+@media(max-width:1000px){.analysis-benchmarks{grid-template-columns:repeat(2,1fr)}.analysis-columns{grid-template-columns:1fr}.athlete-analysis-home>header{align-items:flex-start}.analysis-confidence{min-width:120px}}
+@media(max-width:640px){.athlete-analysis-home{padding:22px}.athlete-analysis-home>header{display:block}.analysis-confidence{margin-top:18px}.analysis-benchmarks{grid-template-columns:1fr 1fr}.athlete-analysis-home footer{display:block}.athlete-analysis-home footer button{margin-top:16px}}
+@media print{.atlas-sidebar,.home-header,.home-grid,.atlas-talk,.atlas-index-popover{display:none!important}.atlas-home{margin:0!important;padding:0!important}.athlete-analysis-home{margin:0;border:0;background:#fff;color:#111}.athlete-analysis-home *{color:#111!important}}

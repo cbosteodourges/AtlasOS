@@ -34,6 +34,7 @@ class DailyRecoverySnapshot:
     sleep_recovery_score: Optional[int] = None
     sleep_awakenings_count: Optional[int] = None
     sleep_average_stress: Optional[float] = None
+    sleep_duration_minutes: Optional[int] = None
     sleep_levels: List[Dict[str, Any]] = field(
         default_factory=list
     )
@@ -359,6 +360,10 @@ class GarminWellnessConnector:
             sleep_average_stress=self._float(
                 sleep.get("average_stress_during_sleep")
             ),
+            sleep_duration_minutes=self._sleep_duration_minutes(
+                sleep,
+                sleep_levels,
+            ),
             sleep_levels=sleep_levels,
         )
 
@@ -366,6 +371,60 @@ class GarminWellnessConnector:
             self._quality_score(snapshot)
         )
         return snapshot
+
+    @classmethod
+    def _sleep_duration_minutes(
+        cls,
+        assessment: Dict[str, Any],
+        levels: List[Dict[str, Any]],
+    ) -> Optional[int]:
+        """Extrait la durée réellement dormie des messages FIT Garmin."""
+        for key in (
+            "total_sleep_time",
+            "total_sleep_duration",
+            "sleep_time",
+            "sleep_duration",
+            "total_sleep",
+        ):
+            minutes = cls._duration_as_minutes(assessment.get(key))
+            if minutes is not None:
+                return minutes
+
+        total = 0
+        found = False
+        for level in levels:
+            if not isinstance(level, dict):
+                continue
+            name = str(
+                level.get("sleep_level")
+                or level.get("level")
+                or level.get("activity_type")
+                or ""
+            ).lower()
+            if "awake" in name or "éveil" in name:
+                continue
+            for key in ("duration", "duration_seconds", "message_index_duration"):
+                minutes = cls._duration_as_minutes(level.get(key))
+                if minutes is not None:
+                    total += minutes
+                    found = True
+                    break
+        return total if found and total > 0 else None
+
+    @staticmethod
+    def _duration_as_minutes(value: Any) -> Optional[int]:
+        try:
+            duration = float(value)
+        except (TypeError, ValueError):
+            return None
+        if duration <= 0:
+            return None
+        if duration > 172800:
+            duration /= 1000
+        if duration > 1440:
+            duration /= 60
+        minutes = round(duration)
+        return minutes if 1 <= minutes <= 1440 else None
 
     @staticmethod
     def _archive_day(path: Path) -> date:

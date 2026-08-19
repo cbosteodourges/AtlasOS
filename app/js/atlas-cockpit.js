@@ -112,6 +112,69 @@
       setText("[data-program-progress]", progress.percent);
       const bar = document.querySelector("[data-program-progress-bar]");
       if (bar) bar.style.width = `${progress.percent}%`;
+
+      const workout = progress.next_workout;
+      if (workout?.date) {
+        const day = new Date(`${workout.date}T12:00:00`);
+        const label = day.toLocaleDateString("fr-FR", {
+          weekday: "long",
+          day: "numeric",
+          month: "long"
+        });
+        setText("[data-next-session-date]", `PROCHAINE SÉANCE · ${label.toUpperCase()}`);
+        setText("[data-next-session-title]", workout.title);
+        const duration = workout.duration_minutes
+          ? `${Math.round(workout.duration_minutes)} min`
+          : "Durée à confirmer";
+        setText(
+          "[data-next-session-detail]",
+          [duration, workout.objective].filter(Boolean).join(" · ")
+        );
+      }
+    }
+
+    const analysis = payload.athlete_analysis;
+    if (analysis) {
+      setText("[data-analysis-summary]", analysis.summary);
+      setText("[data-analysis-confidence]", analysis.confidence?.score ?? "—");
+      setText(
+        "[data-analysis-coverage]",
+        analysis.confidence ? `${analysis.confidence.coverage_28d} %` : "—"
+      );
+      setText(
+        "[data-analysis-hrv]",
+        analysis.benchmarks?.hrv_28d != null
+          ? `${String(analysis.benchmarks.hrv_28d).replace(".", ",")} ms`
+          : "Donnée insuffisante"
+      );
+      setText(
+        "[data-analysis-sleep]",
+        analysis.benchmarks?.sleep_score_28d != null
+          ? `${Math.round(analysis.benchmarks.sleep_score_28d)}/100`
+          : "Donnée insuffisante"
+      );
+      setText(
+        "[data-analysis-resting]",
+        analysis.benchmarks?.resting_hr_28d != null
+          ? `${Math.round(analysis.benchmarks.resting_hr_28d)} bpm`
+          : "Donnée insuffisante"
+      );
+      setText("[data-analysis-confidence-text]", analysis.confidence?.explanation);
+      setText("[data-analysis-notice]", analysis.medical_notice);
+
+      const renderList = (selector, values) => {
+        const list = document.querySelector(selector);
+        if (!list) return;
+        list.replaceChildren();
+        (values || []).forEach(value => {
+          const item = document.createElement("li");
+          item.textContent = value;
+          list.appendChild(item);
+        });
+      };
+      renderList("[data-analysis-strengths]", analysis.strengths);
+      renderList("[data-analysis-vigilance]", analysis.vigilance);
+      renderList("[data-analysis-priorities]", analysis.priorities);
     }
 
     setText(
