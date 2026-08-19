@@ -693,3 +693,87 @@ body.has-atlas-global-nav > .atlas-global-nav {
   border-color: rgba(57, 207, 255, .5);
   background: rgba(57, 207, 255, .2);
 }
+
+
+/* Santé : quatre accès directs, moteurs secondaires repliés */
+.atlas-health-modules {
+  margin: 4px 8px 12px 22px;
+}
+
+.atlas-health-modules-toggle {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 42px;
+  padding: 4px 9px;
+  color: #8fa9ba;
+  font: inherit;
+  font-size: .75rem;
+  font-weight: 750;
+  text-align: left;
+  cursor: pointer;
+  border: 1px solid rgba(55, 207, 255, .12);
+  border-radius: 11px;
+  background: rgba(2, 13, 25, .52);
+}
+
+.atlas-health-modules-toggle .atlas-nav-icon {
+  width: 28px;
+  height: 28px;
+  font-size: .9rem;
+}
+
+.atlas-health-modules-toggle i {
+  color: #5aaecb;
+  font-style: normal;
+  transition: transform .2s ease;
+}
+
+.atlas-health-modules-toggle[aria-expanded="true"] i {
+  transform: rotate(180deg);
+}
+
+.atlas-health-modules-list {
+  display: grid;
+  gap: 3px;
+  margin: 5px 0 0 15px;
+  padding: 6px 0 2px 12px;
+  border-left: 1px solid rgba(55, 207, 255, .22);
+}
+
+.atlas-health-modules-list[hidden] {
+  display: none;
+}
+
+.atlas-health-modules-list a {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 5px 8px;
+  color: #849dad;
+  border-radius: 8px;
+  font-size: .72rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.atlas-health-modules-list a:hover,
+.atlas-health-modules-list a:focus-visible {
+  color: #eefaff;
+  background: rgba(55, 207, 255, .09);
+}
+
+.atlas-health-modules-list a > span:first-child {
+  color: #39cfff;
+  text-align: center;
+}
+
+@media (max-width: 820px) {
+  .atlas-health-modules {
+    display: none;
+  }
+}
