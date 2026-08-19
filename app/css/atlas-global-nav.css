@@ -582,3 +582,63 @@ body.has-atlas-global-nav > .atlas-global-nav {
 /* ATLAS COACH ZONES */.atlas-coach-zones{display:grid;gap:6px;margin:12px 16px 4px;padding:12px;border:1px solid rgba(72,205,255,.18);border-radius:12px;background:rgba(7,24,39,.72)}.atlas-coach-zones header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px}.atlas-coach-zones header strong{color:#eaf8ff;font-size:.72rem}.atlas-coach-zones header small{color:#7894a8;font-size:.55rem}.coach-zone{--coach-zone-color:#54cfff;display:grid;grid-template-columns:25px minmax(0,1fr);align-items:center;gap:7px;min-height:30px;padding:5px 7px;border-left:3px solid var(--coach-zone-color);border-radius:7px;background:rgba(255,255,255,.035)}.coach-zone b{color:var(--coach-zone-color);font-size:.65rem}.coach-zone span{display:grid;color:#b9cfdb;font-size:.58rem;line-height:1.35}.coach-zone.zone-1{--coach-zone-color:#38a9ff}.coach-zone.zone-2{--coach-zone-color:#49d17d}.coach-zone.zone-3{--coach-zone-color:#f0cf4f}.coach-zone.zone-4{--coach-zone-color:#ff9f43}.coach-zone.zone-5{--coach-zone-color:#ff506c}
 
 .coach-zone span small{display:block;margin-top:2px;color:#eef8fd;font-size:.56rem;font-weight:700;line-height:1.35}
+
+
+/* Contextual navigation: one clear workspace at a time. */
+.atlas-context-subnav {
+  display: grid;
+  gap: 4px;
+  margin: -2px 8px 8px;
+  padding: 6px 0 6px 30px;
+  border-left: 1px solid rgba(42, 199, 255, 0.24);
+}
+
+.atlas-context-subnav button {
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #88a1b5;
+  font: inherit;
+  font-size: 0.82rem;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+}
+
+.atlas-context-subnav button:hover,
+.atlas-context-subnav button.active {
+  color: #f4fbff;
+  background: rgba(42, 199, 255, 0.12);
+}
+
+[data-coach-section][hidden] {
+  display: none !important;
+}
+
+@media (min-width: 821px) {
+  body.has-atlas-context-nav {
+    padding-left: var(--atlas-nav-expanded);
+  }
+
+  body.has-atlas-context-nav .atlas-global-nav {
+    width: var(--atlas-nav-expanded);
+  }
+
+  .app.has-atlas-context-nav {
+    grid-template-columns: var(--atlas-nav-expanded) minmax(0, 1fr);
+  }
+
+  body.has-atlas-context-nav .coach-navigation,
+  .app.has-atlas-context-nav > main > .top .tabs {
+    display: none !important;
+  }
+}
+
+@media (max-width: 820px) {
+  .atlas-context-subnav {
+    display: none;
+  }
+}

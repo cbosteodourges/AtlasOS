@@ -8,8 +8,8 @@
   if (avatar) {
     const female = selectedAvatar === "female";
     avatar.src = female
-      ? "./assets/atlas-avatar-female-transparent.png"
-      : "./assets/atlas-avatar-male-transparent.png";
+      ? "./assets/avatar-female-hub.jpg"
+      : "./assets/avatar-male-hub.jpg";
     avatar.dataset.avatar = female ? "female" : "male";
     document.body.dataset.avatar = female ? "female" : "male";
   }

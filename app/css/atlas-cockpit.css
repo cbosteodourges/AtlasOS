@@ -175,3 +175,19 @@ body[data-avatar="female"] .twin-panel img { filter: hue-rotate(70deg) brightnes
   .metrics { grid-template-columns: 1fr; }
   .twin-panel { min-height: 390px; }
 }
+
+
+/* User-provided Atlas figurines and gender palette. */
+.twin-panel img,
+.cockpit-twin img,
+[data-cockpit-avatar] {
+  object-fit: cover;
+  object-position: center 58%;
+  mix-blend-mode: screen;
+}
+
+body[data-avatar="female"] .twin-panel img,
+body[data-avatar="female"] .cockpit-twin img,
+body[data-avatar="female"] [data-cockpit-avatar] {
+  filter: hue-rotate(315deg) saturate(1.42) contrast(1.08) brightness(1.08);
+}

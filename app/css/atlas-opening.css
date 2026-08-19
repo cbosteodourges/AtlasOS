@@ -1407,3 +1407,37 @@ button {
     inset 0 1px 0 rgba(255, 255, 255, .2);
   text-shadow: 0 0 12px rgba(220, 187, 255, .92);
 }
+
+/* User-provided Atlas figurines: close crop and palette treatment. */
+.atlas-avatar-card {
+  overflow: hidden;
+  background: #020714;
+}
+
+.atlas-avatar-card > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 58%;
+  transform: scale(1.08);
+  mix-blend-mode: screen;
+}
+
+.atlas-avatar-card[data-avatar="male"] > img {
+  filter: saturate(1.2) contrast(1.08) brightness(1.05);
+}
+
+.atlas-avatar-card[data-avatar="female"] > img {
+  filter: hue-rotate(315deg) saturate(1.42) contrast(1.08) brightness(1.08);
+}
+
+.hub-persistent-avatar {
+  object-fit: cover;
+  object-position: center 58%;
+  transform: scale(1.08);
+  mix-blend-mode: screen;
+}
+
+.hub-persistent-avatar[data-avatar="female"] {
+  filter: hue-rotate(315deg) saturate(1.42) contrast(1.08) brightness(1.08);
+}

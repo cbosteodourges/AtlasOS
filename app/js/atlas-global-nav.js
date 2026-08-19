@@ -5,64 +5,151 @@
   const isHub = page === "atlas-hub.html";
   const isCoach = page === "performance-running.html";
 
-  const hubDestination = (tab, icon, label, active = false) => isHub
-    ? `<button class="atlas-nav-item ${active ? "active" : ""}" type="button" data-tab="${tab}">
-        <span class="atlas-nav-icon">${icon}</span><span class="atlas-nav-label">${label}</span>
-      </button>`
-    : `<a class="atlas-nav-item ${active ? "active" : ""}" href="./atlas-hub.html#${tab}">
-        <span class="atlas-nav-icon">${icon}</span><span class="atlas-nav-label">${label}</span>
-      </a>`;
+  const primaryItem = ({ href, tab, icon, label, active = false, extra = "" }) => {
+    const className = `atlas-nav-item ${active ? "active" : ""}`;
+    const content = `<span class="atlas-nav-icon">${icon}</span><span class="atlas-nav-label">${label}</span>`;
+    return tab && isHub
+      ? `<button class="${className}" type="button" data-tab="${tab}" ${extra}>${content}</button>`
+      : `<a class="${className}" href="${href}" ${extra}>${content}</a>`;
+  };
 
-  const link = (href, icon, label, active = false) => `
-    <a class="atlas-nav-item ${active ? "active" : ""}" href="${href}">
-      <span class="atlas-nav-icon">${icon}</span><span class="atlas-nav-label">${label}</span>
-    </a>`;
+  const coachSubnav = isCoach ? `
+    <div class="atlas-context-subnav" aria-label="Sous-menu Entraînement">
+      <button type="button" data-coach-nav="overview"><span>Vue d’ensemble</span></button>
+      <button type="button" data-coach-nav="sensors"><span>Montres et capteurs</span></button>
+      <button type="button" data-coach-nav="profile"><span>Profil et objectif</span></button>
+      <button type="button" data-coach-nav="deadline"><span>Prochaine échéance</span></button>
+      <button type="button" data-coach-nav="plan"><span>Plan personnalisé</span></button>
+      <button type="button" data-coach-nav="history"><span>Historique des séances</span></button>
+    </div>` : "";
 
-  const markup = `
-    <a class="atlas-nav-brand" href="./atlas-opening.html">
-      <img src="./assets/atlas-logo-full.jpg" alt="Atlas OS">
+  const healthSubnav = isHub ? `
+    <div class="atlas-context-subnav" aria-label="Sous-menu Santé">
+      <button type="button" data-tab="balance" data-health-nav="balance"><span>Équilibre</span></button>
+      <button type="button" data-tab="health" data-health-nav="health"><span>Santé</span></button>
+      <button type="button" data-tab="injuries" data-health-nav="injuries"><span>Blessures</span></button>
+      <button type="button" data-tab="timeline" data-health-nav="timeline"><span>Chronologie</span></button>
+    </div>` : "";
+
+  const nav = document.createElement("aside");
+  nav.className = "atlas-global-nav";
+  nav.setAttribute("aria-label", "Navigation Atlas");
+  nav.innerHTML = `
+    <a class="atlas-brand" href="./atlas-cockpit.html" aria-label="Retour à Aujourd’hui">
+      <img src="./assets/logo-atlas.png" alt="">
       <span><strong>ATLAS OS</strong><small>Jumeau numérique humain</small></span>
     </a>
-    <div class="atlas-nav-items">
-      ${link("./atlas-cockpit.html", "⌂", "Aujourd’hui", page === "atlas-cockpit.html")}
-      ${link("./performance-running.html", "◉", "Entraînement", isCoach)}
-      ${hubDestination("health", "♡", "Santé", isHub && location.hash !== "#timeline")}
-      ${hubDestination("timeline", "↝", "Historique", isHub && location.hash === "#timeline")}
-    </div>
-    <button class="atlas-talk-button" type="button" data-atlas-talk aria-label="Parler à Atlas">
-      <span class="atlas-talk-orb">✦</span>
-      <span class="atlas-talk-copy"><strong>Parler à Atlas</strong><small>Ajouter un ressenti ou poser une question</small></span>
-    </button>
-    <div class="atlas-nav-user">
-      <span class="atlas-nav-avatar">CB</span>
-      <span><strong>Christophe</strong><small>Jumeau synchronisé</small></span>
-    </div>`;
 
-  let nav;
-  if (isHub) {
-    const app = document.querySelector(".app");
-    nav = document.querySelector(".sidebar");
-    if (!app || !nav) return;
+    <nav class="atlas-primary-nav">
+      ${primaryItem({ href: "./atlas-cockpit.html", icon: "⌂", label: "Aujourd’hui", active: page === "atlas-cockpit.html" })}
+      ${primaryItem({ href: "./performance-running.html", icon: "◎", label: "Entraînement", active: isCoach })}
+      ${coachSubnav}
+      ${primaryItem({ href: "./atlas-hub.html#health", tab: "health", icon: "♡", label: "Santé", active: isHub, extra: 'data-primary-health="health"' })}
+      ${healthSubnav}
+      ${primaryItem({ href: "./atlas-hub.html#timeline", tab: "timeline", icon: "⌁", label: "Historique", extra: 'data-primary-health="timeline"' })}
+    </nav>
+
+    <button class="atlas-talk" type="button" data-atlas-talk>
+      <span class="atlas-talk-orb">✦</span>
+      <span><strong>Parler à Atlas</strong><small>Ajouter un ressenti ou poser une question</small></span>
+    </button>
+
+    <div class="atlas-profile">
+      <span class="atlas-profile-avatar">CB</span>
+      <span><strong>Christophe</strong><small>Jumeau synchronisé</small></span>
+    </div>
+  `;
+
+  const app = document.querySelector(".app");
+  if (isHub && app) {
+    app.prepend(nav);
     app.classList.add("has-atlas-global-nav");
-    nav.className = "sidebar atlas-global-nav";
   } else {
-    nav = document.createElement("aside");
-    nav.className = "atlas-global-nav";
-    nav.setAttribute("aria-label", "Navigation Atlas OS");
     document.body.prepend(nav);
     document.body.classList.add("has-atlas-global-nav");
   }
-  nav.innerHTML = markup;
+
+  const setExpandedLayout = () => {
+    nav.classList.add("is-expanded");
+    document.body.classList.add("has-atlas-context-nav");
+    app?.classList.add("has-atlas-context-nav");
+  };
+
+  if (isCoach) {
+    setExpandedLayout();
+    const panels = [...document.querySelectorAll("[data-coach-section]")];
+    const buttons = [...nav.querySelectorAll("[data-coach-nav]")];
+
+    const showCoachSection = requested => {
+      const selected = panels.some(panel => panel.dataset.coachSection === requested)
+        ? requested
+        : "overview";
+
+      panels.forEach(panel => {
+        const active = panel.dataset.coachSection === selected;
+        panel.hidden = !active;
+        panel.classList.toggle("is-coach-active", active);
+      });
+
+      buttons.forEach(button => {
+        const active = button.dataset.coachNav === selected;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+
+      document.body.dataset.coachSection = selected;
+      localStorage.setItem("atlasCoachActiveSection", selected);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    buttons.forEach(button => {
+      button.addEventListener("click", () => showCoachSection(button.dataset.coachNav));
+    });
+
+    window.addEventListener("atlas:coach-section-request", event => {
+      showCoachSection(event.detail?.section);
+    });
+
+    showCoachSection(localStorage.getItem("atlasCoachActiveSection") || "overview");
+  }
+
+  if (isHub) {
+    setExpandedLayout();
+    const contextButtons = [...nav.querySelectorAll("[data-health-nav]")];
+    const primaryButtons = [...nav.querySelectorAll("[data-primary-health]")];
+
+    const syncHealthNavigation = selected => {
+      contextButtons.forEach(button => {
+        const active = button.dataset.healthNav === selected;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+      primaryButtons.forEach(button => {
+        const active = button.dataset.primaryHealth === selected
+          || (button.dataset.primaryHealth === "health" && selected !== "timeline");
+        button.classList.toggle("active", active);
+      });
+    };
+
+    nav.querySelectorAll("[data-tab]").forEach(button => {
+      button.addEventListener("click", () => syncHealthNavigation(button.dataset.tab));
+    });
+
+    window.addEventListener("load", () => {
+      const requested = location.hash.replace("#", "");
+      const selected = ["balance", "health", "injuries", "timeline"].includes(requested)
+        ? requested
+        : "health";
+      nav.querySelector(`[data-health-nav="${selected}"]`)?.click();
+      syncHealthNavigation(selected);
+    });
+  }
 
   nav.querySelector("[data-atlas-talk]")?.addEventListener("click", () => {
     window.dispatchEvent(new CustomEvent("atlas:conversation-open"));
   });
 
-  if (isHub) {
-    const requested = location.hash.slice(1);
-    const initial = ["health", "timeline"].includes(requested) ? requested : "health";
-    window.addEventListener("load", () => {
-      nav.querySelector(`[data-tab="${initial}"]`)?.click();
-    });
+  if (!isCoach && !isHub) {
+    nav.addEventListener("dblclick", () => nav.classList.toggle("is-expanded"));
   }
 })();
