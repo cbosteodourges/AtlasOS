@@ -23,8 +23,8 @@
 
     const isFemale = selectedAvatar === "female";
     hubPersistentAvatar.src = isFemale
-      ? "./assets/avatar-female-hub.jpg"
-      : "./assets/avatar-male-hub.jpg";
+      ? "./assets/avatar-female-hub.jpg?v=2"
+      : "./assets/avatar-male-hub.jpg?v=2";
 
     hubPersistentAvatar.dataset.avatar = isFemale
       ? "female"
