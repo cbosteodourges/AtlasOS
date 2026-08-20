@@ -72,6 +72,9 @@
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Atlas indisponible");
+    if (!data.assessment || !Array.isArray(data.options)) {
+      throw new Error("Le serveur Atlas utilise encore l’ancienne version. Arrêtez-le puis relancez tools\\atlas_web_server.py.");
+    }
     return data;
   };
 

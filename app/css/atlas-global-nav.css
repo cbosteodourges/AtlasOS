@@ -799,3 +799,29 @@ body.has-atlas-global-nav > .atlas-global-nav {
     display: none;
   }
 }
+
+
+/* Compatibilité de la navigation injectée */
+.atlas-global-nav .atlas-brand,
+.atlas-global-nav .atlas-profile {
+  text-decoration: none;
+}
+.atlas-global-nav .atlas-talk-copy,
+.atlas-global-nav .atlas-profile-copy {
+  min-width: 0;
+}
+.atlas-global-nav .atlas-talk-copy strong,
+.atlas-global-nav .atlas-talk-copy small,
+.atlas-global-nav .atlas-profile-copy strong,
+.atlas-global-nav .atlas-profile-copy small {
+  display: block;
+  line-height: 1.25;
+}
+.atlas-global-nav .atlas-talk-copy strong,
+.atlas-global-nav .atlas-talk-copy small {
+  white-space: normal;
+}
+.atlas-global-nav .atlas-profile-copy strong,
+.atlas-global-nav .atlas-profile-copy small {
+  white-space: nowrap;
+}

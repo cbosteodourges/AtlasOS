@@ -61,7 +61,7 @@
   nav.className = "atlas-global-nav";
   nav.setAttribute("aria-label", "Navigation Atlas");
   nav.innerHTML = `
-    <a class="atlas-brand" href="./atlas-cockpit.html" aria-label="Retour à Aujourd’hui">
+    <a class="atlas-brand atlas-nav-brand" href="./atlas-cockpit.html" aria-label="Retour à Aujourd’hui">
       <img src="./assets/logo-atlas.png" alt="">
       <span><strong>ATLAS OS</strong><small>Jumeau numérique humain</small></span>
     </a>
@@ -76,12 +76,12 @@
 
     <button class="atlas-talk-button" type="button" data-atlas-talk>
       <span class="atlas-talk-orb">✦</span>
-      <span><strong>Adapter ma séance</strong><small>Ressenti, calcul et choix guidé</small></span>
+      <span class="atlas-talk-copy"><strong>Adapter ma séance</strong><small>Ressenti et choix guidé</small></span>
     </button>
 
-    <div class="atlas-profile">
-      <span class="atlas-profile-avatar">CB</span>
-      <span><strong>Christophe</strong><small>Jumeau synchronisé</small></span>
+    <div class="atlas-profile atlas-nav-user">
+      <span class="atlas-profile-avatar atlas-nav-avatar">CB</span>
+      <span class="atlas-profile-copy"><strong>Christophe</strong><small>Jumeau synchronisé</small></span>
     </div>
   `;
 
