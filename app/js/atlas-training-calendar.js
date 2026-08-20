@@ -3218,6 +3218,19 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     }
 
     saved.forEach(workout => {
+      fetch("/api/atlas-coach/optional-workout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8"
+        },
+        body: JSON.stringify(workout)
+      }).catch(error => {
+        console.warn(
+          "Séance facultative non synchronisée avec Atlas.",
+          error
+        );
+      });
+
       const week = program.weeks.find(
         item => (
           workout.workout_date >= item.start_date &&
