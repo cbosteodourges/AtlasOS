@@ -91,7 +91,25 @@ class AutomaticWorkoutConfirmationTests(unittest.TestCase):
         )
         analysis = types.SimpleNamespace(
             dominant_work_type="sv2",
-            work_duration_seconds=24 * 60,
+            work_duration_seconds=1975.7,
+            blocks=[
+                types.SimpleNamespace(
+                    block_type="z2",
+                    duration_seconds=535.7,
+                ),
+                types.SimpleNamespace(
+                    block_type="sv2",
+                    duration_seconds=480,
+                ),
+                types.SimpleNamespace(
+                    block_type="sv2",
+                    duration_seconds=480,
+                ),
+                types.SimpleNamespace(
+                    block_type="sv2",
+                    duration_seconds=480,
+                ),
+            ],
         )
         profile = AthleteProfile(
             athlete_id="test",

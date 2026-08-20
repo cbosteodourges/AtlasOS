@@ -264,7 +264,12 @@ def detected_optional_threshold_workout(
         return None
     if analysis.dominant_work_type != "sv2":
         return None
-    if not 18 * 60 <= analysis.work_duration_seconds <= 32 * 60:
+    threshold_duration_seconds = sum(
+        float(getattr(block, "duration_seconds", 0.0) or 0.0)
+        for block in analysis.blocks
+        if getattr(block, "block_type", None) == "sv2"
+    )
+    if not 20 * 60 <= threshold_duration_seconds <= 28 * 60:
         return None
 
     physiological = profile.physiological
