@@ -420,6 +420,17 @@ def main() -> None:
     print(
         f"Séances confirmées automatiquement : {confirmed_count}."
     )
+    for record in new_records:
+        match = record.get("atlas_workout_match") or {}
+        execution = match.get("execution") or {}
+        state = "associée" if match.get("matched") else "non associée"
+        print(
+            "- "
+            f"{str(record.get('start_time') or '')[:16]} | "
+            f"{execution.get('workout_name') or 'aucune séance'} | "
+            f"{state} ({match.get('match_confidence_score') or 0}/100) | "
+            f"{match.get('workout_id') or 'sans identifiant'}"
+        )
     print(f"Historique privé : {destination}")
 
 

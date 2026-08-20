@@ -62,7 +62,7 @@
   nav.setAttribute("aria-label", "Navigation Atlas");
   nav.innerHTML = `
     <a class="atlas-brand atlas-nav-brand" href="./atlas-cockpit.html" aria-label="Retour à Aujourd’hui">
-      <img src="./assets/logo-atlas.png" alt="">
+      <img src="./assets/atlas-logo-full.jpg" alt="">
       <span><strong>ATLAS OS</strong><small>Jumeau numérique humain</small></span>
     </a>
 

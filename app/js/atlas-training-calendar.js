@@ -77,7 +77,11 @@
     }
 
     const report = payload.executions?.[0] || null;
-    executionReportCache.set(workoutId, report);
+    // Ne jamais mémoriser durablement une absence de rapport : le Watcher
+    // peut terminer l'analyse quelques secondes après l'ouverture du volet.
+    if (report) {
+      executionReportCache.set(workoutId, report);
+    }
     return report;
   }
 
@@ -2730,34 +2734,56 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       if (dialogShell) dialogShell.scrollTop = 0;
     });
 
+    const displayExecutionReport = async (report, userContext) => {
+      loadedReport = report;
+      loadedContext = userContext;
+      if (dialog.dataset.workoutId !== workout.workout_id) return;
+
+      const panel = content.querySelector(
+        '[data-session-panel="report"]'
+      );
+      const status = content.querySelector("[data-report-status]");
+
+      panel.innerHTML = executionReportHtml(
+        report,
+        workout,
+        userContext
+      );
+      status.textContent = report
+        ? "Analyse disponible"
+        : "En attente · analyse automatique en cours";
+      status.dataset.available = String(Boolean(report));
+
+      if (report) {
+        await syncWorkoutDecisions();
+        content.querySelector(
+          '[data-session-tab="report"]'
+        )?.click();
+      }
+    };
+
     Promise.all([
       loadExecutionReport(workout.workout_id),
       loadWorkoutContext(workout.workout_id)
     ])
-      .then(([report, userContext]) => {
-        loadedReport = report;
-        loadedContext = userContext;
-        if (dialog.dataset.workoutId !== workout.workout_id) return;
+      .then(async ([report, userContext]) => {
+        await displayExecutionReport(report, userContext);
+        if (report) return;
 
-        const panel = content.querySelector(
-          '[data-session-panel="report"]'
-        );
-        const status = content.querySelector("[data-report-status]");
+        // Le traitement FIT est asynchrone. Tant que ce volet reste ouvert,
+        // Atlas recherche automatiquement le compte-rendu pendant une minute.
+        for (let attempt = 0; attempt < 20; attempt += 1) {
+          await new Promise(resolve => window.setTimeout(resolve, 3000));
+          if (
+            !dialog.open ||
+            dialog.dataset.workoutId !== workout.workout_id
+          ) return;
 
-        panel.innerHTML = executionReportHtml(
-          report,
-          workout,
-          userContext
-        );
-        status.textContent = report
-          ? "Analyse disponible"
-          : "En attente";
-        status.dataset.available = String(Boolean(report));
+          const refreshed = await loadExecutionReport(workout.workout_id);
+          if (!refreshed) continue;
 
-        if (report) {
-          content.querySelector(
-            '[data-session-tab="report"]'
-          )?.click();
+          await displayExecutionReport(refreshed, userContext);
+          return;
         }
       })
       .catch(error => {
