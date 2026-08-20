@@ -884,7 +884,7 @@ def _athlete_analysis(history):
         ),
     }
 
-def load_wellness_history():
+def load_wellness_history(refresh_latest=True):
     """Retourne uniquement les mesures utiles au navigateur."""
     connector = GarminWellnessConnector(str(WELLNESS_DIRECTORY))
     snapshots = []
@@ -910,7 +910,11 @@ def load_wellness_history():
 
     # Les anciens caches ne contenaient pas la durée : relire seulement
     # l’archive la plus récente, sans retraiter tout l’historique.
-    if snapshots and getattr(snapshots[-1], "sleep_duration_minutes", None) is None:
+    if (
+        refresh_latest
+        and snapshots
+        and getattr(snapshots[-1], "sleep_duration_minutes", None) is None
+    ):
         latest_archive = WELLNESS_DIRECTORY / f"{snapshots[-1].day.isoformat()}.zip"
         if latest_archive.is_file():
             try:
@@ -980,12 +984,49 @@ def atlas_conversation(payload):
 
     wellness = None
     try:
-        wellness = load_wellness_history().get("latest")
+        wellness_payload = load_wellness_history(refresh_latest=False)
+        wellness = wellness_payload.get("latest")
     except (OSError, ValueError, json.JSONDecodeError):
         wellness = None
 
     lowered = message.lower()
-    if any(word in lowered for word in ("fatigu", "récup", "forme", "prêt")):
+    program = _program_progress()
+    next_workout = (program or {}).get("next_workout") or {}
+
+    if any(word in lowered for word in ("seuil", "vo2", "fractionn")):
+        readiness = wellness.get("atlas_index") if wellness else None
+        hrv = wellness.get("hrv_last_night_ms") if wellness else None
+        weekly_hrv = wellness.get("hrv_weekly_average_ms") if wellness else None
+        planned = next_workout.get("title")
+        planned_date = next_workout.get("date")
+        hrv_note = ""
+        if hrv is not None and weekly_hrv is not None:
+            direction = "sous" if hrv < weekly_hrv else "au niveau de"
+            hrv_note = (
+                f" Votre VFC ({round(hrv)} ms) se situe {direction} "
+                f"votre moyenne 7 jours ({round(weekly_hrv)} ms)."
+            )
+        if readiness is not None and readiness < 75:
+            response = (
+                f"Votre disponibilité Atlas est de {readiness}/100.{hrv_note} "
+                "Je ne remplacerais donc pas spontanément la séance planifiée par "
+                "une séance VO₂max exigeante. "
+            )
+        else:
+            response = (
+                f"Votre disponibilité Atlas est de {readiness}/100.{hrv_note} "
+                "Une séance intense peut être discutée, mais elle doit rester cohérente "
+                "avec la progression du plan. "
+            )
+        if planned:
+            response += (
+                f"La prochaine séance du programme est « {planned} »"
+                + (f" le {planned_date}" if planned_date else "")
+                + ". Je vous conseille de conserver cette trame ; si vous souhaitez "
+                "du fractionné, privilégiez le contenu prévu plutôt qu’un choix improvisé "
+                "entre seuil et VO₂max."
+            )
+    elif any(word in lowered for word in ("fatigu", "récup", "forme", "prêt")):
         if wellness:
             response = (
                 f"Votre indice Atlas est de {wellness.get('atlas_index')}/100. "
