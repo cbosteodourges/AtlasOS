@@ -1814,11 +1814,15 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       : Number.NaN;
     const averageWorkPower = Number(mergedWork.average_power_watts);
     const averageWorkCadence = Number(mergedWork.average_cadence_spm);
-    const workDurations = workBlocks.map(
-      block => Number(block.duration_seconds)
-    ).filter(Number.isFinite);
-    const repetitionSpread = workDurations.length
-      ? Math.max(...workDurations) - Math.min(...workDurations)
+    const workSpeeds = workBlocks.map(
+      block => Number(block.average_speed_kmh)
+    ).filter(speed => Number.isFinite(speed) && speed > 0);
+    const speedSpread = workSpeeds.length
+      ? Math.max(...workSpeeds) - Math.min(...workSpeeds)
+      : Number.NaN;
+    const workPaces = workSpeeds.map(speed => 3600 / speed);
+    const paceSpread = workPaces.length
+      ? Math.max(...workPaces) - Math.min(...workPaces)
       : Number.NaN;
     const isIntervalSession = plannedRepetitions > 1 &&
       workBlocks.length > 1;
@@ -1961,6 +1965,19 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             0
           )} m`
         : `${plannedRepetitions} répétitions`;
+    const completedIntervalLabel = Number(
+      plannedMainBlock?.duration_minutes
+    ) > 0
+      ? `${workBlocks.length} blocs de ${reportNumber(
+          plannedMainBlock.duration_minutes,
+          0
+        )} min`
+      : `${workBlocks.length} répétitions`;
+    const intervalCompletionSummary = Number(
+      plannedMainBlock?.duration_minutes
+    ) > 0
+      ? `${completedIntervalLabel} réalisés sur ${plannedRepetitions} prévus`
+      : `${completedIntervalLabel} réalisées sur ${plannedRepetitions} prévues`;
 
     return `
       <section class="execution-report execution-report-narrative">
@@ -1985,7 +2002,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             <span class="report-kicker">RÉSULTAT</span>
             <h3>
               ${isIntervalSession
-                ? `${workBlocks.length} répétitions réalisées sur ${plannedRepetitions}`
+                ? intervalCompletionSummary
                 : executionConclusion}
             </h3>
             <p>
@@ -1997,7 +2014,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
 
           <div class="interval-result-grid">
             <article>
-              <span>Travail rapide</span>
+              <span>${dominantType === "sv2" ? "Travail au seuil" : "Travail rapide"}</span>
               <strong>${reportBlockTime(workDurationSeconds)}</strong>
               <small>${reportNumber(workDistanceKm, 2)} km</small>
             </article>
@@ -2008,8 +2025,8 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             </article>
             <article>
               <span>Régularité</span>
-              <strong>${reportNumber(repetitionSpread, 1)} s</strong>
-              <small>écart rapide/lente</small>
+              <strong>${reportNumber(speedSpread, 2)} km/h</strong>
+              <small>${reportNumber(paceSpread, 0)} s/km d’écart</small>
             </article>
             <article>
               <span>Fréquence cardiaque</span>
@@ -2019,12 +2036,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             <article>
               <span>Puissance moyenne</span>
               <strong>${reportNumber(averageWorkPower, 0)} W</strong>
-              <small>répétitions</small>
+              <small>blocs de travail</small>
             </article>
             <article>
               <span>Cadence moyenne</span>
               <strong>${reportNumber(averageWorkCadence, 0)} ppm</strong>
-              <small>répétitions</small>
+              <small>blocs de travail</small>
             </article>
           </div>
         </section>
@@ -2033,7 +2050,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           <section class="interval-details-section">
             <div class="report-heading">
               <span class="report-kicker">CIRCUITS</span>
-              <h3>Détail des ${workBlocks.length} répétitions</h3>
+              <h3>Détail des ${workBlocks.length} blocs</h3>
             </div>
             <div class="interval-detail-table">
               <div class="interval-detail-row interval-detail-header">
@@ -2052,12 +2069,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                 <section class="narrative-analysis-section interval-analysis-section">
                   <div class="report-heading">
                     <span class="report-kicker">LECTURE ATLAS</span>
-                    <h3>Une série régulière jusqu’à la dernière répétition</h3>
+                    <h3>Une série régulière jusqu’au dernier bloc</h3>
                   </div>
                   <p>
                     Les ${plannedIntervalLabel}
                     ont été réalisés à ${reportPace(3600 / averageWorkSpeed)}
-                    de moyenne. L’écart total de ${reportNumber(repetitionSpread, 1)} s
+                    de moyenne. L’écart d’allure de ${reportNumber(paceSpread, 0)} s/km
                     confirme une exécution homogène.
                   </p>
                   <div class="drift-reading-line">
@@ -2080,7 +2097,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                     </div>
                   </div>
                   <p>
-                    Entre la première et la dernière répétition, la vitesse évolue de
+                    Entre le premier et le dernier bloc, la vitesse évolue de
                     ${reportSignedNumber(intervalSpeedChangePercent, 1, " %")}
                     et la fréquence cardiaque de
                     ${reportSignedNumber(intervalHeartRateChange, 0, " bpm")}.
