@@ -217,6 +217,12 @@ def load_optional_workouts(path: str | Path, loader):
         "double_session": "endurance_z2",
         "double_threshold": "threshold_sv2",
     }
+    block_aliases = {
+        "warmup": "warm_up",
+        "interval": "work",
+        "cooldown": "cool_down",
+        "circuit": "strength",
+    }
     normalized = []
     for raw in items:
         if not isinstance(raw, dict):
@@ -226,8 +232,122 @@ def load_optional_workouts(path: str | Path, loader):
             str(workout.get("workout_type")),
             workout.get("workout_type"),
         )
+        workout["blocks"] = [
+            {
+                **block,
+                "block_type": block_aliases.get(
+                    str(block.get("block_type")),
+                    block.get("block_type"),
+                ),
+            }
+            for block in workout.get("blocks", [])
+            if isinstance(block, dict)
+        ]
         normalized.append(workout)
     return loader.from_payload({"weeks": [{"workouts": normalized}]})
+
+
+def detected_optional_threshold_workout(
+    longitudinal,
+    analysis,
+    loader: TrainingProgramLoader,
+    profile: AthleteProfile,
+):
+    """Restaure le 3 x 8 min UI si sa transmission locale a échoué."""
+
+    if str(longitudinal.activity_type).strip().lower() not in {
+        "running",
+        "run",
+        "course",
+        "course à pied",
+    }:
+        return None
+    if analysis.dominant_work_type != "sv2":
+        return None
+    if not 18 * 60 <= analysis.work_duration_seconds <= 32 * 60:
+        return None
+
+    physiological = profile.physiological
+    vma = physiological.vma_kmh
+    maximum_hr = physiological.maximum_heart_rate_bpm
+
+    def target(zone, speed_factors, heart_rate_factors, rpe):
+        return {
+            "zone": zone,
+            "speed_min_kmh": (
+                round(vma * speed_factors[0], 1)
+                if vma is not None else None
+            ),
+            "speed_max_kmh": (
+                round(vma * speed_factors[1], 1)
+                if vma is not None else None
+            ),
+            "heart_rate_min_bpm": (
+                round(maximum_hr * heart_rate_factors[0])
+                if maximum_hr is not None else None
+            ),
+            "heart_rate_max_bpm": (
+                round(maximum_hr * heart_rate_factors[1])
+                if maximum_hr is not None else None
+            ),
+            "rpe_0_10": rpe,
+            "intensity_pattern": (
+                "interval" if zone == 4 else "constant"
+            ),
+        }
+
+    workout_day = longitudinal.start_time.date().isoformat()
+    payload = {
+        "workout_id": f"{workout_day}-optional-threshold_run",
+        "workout_date": workout_day,
+        "workout_type": "threshold_sv2",
+        "title": "Seuil SV2",
+        "objective": (
+            "Stimuler le seuil anaérobie avec une charge contrôlée."
+        ),
+        "sport": "running",
+        "priority": "optional",
+        "planned_duration_minutes": 55,
+        "expected_response": {
+            "physiological_load_0_100": 68,
+            "biomechanical_load_0_100": 52,
+            "recovery_min_hours": 30,
+            "recovery_max_hours": 48,
+            "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille",
+            ],
+        },
+        "blocks": [
+            {
+                "name": "Échauffement",
+                "block_type": "warm_up",
+                "duration_minutes": 15,
+                "target": target(1, (.55, .65), (.62, .71), 2.5),
+            },
+            {
+                "name": "3 × 8 min au SV2",
+                "block_type": "work",
+                "repetitions": 3,
+                "duration_minutes": 8,
+                "recovery_minutes": 2,
+                "target": target(4, (.86, .92), (.85, .91), 7),
+            },
+            {
+                "name": "Retour au calme",
+                "block_type": "cool_down",
+                "duration_minutes": 10,
+                "target": target(1, (.55, .65), (.62, .71), 2.5),
+            },
+        ],
+        "coach_notes": [
+            "Séance facultative restaurée depuis le profil détaillé du FIT.",
+            "La récupération écourtée n'empêche pas la validation.",
+        ],
+    }
+    return loader.from_payload({
+        "weeks": [{"workouts": [payload]}]
+    })[0]
 
 
 def confirm_matched_workouts(records, decisions_path: str | Path):
@@ -326,6 +446,26 @@ def build_record(
         if matches
         else None
     )
+
+    if best_match is None or not best_match.matched:
+        restored = detected_optional_threshold_workout(
+            longitudinal,
+            analysis,
+            loader,
+            profile,
+        )
+        if restored is not None:
+            restored_match = AtlasWorkoutExecutionMatcher().match(
+                restored,
+                longitudinal,
+                analysis,
+            )
+            if (
+                best_match is None
+                or restored_match.match_confidence_score
+                > best_match.match_confidence_score
+            ):
+                best_match = restored_match
 
     return {
         "activity_id": longitudinal.atlas_id,

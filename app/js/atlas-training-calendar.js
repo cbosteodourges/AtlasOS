@@ -3232,7 +3232,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     dailySelectionCache.delete(workout.workout_id);
     workoutIndex.delete(workout.workout_id);
   }
-  function restoreOptional(program) {
+  async function restoreOptional(program) {
     let saved = [];
 
     try {
@@ -3243,19 +3243,30 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       saved = [];
     }
 
-    saved.forEach(workout => {
-      fetch("/api/atlas-coach/optional-workout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json; charset=utf-8"
-        },
-        body: JSON.stringify(workout)
-      }).catch(error => {
+    await Promise.all(saved.map(async workout => {
+      try {
+        const response = await fetch(
+          "/api/atlas-coach/optional-workout",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json; charset=utf-8"
+            },
+            body: JSON.stringify(workout)
+          }
+        );
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(
+            payload.error || "Réponse Atlas invalide."
+          );
+        }
+      } catch (error) {
         console.warn(
           "Séance facultative non synchronisée avec Atlas.",
           error
         );
-      });
+      }
 
       const week = program.weeks.find(
         item => (
@@ -3272,7 +3283,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       ) {
         week.workouts.push(workout);
       }
-    });
+    }));
   }
 
   async function addOptional(value, type = "recovery_run") {

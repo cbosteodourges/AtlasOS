@@ -12,7 +12,13 @@ garmin_fit_sdk.Decoder = object
 garmin_fit_sdk.Stream = object
 sys.modules.setdefault("garmin_fit_sdk", garmin_fit_sdk)
 
-from scripts.sync_atlas_coach_pilot import confirm_matched_workouts
+from scripts.sync_atlas_coach_pilot import (
+    confirm_matched_workouts,
+    detected_optional_threshold_workout,
+    load_optional_workouts,
+)
+from src.performance import AthleteProfile, PhysiologicalReferences
+from src.training import TrainingProgramLoader
 
 
 class AutomaticWorkoutConfirmationTests(unittest.TestCase):
@@ -51,6 +57,65 @@ class AutomaticWorkoutConfirmationTests(unittest.TestCase):
 
             self.assertEqual(added, 0)
             self.assertFalse(destination.exists())
+
+    def test_ui_block_names_are_normalized_for_engine(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "optional.json"
+            source.write_text(json.dumps([{
+                "workout_id": "2026-08-20-optional-threshold_run",
+                "workout_date": "2026-08-20",
+                "workout_type": "threshold_run",
+                "title": "Seuil SV2",
+                "objective": "Test",
+                "priority": "optional",
+                "blocks": [{
+                    "name": "3 × 8 min au SV2",
+                    "block_type": "interval",
+                    "duration_minutes": 8,
+                    "repetitions": 3,
+                }],
+            }]), encoding="utf-8")
+
+            workouts = load_optional_workouts(
+                source,
+                TrainingProgramLoader(),
+            )
+
+            self.assertEqual(workouts[0].workout_type.value, "threshold_sv2")
+            self.assertEqual(workouts[0].blocks[0].block_type.value, "work")
+
+    def test_detected_sv2_restores_exact_optional_workout_id(self):
+        longitudinal = types.SimpleNamespace(
+            activity_type="running",
+            start_time=__import__("datetime").datetime(2026, 8, 20, 20, 52),
+        )
+        analysis = types.SimpleNamespace(
+            dominant_work_type="sv2",
+            work_duration_seconds=24 * 60,
+        )
+        profile = AthleteProfile(
+            athlete_id="test",
+            declared_level="test",
+            observed_level="test",
+            physiological=PhysiologicalReferences(
+                maximum_heart_rate_bpm=170,
+                vma_kmh=14,
+            ),
+        )
+
+        workout = detected_optional_threshold_workout(
+            longitudinal,
+            analysis,
+            TrainingProgramLoader(),
+            profile,
+        )
+
+        self.assertEqual(
+            workout.workout_id,
+            "2026-08-20-optional-threshold_run",
+        )
+        self.assertEqual(workout.blocks[1].repetitions, 3)
+        self.assertEqual(workout.blocks[1].duration_minutes, 8)
 
 
 if __name__ == "__main__":
