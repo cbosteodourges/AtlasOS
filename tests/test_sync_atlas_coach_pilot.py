@@ -16,6 +16,7 @@ from scripts.sync_atlas_coach_pilot import (
     confirm_matched_workouts,
     detected_optional_threshold_workout,
     load_optional_workouts,
+    persist_restored_optional_workouts,
 )
 from src.performance import AthleteProfile, PhysiologicalReferences
 from src.training import TrainingProgramLoader
@@ -134,6 +135,21 @@ class AutomaticWorkoutConfirmationTests(unittest.TestCase):
         )
         self.assertEqual(workout.blocks[1].repetitions, 3)
         self.assertEqual(workout.blocks[1].duration_minutes, 8)
+
+    def test_restored_workout_is_persisted_for_calendar(self):
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "optional.json"
+            count = persist_restored_optional_workouts([{
+                "restored_optional_workout": {
+                    "workout_id": "2026-08-20-optional-threshold_run",
+                    "workout_date": "2026-08-20",
+                    "title": "Seuil SV2",
+                },
+            }], destination)
+
+            self.assertEqual(count, 1)
+            saved = json.loads(destination.read_text(encoding="utf-8"))
+            self.assertEqual(saved[0]["title"], "Seuil SV2")
 
 
 if __name__ == "__main__":

@@ -1423,6 +1423,27 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
 
         query = parse_qs(parsed.query)
 
+        if parsed.path == "/api/atlas-coach/optional-workouts":
+            try:
+                workouts = []
+                if OPTIONAL_WORKOUTS_PATH.exists():
+                    with OPTIONAL_WORKOUTS_PATH.open(
+                        "r", encoding="utf-8"
+                    ) as source:
+                        loaded = json.load(source)
+                        if isinstance(loaded, list):
+                            workouts = loaded
+                self.send_json(200, {
+                    "ok": True,
+                    "workouts": workouts,
+                })
+            except (OSError, json.JSONDecodeError) as error:
+                self.send_json(
+                    500,
+                    {"ok": False, "error": str(error)},
+                )
+            return
+
         if parsed.path == "/api/atlas/wellness-history":
             try:
                 self.send_json(200, load_wellness_history())

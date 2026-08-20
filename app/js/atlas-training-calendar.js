@@ -3233,17 +3233,60 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     workoutIndex.delete(workout.workout_id);
   }
   async function restoreOptional(program) {
-    let saved = [];
+    let localWorkouts = [];
+    let serverWorkouts = [];
 
     try {
-      saved = JSON.parse(
+      localWorkouts = JSON.parse(
         localStorage.getItem(STORAGE_KEY) || "[]"
       );
     } catch {
-      saved = [];
+      localWorkouts = [];
     }
 
-    await Promise.all(saved.map(async workout => {
+    try {
+      const response = await fetch(
+        `/api/atlas-coach/optional-workouts?v=${Date.now()}`,
+        { cache: "no-store" }
+      );
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "Mémoire Atlas invalide.");
+      }
+      serverWorkouts = Array.isArray(payload.workouts)
+        ? payload.workouts
+        : [];
+    } catch (error) {
+      console.warn("Séances Atlas restaurées indisponibles.", error);
+    }
+
+    const saved = [
+      ...new Map(
+        [...serverWorkouts, ...localWorkouts].map(
+          workout => [workout.workout_id, workout]
+        )
+      ).values()
+    ];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+
+    saved.forEach(workout => {
+      const week = program.weeks.find(
+        item => (
+          workout.workout_date >= item.start_date &&
+          workout.workout_date <= item.end_date
+        )
+      );
+      if (
+        week &&
+        !week.workouts.some(
+          item => item.workout_id === workout.workout_id
+        )
+      ) {
+        week.workouts.push(workout);
+      }
+    });
+
+    await Promise.all(localWorkouts.map(async workout => {
       try {
         const response = await fetch(
           "/api/atlas-coach/optional-workout",
@@ -3268,21 +3311,6 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         );
       }
 
-      const week = program.weeks.find(
-        item => (
-          workout.workout_date >= item.start_date &&
-          workout.workout_date <= item.end_date
-        )
-      );
-
-      if (
-        week &&
-        !week.workouts.some(
-          item => item.workout_id === workout.workout_id
-        )
-      ) {
-        week.workouts.push(workout);
-      }
     }));
   }
 
@@ -3419,10 +3447,10 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     });
   }
 
-  function render(program) {
+  async function render(program) {
     activeProgram = program;
     workoutIndex.clear();
-    restoreOptional(program);
+    await restoreOptional(program);
     renderCoachZones(program);
     physiologicalRibbon(program.athlete_snapshot);
     renderOverview(program);
@@ -3523,7 +3551,7 @@ ${program.weeks.map(
         const program = await response.json();
 
         if (program?.weeks && program?.goal) {
-          render(program);
+          await render(program);
           return;
         }
       } catch (error) {

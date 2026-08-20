@@ -404,6 +404,42 @@ def confirm_matched_workouts(records, decisions_path: str | Path):
         temporary.replace(destination)
     return added
 
+
+def persist_restored_optional_workouts(records, output_path: str | Path):
+    """Rend au calendrier les séances retrouvées depuis un fichier FIT."""
+
+    restored = [
+        item["restored_optional_workout"]
+        for item in records
+        if isinstance(item.get("restored_optional_workout"), dict)
+    ]
+    if not restored:
+        return 0
+
+    destination = Path(output_path)
+    history = []
+    if destination.exists():
+        with destination.open("r", encoding="utf-8") as source:
+            loaded = json.load(source)
+            if isinstance(loaded, list):
+                history = loaded
+
+    restored_by_id = {
+        str(item.get("workout_id")): item
+        for item in restored
+    }
+    history = [
+        item for item in history
+        if str(item.get("workout_id")) not in restored_by_id
+    ]
+    history.extend(restored_by_id.values())
+    history.sort(key=lambda item: (
+        str(item.get("workout_date", "")),
+        str(item.get("workout_id", "")),
+    ))
+    write_json_atomic(str(destination), history)
+    return len(restored_by_id)
+
 def build_record(
     normalized_activity,
     workouts,
@@ -452,6 +488,7 @@ def build_record(
         else None
     )
 
+    restored = None
     if best_match is None or not best_match.matched:
         restored = detected_optional_threshold_workout(
             longitudinal,
@@ -489,6 +526,13 @@ def build_record(
         "automatic_learning_allowed": bool(
             best_match is not None
             and best_match.matched
+        ),
+        "restored_optional_workout": (
+            restored.to_dict()
+            if restored is not None
+            and best_match is not None
+            and best_match.workout_id == restored.workout_id
+            else None
         ),
     }
 
@@ -542,6 +586,10 @@ def main() -> None:
     destination = write_json_atomic(
         arguments.output,
         history,
+    )
+    persist_restored_optional_workouts(
+        new_records,
+        arguments.optional_workouts,
     )
     confirmed_count = confirm_matched_workouts(
         new_records,
