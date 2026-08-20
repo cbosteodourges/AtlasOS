@@ -1676,6 +1676,75 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     return valid.reduce((total, value) => total + value, 0) /
       valid.length;
   }
+
+  function mergeReportBlocks(blocks) {
+    const validBlocks = blocks.filter(Boolean);
+    if (!validBlocks.length) return {};
+
+    const durationSeconds = validBlocks.reduce(
+      (total, block) => total + Number(block.duration_seconds || 0),
+      0
+    );
+    const weightedMean = field => {
+      const weighted = validBlocks.reduce((result, block) => {
+        const value = Number(block[field]);
+        const duration = Number(block.duration_seconds);
+        if (!Number.isFinite(value) || !(duration > 0)) return result;
+        result.total += value * duration;
+        result.weight += duration;
+        return result;
+      }, { total: 0, weight: 0 });
+      return weighted.weight > 0
+        ? weighted.total / weighted.weight
+        : Number.NaN;
+    };
+    const maximumHeartRates = validBlocks.map(
+      block => Number(block.maximum_heart_rate_bpm)
+    ).filter(Number.isFinite);
+
+    return {
+      ...validBlocks[0],
+      duration_seconds: durationSeconds,
+      distance_meters: validBlocks.reduce(
+        (total, block) => total + Number(block.distance_meters || 0),
+        0
+      ),
+      average_speed_kmh: weightedMean("average_speed_kmh"),
+      average_heart_rate_bpm: weightedMean("average_heart_rate_bpm"),
+      maximum_heart_rate_bpm: maximumHeartRates.length
+        ? Math.max(...maximumHeartRates)
+        : Number.NaN,
+      average_power_watts: weightedMean("average_power_watts"),
+      average_cadence_spm: weightedMean("average_cadence_spm")
+    };
+  }
+
+  function reportIntervalGroups(blocks, workTypes) {
+    const groups = [];
+    let currentWork = [];
+
+    const finishWork = () => {
+      if (!currentWork.length) return;
+      groups.push({ block: mergeReportBlocks(currentWork), recovery: null });
+      currentWork = [];
+    };
+
+    blocks.forEach(block => {
+      if (workTypes.has(block.block_type)) {
+        currentWork.push(block);
+        return;
+      }
+
+      finishWork();
+      if (block.block_type === "recovery" && groups.length) {
+        const previous = groups[groups.length - 1];
+        if (!previous.recovery) previous.recovery = block;
+      }
+    });
+    finishWork();
+    return groups;
+  }
+
   function executionReportHtml(report, workout, userContext = null) {
     if (!report) {
       return `
@@ -1711,7 +1780,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const matchingWorkBlocks = detailedBlocks.filter(
       block => block.block_type === dominantType
     );
-    const workBlocks = matchingWorkBlocks.length
+    const rawWorkBlocks = matchingWorkBlocks.length
       ? matchingWorkBlocks
       : detailedBlocks.filter(block => ![
           "warm_up",
@@ -1719,9 +1788,11 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           "recovery",
           "z1"
         ].includes(block.block_type));
-    const recoveryBlocks = detailedBlocks.filter(
-      block => block.block_type === "recovery"
-    );
+    const workTypes = new Set(rawWorkBlocks.map(block => block.block_type));
+    const intervalGroups = reportIntervalGroups(detailedBlocks, workTypes);
+    const workBlocks = intervalGroups.length
+      ? intervalGroups.map(group => group.block)
+      : rawWorkBlocks;
     const workDistanceKm = workBlocks.reduce(
       (total, block) => total + Number(block.distance_meters || 0),
       0
@@ -1730,11 +1801,10 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       (total, block) => total + Number(block.duration_seconds || 0),
       0
     );
-    const averageWorkSpeed = reportMean(
-      workBlocks.map(block => block.average_speed_kmh)
-    );
-    const averageWorkHeartRate = reportMean(
-      workBlocks.map(block => block.average_heart_rate_bpm)
+    const mergedWork = mergeReportBlocks(workBlocks);
+    const averageWorkSpeed = Number(mergedWork.average_speed_kmh);
+    const averageWorkHeartRate = Number(
+      mergedWork.average_heart_rate_bpm
     );
     const workMaximumHeartRates = workBlocks.map(
       block => Number(block.maximum_heart_rate_bpm)
@@ -1742,12 +1812,8 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const maximumWorkHeartRate = workMaximumHeartRates.length
       ? Math.max(...workMaximumHeartRates)
       : Number.NaN;
-    const averageWorkPower = reportMean(
-      workBlocks.map(block => block.average_power_watts)
-    );
-    const averageWorkCadence = reportMean(
-      workBlocks.map(block => block.average_cadence_spm)
-    );
+    const averageWorkPower = Number(mergedWork.average_power_watts);
+    const averageWorkCadence = Number(mergedWork.average_cadence_spm);
     const workDurations = workBlocks.map(
       block => Number(block.duration_seconds)
     ).filter(Number.isFinite);
@@ -1760,8 +1826,8 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const lastWorkBlock = workBlocks[workBlocks.length - 1] || {};
     const fastestWorkBlock = workBlocks.reduce(
       (fastest, block) => (
-        Number(block.duration_seconds) <
-        Number(fastest?.duration_seconds ?? Infinity)
+        Number(block.average_speed_kmh) >
+        Number(fastest?.average_speed_kmh ?? -Infinity)
           ? block
           : fastest
       ),
@@ -1861,7 +1927,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         : "Les cibles prévues ont été peu respectées.";
     const intervalRows = workBlocks.map((block, index) => {
       const speed = Number(block.average_speed_kmh);
-      const recovery = recoveryBlocks[index] || null;
+      const recovery = intervalGroups[index]?.recovery || null;
 
       return `
         <div class="interval-detail-row">
@@ -1884,6 +1950,17 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         </div>
       `;
     }).join("");
+    const plannedIntervalLabel = Number(plannedMainBlock?.duration_minutes) > 0
+      ? `${plannedRepetitions} blocs de ${reportNumber(
+          plannedMainBlock.duration_minutes,
+          0
+        )} min`
+      : Number(plannedMainBlock?.distance_meters) > 0
+        ? `${plannedRepetitions} × ${reportNumber(
+            plannedMainBlock.distance_meters,
+            0
+          )} m`
+        : `${plannedRepetitions} répétitions`;
 
     return `
       <section class="execution-report execution-report-narrative">
@@ -1978,8 +2055,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                     <h3>Une série régulière jusqu’à la dernière répétition</h3>
                   </div>
                   <p>
-                    Les ${workBlocks.length} ×
-                    ${reportNumber(firstWorkBlock.distance_meters, 0)} m
+                    Les ${plannedIntervalLabel}
                     ont été réalisés à ${reportPace(3600 / averageWorkSpeed)}
                     de moyenne. L’écart total de ${reportNumber(repetitionSpread, 1)} s
                     confirme une exécution homogène.
@@ -2008,7 +2084,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                     ${reportSignedNumber(intervalSpeedChangePercent, 1, " %")}
                     et la fréquence cardiaque de
                     ${reportSignedNumber(intervalHeartRateChange, 0, " bpm")}.
-                    Les récupérations ralenties n’ont pas dégradé la qualité des 400 m.
+                    Les récupérations n’ont pas dégradé la qualité des blocs au seuil.
                   </p>
                 </section>
               ` : ""}
