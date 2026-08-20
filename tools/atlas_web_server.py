@@ -990,81 +990,147 @@ def atlas_conversation(payload):
         wellness = None
 
     lowered = message.lower()
+    transcription_corrections = {
+        "vélo de max": "vo2max",
+        "vélo de ma x": "vo2max",
+        "vélo max": "vo2max",
+        "vo deux max": "vo2max",
+        "v o 2 max": "vo2max",
+        "séance de ça": "séance de seuil",
+    }
+    for heard, intended in transcription_corrections.items():
+        lowered = lowered.replace(heard, intended)
+
     program = _program_progress()
     next_workout = (program or {}).get("next_workout") or {}
 
-    if any(word in lowered for word in ("seuil", "vo2", "fractionn")):
-        readiness = wellness.get("atlas_index") if wellness else None
-        hrv = wellness.get("hrv_last_night_ms") if wellness else None
-        weekly_hrv = wellness.get("hrv_weekly_average_ms") if wellness else None
+    def value(name, fallback="non renseigné"):
+        if not wellness:
+            return fallback
+        current = wellness.get(name)
+        return fallback if current is None else current
+
+    def data_summary():
+        if not wellness:
+            return (
+                "Je n’accède pas à la dernière journée Wellness : je ne peux pas "
+                "justifier une adaptation intensive avec des données objectives."
+            )
+        index = value("atlas_index")
+        recovery = value("sleep_recovery_score")
+        sleep = value("sleep_score")
+        duration = value("sleep_duration_minutes", None)
+        hrv = value("hrv_last_night_ms", None)
+        weekly_hrv = value("hrv_weekly_average_ms", None)
+        details = [
+            f"indice Atlas {index}/100",
+            f"récupération {recovery}/100",
+            f"sommeil {sleep}/100",
+        ]
+        if duration:
+            hours, minutes = divmod(round(duration), 60)
+            details.append(f"durée {hours} h {minutes:02d}")
+        if hrv is not None:
+            hrv_text = f"VFC {round(hrv)} ms"
+            if weekly_hrv is not None:
+                hrv_text += f" contre {round(weekly_hrv)} ms de moyenne sur 7 jours"
+            details.append(hrv_text)
+        return "J’ai croisé vos données du " + str(value("day")) + " : " + ", ".join(details) + "."
+
+    intense_request = any(
+        word in lowered
+        for word in ("seuil", "vo2", "fractionn", "intens", "deux séances")
+    )
+    training_request = any(
+        word in lowered
+        for word in ("séance", "entrain", "entraîn", "programme", "course", "courir")
+    )
+
+    if intense_request:
+        readiness = value("atlas_index", None)
+        hrv = value("hrv_last_night_ms", None)
+        weekly_hrv = value("hrv_weekly_average_ms", None)
         planned = next_workout.get("title")
         planned_date = next_workout.get("date")
-        hrv_note = ""
-        if hrv is not None and weekly_hrv is not None:
-            direction = "sous" if hrv < weekly_hrv else "au niveau de"
-            hrv_note = (
-                f" Votre VFC ({round(hrv)} ms) se situe {direction} "
-                f"votre moyenne 7 jours ({round(weekly_hrv)} ms)."
+        response = data_summary() + " "
+        cautious = (
+            readiness is None
+            or readiness < 75
+            or (
+                hrv is not None
+                and weekly_hrv is not None
+                and hrv < weekly_hrv
             )
-        if readiness is not None and readiness < 75:
-            response = (
-                f"Votre disponibilité Atlas est de {readiness}/100.{hrv_note} "
-                "Je ne remplacerais donc pas spontanément la séance planifiée par "
-                "une séance VO₂max exigeante. "
+        )
+        if cautious:
+            response += (
+                "Votre ressenti est positif, mais les signaux objectifs sont seulement "
+                "modérés : je déconseille de cumuler seuil et VO₂max le même jour. "
+                "Si l’échauffement est normal et qu’il n’y a ni douleur ni fatigue "
+                "inhabituelle, choisissez une seule séance contrôlée : 3 × 8 minutes "
+                "autour du seuil, récupération 3 minutes facile. Gardez la VO₂max "
+                "pour une autre journée après récupération. "
             )
         else:
-            response = (
-                f"Votre disponibilité Atlas est de {readiness}/100.{hrv_note} "
-                "Une séance intense peut être discutée, mais elle doit rester cohérente "
-                "avec la progression du plan. "
+            response += (
+                "Les indicateurs sont compatibles avec une séance qualitative, sans "
+                "justifier deux séances intenses le même jour. Choisissez soit un seuil "
+                "contrôlé (3 × 8 minutes, récupération 3 minutes), soit une VO₂max "
+                "(6 × 2 minutes, récupération 2 minutes), puis réévaluez vos sensations. "
             )
         if planned:
             response += (
-                f"La prochaine séance du programme est « {planned} »"
+                f"Le plan prévoit « {planned} »"
                 + (f" le {planned_date}" if planned_date else "")
-                + ". Je vous conseille de conserver cette trame ; si vous souhaitez "
-                "du fractionné, privilégiez le contenu prévu plutôt qu’un choix improvisé "
-                "entre seuil et VO₂max."
+                + " : ma recommandation principale reste de suivre cette séance. "
             )
+        response += (
+            "Arrêtez la séance en cas de douleur, malaise ou réponse inhabituelle. "
+            "Je vous propose cette adaptation, mais je ne modifie pas le programme "
+            "sans votre validation."
+        )
     elif any(word in lowered for word in ("fatigu", "récup", "forme", "prêt")):
+        response = data_summary()
         if wellness:
-            response = (
-                f"Votre indice Atlas est de {wellness.get('atlas_index')}/100. "
-                f"Sommeil : {wellness.get('sleep_score') or 'non renseigné'}/100 ; "
-                f"VFC nocturne : {wellness.get('hrv_last_night_ms') or 'non renseignée'} ms. "
-                "Je peux vous aider à interpréter la tendance avant de modifier une séance."
+            response += (
+                " Ces valeurs décrivent votre disponibilité du jour ; la tendance sur "
+                "plusieurs jours reste plus importante qu’une mesure isolée."
+            )
+    elif training_request:
+        planned = next_workout.get("title")
+        planned_date = next_workout.get("date")
+        response = data_summary() + " "
+        if planned:
+            response += (
+                f"Votre prochaine séance planifiée est « {planned} »"
+                + (f" le {planned_date}" if planned_date else "")
+                + ". À ce stade, je conseille de conserver cette trame. "
             )
         else:
-            response = (
-                "Je n'accède pas encore à la dernière journée Wellness. "
-                "Je peux enregistrer votre ressenti, mais je ne proposerai pas "
-                "d'adaptation sans données suffisantes."
+            response += (
+                "Je ne trouve pas de prochaine séance exploitable dans le plan. "
             )
-    elif any(word in lowered for word in ("séance", "entrain", "entraîn", "programme")):
-        response = (
-            "Je peux expliquer la prochaine séance, ses zones, sa charge attendue "
-            "et sa cohérence avec votre récupération. Toute adaptation du programme "
-            "reste une proposition qui demande votre validation."
+        response += (
+            "Dites-moi si vous envisagez endurance, seuil ou VO₂max : je comparerai "
+            "alors précisément l’option à votre récupération et à votre VFC."
         )
     elif any(word in lowered for word in ("douleur", "bless", "gêne")):
         response = (
-            "Je peux enregistrer la localisation, l'intensité et l'évolution de la douleur, "
+            "Je peux enregistrer la localisation, l’intensité et l’évolution de la douleur, "
             "puis signaler les séances potentiellement incompatibles. En cas de douleur "
-            "importante, inhabituelle ou accompagnée de signes d'alerte, un avis médical "
+            "importante, inhabituelle ou accompagnée de signes d’alerte, un avis médical "
             "reste prioritaire."
         )
     elif any(word in lowered for word in ("vfc", "sommeil", "stress", "charge")):
-        response = (
-            "Je peux comparer cet indicateur à votre référence personnelle sur plusieurs "
-            "périodes et expliquer son poids dans l'indice Atlas. Ouvrez également la carte "
-            "correspondante pour voir sa courbe."
+        response = data_summary() + (
+            " Ouvrez la carte correspondante pour comparer cet indicateur à votre "
+            "référence personnelle et consulter sa courbe."
         )
     elif message:
         response = (
-            "J'ai enregistré votre question. Mon moteur local sait aujourd'hui expliquer "
-            "vos données, votre programme et vos ressentis. Il ne s'agit pas encore d'un "
-            "modèle conversationnel général : je privilégie des réponses traçables à partir "
-            "de vos données Atlas."
+            "J’ai enregistré votre question, mais je n’ai pas identifié précisément "
+            "l’analyse attendue. Essayez : « analyse ma récupération », « adapte ma "
+            "prochaine séance » ou « signale une douleur »."
         )
     else:
         response = (
@@ -1096,17 +1162,14 @@ def atlas_conversation(payload):
 
     return {
         "response": response,
-        "mode": "Atlas local explicable",
+        "mode": "Atlas local · analyse croisée",
         "data_available": wellness is not None,
         "suggestions": [
-            "Suis-je suffisamment récupéré pour ma prochaine séance ?",
-            "Explique-moi l’objectif de la séance du jour.",
-            "Pourquoi ma VFC a-t-elle évolué ?",
-            "Je ressens une douleur : que dois-je renseigner ?",
-            "Sur quoi dois-je travailler cette semaine ?",
+            "Analyser ma récupération",
+            "Adapter ma prochaine séance",
+            "Signaler une douleur",
         ],
     }
-
 
 class AtlasRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):

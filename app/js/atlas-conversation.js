@@ -71,6 +71,13 @@
   };
   setSuggestions(suggestions);
 
+  const normalizeDictation = value => value
+    .replace(/\\bvélo de max\\b/gi, "VO₂max")
+    .replace(/\\bvélo max\\b/gi, "VO₂max")
+    .replace(/\\bvo deux max\\b/gi, "VO₂max")
+    .replace(/\\bv o 2 max\\b/gi, "VO₂max")
+    .replace(/\\bséance de ça\\b/gi, "séance de seuil");
+
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   let recognition = null;
   let dictating = false;
@@ -109,7 +116,7 @@
           interim = [interim, words].filter(Boolean).join(" ");
         }
       }
-      textarea.value = [initialText, finalText, interim].filter(Boolean).join(" ").trim();
+      textarea.value = normalizeDictation([initialText, finalText, interim].filter(Boolean).join(" ").trim());
     });
     recognition.addEventListener("end", () => {
       if (dictating) {
