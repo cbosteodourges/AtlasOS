@@ -1770,7 +1770,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       analysis.dominant_work_type || ""
     );
     const plannedMainBlock = (workout.blocks || []).find(
-      block => block.block_type === "work"
+      block => ["work", "interval"].includes(block.block_type)
     );
     const plannedRepetitions = Number(
       execution.planned_repetition_count ||
