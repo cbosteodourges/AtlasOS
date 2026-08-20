@@ -239,12 +239,6 @@
       return;
     }
 
-    if (workoutDecisions[preparation.workout_id]?.status === "skipped") {
-      button.classList.remove("has-daily-preparation");
-      button.querySelector(".daily-preparation-summary")?.remove();
-      return;
-    }
-
     button.classList.add("has-daily-preparation");
     button.querySelector(".daily-preparation-summary")?.remove();
 
@@ -2528,7 +2522,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         );
         if (!confirmed) return;
 
-        removeOptional(workout);
+        try {
+          await removeOptional(workout);
+        } catch (error) {
+          window.alert(`Erreur Atlas :\n${error.message}`);
+          return;
+        }
         dialog.close();
         render(activeProgram);
         return;
@@ -2536,18 +2535,6 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
 
       const button = event.target.closest("[data-workout-action]");
       if (!button) return;
-
-    if (workoutDecisions[preparation.workout_id]?.status === "skipped") {
-      button.classList.remove("has-daily-preparation");
-      button.querySelector(".daily-preparation-summary")?.remove();
-      return;
-    }
-
-    if (workoutDecisions[preparation.workout_id]?.status === "skipped") {
-      button.classList.remove("has-daily-preparation");
-      button.querySelector(".daily-preparation-summary")?.remove();
-      return;
-    }
 
       const status = button.dataset.workoutAction;
       let reason = "";
@@ -3133,7 +3120,24 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     };
   }
 
-  function saveOptional(workout) {
+  async function saveOptional(workout) {
+    const response = await fetch(
+      "/api/atlas-coach/optional-workout",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8"
+        },
+        body: JSON.stringify(workout)
+      }
+    );
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) {
+      throw new Error(
+        payload.error || "La séance n’a pas pu être transmise à Atlas."
+      );
+    }
+
     const saved = JSON.parse(
       localStorage.getItem(STORAGE_KEY) || "[]"
     );
@@ -3147,7 +3151,27 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     );
   }
 
-  function removeOptional(workout) {
+  async function removeOptional(workout) {
+    const response = await fetch(
+      "/api/atlas-coach/optional-workout",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8"
+        },
+        body: JSON.stringify({
+          workout_id: workout.workout_id,
+          delete: true
+        })
+      }
+    );
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) {
+      throw new Error(
+        payload.error || "La séance n’a pas pu être supprimée."
+      );
+    }
+
     let saved = [];
 
     try {
@@ -3212,9 +3236,14 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     });
   }
 
-  function addOptional(value, type = "recovery_run") {
+  async function addOptional(value, type = "recovery_run") {
     const workout = optionalWorkout(value, type);
-    saveOptional(workout);
+    try {
+      await saveOptional(workout);
+    } catch (error) {
+      window.alert(`Erreur Atlas :\n${error.message}`);
+      return;
+    }
 
     const week = activeProgram.weeks.find(
       item => value >= item.start_date && value <= item.end_date

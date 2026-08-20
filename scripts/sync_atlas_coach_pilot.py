@@ -52,6 +52,20 @@ def parse_arguments() -> argparse.Namespace:
         help="Dossier contenant les fichiers FIT.",
     )
     parser.add_argument(
+        "--optional-workouts",
+        default=(
+            "atlas-data/private/atlas-coach-optional-workouts.json"
+        ),
+        help="Séances ajoutées depuis l'interface Atlas.",
+    )
+    parser.add_argument(
+        "--decisions",
+        default=(
+            "atlas-data/private/atlas-coach-workout-decisions.json"
+        ),
+        help="Décisions de séances automatiquement confirmées.",
+    )
+    parser.add_argument(
         "--program",
         default=(
             "atlas-data/private/training-program.json"
@@ -184,6 +198,87 @@ def load_analysis_profile(program_path: str | Path) -> AthleteProfile:
         ),
     )
 
+
+def load_optional_workouts(path: str | Path, loader):
+    """Charge les séances UI en normalisant leurs types vers le moteur."""
+
+    source = Path(path)
+    if not source.exists():
+        return []
+    with source.open("r", encoding="utf-8") as input_file:
+        items = json.load(input_file)
+    if not isinstance(items, list):
+        return []
+
+    aliases = {
+        "endurance_run": "endurance_z2",
+        "threshold_run": "threshold_sv2",
+        "vo2max_run": "vma_short",
+        "double_session": "endurance_z2",
+        "double_threshold": "threshold_sv2",
+    }
+    normalized = []
+    for raw in items:
+        if not isinstance(raw, dict):
+            continue
+        workout = dict(raw)
+        workout["workout_type"] = aliases.get(
+            str(workout.get("workout_type")),
+            workout.get("workout_type"),
+        )
+        normalized.append(workout)
+    return loader.from_payload({"weeks": [{"workouts": normalized}]})
+
+
+def confirm_matched_workouts(records, decisions_path: str | Path):
+    """Valide automatiquement toute séance reliée avec confiance au FIT."""
+
+    destination = Path(decisions_path)
+    history = []
+    if destination.exists():
+        with destination.open("r", encoding="utf-8") as input_file:
+            loaded = json.load(input_file)
+            if isinstance(loaded, list):
+                history = loaded
+
+    existing = {
+        (str(item.get("workout_id")), str(item.get("activity_id")))
+        for item in history if isinstance(item, dict)
+    }
+    added = 0
+    for record in records:
+        match = record.get("atlas_workout_match") or {}
+        if not match.get("matched"):
+            continue
+        key = (str(match.get("workout_id")), str(record.get("activity_id")))
+        if not all(key) or key in existing:
+            continue
+        history.append({
+            "decided_at": datetime.now().astimezone().isoformat(
+                timespec="seconds"
+            ),
+            "workout_id": key[0],
+            "activity_id": key[1],
+            "status": "completed",
+            "action": "maintain",
+            "recalculate_future_program": False,
+            "reason": "Séance confirmée automatiquement par le fichier FIT.",
+            "explanations": [
+                "Le Watcher a importé et analysé l'activité.",
+                "La correspondance fiable confirme automatiquement la séance.",
+            ],
+        })
+        existing.add(key)
+        added += 1
+
+    if added:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        temporary = destination.with_suffix(".json.tmp")
+        with temporary.open("w", encoding="utf-8", newline="\n") as output:
+            json.dump(history, output, ensure_ascii=False, indent=2)
+        temporary.replace(destination)
+    return added
+
 def build_record(
     normalized_activity,
     workouts,
@@ -258,6 +353,9 @@ def main() -> None:
     arguments = parse_arguments()
     loader = TrainingProgramLoader()
     workouts = loader.load(arguments.program)
+    workouts.extend(
+        load_optional_workouts(arguments.optional_workouts, loader)
+    )
     profile = load_analysis_profile(arguments.program)
     activities = synchronize_garmin(arguments.input)
     history = load_history(arguments.output)
@@ -300,6 +398,10 @@ def main() -> None:
         arguments.output,
         history,
     )
+    confirmed_count = confirm_matched_workouts(
+        new_records,
+        arguments.decisions,
+    )
 
     matched_count = sum(
         1
@@ -314,6 +416,9 @@ def main() -> None:
     print(
         f"Correspondances Atlas fiables : "
         f"{matched_count}/{len(new_records)}."
+    )
+    print(
+        f"Séances confirmées automatiquement : {confirmed_count}."
     )
     print(f"Historique privé : {destination}")
 

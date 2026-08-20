@@ -85,6 +85,45 @@ WORKOUT_CONTEXTS_PATH = (
     / "atlas-coach-workout-contexts.json"
 )
 
+OPTIONAL_WORKOUTS_PATH = (
+    ROOT
+    / "atlas-data"
+    / "private"
+    / "atlas-coach-optional-workouts.json"
+)
+
+
+def record_optional_workout(payload):
+    """Persiste une séance ajoutée dans l'interface pour le Watcher."""
+
+    workout_id = str(payload.get("workout_id") or "").strip()
+    workout_date = str(payload.get("workout_date") or "").strip()
+    deleting = bool(payload.get("delete"))
+    if not workout_id or (not deleting and not workout_date):
+        raise ValueError("Séance facultative incomplète.")
+
+    if not deleting:
+        date.fromisoformat(workout_date)
+    history = []
+    if OPTIONAL_WORKOUTS_PATH.exists():
+        with OPTIONAL_WORKOUTS_PATH.open("r", encoding="utf-8") as source:
+            loaded = json.load(source)
+            if isinstance(loaded, list):
+                history = loaded
+
+    history = [
+        item for item in history
+        if str(item.get("workout_id") or "") != workout_id
+    ]
+    if not deleting:
+        history.append(payload)
+    OPTIONAL_WORKOUTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    temporary = OPTIONAL_WORKOUTS_PATH.with_suffix(".json.tmp")
+    with temporary.open("w", encoding="utf-8", newline="\n") as output:
+        json.dump(history, output, ensure_ascii=False, indent=2)
+    temporary.replace(OPTIONAL_WORKOUTS_PATH)
+    return {"workout_id": workout_id, "deleted": deleting, **payload}
+
 def selected_fields(value, field_names):
     """Copie uniquement les champs explicitement autorisés."""
 
@@ -1549,6 +1588,7 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             "/api/atlas-brain/analyse",
             "/api/atlas-coach/workout-decision",
             "/api/atlas-coach/workout-context",
+            "/api/atlas-coach/optional-workout",
             "/api/atlas-coach/daily-preparation",
             "/api/atlas/conversation",
         }
@@ -1570,6 +1610,11 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             if self.path == "/api/atlas/conversation":
                 result = atlas_conversation(payload)
                 self.send_json(200, {"ok": True, **result})
+                return
+
+            if self.path == "/api/atlas-coach/optional-workout":
+                workout = record_optional_workout(payload)
+                self.send_json(200, {"ok": True, "workout": workout})
                 return
 
             if self.path == "/api/atlas-coach/daily-preparation":
