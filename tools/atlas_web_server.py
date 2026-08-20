@@ -735,6 +735,7 @@ def _program_progress():
         if upcoming:
             workout_day, workout = upcoming
             next_workout = {
+                "workout_id": getattr(workout, "workout_id", None),
                 "date": workout_day.isoformat(),
                 "title": getattr(workout, "title", "Séance planifiée"),
                 "duration_minutes": getattr(
@@ -976,199 +977,217 @@ CONVERSATION_JOURNAL_PATH = (
 
 
 def atlas_conversation(payload):
-    """Dialogue local explicable, fondé sur les données Atlas disponibles."""
-    message = str(payload.get("message") or "").strip()
+    """Évalue localement une adaptation guidée de la prochaine séance."""
     feeling = payload.get("feeling") or {}
-    if len(message) > 1200:
-        raise ValueError("La question est limitée à 1 200 caractères.")
+    preference = str(payload.get("preference") or "planned").strip().lower()
+    note = str(payload.get("note") or "").strip()
+    selected_option = str(payload.get("selected_option") or "").strip().lower()
+    if len(note) > 400:
+        raise ValueError("La précision est limitée à 400 caractères.")
 
-    wellness = None
     try:
-        wellness_payload = load_wellness_history(refresh_latest=False)
-        wellness = wellness_payload.get("latest")
+        wellness = load_wellness_history(
+            refresh_latest=False
+        ).get("latest")
     except (OSError, ValueError, json.JSONDecodeError):
         wellness = None
-
-    lowered = message.lower()
-    transcription_corrections = {
-        "vélo de max": "vo2max",
-        "vélo de ma x": "vo2max",
-        "vélo max": "vo2max",
-        "vo deux max": "vo2max",
-        "v o 2 max": "vo2max",
-        "séance de ça": "séance de seuil",
-    }
-    for heard, intended in transcription_corrections.items():
-        lowered = lowered.replace(heard, intended)
 
     program = _program_progress()
     next_workout = (program or {}).get("next_workout") or {}
 
-    def value(name, fallback="non renseigné"):
-        if not wellness:
+    def numeric(mapping, name, fallback=None):
+        try:
+            current = mapping.get(name)
+            return fallback if current is None else float(current)
+        except (AttributeError, TypeError, ValueError):
             return fallback
-        current = wellness.get(name)
-        return fallback if current is None else current
 
-    def data_summary():
-        if not wellness:
-            return (
-                "Je n’accède pas à la dernière journée Wellness : je ne peux pas "
-                "justifier une adaptation intensive avec des données objectives."
-            )
-        index = value("atlas_index")
-        recovery = value("sleep_recovery_score")
-        sleep = value("sleep_score")
-        duration = value("sleep_duration_minutes", None)
-        hrv = value("hrv_last_night_ms", None)
-        weekly_hrv = value("hrv_weekly_average_ms", None)
-        details = [
-            f"indice Atlas {index}/100",
-            f"récupération {recovery}/100",
-            f"sommeil {sleep}/100",
-        ]
-        if duration:
-            hours, minutes = divmod(round(duration), 60)
-            details.append(f"durée {hours} h {minutes:02d}")
-        if hrv is not None:
-            hrv_text = f"VFC {round(hrv)} ms"
-            if weekly_hrv is not None:
-                hrv_text += f" contre {round(weekly_hrv)} ms de moyenne sur 7 jours"
-            details.append(hrv_text)
-        return "J’ai croisé vos données du " + str(value("day")) + " : " + ", ".join(details) + "."
+    energy = numeric(feeling, "energy", 6)
+    fatigue = numeric(feeling, "fatigue", 3)
+    pain = numeric(feeling, "pain", 0)
+    atlas_index = numeric(wellness or {}, "atlas_index", 60)
+    recovery = numeric(wellness or {}, "sleep_recovery_score")
+    sleep_score = numeric(wellness or {}, "sleep_score")
+    hrv = numeric(wellness or {}, "hrv_last_night_ms")
+    hrv_week = numeric(wellness or {}, "hrv_weekly_average_ms")
 
-    intense_request = any(
-        word in lowered
-        for word in ("seuil", "vo2", "fractionn", "intens", "deux séances")
+    score = atlas_index
+    reasons = [f"Indice Atlas {round(atlas_index)}/100"]
+    if recovery is not None:
+        reasons.append(f"Récupération {round(recovery)}/100")
+    if sleep_score is not None:
+        reasons.append(f"Sommeil {round(sleep_score)}/100")
+    if hrv is not None:
+        hrv_reason = f"VFC {round(hrv)} ms"
+        if hrv_week is not None:
+            hrv_reason += f" (référence 7 j : {round(hrv_week)} ms)"
+            if hrv < hrv_week * 0.9:
+                score -= 10
+        reasons.append(hrv_reason)
+
+    if energy <= 4:
+        score -= 10
+    elif energy >= 8:
+        score += 4
+    if fatigue >= 8:
+        score -= 20
+    elif fatigue >= 6:
+        score -= 10
+    if pain >= 8:
+        score = min(score, 35)
+    elif pain >= 5:
+        score = min(score, 50)
+    elif pain >= 2:
+        score -= 5
+    score = round(max(0, min(100, score)))
+
+    planned_title = next_workout.get("title") or "la séance prévue"
+    planned_date = next_workout.get("date")
+    planned_text = planned_title + (
+        f" ({planned_date})" if planned_date else ""
     )
-    training_request = any(
-        word in lowered
-        for word in ("séance", "entrain", "entraîn", "programme", "course", "courir")
-    )
 
-    if intense_request:
-        readiness = value("atlas_index", None)
-        hrv = value("hrv_last_night_ms", None)
-        weekly_hrv = value("hrv_weekly_average_ms", None)
-        planned = next_workout.get("title")
-        planned_date = next_workout.get("date")
-        response = data_summary() + " "
-        cautious = (
-            readiness is None
-            or readiness < 75
-            or (
-                hrv is not None
-                and weekly_hrv is not None
-                and hrv < weekly_hrv
-            )
+    if pain >= 5 or score < 60:
+        recommended = "replace"
+        title = "Récupération prioritaire"
+        explanation = (
+            f"Les signaux du jour ne justifient pas une séance exigeante. "
+            f"Atlas propose de remplacer {planned_text} par récupération, "
+            "mobilité douce ou vélo très facile."
         )
-        if cautious:
-            response += (
-                "Votre ressenti est positif, mais les signaux objectifs sont seulement "
-                "modérés : je déconseille de cumuler seuil et VO₂max le même jour. "
-                "Si l’échauffement est normal et qu’il n’y a ni douleur ni fatigue "
-                "inhabituelle, choisissez une seule séance contrôlée : 3 × 8 minutes "
-                "autour du seuil, récupération 3 minutes facile. Gardez la VO₂max "
-                "pour une autre journée après récupération. "
-            )
-        else:
-            response += (
-                "Les indicateurs sont compatibles avec une séance qualitative, sans "
-                "justifier deux séances intenses le même jour. Choisissez soit un seuil "
-                "contrôlé (3 × 8 minutes, récupération 3 minutes), soit une VO₂max "
-                "(6 × 2 minutes, récupération 2 minutes), puis réévaluez vos sensations. "
-            )
-        if planned:
-            response += (
-                f"Le plan prévoit « {planned} »"
-                + (f" le {planned_date}" if planned_date else "")
-                + " : ma recommandation principale reste de suivre cette séance. "
-            )
-        response += (
-            "Arrêtez la séance en cas de douleur, malaise ou réponse inhabituelle. "
-            "Je vous propose cette adaptation, mais je ne modifie pas le programme "
-            "sans votre validation."
-        )
-    elif any(word in lowered for word in ("fatigu", "récup", "forme", "prêt")):
-        response = data_summary()
-        if wellness:
-            response += (
-                " Ces valeurs décrivent votre disponibilité du jour ; la tendance sur "
-                "plusieurs jours reste plus importante qu’une mesure isolée."
-            )
-    elif training_request:
-        planned = next_workout.get("title")
-        planned_date = next_workout.get("date")
-        response = data_summary() + " "
-        if planned:
-            response += (
-                f"Votre prochaine séance planifiée est « {planned} »"
-                + (f" le {planned_date}" if planned_date else "")
-                + ". À ce stade, je conseille de conserver cette trame. "
-            )
-        else:
-            response += (
-                "Je ne trouve pas de prochaine séance exploitable dans le plan. "
-            )
-        response += (
-            "Dites-moi si vous envisagez endurance, seuil ou VO₂max : je comparerai "
-            "alors précisément l’option à votre récupération et à votre VFC."
-        )
-    elif any(word in lowered for word in ("douleur", "bless", "gêne")):
-        response = (
-            "Je peux enregistrer la localisation, l’intensité et l’évolution de la douleur, "
-            "puis signaler les séances potentiellement incompatibles. En cas de douleur "
-            "importante, inhabituelle ou accompagnée de signes d’alerte, un avis médical "
-            "reste prioritaire."
-        )
-    elif any(word in lowered for word in ("vfc", "sommeil", "stress", "charge")):
-        response = data_summary() + (
-            " Ouvrez la carte correspondante pour comparer cet indicateur à votre "
-            "référence personnelle et consulter sa courbe."
-        )
-    elif message:
-        response = (
-            "J’ai enregistré votre question, mais je n’ai pas identifié précisément "
-            "l’analyse attendue. Essayez : « analyse ma récupération », « adapte ma "
-            "prochaine séance » ou « signale une douleur »."
+    elif score < 75:
+        recommended = "lighten"
+        title = "Séance à alléger"
+        explanation = (
+            f"Votre disponibilité ajustée est intermédiaire. Atlas propose "
+            f"de conserver l’objectif de {planned_text}, mais avec moins de "
+            "volume et sans intensité supplémentaire."
         )
     else:
-        response = (
-            "Choisissez une suggestion ou décrivez votre forme, votre sommeil, une douleur "
-            "ou une question sur la prochaine séance."
+        recommended = "keep"
+        title = "Séance compatible"
+        explanation = (
+            f"Les données et votre ressenti sont compatibles avec "
+            f"{planned_text}. Conservez la séance prévue et contrôlez les "
+            "sensations pendant l’échauffement."
         )
 
-    record = {
-        "recorded_at": datetime.now().astimezone().isoformat(timespec="seconds"),
-        "message": message or None,
-        "feeling": feeling if isinstance(feeling, dict) else {},
-        "response": response,
+    if preference in {"threshold", "vo2max"} and score < 80:
+        recommended = "lighten"
+        title = "Intensité non prioritaire"
+        explanation = (
+            "Votre demande de séance qualitative est comprise, mais la marge "
+            "du jour reste insuffisante pour ajouter une intensité improvisée. "
+            "Atlas privilégie une endurance facile ou la séance prévue allégée."
+        )
+    elif preference == "rest":
+        recommended = "replace"
+        title = "Repos choisi"
+        explanation = (
+            "Votre préférence pour le repos est cohérente avec une adaptation "
+            "prudente. Atlas propose mobilité douce ou repos complet."
+        )
+
+    option_definitions = [
+        {
+            "id": "keep",
+            "title": "Conserver",
+            "description": f"Maintenir {planned_text}.",
+        },
+        {
+            "id": "lighten",
+            "title": "Alléger",
+            "description": (
+                "Réduire le volume de 25 à 35 %, rester en endurance facile "
+                "et supprimer l’intensité."
+            ),
+        },
+        {
+            "id": "replace",
+            "title": "Remplacer",
+            "description": (
+                "Choisir repos, mobilité douce ou vélo très facile selon "
+                "la douleur et la fatigue."
+            ),
+        },
+    ]
+    options = [
+        {**option, "recommended": option["id"] == recommended}
+        for option in option_definitions
+    ]
+
+    assessment = {
+        "recorded_at": datetime.now().astimezone().isoformat(
+            timespec="seconds"
+        ),
+        "score": score,
+        "title": title,
+        "recommended_option": recommended,
+        "evidence": reasons,
+        "feeling": {
+            "energy": energy,
+            "fatigue": fatigue,
+            "pain": pain,
+        },
+        "preference": preference,
+        "note": note or None,
+        "workout": next_workout or None,
+        "selected_option": selected_option or None,
     }
+
+    if selected_option:
+        valid_options = {option["id"] for option in option_definitions}
+        if selected_option not in valid_options:
+            raise ValueError("Choix d’adaptation non pris en charge.")
+        selected = next(
+            option
+            for option in option_definitions
+            if option["id"] == selected_option
+        )
+        response = (
+            f"« {selected['title']} » est enregistré dans le journal Atlas "
+            "pour la prochaine séance. Le programme source reste inchangé "
+            "tant que l’adaptation du calendrier n’a pas été confirmée."
+        )
+    else:
+        response = explanation
+
     history = []
     if CONVERSATION_JOURNAL_PATH.exists():
         try:
-            with CONVERSATION_JOURNAL_PATH.open("r", encoding="utf-8") as source:
+            with CONVERSATION_JOURNAL_PATH.open(
+                "r", encoding="utf-8"
+            ) as source:
                 loaded = json.load(source)
                 if isinstance(loaded, list):
                     history = loaded
         except (OSError, json.JSONDecodeError):
             history = []
-    history.append(record)
-    CONVERSATION_JOURNAL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    history.append({
+        "type": "guided_adaptation",
+        **assessment,
+        "response": response,
+    })
+    CONVERSATION_JOURNAL_PATH.parent.mkdir(
+        parents=True, exist_ok=True
+    )
     temporary = CONVERSATION_JOURNAL_PATH.with_suffix(".json.tmp")
-    with temporary.open("w", encoding="utf-8", newline="\n") as output:
-        json.dump(history[-500:], output, ensure_ascii=False, indent=2)
+    with temporary.open(
+        "w", encoding="utf-8", newline="\n"
+    ) as output:
+        json.dump(
+            history[-500:],
+            output,
+            ensure_ascii=False,
+            indent=2,
+        )
     temporary.replace(CONVERSATION_JOURNAL_PATH)
 
     return {
         "response": response,
-        "mode": "Atlas local · analyse croisée",
-        "data_available": wellness is not None,
-        "suggestions": [
-            "Analyser ma récupération",
-            "Adapter ma prochaine séance",
-            "Signaler une douleur",
-        ],
+        "mode": "Moteur Atlas local et explicable",
+        "assessment": assessment,
+        "options": options,
     }
 
 class AtlasRequestHandler(SimpleHTTPRequestHandler):
