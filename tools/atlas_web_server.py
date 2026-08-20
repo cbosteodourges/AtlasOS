@@ -759,6 +759,136 @@ def _program_progress():
         return None
 
 
+def _performance_comparison(history):
+    """Compare le contexte précédant les séances les plus et moins réussies."""
+    empty = {
+        "available": False,
+        "evaluated_sessions": 0,
+        "message": (
+            "Les séances doivent disposer d’un score d’exécution fiable "
+            "avant de pouvoir comparer leur contexte physiologique."
+        ),
+    }
+    if not EXECUTIONS_PATH.is_file() or not history:
+        return empty
+    try:
+        with EXECUTIONS_PATH.open("r", encoding="utf-8") as source:
+            executions = json.load(source)
+    except (OSError, json.JSONDecodeError):
+        return empty
+    if not isinstance(executions, list):
+        return empty
+
+    history_by_day = {item.get("day"): item for item in history}
+    evaluated = []
+    for item in executions:
+        if not isinstance(item, dict):
+            continue
+        match = item.get("atlas_workout_match") or {}
+        execution = match.get("execution") or {}
+        score = _wellness_number(
+            execution.get("execution_score")
+            or execution.get("target_compliance_score")
+            or match.get("target_compliance_score")
+        )
+        day_text = str(item.get("start_time") or "")[:10]
+        try:
+            activity_day = date.fromisoformat(day_text)
+        except ValueError:
+            continue
+        if score is None:
+            continue
+
+        preceding = []
+        for offset in (1, 2, 3):
+            observed = history_by_day.get(
+                (activity_day - timedelta(days=offset)).isoformat()
+            )
+            if observed:
+                preceding.append(observed)
+
+        def contextual_mean(field):
+            values = [
+                _wellness_number(day.get(field))
+                for day in preceding
+            ]
+            values = [value for value in values if value is not None]
+            return round(sum(values) / len(values), 1) if values else None
+
+        analysis = item.get("detailed_analysis") or {}
+        evaluated.append({
+            "score": round(score, 1),
+            "day": day_text,
+            "work_type": analysis.get("dominant_work_type"),
+            "sleep": contextual_mean("sleep_score"),
+            "hrv": contextual_mean("hrv_last_night_ms"),
+            "recovery": contextual_mean("sleep_recovery_score"),
+            "atlas_index": contextual_mean("atlas_index"),
+        })
+
+    if len(evaluated) < 2:
+        return {**empty, "evaluated_sessions": len(evaluated)}
+
+    ordered = sorted(evaluated, key=lambda item: item["score"])
+    group_size = max(1, min(5, len(ordered) // 3))
+    lower = ordered[:group_size]
+    upper = ordered[-group_size:]
+
+    def aggregate(group):
+        result = {
+            "sessions": len(group),
+            "execution_score": round(
+                sum(item["score"] for item in group) / len(group), 1
+            ),
+        }
+        for source, target in (
+            ("sleep", "sleep_score_before"),
+            ("hrv", "hrv_before_ms"),
+            ("recovery", "recovery_before"),
+            ("atlas_index", "atlas_index_before"),
+        ):
+            values = [
+                item[source] for item in group
+                if item[source] is not None
+            ]
+            result[target] = (
+                round(sum(values) / len(values), 1)
+                if values else None
+            )
+        work_types = [
+            str(item["work_type"]) for item in group
+            if item.get("work_type")
+        ]
+        result["dominant_work_type"] = (
+            max(set(work_types), key=work_types.count)
+            if work_types else None
+        )
+        return result
+
+    best = aggregate(upper)
+    difficult = aggregate(lower)
+    available_context = any(
+        best.get(field) is not None or difficult.get(field) is not None
+        for field in (
+            "sleep_score_before",
+            "hrv_before_ms",
+            "recovery_before",
+            "atlas_index_before",
+        )
+    )
+    return {
+        "available": available_context,
+        "evaluated_sessions": len(evaluated),
+        "best": best,
+        "difficult": difficult,
+        "message": (
+            "Comparaison des trois jours précédant les séances les mieux "
+            "et les moins bien exécutées. Elle décrit des associations, "
+            "sans prétendre démontrer une cause."
+        ),
+    }
+
+
 def _athlete_analysis(history):
     """Construit un rapport longitudinal factuel, sans diagnostic médical."""
     if not history:
@@ -875,6 +1005,7 @@ def _athlete_analysis(history):
                 "et sur la qualité technique des fichiers Garmin."
             ),
         },
+        "performance_comparison": _performance_comparison(history),
         "benchmarks": {
             "hrv_28d": hrv_mean,
             "sleep_score_28d": sleep_mean,

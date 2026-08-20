@@ -182,6 +182,52 @@
       renderList("[data-analysis-strengths]", analysis.strengths);
       renderList("[data-analysis-vigilance]", analysis.vigilance);
       renderList("[data-analysis-priorities]", analysis.priorities);
+
+      const comparison = analysis.performance_comparison;
+      setText(
+        "[data-performance-message]",
+        comparison?.message || "Comparaison indisponible."
+      );
+      const formatContext = group => {
+        const rows = [
+          ["Sommeil avant", group?.sleep_score_before, "/100"],
+          ["VFC avant", group?.hrv_before_ms, " ms"],
+          ["Récupération avant", group?.recovery_before, "/100"],
+          ["Indice Atlas avant", group?.atlas_index_before, "/100"]
+        ];
+        return rows.filter(([_label, value]) => value != null);
+      };
+      const renderContext = (selector, group) => {
+        const target = document.querySelector(selector);
+        if (!target) return;
+        target.replaceChildren();
+        formatContext(group).forEach(([label, value, unit]) => {
+          const term = document.createElement("dt");
+          term.textContent = label;
+          const detail = document.createElement("dd");
+          detail.textContent = `${String(value).replace(".", ",")}${unit}`;
+          target.append(term, detail);
+        });
+        if (!target.children.length) {
+          const detail = document.createElement("dd");
+          detail.textContent = "Contexte Wellness insuffisant";
+          target.appendChild(detail);
+        }
+      };
+      setText(
+        "[data-best-score]",
+        comparison?.best
+          ? `${String(comparison.best.execution_score).replace(".", ",")}/100`
+          : "—"
+      );
+      setText(
+        "[data-difficult-score]",
+        comparison?.difficult
+          ? `${String(comparison.difficult.execution_score).replace(".", ",")}/100`
+          : "—"
+      );
+      renderContext("[data-best-context]", comparison?.best);
+      renderContext("[data-difficult-context]", comparison?.difficult);
     }
 
     setText(

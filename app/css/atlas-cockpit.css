@@ -452,3 +452,10 @@ body[data-avatar="female"] .twin-panel img {
 @media(max-width:1000px){.analysis-benchmarks{grid-template-columns:repeat(2,1fr)}.analysis-columns{grid-template-columns:1fr}.athlete-analysis-home>header{align-items:flex-start}.analysis-confidence{min-width:120px}}
 @media(max-width:640px){.athlete-analysis-home{padding:22px}.athlete-analysis-home>header{display:block}.analysis-confidence{margin-top:18px}.analysis-benchmarks{grid-template-columns:1fr 1fr}.athlete-analysis-home footer{display:block}.athlete-analysis-home footer button{margin-top:16px}}
 @media print{.atlas-sidebar,.home-header,.home-grid,.atlas-talk,.atlas-index-popover{display:none!important}.atlas-home{margin:0!important;padding:0!important}.athlete-analysis-home{margin:0;border:0;background:#fff;color:#111}.athlete-analysis-home *{color:#111!important}}
+
+.performance-context{display:grid;grid-template-columns:minmax(260px,.75fr) 1.5fr;gap:24px;margin-top:22px;padding:24px;border:1px solid rgba(56,209,255,.22);border-radius:22px;background:rgba(3,15,28,.58)}
+.performance-context h3{margin:8px 0;font-size:24px}.performance-context p{margin:0;color:var(--muted);line-height:1.5}
+.performance-context-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.performance-context-grid article{padding:18px;border-radius:17px;background:rgba(8,31,50,.78);border:1px solid var(--line)}
+.performance-context-grid article>span{font-size:12px;color:var(--cyan);font-weight:800;letter-spacing:.08em}.performance-context-grid article>strong{display:block;margin:8px 0 12px;font-size:28px}
+.performance-context dl{display:grid;grid-template-columns:1fr auto;gap:7px 14px;margin:0}.performance-context dt{color:var(--muted)}.performance-context dd{margin:0;font-weight:800}
+@media(max-width:900px){.performance-context{grid-template-columns:1fr}.performance-context-grid{grid-template-columns:1fr}}

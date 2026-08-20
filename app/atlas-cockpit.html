@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#020914">
   <title>Atlas OS — Aujourd’hui</title>
-  <link rel="stylesheet" href="./css/atlas-cockpit.css?v=13">
+  <link rel="stylesheet" href="./css/atlas-cockpit.css?v=14">
   <link rel="stylesheet" href="./css/atlas-conversation.css?v=7">
 </head>
 <body>
@@ -118,6 +118,17 @@
           <article class="analysis-vigilance"><span class="eyebrow">POINTS DE VIGILANCE</span><h3>Ce qui limite l’analyse</h3><ul data-analysis-vigilance></ul></article>
           <article class="analysis-priorities"><span class="eyebrow">AXES DE TRAVAIL</span><h3>Priorités proposées</h3><ol data-analysis-priorities></ol></article>
         </div>
+        <section class="performance-context">
+          <div>
+            <span class="eyebrow">CONTEXTES DE PERFORMANCE</span>
+            <h3>Ce qui précède vos séances réussies ou difficiles</h3>
+            <p data-performance-message>Analyse des séances en cours…</p>
+          </div>
+          <div class="performance-context-grid">
+            <article><span>MEILLEURES EXÉCUTIONS</span><strong data-best-score>—</strong><dl data-best-context></dl></article>
+            <article><span>SÉANCES PLUS DIFFICILES</span><strong data-difficult-score>—</strong><dl data-difficult-context></dl></article>
+          </div>
+        </section>
         <footer><p data-analysis-confidence-text>Calcul de confiance en cours…</p><small data-analysis-notice></small><button type="button" onclick="window.print()">Imprimer le rapport</button></footer>
       </section>
     </main>
@@ -130,6 +141,6 @@
     <small>Indicateur d’aide à l’entraînement, sans valeur de diagnostic médical.</small>
   </section>
   <script src="./js/atlas-conversation.js?v=7"></script>
-  <script src="./js/atlas-cockpit.js?v=13"></script>
+  <script src="./js/atlas-cockpit.js?v=14"></script>
 </body>
 </html>
