@@ -134,6 +134,13 @@
     }
 
     const analysis = payload.athlete_analysis;
+    if (!analysis) {
+      setText(
+        "[data-analysis-summary]",
+        "Le rapport n’a pas été transmis par le serveur. Redémarrez Atlas puis rechargez cette page."
+      );
+      setText("[data-analysis-confidence-text]", "Analyse momentanément indisponible.");
+    }
     if (analysis) {
       setText("[data-analysis-summary]", analysis.summary);
       setText("[data-analysis-confidence]", analysis.confidence?.score ?? "—");

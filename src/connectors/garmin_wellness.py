@@ -409,7 +409,52 @@ class GarminWellnessConnector:
                     total += minutes
                     found = True
                     break
-        return total if found and total > 0 else None
+        if found and total > 0:
+            return total
+
+        # Certains exports Garmin décrivent seulement les changements
+        # de phase. La durée se déduit alors des horodatages successifs.
+        timed_levels = []
+        for level in levels:
+            if not isinstance(level, dict):
+                continue
+            moment = cls._as_datetime(level.get("timestamp"))
+            if moment is not None:
+                timed_levels.append((moment, level))
+        timed_levels.sort(key=lambda item: item[0])
+        assessment_end = cls._as_datetime(assessment.get("timestamp"))
+        sleeping_seconds = 0.0
+        for index, (start, level) in enumerate(timed_levels):
+            end = (
+                timed_levels[index + 1][0]
+                if index + 1 < len(timed_levels)
+                else assessment_end
+            )
+            if end is None or end <= start:
+                continue
+            name = str(
+                level.get("sleep_level")
+                or level.get("level")
+                or level.get("activity_type")
+                or ""
+            ).lower()
+            if "awake" not in name and "éveil" not in name:
+                sleeping_seconds += (end - start).total_seconds()
+        minutes = round(sleeping_seconds / 60)
+        return minutes if 1 <= minutes <= 1440 else None
+
+    @staticmethod
+    def _as_datetime(value: Any) -> Optional[datetime]:
+        if isinstance(value, datetime):
+            return value
+        if value is None:
+            return None
+        try:
+            return datetime.fromisoformat(
+                str(value).replace("Z", "+00:00")
+            )
+        except ValueError:
+            return None
 
     @staticmethod
     def _duration_as_minutes(value: Any) -> Optional[int]:

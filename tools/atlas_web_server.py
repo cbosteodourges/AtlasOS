@@ -7,6 +7,7 @@ from datetime import date, datetime, timedelta
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
+import socket
 import sys
 from urllib.parse import parse_qs, urlparse
 
@@ -916,8 +917,12 @@ def load_wellness_history(refresh_latest=True):
         and snapshots
         and getattr(snapshots[-1], "sleep_duration_minutes", None) is None
     ):
-        latest_archive = WELLNESS_DIRECTORY / f"{snapshots[-1].day.isoformat()}.zip"
-        if latest_archive.is_file():
+        archive_day = snapshots[-1].day.isoformat()
+        candidates = sorted(
+            WELLNESS_DIRECTORY.glob(f"{archive_day}*.zip")
+        )
+        latest_archive = candidates[-1] if candidates else None
+        if latest_archive is not None and latest_archive.is_file():
             try:
                 refreshed = connector.import_archive(latest_archive)
                 snapshots[-1] = refreshed
@@ -1516,8 +1521,19 @@ if __name__ == "__main__":
 
     print(
         "ATLAS OS disponible sur "
-        "http://localhost:8000/app/biomecanique.html"
+        "http://localhost:8000/app/atlas-cockpit.html"
     )
+    try:
+        local_ip = socket.gethostbyname(socket.gethostname())
+        print(
+            "Accès smartphone (même Wi-Fi) : "
+            f"http://{local_ip}:8000/app/atlas-cockpit.html"
+        )
+    except OSError:
+        print(
+            "Accès smartphone : utilisez l’adresse IPv4 du PC "
+            "sur le port 8000."
+        )
     print(
         "Passerelle Atlas Brain active sur "
         "/api/atlas-brain/analyse"

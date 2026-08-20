@@ -44,7 +44,11 @@
           </label>
         </div>
         <label class="atlas-guided-note">Précision facultative
-          <textarea name="note" maxlength="400" placeholder="Ex. jambes lourdes, douleur au tendon, nuit perturbée…"></textarea>
+          <span class="atlas-note-input">
+            <textarea name="note" maxlength="400" placeholder="Ex. jambes lourdes, douleur au tendon, nuit perturbée…"></textarea>
+            <button class="atlas-voice-button" type="button" aria-label="Dicter cette précision" title="Dicter cette précision">🎙</button>
+          </span>
+          <small class="atlas-voice-status" aria-live="polite">Vous pouvez écrire ou dicter votre ressenti.</small>
         </label>
         <button class="atlas-send-button" type="submit">Calculer mes options</button>
       </form>
@@ -62,7 +66,61 @@
   const result = root.querySelector(".atlas-adaptation-result");
   const summary = root.querySelector(".atlas-adaptation-summary");
   const optionsRoot = root.querySelector(".atlas-adaptation-options");
+  const note = form.elements.note;
+  const voice = root.querySelector(".atlas-voice-button");
+  const voiceStatus = root.querySelector(".atlas-voice-status");
   let lastPayload = null;
+
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRecognition && window.isSecureContext) {
+    const recognition = new SpeechRecognition();
+    recognition.lang = "fr-FR";
+    recognition.interimResults = false;
+    recognition.continuous = false;
+
+    recognition.addEventListener("start", () => {
+      voice.classList.add("is-listening");
+      voice.textContent = "●";
+      voiceStatus.textContent = "Je vous écoute…";
+    });
+    recognition.addEventListener("result", event => {
+      const transcript = event.results?.[0]?.[0]?.transcript || "";
+      note.value = [note.value.trim(), transcript].filter(Boolean).join(" ");
+      voiceStatus.textContent = transcript
+        ? "Dictée ajoutée. Vous pouvez la corriger avant l’envoi."
+        : "Aucune parole reconnue.";
+      note.focus();
+    });
+    recognition.addEventListener("error", event => {
+      const messages = {
+        "not-allowed": "Microphone refusé : autorisez-le dans les paramètres du site.",
+        "service-not-allowed": "Reconnaissance vocale indisponible dans Chrome.",
+        "no-speech": "Aucune parole détectée. Réessayez en parlant après le signal.",
+        "audio-capture": "Aucun microphone utilisable n’a été détecté."
+      };
+      voiceStatus.textContent =
+        messages[event.error] || `Erreur du microphone : ${event.error}`;
+    });
+    recognition.addEventListener("end", () => {
+      voice.classList.remove("is-listening");
+      voice.textContent = "🎙";
+    });
+    voice.addEventListener("click", async () => {
+      try {
+        await navigator.mediaDevices.getUserMedia({audio: true});
+        recognition.start();
+      } catch (_error) {
+        voiceStatus.textContent =
+          "Microphone bloqué : cliquez sur l’icône à gauche de l’adresse puis choisissez Autoriser.";
+      }
+    });
+  } else {
+    voice.disabled = true;
+    voiceStatus.textContent = window.isSecureContext
+      ? "La dictée vocale n’est pas prise en charge par ce navigateur."
+      : "La dictée vocale nécessite localhost ou une connexion sécurisée.";
+  }
 
   const post = async payload => {
     const response = await fetch("/api/atlas/conversation", {
