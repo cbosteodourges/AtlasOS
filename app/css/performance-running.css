@@ -5964,6 +5964,277 @@ body[data-coach-section]
   .interval-detail-row span:nth-child(9)::before { content: "Récupération"; }
 }
 
+/* Garmin-inspired planned workout sheet */
+#atlasSessionDialog [data-session-panel="planned"] {
+  width: min(100%, 820px);
+  margin-inline: auto;
+}
+
+#atlasSessionDialog [data-session-panel="report"] .execution-report {
+  width: min(100%, 980px);
+  margin-inline: auto;
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .dialog-session-header {
+  padding: 8px 0 18px;
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .dialog-session-header > div {
+  padding: 0;
+  border: 0;
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .dialog-session-header h2 {
+  margin: 7px 0 5px;
+  font-size: clamp(1.55rem, 3vw, 2.15rem);
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .dialog-session-header p {
+  display: none;
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .atlas-workout-timeline {
+  margin: 18px 0 28px;
+  padding: 20px 0 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars {
+  align-items: end;
+  gap: 7px;
+  height: 128px;
+  padding: 0 2px;
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars i {
+  min-width: 10px;
+  height: 52px;
+  border-radius: 7px 7px 2px 2px;
+  box-shadow: none;
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-2 {
+  height: 72px;
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-3 {
+  height: 112px;
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-4 {
+  height: 120px;
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-5 {
+  height: 126px;
+}
+
+.garmin-overview {
+  margin-top: 0;
+}
+
+.garmin-overview > h3,
+.session-notes h3,
+.garmin-steps > h3 {
+  display: block;
+  margin: 0 0 13px;
+  font-size: 1.18rem;
+}
+
+.garmin-overview .session-overview-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+}
+
+.garmin-overview .session-overview-grid article {
+  padding: 12px 0 3px;
+}
+
+.garmin-overview .session-overview-grid span {
+  order: initial;
+  margin: 4px 0 0;
+  font-size: .78rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.session-notes {
+  margin-top: 30px;
+}
+
+.session-notes p {
+  margin: 0;
+  color: #9db1be;
+  line-height: 1.45;
+}
+
+.garmin-steps {
+  margin-top: 30px;
+}
+
+.garmin-steps .session-step-list {
+  gap: 12px;
+}
+
+.garmin-step-card {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  padding: 15px 17px 15px 23px;
+  overflow: hidden;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .075);
+}
+
+.garmin-step-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 7px;
+  content: "";
+  background: var(--step-accent);
+}
+
+.garmin-step-card > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: baseline;
+}
+
+.garmin-step-card strong {
+  font-size: 1.05rem;
+}
+
+.garmin-step-card b {
+  flex: 0 0 auto;
+  font-size: .92rem;
+}
+
+.garmin-step-card > span,
+.garmin-step-card > small {
+  color: #9db0bd;
+  font-size: .83rem;
+}
+
+.garmin-repeat-group {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(183, 205, 217, .28);
+  border-radius: 12px;
+}
+
+.garmin-repeat-group h4 {
+  margin: 0 2px 2px;
+  font-size: 1rem;
+}
+
+.planned-technical-details {
+  margin-top: 16px;
+  border: 1px solid rgba(73, 190, 233, .2);
+  border-radius: 11px;
+  background: rgba(4, 20, 32, .58);
+}
+
+.planned-technical-details > summary {
+  padding: 14px 16px;
+  color: #a8dff2;
+  cursor: pointer;
+  font-size: .86rem;
+  font-weight: 750;
+}
+
+.planned-technical-details[open] > summary {
+  border-bottom: 1px solid rgba(73, 190, 233, .15);
+}
+
+.planned-technical-details > article,
+.planned-technical-grid {
+  margin: 0 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(145, 180, 199, .12);
+}
+
+.planned-technical-grid {
+  display: flex;
+  gap: 24px;
+}
+
+.planned-technical-grid span {
+  color: #8fa9b9;
+}
+
+.planned-technical-grid strong {
+  margin-left: 6px;
+  color: #eef9ff;
+}
+
+.planned-technical-details .session-target-list > div {
+  grid-template-columns: minmax(110px, .6fr) minmax(0, 1.4fr);
+  padding: 8px 0;
+}
+
+.compact-interval-details {
+  padding: 0;
+}
+
+.compact-interval-details > summary {
+  display: grid;
+  gap: 5px;
+  padding: 16px 20px;
+  cursor: pointer;
+}
+
+.compact-interval-details > summary strong {
+  color: #eef9ff;
+  font-size: 1rem;
+}
+
+.compact-interval-details[open] > summary {
+  border-bottom: 1px solid rgba(53, 204, 255, .16);
+}
+
+.compact-interval-details .interval-detail-table {
+  margin: 16px;
+}
+
+@media (max-width: 620px) {
+  #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars {
+    gap: 4px;
+    height: 104px;
+  }
+
+  #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars i {
+    min-width: 5px;
+    height: 42px;
+  }
+
+  #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-2 { height: 58px; }
+  #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-3 { height: 88px; }
+  #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-4 { height: 96px; }
+  #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-5 { height: 102px; }
+
+  .garmin-overview .session-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .garmin-step-card {
+    padding: 13px 13px 13px 19px;
+  }
+
+  .garmin-step-card > div {
+    gap: 10px;
+  }
+
+  .planned-technical-grid {
+    display: grid;
+    gap: 8px;
+  }
+}
+
 /* INTERVAL PHYSIOLOGY READING */
 .narrative-analysis-section.is-interval-hidden {
   display: none !important;

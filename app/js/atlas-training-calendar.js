@@ -1416,8 +1416,16 @@ const target = compactTarget(workout, zone);
     5: "#ff506c"
   };
 
+  function canonicalBlockType(block = {}) {
+    return String(block.block_type || "")
+      .toLowerCase()
+      .replaceAll("-", "_")
+      .replace("warmup", "warm_up")
+      .replace("cooldown", "cool_down");
+  }
+
   function atlasDisplayZone(workout, block = {}) {
-    const blockType = String(block.block_type || "").toLowerCase();
+    const blockType = canonicalBlockType(block);
     const workoutType = String(workout?.workout_type || "").toLowerCase();
     const blockName = String(block.name || "").toLowerCase();
 
@@ -1511,11 +1519,6 @@ const target = compactTarget(workout, zone);
             ></i>
           `).join("")}
         </div>
-        <div class="workout-timeline-legend" aria-hidden="true">
-          <span class="timeline-zone-1">Z1</span><span class="timeline-zone-2">Z2</span>
-          <span class="timeline-zone-3">Z3</span><span class="timeline-zone-4">Z4</span>
-          <span class="timeline-zone-5">Z5</span>
-        </div>
       </section>
     `;
   }
@@ -1584,6 +1587,65 @@ const target = compactTarget(workout, zone);
       note => !note.startsWith("Protocole Atlas Research")
     );
 
+    const compactTargetLine = block => {
+      const blockTarget = block.target || {};
+      const displayZone = atlasDisplayZone(workout, block);
+      const values = [`Z${displayZone}`];
+      const minimum = Number(blockTarget.speed_min_kmh);
+      const maximum = Number(blockTarget.speed_max_kmh);
+
+      if (Number.isFinite(minimum) && Number.isFinite(maximum)) {
+        values.push(
+          `${minimum.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}` +
+          `–${maximum.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} km/h`
+        );
+        const fastPace = paceFromSpeed(maximum);
+        const slowPace = paceFromSpeed(minimum);
+        if (fastPace && slowPace) {
+          values.push(`${fastPace.replace("/km", "")}–${slowPace}`);
+        }
+      } else if (blockTarget.pace_min_per_km) {
+        values.push(`${blockTarget.pace_min_per_km}/km`);
+      }
+
+      return values.join(" · ");
+    };
+
+    const compactStep = (block, options = {}) => {
+      const distance = blockDistance({ ...block, repetitions: 1 });
+      const displayZone = atlasDisplayZone(workout, block);
+      const type = canonicalBlockType(block);
+      const title = options.title || ({
+        warm_up: "Échauffement",
+        recovery: "Récupération",
+        cool_down: "Retour au calme",
+        work: workout.workout_type === "threshold_sv2"
+          ? "Travail au seuil"
+          : "Bloc de travail",
+        continuous: "Course"
+      }[type] || block.name || "Étape");
+      const durationBlock = options.duration != null
+        ? { ...block, repetitions: 1, duration_minutes: options.duration, recovery_minutes: null }
+        : { ...block, repetitions: 1, recovery_minutes: null };
+
+      return `
+        <article class="garmin-step-card timeline-zone-${displayZone}" style="--step-accent:${DISPLAY_ZONE_COLORS[displayZone]}">
+          <div>
+            <strong>${escapeHtml(title)}</strong>
+            <b>${escapeHtml(blockDuration(durationBlock))}</b>
+          </div>
+          <span>${escapeHtml(options.target || compactTargetLine(block))}</span>
+          ${distance ? `<small>Distance estimée : ${distance.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km</small>` : ""}
+        </article>
+      `;
+    };
+
+    const repeatedBlock = blocks.find(block => (
+      Number(block.repetitions) > 1 &&
+      ["work", "interval"].includes(canonicalBlockType(block))
+    ));
+    const simpleBlocks = blocks.filter(block => block !== repeatedBlock);
+
     return `
       <header class="dialog-session-header" style="--session-accent:${mainBlock ? accentFor(mainBlock) : '#39d98a'}">
         <div>
@@ -1598,7 +1660,7 @@ const target = compactTarget(workout, zone);
 
         ${timelineHtml(workoutTimelineSegments(workout), "Organisation de la séance prévue")}
 
-              <section class="session-overview">
+        <section class="session-overview garmin-overview">
           <h3>Aperçu</h3>
           <div class="session-overview-grid">
             <article>
@@ -1614,66 +1676,62 @@ const target = compactTarget(workout, zone);
               </strong>
               <span>Distance estimée</span>
             </article>
-            <article>
-              <strong>${escapeHtml(response.physiological_load_0_100 ?? "—")}/100</strong>
-              <span>Charge physiologique</span>
-            </article>
-            <article>
-              <strong>
-                ${escapeHtml(response.recovery_min_hours ?? "—")}–${escapeHtml(
-                  response.recovery_max_hours ?? "—"
-                )} h
-              </strong>
-              <span>Récupération</span>
-            </article>
           </div>
         </section>
 
-        <section class="session-steps ${blocks.length === 1 ? "is-simple" : ""}">
+        <section class="session-notes">
+          <h3>Notes</h3>
+          <p>${escapeHtml(workout.objective)}</p>
+        </section>
+
+        <section class="session-steps garmin-steps">
           <h3>Étapes</h3>
           <div class="session-step-list">
-            ${blocks.map(block => {
-              const distance = blockDistance(block);
-              const name = stepName(block);
-              const secondaryName = block.name && block.name !== name
-                ? block.name
-                : "";
+            ${simpleBlocks
+              .filter(block => canonicalBlockType(block) === "warm_up")
+              .map(block => compactStep(block))
+              .join("")}
 
-              return `
-                <article
-                  class="session-step"
-                  style="--step-accent:${accentFor(block)}"
-                >
-                  <div class="session-step-heading">
-                    <div>
-                      <strong>${escapeHtml(name)}</strong>
-                      ${secondaryName ? `<span>${escapeHtml(secondaryName)}</span>` : ""}
-                    </div>
-                    <b>${escapeHtml(blockDuration(block))}</b>
-                  </div>
-                  ${targetCards(block)}
+            ${repeatedBlock ? `
+              <section class="garmin-repeat-group">
+                <h4>${escapeHtml(repeatedBlock.repetitions)} fois</h4>
+                ${compactStep(repeatedBlock)}
+                ${compactStep(
+                  { block_type: "recovery", duration_minutes: repeatedBlock.recovery_minutes },
+                  { title: "Récupération", duration: repeatedBlock.recovery_minutes, target: "Z1 · récupération active" }
+                )}
+              </section>
+            ` : ""}
 
-                  ${distance ? `
-                    <small>
-                      Distance estimée :
-                      ${distance.toLocaleString(
-                        "fr-FR",
-                        { maximumFractionDigits: 1 }
-                      )} km
-                    </small>
-                  ` : ""}
+            ${simpleBlocks
+              .filter(block => canonicalBlockType(block) !== "warm_up")
+              .map(block => compactStep(block))
+              .join("")}
 
-                  ${block.instructions ? `
-                    <details class="session-step-advice">
-                      <summary>Conseil Atlas</summary>
-                      <p>${escapeHtml(block.instructions)}</p>
-                    </details>
-                  ` : ""}
-                </article>
-              `;
-            }).join("")}
+            ${!repeatedBlock && !simpleBlocks.length ? blocks.map(block => compactStep(block)).join("") : ""}
           </div>
         </section>
+
+        <details class="planned-technical-details">
+          <summary>Voir les données physiologiques et les conseils Atlas</summary>
+          <div class="planned-technical-grid">
+            <span>Charge <strong>${escapeHtml(response.physiological_load_0_100 ?? "—")}/100</strong></span>
+            <span>Récupération <strong>${escapeHtml(response.recovery_min_hours ?? "—")}–${escapeHtml(response.recovery_max_hours ?? "—")} h</strong></span>
+          </div>
+          ${blocks.map(block => `
+            <article>
+              <strong>${escapeHtml(stepName(block))}</strong>
+              ${targetCards({
+                ...block,
+                target: {
+                  ...(block.target || {}),
+                  zone: atlasDisplayZone(workout, block)
+                }
+              })}
+              ${block.instructions ? `<p>${escapeHtml(block.instructions)}</p>` : ""}
+            </article>
+          `).join("")}
+        </details>
 
 ${RESEARCH_TYPES.has(workout.workout_type) ? `
         <details style="
@@ -2149,11 +2207,11 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         </section>
 
         ${isIntervalSession ? `
-          <section class="interval-details-section">
-            <div class="report-heading">
-              <span class="report-kicker">CIRCUITS</span>
-              <h3>Détail des ${workBlocks.length} blocs</h3>
-            </div>
+          <details class="interval-details-section compact-interval-details">
+            <summary>
+              <span class="report-kicker">TABLEAU RÉCAPITULATIF</span>
+              <strong>Voir le détail des ${workBlocks.length} blocs</strong>
+            </summary>
             <div class="interval-detail-table">
               <div class="interval-detail-row interval-detail-header">
                 <span>N°</span><span>Distance</span><span>Temps</span>
@@ -2163,7 +2221,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
               </div>
               ${intervalRows}
             </div>
-          </section>
+          </details>
         ` : ""}
         <details class="report-more">
           <summary>Voir l’analyse physiologique complète</summary>
