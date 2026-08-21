@@ -1405,10 +1405,6 @@ const target = compactTarget(workout, zone);
       "click",
       () => dialog.close()
     );
-    dialog.addEventListener("click", event => {
-      if (event.target === dialog) dialog.close();
-    });
-
     return dialog;
   }
 
@@ -2400,6 +2396,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                       <h4>Comment vous êtes-vous senti ?</h4>
                     </div>
                     <div class="context-feeling-scale" role="radiogroup" aria-label="Sensation générale">
+                      <input type="hidden" name="sensation" value="${escapeHtml(userContext?.overall_sensation_0_to_10 ?? 5)}" data-sensation-value>
                       ${[
                         [1, "😫", "Très faible"],
                         [3, "🙁", "Faible"],
@@ -2407,11 +2404,16 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                         [7, "🙂", "Fort"],
                         [9, "😄", "Très fort"]
                       ].map(([score, icon, label]) => `
-                        <label>
-                          <input type="radio" name="sensation" value="${score}" ${Number(userContext?.overall_sensation_0_to_10 ?? 5) === score ? "checked" : ""}>
+                        <button
+                          type="button"
+                          role="radio"
+                          aria-checked="${Number(userContext?.overall_sensation_0_to_10 ?? 5) === score}"
+                          class="${Number(userContext?.overall_sensation_0_to_10 ?? 5) === score ? "selected" : ""}"
+                          data-sensation-score="${score}"
+                        >
                           <span aria-hidden="true">${icon}</span>
                           <small>${label}</small>
-                        </label>
+                        </button>
                       `).join("")}
                     </div>
                   </div>
@@ -2744,6 +2746,26 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     `;
 
     content.onclick = async event => {
+      const sensationButton = event.target.closest(
+        "[data-sensation-score]"
+      );
+      if (sensationButton) {
+        event.preventDefault();
+        event.stopPropagation();
+        const form = sensationButton.closest(
+          "[data-workout-context-form]"
+        );
+        const selectedScore = sensationButton.dataset.sensationScore;
+        const valueField = form?.querySelector("[data-sensation-value]");
+        if (valueField) valueField.value = selectedScore;
+        form?.querySelectorAll("[data-sensation-score]").forEach(button => {
+          const selected = button === sensationButton;
+          button.classList.toggle("selected", selected);
+          button.setAttribute("aria-checked", String(selected));
+        });
+        return;
+      }
+
       if (event.target.closest("[data-workout-context-form]")) {
         return;
       }

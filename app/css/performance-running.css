@@ -6553,20 +6553,18 @@ body[data-coach-section]
   margin-top: 12px;
 }
 
-.context-feeling-scale label {
+.context-feeling-scale button {
   display: grid;
   gap: 5px;
   justify-items: center;
+  padding: 2px;
+  color: inherit;
   cursor: pointer;
+  border: 0;
+  background: transparent;
 }
 
-.context-feeling-scale input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.context-feeling-scale label > span {
+.context-feeling-scale button > span {
   display: grid;
   width: 50px;
   height: 50px;
@@ -6579,7 +6577,8 @@ body[data-coach-section]
   transition: transform .15s ease, background .15s ease, border-color .15s ease;
 }
 
-.context-feeling-scale input:checked + span {
+.context-feeling-scale button.selected > span,
+.context-feeling-scale button[aria-checked="true"] > span {
   border-color: #fff;
   background: #318fde;
   box-shadow: 0 0 0 4px rgba(49, 143, 222, .2);
@@ -6591,6 +6590,11 @@ body[data-coach-section]
   color: #a9bbc8;
   font-size: .65rem;
   text-align: center;
+}
+
+.context-feeling-scale button:focus-visible > span {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
 }
 
 .context-range-card {
@@ -6735,7 +6739,7 @@ body[data-coach-section]
   .atlas-session-dialog .context-story,
   .atlas-session-dialog .workout-context-form { padding: 14px !important; }
   .context-feeling-scale { gap: 4px; }
-  .context-feeling-scale label > span { width: 42px; height: 42px; font-size: 1.3rem; }
+  .context-feeling-scale button > span { width: 42px; height: 42px; font-size: 1.3rem; }
   .context-feeling-scale small { font-size: .58rem; }
   .context-range-grid { grid-template-columns: 1fr; }
   .context-score-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
