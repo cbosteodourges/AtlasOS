@@ -120,6 +120,30 @@ class GarminWellnessConnectorTests(unittest.TestCase):
         self.assertFalse(result.sleep_available)
         self.assertEqual(result.data_quality_score, 0)
 
+    def test_sleep_duration_prefers_real_sleep_seconds(self) -> None:
+        result = self.connector.build_snapshot(
+            date(2026, 8, 6),
+            {"sleep_assessment_mesgs": [{
+                "overall_sleep_score": 80,
+                "total_sleep_time": 7 * 3600 + 32 * 60,
+            }]},
+        )
+
+        self.assertEqual(result.sleep_duration_minutes, 452)
+
+    def test_sleep_duration_excludes_awake_levels(self) -> None:
+        result = self.connector.build_snapshot(
+            date(2026, 8, 6),
+            {"sleep_level_mesgs": [
+                {"sleep_level": "light", "duration": 180 * 60},
+                {"sleep_level": "awake", "duration": 35 * 60},
+                {"sleep_level": "deep", "duration": 95 * 60},
+                {"sleep_level": "rem", "duration": 70 * 60},
+            ]},
+        )
+
+        self.assertEqual(result.sleep_duration_minutes, 345)
+
     def test_imports_and_merges_daily_zip_archive(
         self,
     ) -> None:

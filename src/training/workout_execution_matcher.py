@@ -84,6 +84,17 @@ class AtlasWorkoutExecutionMatcher:
             activity,
             analysis,
         )
+        planned_recovery_minutes = sum(
+            (block.recovery_minutes or 0.0)
+            * max(0, block.repetitions - 1)
+            for block in planned_workout.blocks
+        )
+        recovery_score = None
+        if planned_recovery_minutes > 0:
+            recovery_score = self._ratio_score(
+                analysis.recovery_duration_seconds / 60.0,
+                planned_recovery_minutes,
+            )
 
         matching_scores = [
             (date_score, 50),
@@ -106,6 +117,12 @@ class AtlasWorkoutExecutionMatcher:
         ]
         if distance_score is not None:
             execution_scores.append((distance_score, 30))
+        if recovery_score is not None:
+            execution_scores = [
+                (score, round(weight * 0.85))
+                for score, weight in execution_scores
+            ]
+            execution_scores.append((recovery_score, 15))
 
         execution_score = self._weighted_score(
             execution_scores
@@ -163,6 +180,15 @@ class AtlasWorkoutExecutionMatcher:
                 f"Respect de la distance : "
                 f"{distance_score}/100."
             )
+        if recovery_score is not None:
+            reasons.append(
+                "Respect des récupérations : "
+                f"{recovery_score}/100."
+            )
+            if recovery_score < 70:
+                reasons.append(
+                    "Une ou plusieurs récupérations semblent écourtées."
+                )
 
         if not matched:
             reasons.append(
@@ -185,6 +211,7 @@ class AtlasWorkoutExecutionMatcher:
                 len(executed_active_blocks),
             ),
             target_compliance_score=target_score,
+            recovery_compliance_score=recovery_score,
             execution_score=execution_score,
             observations=reasons.copy(),
         )

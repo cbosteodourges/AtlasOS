@@ -35,14 +35,20 @@ class DetailedSessionAnalyzer:
         samples = self._ordered_samples(
             activity.samples
         )
+        data_integrity = self._data_integrity(
+            activity,
+            profile,
+        )
 
         if len(samples) < 2:
             return DetailedSessionAnalysis(
                 activity_id=activity.atlas_id,
-            data_integrity=data_integrity,
+                data_integrity=data_integrity,
+                analysis_confidence_score=0,
                 interpretation=[
                     "Points FIT insuffisants pour détecter "
-                    "les blocs de la séance."
+                    "les blocs de la séance ; Atlas ne classe "
+                    "pas cette activité."
                 ],
             )
 
@@ -65,6 +71,7 @@ class DetailedSessionAnalyzer:
             blocks = self._group_intervals(
                 intervals
             )
+        blocks = self._mark_session_boundaries(blocks)
 
         work_blocks = [
             block
@@ -105,13 +112,14 @@ class DetailedSessionAnalyzer:
         dominant_work_type = self._dominant_type(
             work_blocks
         )
+        session_type = self._session_type(
+            activity,
+            work_blocks,
+            dominant_work_type,
+        )
         workout_execution = self._workout_execution(
             activity,
             blocks,
-        )
-        data_integrity = self._data_integrity(
-            activity,
-            profile,
         )
         threshold_observations = (
             self._threshold_observations(blocks)
@@ -134,6 +142,7 @@ class DetailedSessionAnalyzer:
             threshold_observations=threshold_observations,
 
             dominant_work_type=dominant_work_type,
+            session_type=session_type,
             work_duration_seconds=sum(
                 block.duration_seconds
                 for block in work_blocks
@@ -158,8 +167,10 @@ class DetailedSessionAnalyzer:
             ),
             analysis_confidence_score=confidence,
             interpretation=self._interpretation(
+                activity,
                 blocks,
                 dominant_work_type,
+                session_type,
                 workout_execution,
             ),
             planning_influences=(
@@ -420,6 +431,7 @@ class DetailedSessionAnalyzer:
         ]
         completed_active_count = 0
         target_scores = []
+        recovery_scores = []
 
         for index in planned_active_positions:
             if index >= len(matched_blocks):
@@ -512,6 +524,21 @@ class DetailedSessionAnalyzer:
                     max(0, round(100 - difference * 50))
                 )
 
+        for index, step in enumerate(expanded_steps):
+            if str(step.get("intensity", "")).lower() != "recovery":
+                continue
+            target = cls._number(step.get("duration_time"))
+            if not target or index >= len(matched_blocks):
+                continue
+            actual = sum(
+                block.duration_seconds for block in matched_blocks[index]
+            )
+            ratio = actual / target
+            recovery_scores.append(
+                100 if 0.9 <= ratio <= 1.15
+                else max(0, round(100 - abs(1 - ratio) * 100))
+            )
+
         planned_active_count = len(
             planned_active_positions
         )
@@ -543,10 +570,12 @@ class DetailedSessionAnalyzer:
             else completion_score
         )
         execution_score = round(
-            completion_score * 0.5
+            completion_score * (0.4 if recovery_scores else 0.5)
             + target_score * 0.3
-            + step_score * 0.2
+            + step_score * (0.15 if recovery_scores else 0.2)
+            + ((round(mean(recovery_scores)) * 0.15) if recovery_scores else 0)
         )
+        recovery_score = round(mean(recovery_scores)) if recovery_scores else None
 
         observations = [
             (
@@ -563,6 +592,14 @@ class DetailedSessionAnalyzer:
                 "neutralisées."
             ),
         ]
+        if recovery_score is not None:
+            observations.append(
+                f"Respect des récupérations : {recovery_score}/100."
+            )
+            if recovery_score < 70:
+                observations.append(
+                    "Récupération écourtée détectée ; le score d'exécution est réduit."
+                )
 
         return WorkoutExecutionSummary(
             workout_name=workout_name,
@@ -578,6 +615,7 @@ class DetailedSessionAnalyzer:
                 completed_active_count
             ),
             target_compliance_score=target_score,
+            recovery_compliance_score=recovery_score,
             execution_score=min(100, execution_score),
             countdown_tolerance_seconds=tolerance,
             observations=observations,
@@ -1106,6 +1144,38 @@ class DetailedSessionAnalyzer:
             )
             for index, group in enumerate(groups, start=1)
         ]
+
+    @staticmethod
+    def _mark_session_boundaries(
+        blocks: List[SessionBlock],
+    ) -> List[SessionBlock]:
+        """Identifie échauffement et retour au calme autour d'un travail réel."""
+        if len(blocks) < 3:
+            return blocks
+
+        total_duration = sum(block.duration_seconds for block in blocks)
+        if total_duration < 15 * 60:
+            return blocks
+
+        intense_types = {"z3", "sv2", "vma", "acceleration", "sprint"}
+        easy_types = {"z1", "z2", "recovery"}
+        if not any(block.block_type in intense_types for block in blocks[1:-1]):
+            return blocks
+
+        first = blocks[0]
+        if first.block_type in easy_types and first.duration_seconds <= 25 * 60:
+            first.block_type = "warm_up"
+            first.detection_reasons.append(
+                "Bloc facile initial précédant un travail d'intensité."
+            )
+
+        last = blocks[-1]
+        if last.block_type in easy_types and last.duration_seconds <= 25 * 60:
+            last.block_type = "cool_down"
+            last.detection_reasons.append(
+                "Bloc facile terminal suivant un travail d'intensité."
+            )
+        return blocks
 
     @classmethod
     def _merge_short_groups(
@@ -1684,9 +1754,35 @@ class DetailedSessionAnalyzer:
         return max(durations, key=durations.get)
 
     @staticmethod
+    def _session_type(
+        activity: LongitudinalActivity,
+        work_blocks: List[SessionBlock],
+        dominant_work_type: str,
+    ) -> str:
+        """Classe la nature globale sans déduire une intensité absente."""
+        types = {block.block_type for block in work_blocks}
+        if not work_blocks or dominant_work_type == "unknown":
+            return "unknown"
+        if types & {"sprint", "acceleration", "vma"}:
+            return "vma"
+        if "sv2" in types:
+            return "threshold"
+        if dominant_work_type == "z3":
+            return "tempo"
+        if dominant_work_type == "z1":
+            return "recovery"
+        if dominant_work_type == "z2":
+            if activity.duration_minutes >= 75 or activity.distance_km >= 12:
+                return "long_run"
+            return "endurance"
+        return "unknown"
+
+    @staticmethod
     def _interpretation(
+        activity: LongitudinalActivity,
         blocks: List[SessionBlock],
         dominant_work_type: str,
+        session_type: str,
         workout_execution: WorkoutExecutionSummary,
     ) -> List[str]:
         if not blocks:
@@ -1694,13 +1790,67 @@ class DetailedSessionAnalyzer:
                 "Aucun bloc exploitable n'a été détecté."
             ]
 
+        labels = {
+            "recovery": "footing de récupération",
+            "endurance": "endurance fondamentale",
+            "long_run": "sortie longue à dominante endurance",
+            "tempo": "travail tempo",
+            "threshold": "travail au seuil",
+            "vma": "travail VMA ou vitesse",
+            "unknown": "nature non déterminée",
+        }
         interpretation = [
             f"{len(blocks)} blocs homogènes détectés.",
             (
-                "Travail dominant détecté : "
-                f"{dominant_work_type}."
+                "Nature de séance : "
+                f"{labels.get(session_type, session_type)}."
             ),
         ]
+        if session_type == "unknown":
+            interpretation.append(
+                "Les données disponibles ne permettent pas une classification fiable."
+            )
+
+        work_blocks = [
+            block for block in blocks
+            if block.block_type not in {"warm_up", "recovery", "cool_down"}
+        ]
+
+        def weighted(field: str) -> Optional[float]:
+            available = [
+                block for block in work_blocks
+                if getattr(block, field, None) is not None
+            ]
+            duration = sum(max(1.0, block.duration_seconds) for block in available)
+            if not available or duration <= 0:
+                return None
+            return sum(
+                float(getattr(block, field)) * max(1.0, block.duration_seconds)
+                for block in available
+            ) / duration
+
+        metrics = []
+        for label, field, unit, digits in (
+            ("vitesse", "average_speed_kmh", " km/h", 2),
+            ("FC", "average_heart_rate_bpm", " bpm", 0),
+            ("puissance", "average_power_watts", " W", 0),
+            ("cadence", "average_cadence_spm", " pas/min", 0),
+        ):
+            value = weighted(field)
+            if value is not None:
+                metrics.append(f"{label} {value:.{digits}f}{unit}")
+        if metrics:
+            interpretation.append(
+                "Bloc(s) de travail — " + " · ".join(metrics) + "."
+            )
+        if activity.elevation_gain_m is not None:
+            interpretation.append(
+                f"Dénivelé positif enregistré : {activity.elevation_gain_m:.0f} m."
+            )
+        if not metrics:
+            interpretation.append(
+                "Aucune moyenne fiable de vitesse, FC, puissance ou cadence pour les blocs de travail."
+            )
 
         if workout_execution.workout_name:
             interpretation.append(

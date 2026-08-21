@@ -473,3 +473,8 @@ body[data-avatar="female"] .twin-panel img {
   .performance-context dt{overflow-wrap:anywhere}.performance-context dd{text-align:right}
   .athlete-analysis-home footer button{width:100%}
 }
+.longitudinal-evidence{margin-top:22px;padding:24px;border:1px solid rgba(121,107,255,.3);border-radius:22px;background:rgba(7,20,38,.72)}
+.longitudinal-evidence h3{margin:7px 0 17px;font-size:24px}.longitudinal-evidence>[data-longitudinal-conclusions]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.longitudinal-evidence article{padding:17px;border:1px solid var(--line);border-radius:16px;background:rgba(3,15,28,.7)}.longitudinal-evidence article div{display:flex;justify-content:space-between;gap:12px;color:var(--cyan);font-size:12px;text-transform:uppercase;letter-spacing:.05em}.longitudinal-evidence article div b{color:var(--green);white-space:nowrap}.longitudinal-evidence article>strong{display:block;margin:11px 0 7px;line-height:1.4}.longitudinal-evidence article>small{color:var(--muted);line-height:1.45}.longitudinal-evidence details{margin-top:15px;color:var(--muted)}.longitudinal-evidence summary{cursor:pointer;font-weight:800;color:#c5d7e6}.longitudinal-evidence li{margin:8px 0;line-height:1.45}
+@media(max-width:850px){.longitudinal-evidence>[data-longitudinal-conclusions]{grid-template-columns:1fr}}
+@media(max-width:700px){.longitudinal-evidence{padding:17px;border-radius:17px}.longitudinal-evidence h3{font-size:20px}.longitudinal-evidence article div{display:block}.longitudinal-evidence article div b{display:block;margin-top:5px}}

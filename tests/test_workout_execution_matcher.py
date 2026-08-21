@@ -124,6 +124,51 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
             36,
         )
 
+    def test_penalizes_shortened_recoveries(self) -> None:
+        planned = AdaptiveWorkout(
+            workout_id="threshold-recovery-test",
+            workout_date=date(2026, 8, 9),
+            workout_type=WorkoutType.THRESHOLD_SV2,
+            title="Seuil SV2",
+            objective="Travail au seuil",
+            blocks=[TrainingBlock(
+                name="3 × 8 min au SV2",
+                block_type=BlockType.WORK,
+                repetitions=3,
+                duration_minutes=8,
+                recovery_minutes=2,
+                target=IntensityTarget(zone=4, speed_min_kmh=12, speed_max_kmh=12.9),
+            )],
+            planned_duration_minutes=40,
+        )
+        activity = LongitudinalActivity(
+            atlas_id="garmin-short-recovery",
+            start_time=datetime(2026, 8, 9, 17, tzinfo=timezone.utc),
+            activity_type="running",
+            distance_km=8,
+            duration_minutes=40,
+            average_speed_kmh=12.4,
+        )
+        blocks = [
+            SessionBlock(1, "sv2", 0, 480, 480, 1650, average_speed_kmh=12.4),
+            SessionBlock(2, "recovery", 480, 520, 40, 80),
+            SessionBlock(3, "sv2", 520, 1000, 480, 1650, average_speed_kmh=12.4),
+            SessionBlock(4, "recovery", 1000, 1040, 40, 80),
+            SessionBlock(5, "sv2", 1040, 1520, 480, 1650, average_speed_kmh=12.4),
+        ]
+        analysis = DetailedSessionAnalysis(
+            activity_id=activity.atlas_id,
+            blocks=blocks,
+            dominant_work_type="sv2",
+            session_type="threshold",
+            recovery_duration_seconds=80,
+        )
+
+        result = AtlasWorkoutExecutionMatcher().match(planned, activity, analysis)
+
+        self.assertLess(result.execution.recovery_compliance_score, 50)
+        self.assertTrue(any("écourtées" in reason for reason in result.reasons))
+
 
 if __name__ == "__main__":
     unittest.main()

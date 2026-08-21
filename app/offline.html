@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#020914">
+  <title>Atlas OS — Hors connexion</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}
+    body{display:grid;min-height:100dvh;margin:0;padding:24px;place-items:center;color:#eaf7ff;background:radial-gradient(circle at 50% 10%,#0a3453,#020914 55%)}
+    main{width:min(520px,100%);padding:30px;border:1px solid #23607d;border-radius:22px;background:#071827;text-align:center;box-shadow:0 24px 70px #0008}
+    img{width:76px;height:76px;object-fit:cover;border-radius:18px}h1{margin:20px 0 10px}p{color:#aac0ce;line-height:1.55}
+    button{min-height:48px;margin-top:12px;padding:0 20px;color:#03131f;border:0;border-radius:13px;background:#55dcec;font:inherit;font-weight:800;cursor:pointer}
+    small{display:block;margin-top:20px;color:#7894a7}
+  </style>
+</head>
+<body>
+  <main>
+    <img src="./assets/atlas-os-icon-avatar-master.png" alt="Avatar Atlas">
+    <h1>Atlas est hors connexion</h1>
+    <p>Les pages déjà ouvertes peuvent rester consultables. L’import Garmin, les analyses, les ressentis et les adaptations nécessitent le serveur Atlas local.</p>
+    <button type="button" onclick="location.reload()">Réessayer</button>
+    <small>Aucune ancienne réponse d’analyse n’est utilisée à la place du serveur.</small>
+  </main>
+</body>
+</html>

@@ -1,11 +1,14 @@
 {
   "name": "Atlas OS",
   "short_name": "Atlas",
+  "id": "./atlas-cockpit.html",
   "description": "Jumeau numérique et accompagnement d'entraînement Atlas.",
   "lang": "fr",
   "start_url": "./atlas-cockpit.html",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "categories": ["fitness", "health", "sports"],
   "background_color": "#020914",
   "theme_color": "#020914",
   "icons": [
@@ -13,6 +16,23 @@
       "src": "./assets/atlas-os-icon-avatar-master.png",
       "sizes": "512x512",
       "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Aujourd’hui",
+      "short_name": "Aujourd’hui",
+      "url": "./atlas-cockpit.html"
+    },
+    {
+      "name": "Atlas Coach",
+      "short_name": "Coach",
+      "url": "./performance-running.html"
+    },
+    {
+      "name": "Évolution physiologique",
+      "short_name": "Évolution",
+      "url": "./atlas-metric-history.html"
     }
   ]
 }

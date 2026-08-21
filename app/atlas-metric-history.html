@@ -4,8 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#020914">
+  <link rel="manifest" href="./manifest.webmanifest">
   <title>Atlas OS — Évolution physiologique</title>
-  <link rel="stylesheet" href="./css/atlas-metric-history.css?v=1">
+  <link rel="stylesheet" href="./css/atlas-metric-history.css?v=2">
+  <link rel="stylesheet" href="./css/atlas-wellness-trends.css?v=1">
+  <link rel="stylesheet" href="./css/atlas-responsive.css?v=1">
 </head>
 <body>
   <aside class="history-sidebar">
@@ -17,7 +20,9 @@
     <nav aria-label="Indicateurs">
       <a data-metric-link="recovery" href="?metric=recovery">Récupération</a>
       <a data-metric-link="sleep" href="?metric=sleep">Sommeil</a>
+      <a data-metric-link="sleep_duration" href="?metric=sleep_duration">Durée du sommeil</a>
       <a data-metric-link="hrv" href="?metric=hrv">VFC</a>
+      <a data-metric-link="stress" href="?metric=stress">Stress nocturne</a>
       <a data-metric-link="load" href="?metric=load">Charge</a>
     </nav>
   </aside>
@@ -33,6 +38,7 @@
         <span>DERNIÈRE VALEUR</span>
         <strong data-latest-value>—</strong>
         <small data-latest-date>—</small>
+        <small data-latest-source>Source : —</small>
       </div>
     </header>
 
@@ -49,8 +55,8 @@
 
     <section class="chart-card">
       <div class="chart-head">
-        <div><span data-chart-label>Indice Atlas</span><small data-data-count>0 mesure</small></div>
-        <div class="legend"><i></i><span>Valeur quotidienne</span><i class="average"></i><span>Moyenne</span></div>
+        <div><span data-chart-label>Indice Atlas</span><small data-data-count>0 mesure</small><small data-missing-count></small></div>
+        <div class="legend"><i></i><span>Valeur quotidienne</span><i class="average"></i><span>Moyenne</span><i class="baseline"></i><span>Baseline personnelle</span></div>
       </div>
       <div class="canvas-wrap">
         <canvas id="metricChart" aria-label="Graphique d’évolution"></canvas>
@@ -65,6 +71,8 @@
       <article><span>Tendance</span><strong data-trend>—</strong></article>
     </section>
 
+    <section class="trend-explanation"><strong>Lecture Atlas</strong><p data-trend-explanation>La tendance sera expliquée dès que plusieurs valeurs comparables seront disponibles.</p></section>
+
     <section class="understanding">
       <span class="eyebrow">COMPRENDRE CET INDICATEUR</span>
       <h2 data-understanding-title>Indice Atlas de disponibilité</h2>
@@ -77,6 +85,7 @@
     </section>
   </main>
 
-  <script src="./js/atlas-metric-history.js?v=2"></script>
+  <script src="./js/atlas-metric-history.js?v=3"></script>
+  <script src="./js/atlas-pwa.js?v=1"></script>
 </body>
 </html>

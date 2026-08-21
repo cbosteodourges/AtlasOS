@@ -1,0 +1,32 @@
+.legend i.baseline {
+  margin-left: 10px;
+  background: #b79cff;
+}
+
+.trend-explanation {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin: 0 0 14px;
+  padding: 16px 18px;
+  border: 1px solid rgba(183, 156, 255, .3);
+  border-radius: 14px;
+  background: rgba(68, 48, 112, .14);
+}
+
+.trend-explanation strong {
+  color: #d8caff;
+  white-space: nowrap;
+}
+
+.trend-explanation p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+  .trend-explanation { display: block; }
+  .trend-explanation p { margin-top: 7px; }
+  .legend { flex-wrap: wrap; }
+}

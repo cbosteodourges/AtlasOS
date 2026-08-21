@@ -6,6 +6,7 @@
       title: "Récupération",
       eyebrow: "INDICE ATLAS",
       field: "atlas_index",
+      baselineField: "atlas_index_baseline",
       unit: "/100",
       label: "Indice Atlas de disponibilité",
       description: "Suivez la manière dont sommeil, VFC, stress nocturne et qualité des données influencent votre disponibilité.",
@@ -15,24 +16,48 @@
       title: "Sommeil",
       eyebrow: "RÉCUPÉRATION NOCTURNE",
       field: "sleep_score",
+      baselineField: "sleep_score_baseline",
       unit: "/100",
       label: "Score de sommeil Garmin",
       description: "Visualisez votre qualité de sommeil et ses variations au fil des cycles d’entraînement.",
       understanding: "Le score de sommeil synthétise notamment la durée, la continuité et la qualité physiologique de la nuit. Atlas l’interprète avec la VFC, le stress nocturne et votre charge récente."
     },
+    sleep_duration: {
+      title: "Durée du sommeil",
+      eyebrow: "SOMMEIL RÉEL DÉTECTÉ",
+      field: "sleep_duration_minutes",
+      baselineField: "sleep_duration_baseline_minutes",
+      unit: " min",
+      label: "Durée réellement dormie",
+      description: "Suivez la durée Garmin réellement identifiée comme sommeil, hors phases d’éveil lorsqu’elles sont disponibles.",
+      understanding: "Atlas utilise en priorité la durée totale de sommeil fournie par Garmin, puis additionne les phases réellement dormies. Une journée sans mesure reste vide et n’est jamais interpolée."
+    },
     hrv: {
       title: "Variabilité de fréquence cardiaque",
       eyebrow: "VFC NOCTURNE",
       field: "hrv_last_night_ms",
+      baselineField: "hrv_personal_baseline_ms",
       unit: " ms",
       label: "VFC nocturne",
       description: "Comparez votre VFC à votre tendance personnelle plutôt qu’à une norme générale.",
       understanding: "La VFC reflète les variations entre deux battements. Son intérêt principal réside dans son évolution par rapport à votre propre référence. Une baisse isolée n’est pas nécessairement préoccupante ; la tendance et le contexte priment."
     },
+    stress: {
+      title: "Stress nocturne",
+      eyebrow: "STRESS PENDANT LE SOMMEIL",
+      field: "sleep_average_stress",
+      baselineField: "sleep_stress_baseline",
+      unit: "/100",
+      label: "Stress nocturne moyen",
+      lowerIsBetter: true,
+      description: "Comparez le stress enregistré pendant le sommeil à votre propre historique.",
+      understanding: "Une hausse durable du stress nocturne peut accompagner une récupération moins favorable. Atlas la confronte au sommeil, à la VFC et à la charge sans en déduire seul une cause."
+    },
     load: {
       title: "Charge d’entraînement",
       eyebrow: "CHARGE GARMIN",
       field: "training_load",
+      baselineField: "training_load_baseline",
       unit: "",
       label: "Charge quotidienne",
       description: "Suivez la charge enregistrée dans les activités importées et son accumulation dans le temps.",
@@ -71,16 +96,34 @@
   const formatValue = value => {
     if (!isAvailable(value)) return "—";
     const rounded = Math.round(Number(value) * 10) / 10;
+    if (metric === "sleep_duration") {
+      const minutes = Math.round(Number(value));
+      return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, "0")}`;
+    }
     return `${String(rounded).replace(".", ",")}${definition.unit}`;
   };
 
+  const formatDifference = value => {
+    if (metric === "sleep_duration") {
+      const minutes = Math.round(Number(value));
+      return `${minutes > 0 ? "+" : ""}${minutes} min`;
+    }
+    const rounded = Math.round(Number(value) * 10) / 10;
+    return `${rounded > 0 ? "+" : ""}${String(rounded).replace(".", ",")}${definition.unit}`;
+  };
+
   const filteredHistory = () => {
+    if (!history.length) return [];
     const valid = history.filter(item => isAvailable(item[definition.field]));
-    if (selectedRange === "all" || !valid.length) return valid;
-    const last = new Date(valid[valid.length - 1].day + "T12:00:00");
+    if (!valid.length) return [];
+    if (selectedRange === "all") return history;
+    const last = new Date(history[history.length - 1].day + "T12:00:00");
     const start = new Date(last);
     start.setDate(start.getDate() - Number(selectedRange) + 1);
-    return valid.filter(item => new Date(item.day + "T12:00:00") >= start);
+    return history.filter(item => {
+      const day = new Date(item.day + "T12:00:00");
+      return day >= start && day <= last;
+    });
   };
 
   const renderComposition = latest => {
@@ -119,9 +162,15 @@
     empty.hidden = points.length > 0;
     if (!points.length) return;
 
-    const values = points.map(item => Number(item[definition.field]));
-    let min = Math.min(...values);
-    let max = Math.max(...values);
+    const validPoints = points.filter(item => isAvailable(item[definition.field]));
+    const values = validPoints.map(item => Number(item[definition.field]));
+    if (!values.length) { empty.hidden = false; return; }
+    const baselineValues = definition.baselineField
+      ? points.filter(item => isAvailable(item[definition.baselineField])).map(item => Number(item[definition.baselineField]))
+      : [];
+    const scaleValues = values.concat(baselineValues);
+    let min = Math.min(...scaleValues);
+    let max = Math.max(...scaleValues);
     if (metric === "recovery" || metric === "sleep") {
       min = Math.min(40, min);
       max = 100;
@@ -153,26 +202,30 @@
     const gradient = ctx.createLinearGradient(0, top, 0, top + chartH);
     gradient.addColorStop(0, "rgba(56,209,255,.32)");
     gradient.addColorStop(1, "rgba(56,209,255,0)");
+    let drawing = false;
     ctx.beginPath();
     points.forEach((point, index) => {
+      if (!isAvailable(point[definition.field])) { drawing = false; return; }
       const xx = x(index), yy = y(Number(point[definition.field]));
-      if (index === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
-    });
-    ctx.lineTo(x(points.length - 1), top + chartH);
-    ctx.lineTo(x(0), top + chartH);
-    ctx.closePath();
-    ctx.fillStyle = gradient;
-    ctx.fill();
-
-    ctx.beginPath();
-    points.forEach((point, index) => {
-      const xx = x(index), yy = y(Number(point[definition.field]));
-      if (index === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+      if (!drawing) { ctx.moveTo(xx, yy); drawing = true; } else ctx.lineTo(xx, yy);
     });
     ctx.strokeStyle = "#38d1ff";
     ctx.lineWidth = 2.5;
     ctx.lineJoin = "round";
     ctx.stroke();
+
+    if (definition.baselineField) {
+      drawing = false;
+      ctx.beginPath();
+      points.forEach((point, index) => {
+        if (!isAvailable(point[definition.baselineField])) { drawing = false; return; }
+        const xx = x(index), yy = y(Number(point[definition.baselineField]));
+        if (!drawing) { ctx.moveTo(xx, yy); drawing = true; } else ctx.lineTo(xx, yy);
+      });
+      ctx.strokeStyle = "#b79cff";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
 
     const average = values.reduce((sum, value) => sum + value, 0) / values.length;
     ctx.setLineDash([7, 6]);
@@ -193,13 +246,16 @@
 
   const render = () => {
     const points = filteredHistory();
-    setText("[data-data-count]", `${points.length} mesure${points.length > 1 ? "s" : ""}`);
-    if (!points.length) {
+    const validPoints = points.filter(item => isAvailable(item[definition.field]));
+    const missingCount = points.length - validPoints.length;
+    setText("[data-data-count]", `${validPoints.length} mesure${validPoints.length > 1 ? "s" : ""}`);
+    setText("[data-missing-count]", missingCount ? `${missingCount} jour${missingCount > 1 ? "s" : ""} sans donnée` : "Aucun jour manquant sur la période");
+    if (!validPoints.length) {
       ["[data-average]","[data-minimum]","[data-maximum]","[data-trend]"].forEach(selector => setText(selector, "—"));
       drawChart(points);
       return;
     }
-    const values = points.map(item => Number(item[definition.field]));
+    const values = validPoints.map(item => Number(item[definition.field]));
     const average = values.reduce((sum, value) => sum + value, 0) / values.length;
     const section = Math.max(1, Math.floor(values.length / 3));
     const first = values.slice(0, section).reduce((a,b)=>a+b,0) / section;
@@ -209,11 +265,16 @@
     setText("[data-average]", formatValue(average));
     setText("[data-minimum]", formatValue(Math.min(...values)));
     setText("[data-maximum]", formatValue(Math.max(...values)));
-    setText("[data-trend]", Math.abs(difference) < 1 ? "Stable" : difference > 0 ? `↗ +${formatValue(difference)}` : `↘ ${formatValue(difference)}`);
-    const latest = points[points.length - 1];
+    const stableLimit = metric === "sleep_duration" ? 15 : 1;
+    const favorable = definition.lowerIsBetter ? difference < 0 : difference > 0;
+    const trendLabel = Math.abs(difference) < stableLimit ? "Stable" : favorable ? "Favorable" : "À surveiller";
+    setText("[data-trend]", Math.abs(difference) < stableLimit ? "Stable" : difference > 0 ? `↗ ${formatDifference(difference)}` : `↘ ${formatDifference(difference)}`);
+    setText("[data-trend-explanation]", `${trendLabel} : comparaison entre le début et la fin de la période, écart ${formatDifference(difference)}. ${missingCount ? `${missingCount} jour(s) sans mesure ne sont pas interpolés.` : "La période ne comporte aucun jour manquant."}`);
+    const latest = validPoints[validPoints.length - 1];
     setText("[data-latest-value]", formatValue(latest[definition.field]));
     setText("[data-latest-date]", new Date(latest.day + "T12:00:00").toLocaleDateString("fr-FR", {dateStyle:"long"}));
-    renderComposition(history[history.length - 1]);
+    setText("[data-latest-source]", `Source : ${latest.source || "non renseignée"}`);
+    renderComposition(latest);
     drawChart(points);
   };
 

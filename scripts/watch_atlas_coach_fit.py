@@ -106,6 +106,23 @@ def fit_snapshot(directory: Path) -> dict[Path, tuple[int, int]]:
     }
 
 
+def changed_fit_paths(
+    known: dict[Path, tuple[int, int]],
+    current: dict[Path, tuple[int, int]],
+    pending: set[Path] | None = None,
+) -> list[Path]:
+    """Retourne les nouveautés et les copies incomplètes à réessayer."""
+    pending = pending or set()
+    return sorted(
+        (
+            path
+            for path, signature in current.items()
+            if known.get(path) != signature or path in pending
+        ),
+        key=str,
+    )
+
+
 def run_sync(
     fit_path: Path,
 ) -> subprocess.CompletedProcess[str]:
@@ -281,17 +298,15 @@ def main() -> None:
     write_log(f"Dossier FIT : {input_directory}")
 
     known = fit_snapshot(input_directory)
+    pending: set[Path] = set()
 
     try:
         while True:
             time.sleep(arguments.interval)
             current = fit_snapshot(input_directory)
 
-            changed = [
-                path
-                for path, signature in current.items()
-                if known.get(path) != signature
-            ]
+            pending.intersection_update(current)
+            changed = changed_fit_paths(known, current, pending)
 
             for path in changed:
                 write_log(
@@ -306,9 +321,27 @@ def main() -> None:
                         "Fichier encore incomplet ; "
                         "il sera vérifié de nouveau."
                     )
+                    pending.add(path)
                     continue
 
-                completed = run_sync(path)
+                pending.discard(path)
+                try:
+                    completed = run_sync(path)
+                except (
+                    OSError,
+                    subprocess.SubprocessError,
+                    zipfile.BadZipFile,
+                ) as error:
+                    pending.add(path)
+                    write_log(
+                        "Analyse impossible mais Watcher toujours actif : "
+                        f"{type(error).__name__}: {error}"
+                    )
+                    notify_windows(
+                        "Atlas Coach",
+                        "Import Garmin interrompu ; Atlas réessaiera automatiquement.",
+                    )
+                    continue
 
                 if completed.stdout.strip():
                     write_log(completed.stdout.strip())
@@ -317,6 +350,7 @@ def main() -> None:
                     write_log(completed.stderr.strip())
 
                 if completed.returncode != 0:
+                    pending.add(path)
                     write_log(
                         "Échec de la synchronisation "
                         f"(code {completed.returncode})."
@@ -335,7 +369,18 @@ def main() -> None:
                         f"{count} activité(s) importée(s) "
                         "et analysée(s)."
                     )
-                    fusion, revision = run_feedback_cycle()
+                    try:
+                        fusion, revision = run_feedback_cycle()
+                    except (OSError, subprocess.SubprocessError) as error:
+                        write_log(
+                            "Activité analysée, mais boucle d'adaptation interrompue ; "
+                            f"Watcher toujours actif : {type(error).__name__}: {error}"
+                        )
+                        notify_windows(
+                            "Atlas Coach",
+                            "Séance analysée, adaptation à recalculer ultérieurement.",
+                        )
+                        continue
 
                     if fusion.returncode != 0:
                         write_log(

@@ -108,6 +108,10 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
             result.analysis_confidence_score,
             0,
         )
+        self.assertTrue(any(
+            "puissance" in text and "cadence" in text
+            for text in result.interpretation
+        ))
 
 
     def test_observes_sv1_and_sv2_transitions(
@@ -438,6 +442,68 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
             self.analyzer._dominant_type(blocks),
             "sprint_acceleration",
         )
+
+    def test_classifies_main_running_session_families(self) -> None:
+        def block(block_type: str, duration: float = 600) -> SessionBlock:
+            return SessionBlock(
+                block_index=1,
+                block_type=block_type,
+                start_offset_seconds=0,
+                end_offset_seconds=duration,
+                duration_seconds=duration,
+                distance_meters=2000,
+            )
+
+        activity = LongitudinalActivity(
+            atlas_id="garmin:families",
+            start_time=self.start,
+            activity_type="running",
+            distance_km=8,
+            duration_minutes=50,
+        )
+        cases = [
+            ("z1", "recovery"),
+            ("z2", "endurance"),
+            ("z3", "tempo"),
+            ("sv2", "threshold"),
+            ("vma", "vma"),
+        ]
+        for block_type, expected in cases:
+            with self.subTest(block_type=block_type):
+                self.assertEqual(
+                    self.analyzer._session_type(
+                        activity, [block(block_type)], block_type
+                    ),
+                    expected,
+                )
+
+        long_activity = LongitudinalActivity(
+            atlas_id="garmin:long-run",
+            start_time=self.start,
+            activity_type="running",
+            distance_km=16,
+            duration_minutes=95,
+        )
+        self.assertEqual(
+            self.analyzer._session_type(
+                long_activity, [block("z2", 5700)], "z2"
+            ),
+            "long_run",
+        )
+
+    def test_marks_easy_boundaries_around_intensity(self) -> None:
+        blocks = [
+            SessionBlock(1, "z1", 0, 900, 900, 2200),
+            SessionBlock(2, "sv2", 900, 1380, 480, 1700),
+            SessionBlock(3, "recovery", 1380, 1500, 120, 250),
+            SessionBlock(4, "sv2", 1500, 1980, 480, 1700),
+            SessionBlock(5, "z1", 1980, 2580, 600, 1400),
+        ]
+
+        result = self.analyzer._mark_session_boundaries(blocks)
+
+        self.assertEqual(result[0].block_type, "warm_up")
+        self.assertEqual(result[-1].block_type, "cool_down")
 
     def test_uses_automatic_laps_before_raw_points(
         self,

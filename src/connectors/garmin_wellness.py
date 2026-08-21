@@ -190,7 +190,7 @@ class GarminWellnessConnector:
         self._write_cache(
             cache_file,
             {
-                "version": 1,
+                "version": 2,
                 "archives": current_archives,
             },
         )
@@ -221,7 +221,7 @@ class GarminWellnessConnector:
 
         if (
             not isinstance(payload, dict)
-            or payload.get("version") != 1
+            or payload.get("version") != 2
             or not isinstance(payload.get("archives"), dict)
         ):
             return {}
@@ -413,7 +413,7 @@ class GarminWellnessConnector:
                     total += minutes
                     found = True
                     break
-        if found and total > 0:
+        if found and 1 <= total <= 1200:
             return total
 
         # Certains exports Garmin décrivent seulement les changements
@@ -445,7 +445,7 @@ class GarminWellnessConnector:
             if "awake" not in name and "éveil" not in name:
                 sleeping_seconds += (end - start).total_seconds()
         minutes = round(sleeping_seconds / 60)
-        return minutes if 1 <= minutes <= 1440 else None
+        return minutes if 1 <= minutes <= 1200 else None
 
     @staticmethod
     def _as_datetime(value: Any) -> Optional[datetime]:
@@ -473,7 +473,7 @@ class GarminWellnessConnector:
         if duration > 1440:
             duration /= 60
         minutes = round(duration)
-        return minutes if 1 <= minutes <= 1440 else None
+        return minutes if 1 <= minutes <= 1200 else None
 
     @staticmethod
     def _archive_day(path: Path) -> date:

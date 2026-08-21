@@ -1,0 +1,99 @@
+.atlas-conversation.atlas-adaptation {
+  width: min(720px, 100%);
+}
+
+.atlas-guided-form label > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #d9e8f2;
+  font-weight: 700;
+}
+
+.atlas-guided-form label > span:first-child b {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: #061a2c;
+  background: #55dcec;
+  font-size: 11px;
+}
+
+.atlas-guided-details {
+  padding: 12px 14px;
+  border: 1px solid rgba(56, 209, 255, .2);
+  border-radius: 13px;
+  background: rgba(3, 19, 33, .55);
+}
+
+.atlas-guided-details summary,
+.atlas-knowledge summary {
+  color: #c8dbea;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.atlas-guided-details[open] summary {
+  margin-bottom: 12px;
+}
+
+.atlas-microphone-help {
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 178, 79, .45);
+  border-radius: 12px;
+  background: rgba(106, 65, 14, .16);
+}
+
+.atlas-microphone-help p {
+  margin: 5px 0 0;
+  color: #c9d7e0;
+  line-height: 1.45;
+}
+
+.atlas-knowledge {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(183, 156, 255, .28);
+  border-radius: 13px;
+  background: rgba(68, 48, 112, .12);
+}
+
+.atlas-knowledge > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.atlas-knowledge ul {
+  margin: 7px 0 0;
+  padding-left: 18px;
+  color: #9db3c5;
+  line-height: 1.45;
+}
+
+@media (max-width: 700px) {
+  .atlas-conversation-backdrop {
+    padding: 8px;
+  }
+
+  .atlas-conversation.atlas-adaptation {
+    max-height: calc(100dvh - 16px);
+    border-radius: 18px;
+  }
+
+  .atlas-conversation header strong {
+    font-size: 21px;
+  }
+
+  .atlas-conversation-orb {
+    width: 44px;
+    height: 44px;
+  }
+
+  .atlas-knowledge > div {
+    grid-template-columns: 1fr;
+  }
+}

@@ -135,6 +135,7 @@ class WorkoutExecutionSummary:
     planned_repetition_count: int = 0
     completed_repetition_count: int = 0
     target_compliance_score: int = 0
+    recovery_compliance_score: Optional[int] = None
     execution_score: int = 0
     countdown_tolerance_seconds: int = 5
     observations: List[str] = field(
@@ -161,6 +162,7 @@ class DetailedSessionAnalysis:
     ] = field(default_factory=list)
 
     dominant_work_type: str = "unknown"
+    session_type: str = "unknown"
     work_duration_seconds: float = 0.0
     recovery_duration_seconds: float = 0.0
     work_distance_meters: float = 0.0

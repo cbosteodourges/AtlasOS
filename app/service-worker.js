@@ -1,11 +1,17 @@
 "use strict";
 
-const CACHE_NAME = "atlas-shell-v1";
+const CACHE_NAME = "atlas-shell-v2";
 const APP_SHELL = [
   "./atlas-cockpit.html",
   "./performance-running.html",
   "./atlas-hub.html",
-  "./manifest.webmanifest"
+  "./atlas-metric-history.html",
+  "./offline.html",
+  "./manifest.webmanifest",
+  "./assets/atlas-logo-full.jpg",
+  "./assets/atlas-os-icon-avatar-master.png",
+  "./css/atlas-responsive.css",
+  "./js/atlas-pwa.js"
 ];
 
 self.addEventListener("install", event => {
@@ -26,15 +32,36 @@ self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request).then(
+          cached => cached || caches.match("./offline.html")
+        ))
+    );
+    return;
+  }
   event.respondWith(
-    fetch(event.request)
-      .then(response => {
+    caches.match(event.request).then(cached => {
+      const refreshed = fetch(event.request).then(response => {
         if (response.ok) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
         }
         return response;
-      })
-      .catch(() => caches.match(event.request).then(cached => cached || caches.match("./atlas-cockpit.html")))
+      });
+      if (cached) {
+        event.waitUntil(refreshed.catch(() => undefined));
+        return cached;
+      }
+      return refreshed;
+    })
   );
 });

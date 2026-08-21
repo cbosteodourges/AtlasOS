@@ -11,28 +11,28 @@
         <span class="atlas-conversation-orb">↻</span>
         <div>
           <strong id="atlasAdaptationTitle">Adapter ma séance</strong>
-          <small>Décision locale, calculée et explicable</small>
+          <small>Moteur local Atlas · aucune IA distante sollicitée</small>
         </div>
       </header>
-      <p class="atlas-conversation-intro">Confirmez votre état du jour. Atlas croise votre ressenti, vos données Wellness et votre programme.</p>
+      <p class="atlas-conversation-intro">Quatre réponses suffisent. Atlas les croise uniquement avec les données présentes sur votre ordinateur.</p>
       <form class="atlas-guided-form">
         <div class="atlas-guided-grid">
-          <label>Énergie
+          <label><span><b>1</b> Quelle est votre énergie ?</span>
             <select data-feeling="energy" required>
               <option value="2">Très basse</option><option value="4">Basse</option><option value="6" selected>Moyenne</option><option value="8">Bonne</option><option value="10">Excellente</option>
             </select>
           </label>
-          <label>Fatigue
+          <label><span><b>2</b> Quelle fatigue ressentez-vous ?</span>
             <select data-feeling="fatigue" required>
               <option value="0">Aucune</option><option value="3" selected>Légère</option><option value="6">Modérée</option><option value="8">Forte</option><option value="10">Très forte</option>
             </select>
           </label>
-          <label>Douleur
+          <label><span><b>3</b> Ressentez-vous une douleur ?</span>
             <select data-feeling="pain" required>
               <option value="0" selected>Aucune</option><option value="2">Légère</option><option value="5">Modérée</option><option value="8">Importante</option><option value="10">Très importante</option>
             </select>
           </label>
-          <label>Séance envisagée
+          <label><span><b>4</b> Que souhaitez-vous faire ?</span>
             <select name="preference" required>
               <option value="planned">Suivre le programme</option>
               <option value="endurance">Endurance facile</option>
@@ -43,18 +43,26 @@
             </select>
           </label>
         </div>
-        <label class="atlas-guided-note">Précision facultative
-          <span class="atlas-note-input">
-            <textarea name="note" maxlength="400" placeholder="Ex. jambes lourdes, douleur au tendon, nuit perturbée…"></textarea>
-            <button class="atlas-voice-button" type="button" aria-label="Dicter cette précision" title="Dicter cette précision">🎙</button>
-          </span>
-          <small class="atlas-voice-status" aria-live="polite">Vous pouvez écrire ou dicter votre ressenti.</small>
-        </label>
+        <details class="atlas-guided-details">
+          <summary>Ajouter une précision facultative</summary>
+          <label class="atlas-guided-note">Votre précision
+            <span class="atlas-note-input">
+              <textarea name="note" maxlength="400" placeholder="Ex. jambes lourdes, douleur au tendon, nuit perturbée…"></textarea>
+              <button class="atlas-voice-button" type="button" aria-label="Dicter cette précision" title="Dicter cette précision">🎙</button>
+            </span>
+            <small class="atlas-voice-status" aria-live="polite">Touchez le microphone puis acceptez l’autorisation affichée par le navigateur.</small>
+          </label>
+        </details>
+        <aside class="atlas-microphone-help" hidden>
+          <strong>Autoriser le microphone</strong>
+          <p>Dans Chrome, touchez le cadenas ou l’icône à gauche de l’adresse, ouvrez « Autorisations », puis choisissez « Microphone : Autoriser ».</p>
+        </aside>
         <button class="atlas-send-button" type="submit">Analyser mon état</button>
       </form>
       <section class="atlas-adaptation-result" hidden aria-live="polite">
         <div class="atlas-adaptation-summary"></div>
         <div class="atlas-adaptation-options"></div>
+        <details class="atlas-knowledge"><summary>Ce qu’Atlas sait — et ne sait pas</summary><div></div></details>
         <small>Atlas propose et explique. Votre programme n’est jamais modifié sans votre choix.</small>
       </section>
     </section>
@@ -69,17 +77,21 @@
   const note = form.elements.note;
   const voice = root.querySelector(".atlas-voice-button");
   const voiceStatus = root.querySelector(".atlas-voice-status");
+  const microphoneHelp = root.querySelector(".atlas-microphone-help");
+  const knowledgeRoot = root.querySelector(".atlas-knowledge div");
   let lastPayload = null;
 
   const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
   if (SpeechRecognition && window.isSecureContext) {
     const recognition = new SpeechRecognition();
+    let listening = false;
     recognition.lang = "fr-FR";
     recognition.interimResults = false;
     recognition.continuous = false;
 
     recognition.addEventListener("start", () => {
+      listening = true;
       voice.classList.add("is-listening");
       voice.textContent = "●";
       voiceStatus.textContent = "Je vous écoute…";
@@ -94,32 +106,54 @@
     });
     recognition.addEventListener("error", event => {
       const messages = {
-        "not-allowed": "Microphone refusé : autorisez-le dans les paramètres du site.",
+        "not-allowed": "Microphone refusé. Suivez les étapes affichées juste dessous.",
         "service-not-allowed": "Reconnaissance vocale indisponible dans Chrome.",
         "no-speech": "Aucune parole détectée. Réessayez en parlant après le signal.",
         "audio-capture": "Aucun microphone utilisable n’a été détecté."
       };
       voiceStatus.textContent =
         messages[event.error] || `Erreur du microphone : ${event.error}`;
+      if (["not-allowed", "service-not-allowed"].includes(event.error)) {
+        microphoneHelp.hidden = false;
+      }
     });
     recognition.addEventListener("end", () => {
+      listening = false;
       voice.classList.remove("is-listening");
       voice.textContent = "🎙";
     });
     voice.addEventListener("click", async () => {
+      if (listening) {
+        recognition.stop();
+        return;
+      }
       try {
-        await navigator.mediaDevices.getUserMedia({audio: true});
+        const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+        stream.getTracks().forEach(track => track.stop());
+        microphoneHelp.hidden = true;
         recognition.start();
       } catch (_error) {
-        voiceStatus.textContent =
-          "Microphone bloqué : cliquez sur l’icône à gauche de l’adresse puis choisissez Autoriser.";
+        voiceStatus.textContent = "Microphone bloqué. Autorisez-le dans les réglages du site, puis réessayez.";
+        microphoneHelp.hidden = false;
       }
     });
+    if (navigator.permissions?.query) {
+      navigator.permissions.query({name: "microphone"}).then(permission => {
+        microphoneHelp.hidden = permission.state !== "denied";
+        if (permission.state === "denied") {
+          voiceStatus.textContent = "Microphone actuellement bloqué pour ce site.";
+        }
+        permission.addEventListener?.("change", () => {
+          microphoneHelp.hidden = permission.state !== "denied";
+        });
+      }).catch(() => {});
+    }
   } else {
-    voice.disabled = true;
+    voice.addEventListener("click", () => note.focus());
+    voice.textContent = "⌨";
     voiceStatus.textContent = window.isSecureContext
-      ? "La dictée vocale n’est pas prise en charge par ce navigateur."
-      : "La dictée vocale nécessite localhost ou une connexion sécurisée.";
+      ? "Reconnaissance vocale indisponible : utilisez le microphone du clavier de votre téléphone."
+      : "Sur cette adresse locale non sécurisée, utilisez le microphone du clavier du téléphone.";
   }
 
   const post = async payload => {
@@ -174,6 +208,24 @@
       <div><strong>${data.assessment.title}</strong><p>${data.response}</p><small>${data.assessment.evidence.join(" · ")}</small></div>
     `;
     optionsRoot.replaceChildren();
+    knowledgeRoot.replaceChildren();
+    const knowledge = data.knowledge || {};
+    [
+      ["Atlas sait", knowledge.knows || []],
+      ["Atlas ne sait pas", knowledge.does_not_know || []]
+    ].forEach(([title, values]) => {
+      const section = document.createElement("section");
+      const heading = document.createElement("strong");
+      const list = document.createElement("ul");
+      heading.textContent = title;
+      values.forEach(value => {
+        const item = document.createElement("li");
+        item.textContent = value;
+        list.appendChild(item);
+      });
+      section.append(heading, list);
+      knowledgeRoot.appendChild(section);
+    });
     data.options.forEach(option => {
       const button = document.createElement("button");
       button.type = "button";
@@ -215,6 +267,7 @@
     root.hidden = false;
     document.body.style.overflow = "hidden";
     result.hidden = true;
+    knowledgeRoot.replaceChildren();
     setTimeout(() => form.querySelector("select")?.focus(), 0);
   };
   const close = () => {

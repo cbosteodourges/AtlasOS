@@ -23,6 +23,7 @@ from src.connectors import (  # noqa: E402
     GarminConnector,
 )
 from src.performance.cardiac_drift_analyzer import (
+    CardiacDriftAnalysis,
     CardiacDriftAnalyzer,
 )
 from src.performance import (  # noqa: E402
@@ -458,9 +459,24 @@ def build_record(
         profile,
     )
 
-    cardiac_drift = CardiacDriftAnalyzer().analyze(
-        longitudinal
-    )
+    if not analysis.data_integrity.heart_rate_reliable:
+        cardiac_drift = CardiacDriftAnalysis(
+            activity_id=longitudinal.atlas_id,
+            limitations=[
+                "Dérive cardiaque non calculée : fréquence cardiaque jugée non fiable."
+            ],
+        )
+    elif analysis.session_type not in {"recovery", "endurance", "long_run"}:
+        cardiac_drift = CardiacDriftAnalysis(
+            activity_id=longitudinal.atlas_id,
+            limitations=[
+                "Dérive cardiaque non calculée sur une séance intermittente ou intense."
+            ],
+        )
+    else:
+        cardiac_drift = CardiacDriftAnalyzer().analyze(
+            longitudinal
+        )
 
     candidates = loader.candidates_for_activity(
         workouts,

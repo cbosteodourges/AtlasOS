@@ -1,0 +1,112 @@
+/* Ajustements communs smartphone, tablette et écrans intermédiaires. */
+html { overflow-x: hidden; }
+img { max-width: 100%; }
+
+button, a, select, summary, input[type="range"] { touch-action: manipulation; }
+button, a, select, summary { -webkit-tap-highlight-color: rgba(56, 209, 255, .18); }
+button:focus-visible, a:focus-visible, select:focus-visible,
+summary:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 3px solid #55dcec;
+  outline-offset: 3px;
+}
+
+.analysis-benchmarks > *, .analysis-columns > *, .performance-context > *,
+.performance-context-grid > *, .longitudinal-evidence article, .calendar-day,
+.calendar-session, .report-cockpit-header > * { min-width: 0; }
+
+.analysis-columns li, .longitudinal-evidence strong,
+.longitudinal-evidence small, .performance-context dt,
+.performance-context dd, .calendar-session strong, .calendar-session small,
+.report-cockpit-header h2, .report-cockpit-header p { overflow-wrap: anywhere; }
+
+.calendar-session, .add-optional-session, .session-dialog-tabs button,
+.context-feeling-scale button, .atlas-send-button,
+.atlas-adaptation-options button, .atlas-main-nav a,
+.history-sidebar nav a, .periods button { min-height: 44px; }
+
+.calendar-session, .add-optional-session, .atlas-nav-item,
+.session-dialog-tabs button, .context-feeling-scale button,
+.atlas-adaptation-options button { cursor: pointer; }
+
+@media (min-width: 821px) and (max-width: 1180px) {
+  .analysis-benchmarks { grid-template-columns: repeat(2, minmax(230px, 1fr)); }
+  .analysis-columns,
+  .longitudinal-evidence > [data-longitudinal-conclusions] {
+    grid-template-columns: repeat(2, minmax(270px, 1fr));
+  }
+  .analysis-columns > :last-child { grid-column: 1 / -1; }
+}
+
+@media (max-width: 820px) {
+  body.has-atlas-global-nav {
+    padding-bottom: calc(74px + env(safe-area-inset-bottom));
+  }
+  .atlas-global-nav, .atlas-global-nav:hover, .atlas-global-nav.is-expanded {
+    height: calc(68px + env(safe-area-inset-bottom));
+    padding-bottom: calc(7px + env(safe-area-inset-bottom));
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .atlas-global-nav::-webkit-scrollbar { display: none; }
+  .atlas-global-nav .atlas-nav-item { min-width: 58px; min-height: 52px; }
+  .athlete-analysis-home, .performance-context, .longitudinal-evidence {
+    max-width: 100%;
+    overflow: hidden;
+  }
+  #atlasSessionDialog.atlas-session-dialog .session-tab-panel {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .history-sidebar nav {
+    padding-bottom: 3px;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  .history-sidebar nav::-webkit-scrollbar { display: none; }
+  .history-sidebar nav a { scroll-snap-align: start; }
+  .periods {
+    flex-wrap: nowrap;
+    padding-bottom: 5px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .periods::-webkit-scrollbar { display: none; }
+  .periods button { flex: 0 0 auto; }
+}
+
+@media (max-width: 700px) {
+  .analysis-benchmarks, .analysis-columns, .performance-context-grid,
+  .longitudinal-evidence > [data-longitudinal-conclusions] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .analysis-columns > :last-child { grid-column: auto; }
+  .analysis-benchmarks article, .analysis-columns article,
+  .performance-context-grid article, .longitudinal-evidence article { padding: 15px; }
+  .athlete-analysis-home > header, .report-cockpit-header { align-items: flex-start; }
+  .report-cockpit-header { flex-wrap: wrap; }
+  .report-mini-avatar { order: -1; margin-left: auto; }
+  .session-dialog-tabs button {
+    min-width: 0;
+    padding-inline: 8px !important;
+    white-space: normal;
+  }
+  .context-feeling-scale { gap: 2px; }
+  .context-feeling-scale button { padding-block: 6px; }
+  .canvas-wrap { height: min(330px, 54dvh); }
+  .summary-grid, .composition-grid { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+@media (max-width: 430px) {
+  .context-feeling-scale button > span { width: 38px; height: 38px; }
+  .context-feeling-scale small { max-width: 58px; line-height: 1.2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}

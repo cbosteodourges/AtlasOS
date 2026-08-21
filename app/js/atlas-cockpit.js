@@ -196,6 +196,25 @@
       renderList("[data-analysis-vigilance]", analysis.vigilance);
       renderList("[data-analysis-priorities]", analysis.priorities);
 
+      const longitudinal = analysis.longitudinal_report;
+      const conclusionsRoot = document.querySelector("[data-longitudinal-conclusions]");
+      if (conclusionsRoot) {
+        conclusionsRoot.replaceChildren();
+        (longitudinal?.conclusions || []).forEach(conclusion => {
+          const article = document.createElement("article");
+          article.innerHTML = `
+            <div><span>${conclusion.topic}</span><b>${conclusion.confidence}/100 de confiance</b></div>
+            <strong>${conclusion.conclusion}</strong>
+            <small>${conclusion.evidence}</small>
+          `;
+          conclusionsRoot.appendChild(article);
+        });
+        if (!conclusionsRoot.children.length) {
+          conclusionsRoot.textContent = "Historique encore insuffisant pour formuler une conclusion argumentée.";
+        }
+      }
+      renderList("[data-longitudinal-missing]", longitudinal?.missing_data);
+
       const comparison = analysis.performance_comparison;
       setText(
         "[data-performance-message]",

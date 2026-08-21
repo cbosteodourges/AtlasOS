@@ -149,6 +149,7 @@ def display_analysis(
         "Travail dominant : "
         f"{analysis.dominant_work_type}"
     )
+    print(f"Nature de séance : {analysis.session_type}")
     print(
         "Charge physiologique : "
         f"{analysis.physiological_load_score}/100"

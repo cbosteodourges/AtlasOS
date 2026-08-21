@@ -3,6 +3,7 @@ ATLAS OS — serveur web local avec passerelle Atlas Brain.
 """
 
 from dataclasses import asdict, is_dataclass
+from collections import defaultdict
 from datetime import date, datetime, timedelta
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -172,6 +173,7 @@ def execution_summary(item):
                     "duration_compliance_score",
                     "distance_compliance_score",
                     "target_compliance_score",
+                    "recovery_compliance_score",
                     "physiological_load_score",
                     "biomechanical_load_score",
                     "reasons",
@@ -186,6 +188,7 @@ def execution_summary(item):
                     "origin_reasons",
                     "execution_score",
                     "target_compliance_score",
+                    "recovery_compliance_score",
                     "planned_step_count",
                     "executed_block_count",
                     "planned_repetition_count",
@@ -239,6 +242,7 @@ def execution_summary(item):
                 (
                     "analysis_confidence_score",
                     "dominant_work_type",
+                    "session_type",
                     "physiological_load_score",
                     "biomechanical_load_score",
                     "work_duration_seconds",
@@ -690,7 +694,12 @@ def _sleep_duration_minutes(snapshot):
         found = True
     return total if found and total > 0 else None
 
-def _atlas_recovery_index(snapshot):
+def _atlas_recovery_index(
+    snapshot,
+    *,
+    training_load=None,
+    training_load_baseline=None,
+):
     """Indice Atlas transparent, normalisé uniquement sur les données disponibles."""
     components = []
 
@@ -716,6 +725,16 @@ def _atlas_recovery_index(snapshot):
     if stress is not None:
         components.append(("Stress nocturne", max(0, 100 - stress * 2), 10))
 
+    load = _wellness_number(training_load)
+    load_baseline = _wellness_number(training_load_baseline)
+    if load is not None:
+        if load_baseline is not None and load_baseline > 0:
+            load_ratio = load / load_baseline
+            load_score = max(0, min(100, 100 - load_ratio * 35))
+        else:
+            load_score = 65
+        components.append(("Charge sur 7 jours", load_score, 10))
+
     if snapshot.data_quality_score is not None:
         components.append(("Qualité des données", snapshot.data_quality_score, 5))
 
@@ -732,6 +751,45 @@ def _atlas_recovery_index(snapshot):
             for label, value, weight in components
         ],
     }
+
+
+def _complete_wellness_calendar(history, end_day=None):
+    """Conserve explicitement les jours absents entre deux mesures."""
+    if not history:
+        return []
+    by_day = {str(item.get("day")): item for item in history if item.get("day")}
+    start = date.fromisoformat(min(by_day))
+    end = max(
+        date.fromisoformat(max(by_day)),
+        end_day or date.fromisoformat(max(by_day)),
+    )
+    complete = []
+    current = start
+    while current <= end:
+        key = current.isoformat()
+        if key in by_day:
+            item = dict(by_day[key])
+            item["data_present"] = True
+            complete.append(item)
+        else:
+            complete.append({
+                "day": key,
+                "data_present": False,
+                "source": None,
+                "missing_reason": "Aucune archive Garmin Wellness pour cette date.",
+            })
+        current += timedelta(days=1)
+    return complete
+
+
+def _personal_baseline(history, index, field, days=28):
+    """Calcule une référence antérieure sans utiliser la valeur du jour."""
+    values = [
+        _wellness_number(item.get(field))
+        for item in history[max(0, index - days):index]
+    ]
+    valid = [value for value in values if value is not None]
+    return round(sum(valid) / len(valid), 1) if len(valid) >= 3 else None
 
 
 def _daily_training_loads():
@@ -1117,6 +1175,7 @@ def _athlete_analysis(history):
             ),
         },
         "performance_comparison": _performance_comparison(history),
+        "longitudinal_report": _longitudinal_training_report(history),
         "benchmarks": {
             "hrv_28d": hrv_mean,
             "sleep_score_28d": sleep_mean,
@@ -1129,6 +1188,220 @@ def _athlete_analysis(history):
             "Analyse d’aide à l’entraînement, non diagnostique. Une douleur persistante "
             "ou un symptôme inhabituel nécessite un avis professionnel."
         ),
+    }
+
+
+def _longitudinal_training_report(wellness_history):
+    """Argumente le profil avec les activités réellement analysées."""
+    executions = load_execution_summaries()
+    contexts = load_workout_contexts()
+    conclusions = []
+    missing = []
+
+    recent_wellness = wellness_history[-7:]
+    previous_wellness = wellness_history[-28:-7]
+
+    def wellness_values(items, field):
+        return [float(item[field]) for item in items if item.get(field) is not None]
+
+    def add_wellness_trend(topic, field, unit, favorable_up=True):
+        recent_values = wellness_values(recent_wellness, field)
+        previous_values = wellness_values(previous_wellness, field)
+        if len(recent_values) < 3 or len(previous_values) < 3:
+            missing.append(
+                f"Données {topic.lower()} insuffisantes pour comparer 7 jours à la référence antérieure."
+            )
+            return
+        recent_mean = sum(recent_values) / len(recent_values)
+        previous_mean = sum(previous_values) / len(previous_values)
+        delta = recent_mean - previous_mean
+        favorable = delta >= 0 if favorable_up else delta <= 0
+        stable_margin = 1.0 if field != "hrv_last_night_ms" else 2.0
+        if abs(delta) <= stable_margin:
+            conclusion = f"{topic} globalement stable sur les 7 derniers jours disponibles."
+        elif favorable:
+            conclusion = f"{topic} évolue favorablement sur les 7 derniers jours disponibles."
+        else:
+            conclusion = f"{topic} évolue défavorablement et mérite une surveillance."
+        quality = wellness_values(recent_wellness + previous_wellness, "data_quality_score")
+        quality_mean = sum(quality) / len(quality) if quality else 0
+        confidence = min(95, round(35 + (len(recent_values) + len(previous_values)) * 2 + quality_mean * 0.25))
+        conclusions.append({
+            "topic": topic,
+            "conclusion": conclusion,
+            "confidence": confidence,
+            "evidence": (
+                f"Moyenne 7 j {recent_mean:.1f}{unit}, référence précédente "
+                f"{previous_mean:.1f}{unit}, écart {delta:+.1f}{unit}."
+            ),
+        })
+
+    add_wellness_trend("VFC", "hrv_last_night_ms", " ms", favorable_up=True)
+    add_wellness_trend("Sommeil", "sleep_score", "/100", favorable_up=True)
+    add_wellness_trend(
+        "Fréquence cardiaque au repos",
+        "resting_heart_rate_bpm",
+        " bpm",
+        favorable_up=False,
+    )
+    add_wellness_trend(
+        "Récupération",
+        "sleep_recovery_score",
+        "/100",
+        favorable_up=True,
+    )
+
+    running = [
+        item for item in executions
+        if (item.get("activity") or {}).get("sport") in {
+            "running", "run", "road_running", "trail"
+        }
+    ]
+    weeks = defaultdict(lambda: {"distance": 0.0, "sessions": 0})
+    for item in running:
+        try:
+            started = datetime.fromisoformat(str(item.get("start_time")).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            continue
+        activity = item.get("activity") or {}
+        key = started.isocalendar()[:2]
+        weeks[key]["distance"] += float(activity.get("distance_km") or 0)
+        weeks[key]["sessions"] += 1
+
+    if weeks:
+        values = list(weeks.values())
+        distances = [item["distance"] for item in values]
+        sessions = [item["sessions"] for item in values]
+        average_distance = sum(distances) / len(distances)
+        average_sessions = sum(sessions) / len(sessions)
+        confidence = min(95, 45 + len(running) * 3 + min(20, len(weeks) * 2))
+        conclusions.append({
+            "topic": "Volume et fréquence",
+            "conclusion": (
+                f"{average_distance:.1f} km et {average_sessions:.1f} séances de course "
+                f"par semaine sur {len(weeks)} semaines observées."
+            ),
+            "confidence": confidence,
+            "evidence": f"{len(running)} activités de course analysées.",
+        })
+        if len(distances) >= 4 and average_distance > 0:
+            spread = (max(distances) - min(distances)) / average_distance * 100
+            label = "régulier" if spread <= 35 else "variable"
+            conclusions.append({
+                "topic": "Régularité",
+                "conclusion": f"Volume hebdomadaire {label} sur la période analysée.",
+                "confidence": min(90, 50 + len(weeks) * 4),
+                "evidence": f"Amplitude observée : {spread:.0f} % de la moyenne.",
+            })
+        if len(distances) >= 2 and distances[-2] > 0:
+            change = (distances[-1] / distances[-2] - 1) * 100
+            conclusion = (
+                "Hausse de charge hebdomadaire à surveiller."
+                if change > 20 else "Variation récente du volume sans hausse supérieure à 20 %."
+            )
+            conclusions.append({
+                "topic": "Risque lié à la charge",
+                "conclusion": conclusion,
+                "confidence": min(90, 55 + len(weeks) * 3),
+                "evidence": f"Variation entre les deux dernières semaines : {change:+.1f} %.",
+            })
+    else:
+        missing.append("Historique d'activités analysées insuffisant pour calculer volume et fréquence.")
+
+    valid_efficiency = []
+    for item in running:
+        activity = item.get("activity") or {}
+        speed = activity.get("average_speed_kmh")
+        heart_rate = activity.get("average_heart_rate_bpm")
+        integrity = (item.get("analysis") or {}).get("data_integrity") or {}
+        if speed and heart_rate and integrity.get("heart_rate_reliable", True):
+            valid_efficiency.append(float(speed) / float(heart_rate) * 100)
+    if len(valid_efficiency) >= 4:
+        split = max(2, len(valid_efficiency) // 2)
+        first = sum(valid_efficiency[:split]) / len(valid_efficiency[:split])
+        second_values = valid_efficiency[split:]
+        if second_values:
+            second = sum(second_values) / len(second_values)
+            change = (second / first - 1) * 100
+            conclusions.append({
+                "topic": "Relation allure / fréquence cardiaque",
+                "conclusion": "Efficacité aérobie en progression." if change > 2 else (
+                    "Efficacité aérobie en retrait." if change < -2 else "Efficacité aérobie globalement stable."
+                ),
+                "confidence": min(90, 45 + len(valid_efficiency) * 4),
+                "evidence": f"Évolution de la vitesse par battement : {change:+.1f} %.",
+            })
+    else:
+        missing.append("Au moins quatre séances avec allure et FC fiables sont nécessaires pour la tendance allure/FC.")
+
+    threshold_observations = []
+    for item in executions:
+        threshold_observations.extend(
+            (item.get("analysis") or {}).get("threshold_observations") or []
+        )
+    if threshold_observations:
+        confidence = round(sum(
+            float(item.get("confidence_score") or 0) for item in threshold_observations
+        ) / len(threshold_observations))
+        conclusions.append({
+            "topic": "Seuils",
+            "conclusion": "Des observations de terrain SV1/SV2 sont disponibles, mais restent à confirmer longitudinalement.",
+            "confidence": confidence,
+            "evidence": f"{len(threshold_observations)} observation(s) détectée(s).",
+        })
+    else:
+        missing.append("Aucune observation FIT suffisamment structurée pour confirmer SV1 ou SV2.")
+
+    intense_ids = {
+        str(item.get("workout_match", {}).get("workout_id") or "")
+        for item in executions
+        if (item.get("analysis") or {}).get("session_type") in {"threshold", "vma", "tempo"}
+    }
+    intense_contexts = [
+        item for item in contexts if str(item.get("workout_id") or "") in intense_ids
+    ]
+    if intense_contexts:
+        fatigue = [float(item["fatigue_0_to_10"]) for item in intense_contexts if item.get("fatigue_0_to_10") is not None]
+        pain = [float(item["pain_0_to_10"]) for item in intense_contexts if item.get("pain_0_to_10") is not None]
+        if fatigue or pain:
+            mean_fatigue = sum(fatigue) / len(fatigue) if fatigue else None
+            mean_pain = sum(pain) / len(pain) if pain else None
+            alert = (mean_fatigue is not None and mean_fatigue >= 6) or (mean_pain is not None and mean_pain >= 4)
+            evidence = []
+            if mean_fatigue is not None:
+                evidence.append(f"fatigue {mean_fatigue:.1f}/10")
+            if mean_pain is not None:
+                evidence.append(f"douleur {mean_pain:.1f}/10")
+            conclusions.append({
+                "topic": "Tolérance aux séances intenses",
+                "conclusion": "Tolérance à surveiller avant de progresser." if alert else "Tolérance déclarée compatible avec le maintien prudent de l'intensité.",
+                "confidence": min(90, 45 + len(intense_contexts) * 8),
+                "evidence": f"{len(intense_contexts)} retour(s) : " + ", ".join(evidence) + ".",
+            })
+    else:
+        missing.append("Ressentis post-séance insuffisants pour conclure sur la tolérance à l'intensité.")
+
+    pain_contexts = [
+        item for item in contexts if float(item.get("pain_0_to_10") or 0) >= 4
+    ]
+    if len(pain_contexts) >= 2:
+        conclusions.append({
+            "topic": "Douleurs récurrentes",
+            "conclusion": "Douleur significative déclarée à plusieurs reprises ; progression à suspendre jusqu'à clarification.",
+            "confidence": min(95, 55 + len(pain_contexts) * 10),
+            "evidence": f"{len(pain_contexts)} déclarations avec douleur ≥ 4/10.",
+        })
+
+    if not any(item.get("vo2_max") is not None for item in wellness_history):
+        missing.append("VO₂max longitudinal non disponible dans les instantanés Wellness actuels.")
+
+    return {
+        "activity_count": len(executions),
+        "running_activity_count": len(running),
+        "wellness_day_count": len(wellness_history),
+        "conclusions": conclusions,
+        "missing_data": missing,
+        "notice": "Chaque conclusion indique ses preuves et sa confiance ; les données absentes restent explicitement absentes.",
     }
 
 def load_wellness_history(refresh_latest=True):
@@ -1177,11 +1450,31 @@ def load_wellness_history(refresh_latest=True):
 
     training_loads = _daily_training_loads()
     history = []
-    for snapshot in snapshots:
-        atlas_index = _atlas_recovery_index(snapshot)
+    for index, snapshot in enumerate(snapshots):
         day = snapshot.day.isoformat()
-        history.append({
+        recent_load_values = [
+            value for previous_day, value in training_loads.items()
+            if 0 <= (snapshot.day - date.fromisoformat(previous_day)).days <= 6
+            and value is not None
+        ]
+        baseline_load_values = [
+            value for previous_day, value in training_loads.items()
+            if 7 <= (snapshot.day - date.fromisoformat(previous_day)).days <= 34
+            and value is not None
+        ]
+        recent_load = round(sum(recent_load_values), 1) if recent_load_values else None
+        load_baseline = (
+            round(sum(baseline_load_values) / 4, 1)
+            if len(baseline_load_values) >= 3 else None
+        )
+        atlas_index = _atlas_recovery_index(
+            snapshot,
+            training_load=recent_load,
+            training_load_baseline=load_baseline,
+        )
+        item = {
             "day": day,
+            "source": snapshot.source,
             "atlas_index": atlas_index["score"],
             "atlas_index_components": atlas_index["components"],
             "sleep_duration_minutes": _sleep_duration_minutes(snapshot),
@@ -1196,14 +1489,46 @@ def load_wellness_history(refresh_latest=True):
             "resting_heart_rate_bpm": snapshot.resting_heart_rate_bpm,
             "sleep_average_stress": snapshot.sleep_average_stress,
             "training_load": training_loads.get(day),
+            "training_load_7d": recent_load,
+            "training_load_baseline": load_baseline,
             "data_quality_score": snapshot.data_quality_score,
-        })
+        }
+        history.append(item)
+
+    for index, item in enumerate(history):
+        item["atlas_index_baseline"] = _personal_baseline(
+            history, index, "atlas_index"
+        )
+        item["sleep_score_baseline"] = _personal_baseline(
+            history, index, "sleep_score"
+        )
+        item["sleep_duration_baseline_minutes"] = _personal_baseline(
+            history, index, "sleep_duration_minutes"
+        )
+        item["sleep_stress_baseline"] = _personal_baseline(
+            history, index, "sleep_average_stress"
+        )
+        item["sleep_recovery_baseline"] = _personal_baseline(
+            history, index, "sleep_recovery_score"
+        )
+        lower = _wellness_number(item.get("hrv_baseline_lower_ms"))
+        upper = _wellness_number(item.get("hrv_baseline_upper_ms"))
+        item["hrv_personal_baseline_ms"] = (
+            round((lower + upper) / 2, 1)
+            if lower is not None and upper is not None else
+            _personal_baseline(history, index, "hrv_last_night_ms")
+        )
+    complete_history = _complete_wellness_calendar(
+        history,
+        end_day=date.today(),
+    )
     return {
         "ok": True,
         "count": len(history),
+        "calendar_day_count": len(complete_history),
         "source_status": source_status,
         "latest": history[-1] if history else None,
-        "history": history,
+        "history": complete_history,
         "program_progress": _program_progress(),
         "athlete_analysis": _athlete_analysis(history),
         "index_explanation": {
@@ -1211,7 +1536,7 @@ def load_wellness_history(refresh_latest=True):
             "summary": (
                 "Synthèse quotidienne sur 100 de la récupération du sommeil, "
                 "du sommeil global, de la VFC par rapport à votre référence, "
-                "du stress nocturne et de la qualité des données."
+                "du stress nocturne, de la charge récente et de la qualité des données."
             ),
             "warning": (
                 "Cet indice guide l'entraînement ; il ne constitue pas "
@@ -1235,10 +1560,16 @@ def atlas_conversation(payload):
     if len(note) > 400:
         raise ValueError("La précision est limitée à 400 caractères.")
 
+    knowledge = {
+        "knows": ["Votre ressenti déclaré dans cette fenêtre."],
+        "does_not_know": [],
+        "local": True,
+    }
     try:
-        wellness = load_wellness_history(
+        wellness_payload = load_wellness_history(
             refresh_latest=False
-        ).get("latest")
+        )
+        wellness = wellness_payload.get("latest")
     except (OSError, ValueError, json.JSONDecodeError):
         wellness = None
 
@@ -1258,25 +1589,72 @@ def atlas_conversation(payload):
     for label, value in (("énergie", energy), ("fatigue", fatigue), ("douleur", pain)):
         if value is None or not 0 <= value <= 10:
             raise ValueError(f"Le score {label} doit être compris entre 0 et 10.")
-    atlas_index = numeric(wellness or {}, "atlas_index", 60)
+    wellness_fresh = False
+    if wellness and wellness.get("day"):
+        try:
+            wellness_age = (date.today() - date.fromisoformat(str(wellness["day"])[:10])).days
+            wellness_fresh = wellness_age <= 2
+        except ValueError:
+            wellness_age = None
+    else:
+        wellness_age = None
+
+    atlas_index = numeric(wellness or {}, "atlas_index") if wellness_fresh else None
     recovery = numeric(wellness or {}, "sleep_recovery_score")
     sleep_score = numeric(wellness or {}, "sleep_score")
     hrv = numeric(wellness or {}, "hrv_last_night_ms")
     hrv_week = numeric(wellness or {}, "hrv_weekly_average_ms")
 
-    score = atlas_index
-    reasons = [f"Indice Atlas {round(atlas_index)}/100"]
-    if recovery is not None:
+    score = atlas_index if atlas_index is not None else 70
+    reasons = []
+    if atlas_index is not None:
+        reasons.append(f"Indice Atlas {round(atlas_index)}/100")
+        knowledge["knows"].append(
+            f"Les données Garmin Wellness du {wellness.get('day')}."
+        )
+    else:
+        knowledge["does_not_know"].append(
+            "Votre disponibilité physiologique actuelle : les données Wellness sont absentes ou datent de plus de deux jours."
+        )
+        reasons.append("Décision principalement fondée sur le ressenti déclaré")
+    if recovery is not None and wellness_fresh:
         reasons.append(f"Récupération {round(recovery)}/100")
-    if sleep_score is not None:
+    if sleep_score is not None and wellness_fresh:
         reasons.append(f"Sommeil {round(sleep_score)}/100")
-    if hrv is not None:
+    if hrv is not None and wellness_fresh:
         hrv_reason = f"VFC {round(hrv)} ms"
         if hrv_week is not None:
             hrv_reason += f" (référence 7 j : {round(hrv_week)} ms)"
             if hrv < hrv_week * 0.9:
                 score -= 10
         reasons.append(hrv_reason)
+
+    try:
+        previous_contexts = load_workout_contexts()
+    except (OSError, json.JSONDecodeError):
+        previous_contexts = []
+    if previous_contexts:
+        latest_context = previous_contexts[-1]
+        latest_fatigue = numeric(latest_context, "fatigue_0_to_10")
+        latest_pain = numeric(latest_context, "pain_0_to_10")
+        knowledge["knows"].append(
+            "Le dernier ressenti post-séance enregistré dans Atlas."
+        )
+        if latest_fatigue is not None and latest_fatigue >= 6:
+            score -= 5
+            reasons.append(f"Dernière fatigue post-séance {latest_fatigue:.0f}/10")
+        if latest_pain is not None and latest_pain >= 4:
+            score -= 10
+            reasons.append(f"Dernière douleur post-séance {latest_pain:.0f}/10")
+    else:
+        knowledge["does_not_know"].append(
+            "Votre réponse à la dernière séance : aucun ressenti post-séance n’est enregistré."
+        )
+
+    if next_workout:
+        knowledge["knows"].append("La prochaine séance inscrite au programme Atlas.")
+    else:
+        knowledge["does_not_know"].append("La prochaine séance : aucun programme exploitable n’est chargé.")
 
     if energy <= 4:
         score -= 10
@@ -1386,6 +1764,7 @@ def atlas_conversation(payload):
         "note": note or None,
         "workout": next_workout or None,
         "selected_option": selected_option or None,
+        "knowledge": knowledge,
     }
 
     if selected_option:
@@ -1441,6 +1820,7 @@ def atlas_conversation(payload):
         "mode": "Moteur Atlas local et explicable",
         "assessment": assessment,
         "options": options,
+        "knowledge": knowledge,
     }
 
 class AtlasRequestHandler(SimpleHTTPRequestHandler):

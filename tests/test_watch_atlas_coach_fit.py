@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts.watch_atlas_coach_fit import (
+    changed_fit_paths,
     fit_snapshot,
     imported_count,
     run_feedback_cycle,
@@ -66,6 +67,18 @@ class AtlasCoachFitWatcherTests(unittest.TestCase):
             missing = Path(directory) / "missing"
 
             self.assertEqual(fit_snapshot(missing), {})
+
+    def test_incomplete_file_is_retried_without_signature_change(self) -> None:
+        path = Path("activity.fit")
+        signature = (1024, 123456)
+
+        changed = changed_fit_paths(
+            {path: signature},
+            {path: signature},
+            {path},
+        )
+
+        self.assertEqual(changed, [path])
 
 
     @patch("scripts.watch_atlas_coach_fit.subprocess.run")
