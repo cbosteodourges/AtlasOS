@@ -6473,3 +6473,230 @@ body[data-coach-section]
   #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-4 { height: 69px; }
   #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-5 { height: 74px; }
 }
+
+/* Fiche séance resserrée et auto-évaluation tactile */
+#atlasSessionDialog.atlas-session-dialog {
+  width: min(1080px, calc(100vw - 72px)) !important;
+  max-width: 1080px !important;
+}
+
+#atlasSessionDialog.atlas-session-dialog [data-session-panel="report"] .execution-report {
+  max-width: 780px;
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .dialog-session-header {
+  grid-template-columns: minmax(0, 1fr) 112px;
+}
+
+.session-mini-avatar {
+  width: 112px;
+  height: 124px;
+}
+
+.atlas-session-dialog .context-story {
+  padding: 22px !important;
+  border-left: 0 !important;
+  background: rgba(7, 20, 33, .82) !important;
+}
+
+.atlas-session-dialog .context-story > p {
+  display: none;
+}
+
+.atlas-session-dialog .declared-context-zone {
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.atlas-session-dialog .declared-context-reading {
+  padding: 11px 14px;
+  border: 1px solid rgba(90, 207, 255, .16);
+  border-left: 3px solid #5acfff;
+  border-radius: 10px;
+  background: rgba(53, 204, 255, .045);
+}
+
+.atlas-session-dialog .declared-context-reading p {
+  line-height: 1.45;
+}
+
+.atlas-session-dialog .declared-context-reading .context-interpretation {
+  display: none;
+}
+
+.atlas-session-dialog .workout-context-form {
+  gap: 14px;
+  padding: 18px;
+  border-color: rgba(90, 207, 255, .2);
+  border-radius: 14px;
+  background: #091624;
+}
+
+.context-form-heading > span {
+  color: #5acfff;
+  font-size: .7rem;
+  font-weight: 850;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+.context-form-heading h4 {
+  margin: 5px 0 0;
+  color: #fff;
+  font-size: 1.05rem;
+}
+
+.context-feeling-scale {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.context-feeling-scale label {
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+  cursor: pointer;
+}
+
+.context-feeling-scale input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.context-feeling-scale label > span {
+  display: grid;
+  width: 50px;
+  height: 50px;
+  place-items: center;
+  border: 2px solid rgba(90, 207, 255, .18);
+  border-radius: 50%;
+  background: rgba(36, 119, 190, .36);
+  filter: grayscale(.7);
+  font-size: 1.55rem;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+
+.context-feeling-scale input:checked + span {
+  border-color: #fff;
+  background: #318fde;
+  box-shadow: 0 0 0 4px rgba(49, 143, 222, .2);
+  filter: none;
+  transform: translateY(-2px) scale(1.05);
+}
+
+.context-feeling-scale small {
+  color: #a9bbc8;
+  font-size: .65rem;
+  text-align: center;
+}
+
+.context-range-card {
+  display: grid;
+  gap: 8px;
+  padding: 11px 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 11px;
+  background: rgba(255,255,255,.025);
+}
+
+.context-range-card > span,
+.context-range-card > small {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.context-range-card b { color: #edf8ff; }
+.context-range-card output { color: #f7ca3d; font-weight: 850; }
+.context-range-card > small { color: #8298a8; font-size: .65rem; }
+
+.context-range-card input[type="range"] {
+  width: 100%;
+  height: 6px;
+  cursor: pointer;
+  accent-color: #f7ca3d;
+  background: linear-gradient(90deg, #3ba7ef 0 20%, #36bd80 20% 40%, #f3cc3e 40% 60%, #f28a2d 60% 80%, #ef5469 80% 100%);
+  border-radius: 99px;
+  appearance: none;
+}
+
+.context-range-card input[type="range"]::-webkit-slider-thumb {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #07131e;
+  border-radius: 50%;
+  background: #f7ca3d;
+  box-shadow: 0 0 0 2px rgba(247,202,61,.35);
+  appearance: none;
+}
+
+.context-constraints {
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 11px;
+  background: rgba(255,255,255,.018);
+}
+
+.context-constraints summary {
+  padding: 12px 14px;
+  color: #ddecf5;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.context-range-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  padding: 0 10px 10px;
+}
+
+.context-score-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.context-score-summary span {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  color: #8faabd;
+  border-radius: 8px;
+  background: rgba(255,255,255,.035);
+  font-size: .66rem;
+}
+
+.context-score-summary b { color: #edf8ff; font-size: .82rem; }
+
+.atlas-session-dialog .context-comment-field textarea {
+  min-height: 66px;
+  border-color: rgba(90,207,255,.18);
+}
+
+@media (max-width: 760px) {
+  #atlasSessionDialog.atlas-session-dialog {
+    width: calc(100vw - 10px) !important;
+    max-width: none !important;
+  }
+
+  #atlasSessionDialog [data-session-panel="planned"] .dialog-session-header {
+    grid-template-columns: minmax(0, 1fr) 74px;
+  }
+
+  .session-mini-avatar {
+    width: 74px;
+    height: 84px;
+  }
+
+  .atlas-session-dialog .context-story,
+  .atlas-session-dialog .workout-context-form { padding: 14px !important; }
+  .context-feeling-scale { gap: 4px; }
+  .context-feeling-scale label > span { width: 42px; height: 42px; font-size: 1.3rem; }
+  .context-feeling-scale small { font-size: .58rem; }
+  .context-range-grid { grid-template-columns: 1fr; }
+  .context-score-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

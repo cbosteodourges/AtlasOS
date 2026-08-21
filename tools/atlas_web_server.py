@@ -369,26 +369,27 @@ def record_workout_context(payload):
             "Le commentaire ne peut pas dépasser 1200 caractères."
         )
 
-    else:
-        impact = {
-            "workout_id": workout.workout_id,
-            "status": "planned",
-            "action": "restore",
-            "recalculate_future_program": False,
-            "removed_duration_minutes": 0,
-            "removed_physiological_load": 0,
-            "removed_biomechanical_load": 0,
-            "shift_days": 0,
-            "reason": reason or "Decision modifiee par l'utilisateur",
-            "explanations": [
-                "La seance est reactivee dans le programme.",
-            ],
-        }
     record = {
         "workout_id": workout_id,
         "activity_id": activity_id or None,
         "heat": bool(payload.get("heat")),
         "relief": bool(payload.get("relief")),
+        "overall_sensation_0_to_10": context_score(
+            payload.get("overall_sensation_0_to_10"),
+            "La sensation générale",
+        ),
+        "perceived_effort_0_to_10": context_score(
+            payload.get("perceived_effort_0_to_10"),
+            "L'effort perçu",
+        ),
+        "heat_0_to_10": context_score(
+            payload.get("heat_0_to_10"),
+            "La chaleur ressentie",
+        ),
+        "relief_0_to_10": context_score(
+            payload.get("relief_0_to_10"),
+            "Le relief contraignant",
+        ),
         "pain_0_to_10": context_score(
             payload.get("pain_0_to_10"),
             "La douleur",

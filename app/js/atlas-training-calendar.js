@@ -120,8 +120,12 @@
         body: JSON.stringify({
           workout_id: workout.workout_id,
           activity_id: report?.activity_id || "",
-          heat: Boolean(values.heat),
-          relief: Boolean(values.relief),
+          heat: Number(values.heat) > 0,
+          relief: Number(values.relief) > 0,
+          overall_sensation_0_to_10: Number(values.sensation),
+          perceived_effort_0_to_10: Number(values.effort),
+          heat_0_to_10: Number(values.heat),
+          relief_0_to_10: Number(values.relief),
           pain_0_to_10: values.pain === "" ? null : Number(values.pain),
           fatigue_0_to_10: values.fatigue === "" ? null : Number(values.fatigue),
           comment: values.comment.trim()
@@ -1926,6 +1930,17 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     return groups;
   }
 
+  function contextRange(name, label, value, lowLabel = "Aucun", highLabel = "Maximum") {
+    const currentValue = Number.isFinite(Number(value)) ? Number(value) : 0;
+    return `
+      <label class="context-range-card">
+        <span><b>${escapeHtml(label)}</b><output data-range-output>${currentValue}/10</output></span>
+        <input type="range" name="${escapeHtml(name)}" min="0" max="10" step="1" value="${currentValue}" data-context-range>
+        <small><span>${escapeHtml(lowLabel)}</span><span>${escapeHtml(highLabel)}</span></small>
+      </label>
+    `;
+  }
+
   function executionReportHtml(report, workout, userContext = null) {
     if (!report) {
       return `
@@ -2344,6 +2359,8 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                   <div class="declared-context-reading">
                     <strong>Ce que vous avez déclaré</strong>
                     <p>
+                      ${userContext.overall_sensation_0_to_10 != null ? `Sensation générale : ${escapeHtml(userContext.overall_sensation_0_to_10)}/10. ` : ""}
+                      ${userContext.perceived_effort_0_to_10 != null ? `Effort perçu : ${escapeHtml(userContext.perceived_effort_0_to_10)}/10. ` : ""}
                       ${userContext.heat ? "Vous signalez une chaleur importante. " : ""}
                       ${userContext.relief ? "Le parcours comportait du relief ou des faux plats. " : ""}
                       ${userContext.pain_0_to_10 != null ? `La douleur ressentie était évaluée à ${escapeHtml(userContext.pain_0_to_10)}/10. ` : ""}
@@ -2363,25 +2380,44 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                 `}
 
                 <form class="workout-context-form" data-workout-context-form>
-                  <div class="context-toggle-grid">
-                    <label>
-                      <input type="checkbox" name="heat" ${userContext?.heat ? "checked" : ""}>
-                      <span><b>Chaleur ressentie</b><small>Température ou sensation thermique inhabituelle</small></span>
-                    </label>
-                    <label>
-                      <input type="checkbox" name="relief" ${userContext?.relief ? "checked" : ""}>
-                      <span><b>Relief contraignant</b><small>Bosses, faux plats ou terrain irrégulier</small></span>
-                    </label>
+                  <div class="context-self-evaluation">
+                    <div class="context-form-heading">
+                      <span>Auto-évaluation</span>
+                      <h4>Comment vous êtes-vous senti ?</h4>
+                    </div>
+                    <div class="context-feeling-scale" role="radiogroup" aria-label="Sensation générale">
+                      ${[
+                        [1, "😫", "Très faible"],
+                        [3, "🙁", "Faible"],
+                        [5, "😐", "Normal"],
+                        [7, "🙂", "Fort"],
+                        [9, "😄", "Très fort"]
+                      ].map(([score, icon, label]) => `
+                        <label>
+                          <input type="radio" name="sensation" value="${score}" ${Number(userContext?.overall_sensation_0_to_10 ?? 5) === score ? "checked" : ""}>
+                          <span aria-hidden="true">${icon}</span>
+                          <small>${label}</small>
+                        </label>
+                      `).join("")}
+                    </div>
                   </div>
-                  <div class="context-score-grid">
-                    <label>
-                      <span>Douleur ressentie <small>0 = aucune · 10 = maximale</small></span>
-                      <input type="number" name="pain" min="0" max="10" step="1" value="${userContext?.pain_0_to_10 ?? ""}">
-                    </label>
-                    <label>
-                      <span>Fatigue ressentie <small>0 = aucune · 10 = maximale</small></span>
-                      <input type="number" name="fatigue" min="0" max="10" step="1" value="${userContext?.fatigue_0_to_10 ?? ""}">
-                    </label>
+                  <div class="context-primary-range">
+                    ${contextRange("effort", "Effort perçu", userContext?.perceived_effort_0_to_10 ?? 5, "Très facile", "Maximum")}
+                  </div>
+                  <details class="context-constraints">
+                    <summary>Préciser les contraintes de la séance</summary>
+                    <div class="context-range-grid">
+                      ${contextRange("heat", "Chaleur ressentie", userContext?.heat_0_to_10 ?? (userContext?.heat ? 5 : 0))}
+                      ${contextRange("relief", "Relief contraignant", userContext?.relief_0_to_10 ?? (userContext?.relief ? 5 : 0))}
+                      ${contextRange("pain", "Douleur ressentie", userContext?.pain_0_to_10 ?? 0)}
+                      ${contextRange("fatigue", "Fatigue ressentie", userContext?.fatigue_0_to_10 ?? 0)}
+                    </div>
+                  </details>
+                  <div class="context-score-summary" aria-live="polite">
+                    <span>Chaleur <b data-context-score="heat">${userContext?.heat_0_to_10 ?? (userContext?.heat ? 5 : 0)}/10</b></span>
+                    <span>Relief <b data-context-score="relief">${userContext?.relief_0_to_10 ?? (userContext?.relief ? 5 : 0)}/10</b></span>
+                    <span>Douleur <b data-context-score="pain">${userContext?.pain_0_to_10 ?? 0}/10</b></span>
+                    <span>Fatigue <b data-context-score="fatigue">${userContext?.fatigue_0_to_10 ?? 0}/10</b></span>
                   </div>
                   <label class="context-comment-field">
                     <span>Votre lecture de la séance</span>
@@ -2868,6 +2904,19 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       }
     };
 
+    content.oninput = event => {
+      const range = event.target.closest("[data-context-range]");
+      if (!range) return;
+
+      const cardOutput = range.closest(".context-range-card")
+        ?.querySelector("[data-range-output]");
+      const summaryOutput = content.querySelector(
+        `[data-context-score="${range.name}"]`
+      );
+      if (cardOutput) cardOutput.textContent = `${range.value}/10`;
+      if (summaryOutput) summaryOutput.textContent = `${range.value}/10`;
+    };
+
     content.onsubmit = async event => {
       const readinessForm = event.target.closest(
         "[data-daily-preparation-form]"
@@ -2963,8 +3012,10 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           workout,
           loadedReport,
           {
-            heat: values.get("heat") === "on",
-            relief: values.get("relief") === "on",
+            sensation: values.get("sensation") || "5",
+            effort: values.get("effort") || "0",
+            heat: values.get("heat") || "0",
+            relief: values.get("relief") || "0",
             pain: values.get("pain") || "",
             fatigue: values.get("fatigue") || "",
             comment: String(values.get("comment") || "")
