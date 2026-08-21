@@ -14,22 +14,22 @@
           <small>Décision locale, calculée et explicable</small>
         </div>
       </header>
-      <p class="atlas-conversation-intro">Renseignez votre état du jour. Atlas croise votre ressenti, vos données Wellness et votre programme.</p>
+      <p class="atlas-conversation-intro">Confirmez votre état du jour. Atlas croise votre ressenti, vos données Wellness et votre programme.</p>
       <form class="atlas-guided-form">
         <div class="atlas-guided-grid">
           <label>Énergie
             <select data-feeling="energy" required>
-              <option value="">Choisir…</option><option value="2">Très basse</option><option value="4">Basse</option><option value="6">Moyenne</option><option value="8">Bonne</option><option value="10">Excellente</option>
+              <option value="2">Très basse</option><option value="4">Basse</option><option value="6" selected>Moyenne</option><option value="8">Bonne</option><option value="10">Excellente</option>
             </select>
           </label>
           <label>Fatigue
             <select data-feeling="fatigue" required>
-              <option value="">Choisir…</option><option value="0">Aucune</option><option value="3">Légère</option><option value="6">Modérée</option><option value="8">Forte</option><option value="10">Très forte</option>
+              <option value="0">Aucune</option><option value="3" selected>Légère</option><option value="6">Modérée</option><option value="8">Forte</option><option value="10">Très forte</option>
             </select>
           </label>
           <label>Douleur
             <select data-feeling="pain" required>
-              <option value="">Choisir…</option><option value="0">Aucune</option><option value="2">Légère</option><option value="5">Modérée</option><option value="8">Importante</option><option value="10">Très importante</option>
+              <option value="0" selected>Aucune</option><option value="2">Légère</option><option value="5">Modérée</option><option value="8">Importante</option><option value="10">Très importante</option>
             </select>
           </label>
           <label>Séance envisagée
@@ -50,7 +50,7 @@
           </span>
           <small class="atlas-voice-status" aria-live="polite">Vous pouvez écrire ou dicter votre ressenti.</small>
         </label>
-        <button class="atlas-send-button" type="submit">Calculer mes options</button>
+        <button class="atlas-send-button" type="submit">Analyser mon état</button>
       </form>
       <section class="atlas-adaptation-result" hidden aria-live="polite">
         <div class="atlas-adaptation-summary"></div>
@@ -123,12 +123,25 @@
   }
 
   const post = async payload => {
-    const response = await fetch("/api/atlas/conversation", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(payload)
-    });
-    const data = await response.json();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+    let response;
+    try {
+      response = await fetch("/api/atlas/conversation", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+    } catch (error) {
+      if (error.name === "AbortError") throw new Error("Atlas met trop de temps à répondre. Réessayez dans quelques secondes.");
+      throw new Error("Connexion au serveur Atlas impossible.");
+    } finally {
+      clearTimeout(timeout);
+    }
+    let data;
+    try { data = await response.json(); }
+    catch (_error) { throw new Error("Réponse Atlas illisible. Relancez le serveur local."); }
     if (!response.ok) throw new Error(data.error || "Atlas indisponible");
     if (!data.assessment || !Array.isArray(data.options)) {
       throw new Error("Le serveur Atlas utilise encore l’ancienne version. Arrêtez-le puis relancez tools\\atlas_web_server.py.");
@@ -194,7 +207,7 @@
       optionsRoot.replaceChildren();
     } finally {
       submit.disabled = false;
-      submit.textContent = "Calculer mes options";
+      submit.textContent = "Analyser mon état";
     }
   });
 
@@ -217,6 +230,5 @@
   });
   window.addEventListener("atlas:conversation-open", open);
   root.querySelector(".atlas-conversation-close").addEventListener("click", close);
-  root.addEventListener("click", event => { if (event.target === root) close(); });
   document.addEventListener("keydown", event => { if (event.key === "Escape" && !root.hidden) close(); });
 })();

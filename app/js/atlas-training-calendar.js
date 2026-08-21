@@ -2112,6 +2112,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const hillSamples = Number(drift.excluded_hill_sample_count);
     const learningAllowed =
       report.automatic_learning_allowed === true;
+    const contextInterpretation = userContext?.atlas_interpretation || null;
+    const contextActionLabels = {
+      maintain: "Maintien proposé",
+      monitor: "Maintien sous surveillance",
+      reduce_next_intensity: "Allègement proposé",
+      recovery_priority: "Récupération prioritaire"
+    };
 
     const executionConclusion = executionScore >= 80
       ? "La séance est globalement bien exécutée."
@@ -2378,9 +2385,11 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                       ${userContext.comment ? escapeHtml(userContext.comment) : ""}
                     </p>
                     <p class="context-interpretation">
-                      ${userContext.heat || userContext.relief
-                        ? "Atlas tient compte de ces contraintes externes : elles peuvent expliquer une partie de la hausse cardiaque observée sans conclure trop rapidement à une mauvaise tolérance physiologique."
-                        : "Cette déclaration complète les données objectives et sera conservée dans l’historique longitudinal."}
+                      ${contextInterpretation
+                        ? `<strong>${escapeHtml(contextActionLabels[contextInterpretation.action] || "Analyse prudente")}</strong> · ${escapeHtml((contextInterpretation.reasons || []).join(" "))}`
+                        : userContext.heat || userContext.relief
+                          ? "Atlas tient compte de ces contraintes externes : elles peuvent expliquer une partie de la hausse cardiaque observée sans conclure trop rapidement à une mauvaise tolérance physiologique."
+                          : "Cette déclaration complète les données objectives et sera conservée dans l’historique longitudinal."}
                     </p>
                   </div>
                 ` : `
@@ -2451,9 +2460,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
 
           <aside class="atlas-decision-column">
             <span class="report-kicker">DÉCISION ATLAS</span>
-            <h3>${learningAllowed ? "Séance retenue pour l’apprentissage" : "Analyse conservée avec prudence"}</h3>
+            <h3>${contextInterpretation
+              ? escapeHtml(contextActionLabels[contextInterpretation.action] || "Analyse conservée avec prudence")
+              : learningAllowed ? "Séance retenue pour l’apprentissage" : "Analyse conservée avec prudence"}</h3>
             <p>
-              ${learningAllowed
+              ${contextInterpretation
+                ? escapeHtml((contextInterpretation.reasons || []).join(" "))
+                : learningAllowed
                 ? "La qualité des données et la correspondance sont suffisantes pour enrichir votre profil longitudinal."
                 : "Cette analyse est conservée, mais elle ne modifiera pas automatiquement le profil."}
             </p>

@@ -166,6 +166,19 @@
           ? `${Math.round(analysis.benchmarks.resting_hr_28d)} bpm`
           : "Donnée insuffisante"
       );
+      const trendText = (value, unit, inverse = false) => {
+        if (value == null) return "Tendance 7 jours indisponible";
+        const sign = value > 0 ? "+" : "";
+        const direction = value === 0 ? "stable" : ((value > 0) !== inverse ? "en hausse" : "en baisse");
+        return `7 j : ${sign}${String(value).replace(".", ",")}${unit} · ${direction}`;
+      };
+      setText("[data-analysis-hrv-trend]", trendText(analysis.benchmarks?.hrv_change_7d, " ms"));
+      setText("[data-analysis-sleep-trend]", trendText(analysis.benchmarks?.sleep_change_7d, " pt"));
+      setText("[data-analysis-resting-trend]", trendText(analysis.benchmarks?.resting_hr_change_7d, " bpm", true));
+      const freshness = analysis.confidence?.freshness_days;
+      setText("[data-analysis-freshness]", freshness == null
+        ? "Fraîcheur inconnue"
+        : (freshness === 0 ? "Synchronisé aujourd’hui" : `Dernière donnée : il y a ${freshness} j`));
       setText("[data-analysis-confidence-text]", analysis.confidence?.explanation);
       setText("[data-analysis-notice]", analysis.medical_notice);
 
@@ -193,7 +206,11 @@
           ["Sommeil avant", group?.sleep_score_before, "/100"],
           ["VFC avant", group?.hrv_before_ms, " ms"],
           ["Récupération avant", group?.recovery_before, "/100"],
-          ["Indice Atlas avant", group?.atlas_index_before, "/100"]
+          ["Indice Atlas avant", group?.atlas_index_before, "/100"],
+          ["Effort perçu après", group?.perceived_effort_after, "/10"],
+          ["Sensation après", group?.sensation_after, "/10"],
+          ["Fatigue après", group?.fatigue_after, "/10"],
+          ["Douleur après", group?.pain_after, "/10"]
         ];
         return rows.filter(([_label, value]) => value != null);
       };

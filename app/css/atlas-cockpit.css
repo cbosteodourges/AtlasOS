@@ -444,7 +444,7 @@ body[data-avatar="female"] .twin-panel img {
 .analysis-confidence strong{font-size:40px;color:var(--green)}.analysis-confidence span{color:var(--muted)}.analysis-confidence small{display:block;margin-top:5px;color:var(--muted)}
 .analysis-benchmarks{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
 .analysis-benchmarks article,.analysis-columns article{padding:22px;border:1px solid var(--line);border-radius:20px;background:rgba(3,15,28,.68)}
-.analysis-benchmarks span{display:block;color:var(--muted);font-size:13px}.analysis-benchmarks strong{display:block;margin-top:8px;font-size:22px;color:var(--cyan)}
+.analysis-benchmarks span{display:block;color:var(--muted);font-size:13px}.analysis-benchmarks strong{display:block;margin-top:8px;font-size:22px;color:var(--cyan)}.analysis-benchmarks small{display:block;margin-top:7px;color:#8fa8bc;line-height:1.35}
 .analysis-columns{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.analysis-columns h3{font-size:22px;margin:8px 0 14px}
 .analysis-columns li{margin:0 0 12px;color:#c5d7e6;line-height:1.5}.analysis-vigilance{border-color:rgba(255,178,70,.3)!important}.analysis-priorities{border-color:rgba(121,107,255,.32)!important}
 .athlete-analysis-home footer{display:grid;grid-template-columns:1fr auto;gap:8px 20px;align-items:center;margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}
@@ -459,3 +459,17 @@ body[data-avatar="female"] .twin-panel img {
 .performance-context-grid article>span{font-size:12px;color:var(--cyan);font-weight:800;letter-spacing:.08em}.performance-context-grid article>strong{display:block;margin:8px 0 12px;font-size:28px}
 .performance-context dl{display:grid;grid-template-columns:1fr auto;gap:7px 14px;margin:0}.performance-context dt{color:var(--muted)}.performance-context dd{margin:0;font-weight:800}
 @media(max-width:900px){.performance-context{grid-template-columns:1fr}.performance-context-grid{grid-template-columns:1fr}}
+@media(max-width:700px){
+  .athlete-analysis-home{margin-top:22px;padding:18px;border-radius:20px}
+  .athlete-analysis-home h2{font-size:clamp(25px,8vw,34px)}
+  .analysis-confidence{padding:14px 16px;border-radius:17px}
+  .analysis-confidence strong{font-size:34px}
+  .analysis-benchmarks{grid-template-columns:1fr;gap:10px}
+  .analysis-benchmarks article,.analysis-columns article{padding:17px;border-radius:16px;min-width:0}
+  .analysis-columns h3,.performance-context h3{font-size:20px}
+  .performance-context{padding:17px;border-radius:17px;min-width:0}
+  .performance-context-grid article{padding:15px;min-width:0}
+  .performance-context dl{grid-template-columns:minmax(0,1fr) auto;gap:7px 9px;font-size:14px}
+  .performance-context dt{overflow-wrap:anywhere}.performance-context dd{text-align:right}
+  .athlete-analysis-home footer button{width:100%}
+}

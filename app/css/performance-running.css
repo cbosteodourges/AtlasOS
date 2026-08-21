@@ -6521,7 +6521,12 @@ body[data-coach-section]
 }
 
 .atlas-session-dialog .declared-context-reading .context-interpretation {
-  display: none;
+  display: block;
+  margin-top: 7px;
+  padding-top: 7px;
+  color: #bfe9ff;
+  border-top: 1px solid rgba(90,207,255,.12);
+  font-size: .76rem;
 }
 
 .atlas-session-dialog .workout-context-form {

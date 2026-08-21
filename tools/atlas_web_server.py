@@ -25,6 +25,9 @@ from src.training.daily_preparation_service import (
     DailyPreparationService,
 )
 from src.training.training_program_loader import TrainingProgramLoader
+from src.training.post_workout_context_analyzer import (
+    PostWorkoutContextAnalyzer,
+)
 from src.training.user_workout_decision import UserWorkoutDecisionEngine
 
 
@@ -403,6 +406,9 @@ def record_workout_context(payload):
             timespec="seconds"
         ),
     }
+    record["atlas_interpretation"] = (
+        PostWorkoutContextAnalyzer().analyze(record).to_dict()
+    )
 
     history = load_workout_contexts()
     history.append(record)
@@ -819,6 +825,14 @@ def _performance_comparison(history):
     if not isinstance(executions, list):
         return empty
 
+    contexts_by_workout = {}
+    for context in load_workout_contexts():
+        if not isinstance(context, dict):
+            continue
+        workout_id = str(context.get("workout_id") or "")
+        if workout_id:
+            contexts_by_workout[workout_id] = context
+
     history_by_day = {item.get("day"): item for item in history}
     evaluated = []
     for item in executions:
@@ -856,6 +870,8 @@ def _performance_comparison(history):
             return round(sum(values) / len(values), 1) if values else None
 
         analysis = item.get("detailed_analysis") or {}
+        workout_id = str(match.get("workout_id") or "")
+        declared = contexts_by_workout.get(workout_id, {})
         evaluated.append({
             "score": round(score, 1),
             "day": day_text,
@@ -864,6 +880,18 @@ def _performance_comparison(history):
             "hrv": contextual_mean("hrv_last_night_ms"),
             "recovery": contextual_mean("sleep_recovery_score"),
             "atlas_index": contextual_mean("atlas_index"),
+            "perceived_effort": _wellness_number(
+                declared.get("perceived_effort_0_to_10")
+            ),
+            "sensation": _wellness_number(
+                declared.get("overall_sensation_0_to_10")
+            ),
+            "fatigue": _wellness_number(
+                declared.get("fatigue_0_to_10")
+            ),
+            "pain": _wellness_number(
+                declared.get("pain_0_to_10")
+            ),
         })
 
     if len(evaluated) < 2:
@@ -886,6 +914,10 @@ def _performance_comparison(history):
             ("hrv", "hrv_before_ms"),
             ("recovery", "recovery_before"),
             ("atlas_index", "atlas_index_before"),
+            ("perceived_effort", "perceived_effort_after"),
+            ("sensation", "sensation_after"),
+            ("fatigue", "fatigue_after"),
+            ("pain", "pain_after"),
         ):
             values = [
                 item[source] for item in group
@@ -914,6 +946,10 @@ def _performance_comparison(history):
             "hrv_before_ms",
             "recovery_before",
             "atlas_index_before",
+            "perceived_effort_after",
+            "sensation_after",
+            "fatigue_after",
+            "pain_after",
         )
     )
     return {
@@ -922,8 +958,8 @@ def _performance_comparison(history):
         "best": best,
         "difficult": difficult,
         "message": (
-            "Comparaison des trois jours précédant les séances les mieux "
-            "et les moins bien exécutées. Elle décrit des associations, "
+            "Comparaison des trois jours précédant les séances et du ressenti "
+            "déclaré après leur réalisation. Elle décrit des associations, "
             "sans prétendre démontrer une cause."
         ),
     }
@@ -958,6 +994,18 @@ def _athlete_analysis(history):
     ]
 
     mean = lambda values: round(sum(values) / len(values), 1) if values else None
+    recent_week = recent[-7:]
+    previous_period = recent[:-7]
+
+    def field_mean(items, field):
+        return mean([item[field] for item in items if item.get(field) is not None])
+
+    def change(field):
+        current = field_mean(recent_week, field)
+        previous = field_mean(previous_period, field)
+        if current is None or previous is None:
+            return None
+        return round(current - previous, 1)
     hrv_mean = mean(valid_hrv)
     sleep_mean = mean(valid_sleep)
     resting_mean = mean(valid_resting)
@@ -968,7 +1016,19 @@ def _athlete_analysis(history):
             for item in recent
         ) / max(1, len(recent))
     )
-    confidence = round((mean(quality) or 0) * 0.7 + coverage * 0.3)
+    latest_day = None
+    try:
+        latest_day = date.fromisoformat(str(latest.get("day"))[:10])
+    except (TypeError, ValueError):
+        pass
+    freshness_days = max(0, (date.today() - latest_day).days) if latest_day else None
+    freshness_penalty = (
+        min(45, max(0, freshness_days - 2) * 4)
+        if freshness_days is not None else 25
+    )
+    confidence = round(
+        (mean(quality) or 0) * 0.7 + coverage * 0.3 - freshness_penalty
+    )
 
     strengths = []
     vigilance = []
@@ -1012,6 +1072,13 @@ def _athlete_analysis(history):
         vigilance.append(
             "Charge du jour non mesurée : aucune conclusion de surcharge n’est formulée."
         )
+    if freshness_days is None:
+        vigilance.append("Date du dernier instantané Wellness illisible : synchronisation à vérifier.")
+    elif freshness_days > 2:
+        vigilance.append(
+            f"Dernières données Wellness âgées de {freshness_days} jours : "
+            "la disponibilité du jour ne doit pas être déduite de cet instantané."
+        )
 
     priorities.extend([
         "Préserver la majorité du volume en endurance fondamentale et suivre la dérive cardiaque.",
@@ -1040,9 +1107,13 @@ def _athlete_analysis(history):
             "coverage_28d": coverage,
             "wellness_days": len(history),
             "quality_28d": round(mean(quality) or 0),
+            "freshness_days": freshness_days,
+            "valid_hrv_days": len(valid_hrv),
+            "valid_sleep_days": len(valid_sleep),
             "explanation": (
                 "Confiance fondée sur la couverture sommeil + VFC des 28 derniers jours "
-                "et sur la qualité technique des fichiers Garmin."
+                "et sur la qualité technique des fichiers Garmin. Une synchronisation "
+                "ancienne réduit automatiquement ce score."
             ),
         },
         "performance_comparison": _performance_comparison(history),
@@ -1050,6 +1121,9 @@ def _athlete_analysis(history):
             "hrv_28d": hrv_mean,
             "sleep_score_28d": sleep_mean,
             "resting_hr_28d": resting_mean,
+            "hrv_change_7d": change("hrv_last_night_ms"),
+            "sleep_change_7d": change("sleep_score"),
+            "resting_hr_change_7d": change("resting_heart_rate_bpm"),
         },
         "medical_notice": (
             "Analyse d’aide à l’entraînement, non diagnostique. Une douleur persistante "
@@ -1181,6 +1255,9 @@ def atlas_conversation(payload):
     energy = numeric(feeling, "energy", 6)
     fatigue = numeric(feeling, "fatigue", 3)
     pain = numeric(feeling, "pain", 0)
+    for label, value in (("énergie", energy), ("fatigue", fatigue), ("douleur", pain)):
+        if value is None or not 0 <= value <= 10:
+            raise ValueError(f"Le score {label} doit être compris entre 0 et 10.")
     atlas_index = numeric(wellness or {}, "atlas_index", 60)
     recovery = numeric(wellness or {}, "sleep_recovery_score")
     sleep_score = numeric(wellness or {}, "sleep_score")

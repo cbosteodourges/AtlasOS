@@ -9,7 +9,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
-from garmin_fit_sdk import Decoder, Stream
+try:
+    from garmin_fit_sdk import Decoder, Stream
+except ModuleNotFoundError:  # pragma: no cover - dépend de l'installation locale
+    Decoder = None
+    Stream = None
 
 from .activity_schema import (
     ActivitySample,
@@ -255,6 +259,11 @@ class GarminConnector(ActivityConnector):
     def _decode(
         fit_path: Path,
     ) -> tuple[Dict[str, Any], List[Any]]:
+        if Decoder is None or Stream is None:
+            raise RuntimeError(
+                "Le SDK Garmin FIT n’est pas installé. "
+                "Installez garmin-fit-sdk avant d’importer un fichier FIT."
+            )
         stream = Stream.from_file(str(fit_path))
         decoder = Decoder(stream)
         return decoder.read()

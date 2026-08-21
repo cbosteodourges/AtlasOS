@@ -11,7 +11,11 @@ from tempfile import TemporaryDirectory
 from typing import Any, Dict, List, Optional
 from zipfile import BadZipFile, ZipFile
 
-from garmin_fit_sdk import Decoder, Stream
+try:
+    from garmin_fit_sdk import Decoder, Stream
+except ModuleNotFoundError:  # pragma: no cover - dépend de l'installation locale
+    Decoder = None
+    Stream = None
 
 
 @dataclass
@@ -486,6 +490,11 @@ class GarminWellnessConnector:
         fit_path: Path,
         destination: Dict[str, List[Dict[str, Any]]],
     ) -> None:
+        if Decoder is None or Stream is None:
+            raise RuntimeError(
+                "Le SDK Garmin FIT n’est pas installé. "
+                "Installez garmin-fit-sdk avant d’importer les données Wellness."
+            )
         stream = Stream.from_file(str(fit_path))
         decoder = Decoder(stream)
         decoded_messages, _errors = decoder.read()
