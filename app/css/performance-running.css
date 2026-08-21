@@ -6326,3 +6326,150 @@ body[data-coach-section]
   border-top: 1px solid rgba(255,255,255,.08);
   font-size: .75rem;
 }
+
+/* Final compact session layout */
+#atlasSessionDialog.atlas-session-dialog [data-session-panel="planned"] {
+  align-self: center;
+  width: 100% !important;
+  max-width: 720px !important;
+  padding-inline: 10px;
+}
+
+#atlasSessionDialog.atlas-session-dialog [data-session-panel="report"] .execution-report {
+  max-width: 860px;
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .dialog-session-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 86px;
+  gap: 16px;
+  align-items: center;
+  padding-bottom: 12px;
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .dialog-session-header > div {
+  min-width: 0;
+}
+
+.session-mini-avatar {
+  width: 86px;
+  height: 96px;
+  object-fit: contain;
+  object-position: center;
+  mix-blend-mode: screen;
+  filter: brightness(1.35) saturate(1.18)
+    drop-shadow(0 0 13px rgba(57, 202, 255, .34));
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .atlas-workout-timeline {
+  margin: 8px 0 18px;
+  padding-top: 8px;
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars {
+  height: 92px;
+  gap: 5px;
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars i {
+  position: relative;
+  height: 36px;
+  outline: none;
+}
+
+#atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-2 { height: 49px; }
+#atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-3 { height: 76px; }
+#atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-4 { height: 83px; }
+#atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-5 { height: 88px; }
+
+.workout-timeline-bars {
+  overflow: visible;
+}
+
+.workout-timeline-bars i::after {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  bottom: calc(100% + 7px);
+  width: max-content;
+  max-width: 180px;
+  padding: 6px 8px;
+  color: #eef9ff;
+  pointer-events: none;
+  content: attr(data-label);
+  opacity: 0;
+  border: 1px solid rgba(73, 203, 255, .3);
+  border-radius: 7px;
+  background: #071725;
+  font-size: .7rem;
+  font-style: normal;
+  white-space: normal;
+  transform: translate(-50%, 4px);
+  transition: opacity .15s ease, transform .15s ease;
+}
+
+.workout-timeline-bars i:hover::after,
+.workout-timeline-bars i:focus::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.garmin-overview .session-overview-grid {
+  gap: 20px;
+}
+
+.garmin-overview .session-overview-grid article {
+  padding-top: 8px;
+}
+
+.session-notes,
+.garmin-steps {
+  margin-top: 20px;
+}
+
+.garmin-step-card {
+  gap: 3px;
+  padding: 11px 14px 11px 20px;
+}
+
+.garmin-step-card > span,
+.garmin-step-card > small {
+  font-size: .78rem;
+}
+
+.garmin-repeat-group {
+  gap: 7px;
+  padding: 9px;
+}
+
+.planned-technical-details {
+  margin-top: 12px;
+}
+
+@media (max-width: 760px) {
+  #atlasSessionDialog.atlas-session-dialog [data-session-panel="planned"] {
+    max-width: 620px !important;
+    padding-inline: 2px;
+  }
+
+  #atlasSessionDialog [data-session-panel="planned"] .dialog-session-header {
+    grid-template-columns: minmax(0, 1fr) 58px;
+    gap: 9px;
+  }
+
+  .session-mini-avatar {
+    width: 58px;
+    height: 68px;
+  }
+
+  #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars {
+    height: 78px;
+    gap: 3px;
+  }
+
+  #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars i { height: 31px; }
+  #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-2 { height: 42px; }
+  #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-3 { height: 63px; }
+  #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-4 { height: 69px; }
+  #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-5 { height: 74px; }
+}

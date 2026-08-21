@@ -1515,7 +1515,9 @@ const target = compactTarget(workout, zone);
             <i
               class="timeline-zone-${segment.zone}"
               style="--segment-weight:${Math.max(segment.duration, .5)};--segment-color:${DISPLAY_ZONE_COLORS[segment.zone]}"
-              title="${escapeHtml(segment.label)} · Z${segment.zone}"
+              tabindex="0"
+              data-label="${escapeHtml(segment.label)} · ${readableWorkTime(segment.duration)} · Z${segment.zone}"
+              aria-label="${escapeHtml(segment.label)} · ${readableWorkTime(segment.duration)} · Zone ${segment.zone}"
             ></i>
           `).join("")}
         </div>
@@ -1622,6 +1624,9 @@ const target = compactTarget(workout, zone);
         work: workout.workout_type === "threshold_sv2"
           ? "Travail au seuil"
           : "Bloc de travail",
+        interval: workout.workout_type === "threshold_sv2"
+          ? "Travail au seuil"
+          : "Bloc de travail",
         continuous: "Course"
       }[type] || block.name || "Étape");
       const durationBlock = options.duration != null
@@ -1645,6 +1650,12 @@ const target = compactTarget(workout, zone);
       ["work", "interval"].includes(canonicalBlockType(block))
     ));
     const simpleBlocks = blocks.filter(block => block !== repeatedBlock);
+    const avatarIsFemale = (
+      localStorage.getItem("atlasPreselectedAvatar") || "male"
+    ) === "female";
+    const sessionAvatarSource = avatarIsFemale
+      ? "./assets/atlas-avatar-femme-clean-final.png?v=2"
+      : "./assets/atlas-avatar-homme-clean-final.png?v=2";
 
     return `
       <header class="dialog-session-header" style="--session-accent:${mainBlock ? accentFor(mainBlock) : '#39d98a'}">
@@ -1653,6 +1664,11 @@ const target = compactTarget(workout, zone);
           <h2>${escapeHtml(workout.title)}</h2>
           <p>${escapeHtml(workout.objective)}</p>
         </div>
+        <img
+          class="session-mini-avatar"
+          src="${sessionAvatarSource}"
+          alt="Votre jumeau numérique Atlas"
+        >
         <i class="difficulty-pill difficulty-${level}">
           ${escapeHtml(difficultyLabel(level))}
         </i>
