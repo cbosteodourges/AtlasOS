@@ -6634,6 +6634,31 @@ body[data-coach-section]
   appearance: none;
 }
 
+.context-range-ticks {
+  display: grid !important;
+  grid-template-columns: repeat(11, 1fr);
+  margin: -2px 1px 0;
+  color: #9eb3c1;
+}
+
+.context-range-ticks i {
+  position: relative;
+  color: inherit;
+  font-size: .58rem;
+  font-style: normal;
+  font-weight: 750;
+  text-align: center;
+}
+
+.context-range-ticks i::before {
+  display: block;
+  width: 1px;
+  height: 4px;
+  margin: 0 auto 2px;
+  content: "";
+  background: rgba(226, 240, 248, .55);
+}
+
 .context-constraints {
   border: 1px solid rgba(255,255,255,.08);
   border-radius: 11px;
@@ -6677,6 +6702,21 @@ body[data-coach-section]
   border-color: rgba(90,207,255,.18);
 }
 
+.report-cockpit-header > div:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.report-mini-avatar {
+  flex: 0 0 auto;
+  width: 78px;
+  height: 88px;
+  object-fit: contain;
+  mix-blend-mode: screen;
+  filter: brightness(1.35) saturate(1.18)
+    drop-shadow(0 0 12px rgba(57, 202, 255, .3));
+}
+
 @media (max-width: 760px) {
   #atlasSessionDialog.atlas-session-dialog {
     width: calc(100vw - 10px) !important;
@@ -6699,4 +6739,9 @@ body[data-coach-section]
   .context-feeling-scale small { font-size: .58rem; }
   .context-range-grid { grid-template-columns: 1fr; }
   .context-score-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .report-cockpit-header { gap: 12px !important; }
+  .report-main-score { min-width: 82px; }
+  .report-main-score strong { font-size: 1.65rem; }
+  .report-mini-avatar { width: 52px; height: 62px; }
+  .context-range-ticks i { font-size: .52rem; }
 }

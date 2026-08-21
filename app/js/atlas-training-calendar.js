@@ -1935,7 +1935,10 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     return `
       <label class="context-range-card">
         <span><b>${escapeHtml(label)}</b><output data-range-output>${currentValue}/10</output></span>
-        <input type="range" name="${escapeHtml(name)}" min="0" max="10" step="1" value="${currentValue}" data-context-range>
+        <input type="range" name="${escapeHtml(name)}" min="0" max="10" step="1" value="${currentValue}" aria-valuetext="${currentValue} sur 10" data-context-range>
+        <span class="context-range-ticks" aria-hidden="true">
+          ${Array.from({ length: 11 }, (_, score) => `<i>${score}</i>`).join("")}
+        </span>
         <small><span>${escapeHtml(lowLabel)}</span><span>${escapeHtml(highLabel)}</span></small>
       </label>
     `;
@@ -2174,6 +2177,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     ) > 0
       ? `${completedIntervalLabel} réalisés sur ${plannedRepetitions} prévus`
       : `${completedIntervalLabel} réalisées sur ${plannedRepetitions} prévues`;
+    const avatarIsFemale = (
+      localStorage.getItem("atlasPreselectedAvatar") || "male"
+    ) === "female";
+    const reportAvatarSource = avatarIsFemale
+      ? "./assets/atlas-avatar-femme-clean-final.png?v=2"
+      : "./assets/atlas-avatar-homme-clean-final.png?v=2";
 
     return `
       <section class="execution-report execution-report-narrative">
@@ -2191,6 +2200,11 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             <strong>${reportScore(execution.execution_score)}</strong>
             <span>Score d’exécution</span>
           </div>
+          <img
+            class="report-mini-avatar"
+            src="${reportAvatarSource}"
+            alt="Votre jumeau numérique Atlas"
+          >
         </header>
 
         ${timelineHtml(
@@ -2730,6 +2744,10 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     `;
 
     content.onclick = async event => {
+      if (event.target.closest("[data-workout-context-form]")) {
+        return;
+      }
+
       const tab = event.target.closest("[data-session-tab]");
 
       if (tab) {
@@ -2915,6 +2933,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       );
       if (cardOutput) cardOutput.textContent = `${range.value}/10`;
       if (summaryOutput) summaryOutput.textContent = `${range.value}/10`;
+      range.setAttribute("aria-valuetext", `${range.value} sur 10`);
     };
 
     content.onsubmit = async event => {
