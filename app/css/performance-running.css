@@ -5689,6 +5689,87 @@ body[data-coach-section]
 }
 
 /* INTERVAL EXECUTION REPORT */
+.atlas-workout-timeline {
+  margin: 22px 0 8px;
+  padding: 18px 20px 12px;
+  border: 1px solid rgba(126, 186, 215, .18);
+  border-radius: 16px;
+  background: rgba(3, 16, 27, .78);
+}
+
+.workout-timeline-bars {
+  display: flex;
+  align-items: end;
+  gap: 4px;
+  height: 92px;
+  overflow: hidden;
+}
+
+.workout-timeline-bars i {
+  flex: var(--segment-weight) 1 0;
+  min-width: 5px;
+  height: calc(24px + (var(--timeline-zone) * 12px));
+  border-radius: 6px 6px 2px 2px;
+  background: var(--segment-color);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--segment-color) 24%, transparent);
+}
+
+.workout-timeline-bars .timeline-zone-1 { --timeline-zone: 1; }
+.workout-timeline-bars .timeline-zone-2 { --timeline-zone: 2; }
+.workout-timeline-bars .timeline-zone-3 { --timeline-zone: 3; }
+.workout-timeline-bars .timeline-zone-4 { --timeline-zone: 4; }
+.workout-timeline-bars .timeline-zone-5 { --timeline-zone: 5; }
+
+.workout-timeline-legend {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+  color: #91aabd;
+  font-size: .68rem;
+  font-weight: 800;
+}
+
+.workout-timeline-legend span::before {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 4px;
+  border-radius: 50%;
+  content: "";
+  background: currentColor;
+}
+
+.workout-timeline-legend .timeline-zone-1 { color: #38a9ff; }
+.workout-timeline-legend .timeline-zone-2 { color: #49d17d; }
+.workout-timeline-legend .timeline-zone-3 { color: #f0cf4f; }
+.workout-timeline-legend .timeline-zone-4 { color: #ff9f43; }
+.workout-timeline-legend .timeline-zone-5 { color: #ff506c; }
+
+.report-more {
+  margin-top: 18px;
+  border: 1px solid rgba(53, 204, 255, .2);
+  border-radius: 14px;
+  background: rgba(4, 18, 30, .68);
+}
+
+.report-more > summary {
+  padding: 16px 20px;
+  color: #bfefff;
+  cursor: pointer;
+  font-weight: 800;
+  list-style-position: inside;
+}
+
+.report-more[open] > summary {
+  border-bottom: 1px solid rgba(53, 204, 255, .16);
+}
+
+.report-more .report-analysis-layout,
+.report-more .recovery-story {
+  margin-inline: 18px;
+}
+
 .interval-result-summary,
 .interval-details-section {
   margin-top: 18px;
@@ -5704,7 +5785,7 @@ body[data-coach-section]
 
 .interval-result-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1px;
   margin-top: 22px;
   border-top: 1px solid rgba(92, 218, 255, .22);
@@ -5783,6 +5864,31 @@ body[data-coach-section]
 }
 
 @media (max-width: 760px) {
+  .atlas-workout-timeline {
+    margin-top: 16px;
+    padding: 13px 12px 9px;
+  }
+
+  .workout-timeline-bars {
+    gap: 2px;
+    height: 76px;
+  }
+
+  .workout-timeline-bars i {
+    min-width: 3px;
+    height: calc(20px + (var(--timeline-zone) * 10px));
+  }
+
+  .workout-timeline-legend {
+    justify-content: space-between;
+    gap: 5px;
+  }
+
+  .report-more .report-analysis-layout,
+  .report-more .recovery-story {
+    margin-inline: 10px;
+  }
+
   .interval-result-summary,
   .interval-details-section {
     padding: 20px 16px;

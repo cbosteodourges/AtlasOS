@@ -1408,6 +1408,118 @@ const target = compactTarget(workout, zone);
     return dialog;
   }
 
+  const DISPLAY_ZONE_COLORS = {
+    1: "#38a9ff",
+    2: "#49d17d",
+    3: "#f0cf4f",
+    4: "#ff9f43",
+    5: "#ff506c"
+  };
+
+  function atlasDisplayZone(workout, block = {}) {
+    const blockType = String(block.block_type || "").toLowerCase();
+    const workoutType = String(workout?.workout_type || "").toLowerCase();
+    const blockName = String(block.name || "").toLowerCase();
+
+    if (["warm_up", "cool_down", "recovery", "rest", "z1"].includes(blockType)) return 1;
+    if (blockType === "z2") return 2;
+    if (["z3", "tempo", "sv2"].includes(blockType)) return 3;
+    if (["vma", "vo2", "vo2max", "z4"].includes(blockType)) return 4;
+    if (["sprint", "acceleration", "z5"].includes(blockType)) return 5;
+
+    if (blockName.includes("seuil") || blockName.includes("sv2") || blockName.includes("tempo")) return 3;
+    if (blockName.includes("sprint") || blockName.includes("anaérobie")) return 5;
+    if (blockName.includes("vo2") || blockName.includes("vo₂")) return 4;
+    if (blockName.includes("vma")) {
+      const namedDistance = Number(block.distance_meters);
+      const namedDurationSeconds = Number(block.duration_seconds) ||
+        Number(block.duration_minutes) * 60;
+      return (namedDistance > 0 && namedDistance <= 200) ||
+        (namedDurationSeconds > 0 && namedDurationSeconds <= 45)
+        ? 5
+        : 4;
+    }
+
+    if (workoutType.includes("sprint")) return 5;
+    if (workoutType === "vma_short") {
+      const distance = Number(block.distance_meters);
+      const durationSeconds = Number(block.duration_seconds) ||
+        Number(block.duration_minutes) * 60;
+      return (distance > 0 && distance <= 200) ||
+        (durationSeconds > 0 && durationSeconds <= 45)
+        ? 5
+        : 4;
+    }
+    if (workoutType.includes("vo2") || workoutType === "vma_long") return 4;
+    if (workoutType.includes("threshold") || workoutType.includes("tempo")) return 3;
+    if (workoutType.includes("endurance") || workoutType === "long_run") return 2;
+
+    const targetZone = Number(block.target?.zone);
+    return targetZone >= 1 && targetZone <= 5 ? targetZone : 1;
+  }
+
+  function workoutTimelineSegments(workout) {
+    const segments = [];
+
+    (workout.blocks || []).forEach(block => {
+      const repetitions = Math.max(1, Number(block.repetitions) || 1);
+      const duration = Number(block.duration_minutes) ||
+        (Number(block.duration_seconds) || 0) / 60 || 1;
+
+      for (let index = 0; index < repetitions; index += 1) {
+        segments.push({
+          zone: atlasDisplayZone(workout, block),
+          duration,
+          label: block.name || block.block_type || "Étape"
+        });
+
+        const recovery = Number(block.recovery_minutes) ||
+          (Number(block.recovery_seconds) || 0) / 60;
+        if (recovery > 0 && index < repetitions - 1) {
+          segments.push({ zone: 1, duration: recovery, label: "Récupération" });
+        }
+      }
+    });
+
+    return segments;
+  }
+
+  function reportTimelineSegments(workout, blocks, dominantType) {
+    return (blocks || []).map(block => ({
+      zone: atlasDisplayZone(workout, {
+        ...block,
+        block_type: block.block_type === dominantType
+          ? dominantType
+          : block.block_type
+      }),
+      duration: Math.max((Number(block.duration_seconds) || 0) / 60, .25),
+      label: block.block_type || "Bloc réalisé"
+    }));
+  }
+
+  function timelineHtml(segments, label) {
+    if (!segments.length) return "";
+
+    return `
+      <section class="atlas-workout-timeline" aria-label="${escapeHtml(label)}">
+        <div class="workout-timeline-bars">
+          ${segments.map(segment => `
+            <i
+              class="timeline-zone-${segment.zone}"
+              style="--segment-weight:${Math.max(segment.duration, .5)};--segment-color:${DISPLAY_ZONE_COLORS[segment.zone]}"
+              title="${escapeHtml(segment.label)} · Z${segment.zone}"
+            ></i>
+          `).join("")}
+        </div>
+        <div class="workout-timeline-legend" aria-hidden="true">
+          <span class="timeline-zone-1">Z1</span><span class="timeline-zone-2">Z2</span>
+          <span class="timeline-zone-3">Z3</span><span class="timeline-zone-4">Z4</span>
+          <span class="timeline-zone-5">Z5</span>
+        </div>
+      </section>
+    `;
+  }
+
   function detailHtml(workout) {
     const response = workout.expected_response || {};
     const blocks = workout.blocks || [];
@@ -1442,16 +1554,9 @@ const target = compactTarget(workout, zone);
     ) || blocks[0];
 
     const accentFor = block => {
-      const zone = Number(block.target?.zone);
-      const zoneColors = {
-        1: "#38a9ff",
-        2: "#49d17d",
-        3: "#f0cf4f",
-        4: "#ff9f43",
-        5: "#ff506c"
-      };
+      const displayZone = atlasDisplayZone(workout, block);
 
-      if (zoneColors[zone]) return zoneColors[zone];
+      if (DISPLAY_ZONE_COLORS[displayZone]) return DISPLAY_ZONE_COLORS[displayZone];
 
       return {
         strength: "#a978ff",
@@ -1490,6 +1595,8 @@ const target = compactTarget(workout, zone);
           ${escapeHtml(difficultyLabel(level))}
         </i>
       </header>
+
+        ${timelineHtml(workoutTimelineSegments(workout), "Organisation de la séance prévue")}
 
               <section class="session-overview">
           <h3>Aperçu</h3>
@@ -1997,6 +2104,11 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           </div>
         </header>
 
+        ${timelineHtml(
+          reportTimelineSegments(workout, detailedBlocks, dominantType),
+          "Organisation de la séance réalisée"
+        )}
+
         <section class="interval-result-summary">
           <div class="report-heading">
             <span class="report-kicker">RÉSULTAT</span>
@@ -2033,16 +2145,6 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
               <strong>${reportNumber(averageWorkHeartRate, 0)} bpm</strong>
               <small>max. ${reportNumber(maximumWorkHeartRate, 0)} bpm</small>
             </article>
-            <article>
-              <span>Puissance moyenne</span>
-              <strong>${reportNumber(averageWorkPower, 0)} W</strong>
-              <small>blocs de travail</small>
-            </article>
-            <article>
-              <span>Cadence moyenne</span>
-              <strong>${reportNumber(averageWorkCadence, 0)} ppm</strong>
-              <small>blocs de travail</small>
-            </article>
           </div>
         </section>
 
@@ -2063,6 +2165,8 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             </div>
           </section>
         ` : ""}
+        <details class="report-more">
+          <summary>Voir l’analyse physiologique complète</summary>
         <div class="report-analysis-layout">
           <main>
               ${isIntervalSession ? `
@@ -2255,6 +2359,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             <span><b>72 h</b> Tolérance confirmée</span>
           </div>
         </section>
+        </details>
       </section>
     `;
   }
