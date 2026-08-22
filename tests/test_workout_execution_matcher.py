@@ -169,6 +169,68 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
         self.assertLess(result.execution.recovery_compliance_score, 50)
         self.assertTrue(any("écourtées" in reason for reason in result.reasons))
 
+    def test_hybrid_counts_only_repeated_work_blocks(self) -> None:
+        planned = AdaptiveWorkout(
+            workout_id="hybrid-3x6",
+            workout_date=date(2026, 8, 22),
+            workout_type=WorkoutType.LONG_RUN,
+            title="Sortie longue hybride · 3 × 6 min sous SV2",
+            objective="Résistance à la fatigue",
+            blocks=[
+                TrainingBlock(
+                    name="Endurance avant les blocs",
+                    block_type=BlockType.CONTINUOUS,
+                    repetitions=1,
+                    duration_minutes=23,
+                    target=IntensityTarget(zone=2),
+                ),
+                TrainingBlock(
+                    name="3 × 6 min sous SV2",
+                    block_type=BlockType.WORK,
+                    repetitions=3,
+                    duration_minutes=6,
+                    recovery_minutes=2,
+                    target=IntensityTarget(
+                        zone=3,
+                        speed_min_kmh=11.9,
+                        speed_max_kmh=12.5,
+                    ),
+                ),
+            ],
+            planned_duration_minutes=70,
+        )
+        activity = LongitudinalActivity(
+            atlas_id="garmin-hybrid-3x6",
+            start_time=datetime(
+                2026, 8, 22, 17, tzinfo=timezone.utc
+            ),
+            activity_type="running",
+            distance_km=10,
+            duration_minutes=70,
+            average_speed_kmh=10,
+        )
+        analysis = DetailedSessionAnalysis(
+            activity_id=activity.atlas_id,
+            blocks=[
+                SessionBlock(1, "z2", 0, 900, 900, 2400),
+                SessionBlock(2, "z3", 900, 1260, 360, 1200),
+                SessionBlock(3, "recovery", 1260, 1380, 120, 220),
+                SessionBlock(4, "z3", 1380, 1740, 360, 1200),
+                SessionBlock(5, "recovery", 1740, 1860, 120, 220),
+                SessionBlock(6, "z3", 1860, 2220, 360, 1200),
+            ],
+            dominant_work_type="z3",
+            session_type="long_run",
+            recovery_duration_seconds=240,
+        )
+
+        result = AtlasWorkoutExecutionMatcher().match(
+            planned, activity, analysis
+        )
+
+        self.assertEqual(result.execution.planned_repetition_count, 3)
+        self.assertEqual(result.execution.completed_repetition_count, 3)
+
 
 if __name__ == "__main__":
     unittest.main()
