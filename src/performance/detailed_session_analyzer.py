@@ -123,6 +123,14 @@ class DetailedSessionAnalyzer:
             activity,
             blocks,
         )
+        partial_work_duration = (
+            self._structured_partial_work_duration(
+                activity,
+                samples,
+                blocks,
+                threshold_speed_kmh,
+            )
+        )
         threshold_observations = (
             self._threshold_observations(blocks)
         )
@@ -161,6 +169,9 @@ class DetailedSessionAnalyzer:
                 block.distance_meters
                 for block in recovery_blocks
             ),
+            partial_work_duration_seconds=(
+                partial_work_duration
+            ),
             physiological_load_score=(
                 physiological_load
             ),
@@ -184,6 +195,94 @@ class DetailedSessionAnalyzer:
                 )
             ),
         )
+
+    def _structured_partial_work_duration(
+        self,
+        activity: LongitudinalActivity,
+        samples: List[ActivitySample],
+        blocks: List[SessionBlock],
+        threshold_speed_kmh: Optional[float],
+    ) -> float:
+        """Isole le travail d'un tour manuel mêlant effort et récupération.
+
+        Sur une séance chronométrée, un Auto Lap suivi d'un appui manuel peut
+        produire un bloc unique contenant la fin de l'effort puis le début de
+        la récupération. La première chute de vitesse durable sous la cible
+        marque alors la fin réelle du travail spécifique.
+        """
+        if not activity.workout_steps or len(samples) < 2:
+            return 0.0
+
+        active_steps = [
+            step for step in activity.workout_steps
+            if str(step.get("intensity", "")).lower()
+            in {"active", "interval"}
+            and self._number(step.get("duration_time"))
+        ]
+        if not active_steps:
+            return 0.0
+
+        target_duration = self._number(
+            active_steps[0].get("duration_time")
+        )
+        if not target_duration:
+            return 0.0
+
+        target_speed_low = self._number(
+            active_steps[0].get("custom_target_speed_low")
+        )
+        if target_speed_low is None and threshold_speed_kmh:
+            target_speed_low = threshold_speed_kmh * 0.90 / 3.6
+        if not target_speed_low:
+            return 0.0
+
+        candidates = [
+            block for block in blocks
+            if block.duration_seconds > target_duration + 5
+            and any(
+                "manuel" in reason.lower()
+                for reason in block.detection_reasons
+            )
+        ]
+        if not candidates:
+            return 0.0
+
+        session_start = self._date(samples[0].timestamp)
+        cutoff_speed = target_speed_low * 0.90
+
+        for block in candidates:
+            block_samples = [
+                sample for sample in samples
+                if block.start_offset_seconds <= (
+                    self._date(sample.timestamp) - session_start
+                ).total_seconds() <= block.end_offset_seconds
+            ]
+            for index, sample in enumerate(block_samples):
+                offset = (
+                    self._date(sample.timestamp) - session_start
+                ).total_seconds() - block.start_offset_seconds
+                if offset < target_duration * 0.50:
+                    continue
+                if sample.speed_mps is None or sample.speed_mps >= cutoff_speed:
+                    continue
+
+                sustained = [
+                    following for following in block_samples[index:]
+                    if (
+                        self._date(following.timestamp)
+                        - self._date(sample.timestamp)
+                    ).total_seconds() <= 10
+                ]
+                if len(sustained) < 5:
+                    continue
+                if all(
+                    following.speed_mps is not None
+                    and following.speed_mps < cutoff_speed
+                    for following in sustained
+                ):
+                    return round(offset, 3)
+
+        return 0.0
 
     @staticmethod
     def _data_integrity(
