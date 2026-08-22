@@ -53,6 +53,20 @@ button, input, select { font: inherit; }
   border-bottom: 1px solid var(--line);
   background: rgba(2, 10, 22, .94);
   backdrop-filter: blur(16px);
+  transform: translateY(0);
+  transition: transform .32s ease, box-shadow .32s ease;
+  will-change: transform;
+}
+
+.performance-header.is-scroll-hidden {
+  pointer-events: none;
+  transform: translateY(calc(-100% - 2px));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .performance-header {
+    transition: none;
+  }
 }
 
 .back-link {

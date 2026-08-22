@@ -1,6 +1,40 @@
 "use strict";
 
 (() => {
+  const header = document.querySelector(".performance-header");
+  if (!header) return;
+
+  let previousY = Math.max(0, window.scrollY);
+  let ticking = false;
+
+  const updateHeader = () => {
+    const currentY = Math.max(0, window.scrollY);
+    const movement = currentY - previousY;
+
+    if (currentY <= 24) {
+      header.classList.remove("is-scroll-hidden");
+    } else if (movement > 6) {
+      header.classList.add("is-scroll-hidden");
+    } else if (movement < -6) {
+      header.classList.remove("is-scroll-hidden");
+    }
+
+    previousY = currentY;
+    ticking = false;
+  };
+
+  window.addEventListener("scroll", () => {
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(updateHeader);
+  }, { passive: true });
+
+  header.addEventListener("focusin", () => {
+    header.classList.remove("is-scroll-hidden");
+  });
+})();
+
+(() => {
   // ████████████████████████████████████████████████████████████
   // 🟦 PARTIE A — A01 — CONFIGURATION
   // ████████████████████████████████████████████████████████████
