@@ -38,7 +38,27 @@
     vma: document.getElementById("vma"),
     hrMax: document.getElementById("hrMax"),
     hrRest: document.getElementById("hrRest"),
+    vo2MaxProfile: document.getElementById("vo2MaxProfile"),
     daysPerWeek: document.getElementById("daysPerWeek"),
+    runningExperience: document.getElementById("runningExperience"),
+    weeklyVolume: document.getElementById("weeklyVolume"),
+    recentLongRun: document.getElementById("recentLongRun"),
+    recentRaceTime: document.getElementById("recentRaceTime"),
+    intensityTolerance: document.getElementById("intensityTolerance"),
+    trainingMotivation: document.getElementById("trainingMotivation"),
+    initialAssessmentMethod: document.getElementById("initialAssessmentMethod"),
+    halfCooperPanel: document.getElementById("halfCooperPanel"),
+    halfCooperDistance: document.getElementById("halfCooperDistance"),
+    halfCooperResult: document.getElementById("halfCooperResult"),
+    availabilityDays: document.getElementById("availabilityDays"),
+    specificDayOne: document.getElementById("specificDayOne"),
+    specificDayTwo: document.getElementById("specificDayTwo"),
+    longRunDay: document.getElementById("longRunDay"),
+    weekdayDuration: document.getElementById("weekdayDuration"),
+    weekendDuration: document.getElementById("weekendDuration"),
+    preferredTime: document.getElementById("preferredTime"),
+    trainingFlexibility: document.getElementById("trainingFlexibility"),
+    profileSaveStatus: document.getElementById("profileSaveStatus"),
     displayMode: document.getElementById("displayMode"),
     thresholdSource: document.getElementById("thresholdSource"),
     measuredThresholds: document.getElementById("measuredThresholds"),
@@ -780,68 +800,74 @@
   function calculate() {
     try {
       const profile = getInputs();
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (!profile.eventDate || profile.eventDate <= today) {
-        throw new Error("Choisissez une date d’événement située dans le futur.");
-      }
 
       if (!Number.isFinite(profile.vma) || profile.vma < 6) {
-        throw new Error("Renseignez une VMA valide.");
+        throw new Error("Renseignez une VMA valide ou choisissez une méthode d’estimation.");
       }
-
       if (!Number.isFinite(profile.hrMax) || profile.hrMax < 120) {
         throw new Error("Renseignez une fréquence cardiaque maximale valide.");
       }
-
       if (Number.isFinite(profile.hrRest) && profile.hrRest >= profile.hrMax) {
         throw new Error("La fréquence cardiaque de repos doit être inférieure à la FC maximale.");
       }
 
       const zones = buildZones(profile);
       const thresholds = determineThresholds(profile, zones);
-      const plan = generatePlan(profile, zones);
-
       renderZones(zones, thresholds);
-      window.dispatchEvent(new CustomEvent(
-        "atlas:zones-updated",
-        {
-          detail: {
-            zones,
-            thresholds,
-            profile: {
-              vma: profile.vma,
-              hrMax: profile.hrMax,
-              hrRest: profile.hrRest,
-              displayMode: profile.displayMode
-            }
-          }
-        }
-      ));
-      // Le programme privé Atlas Research est rendu par
-// atlas-training-calendar.js. Ne pas réinjecter l’ancien plan.
 
-      elements.durationSummary.textContent = `${plan.totalWeeks} semaines`;
-      elements.eventSummary.textContent =
-        `${EVENT_LABELS[profile.eventType]} · ${formatShortDate(profile.eventDate)}`;
+      const availableDays = [
+        ...elements.availabilityDays.querySelectorAll("input:checked")
+      ].map(input => input.value);
+      if (availableDays.length < profile.daysPerWeek) {
+        throw new Error(
+          "Sélectionnez au moins autant de jours disponibles que de séances prévues."
+        );
+      }
 
-      elements.physiologyPanel.hidden = false;
-      elements.planPanel.hidden = false;
-
-      localStorage.setItem("atlasRunningProfile", JSON.stringify({
+      const savedProfile = {
         eventType: profile.eventType,
         eventDate: elements.eventDate.value,
         vma: profile.vma,
+        vo2Max: Number(elements.vo2MaxProfile.value) || null,
         hrMax: profile.hrMax,
         hrRest: profile.hrRest,
         daysPerWeek: profile.daysPerWeek,
         displayMode: profile.displayMode,
         thresholdSource: profile.thresholdSource,
-        thresholds
-      }));
+        thresholds,
+        experience: elements.runningExperience.value,
+        weeklyVolumeKm: Number(elements.weeklyVolume.value) || null,
+        recentLongRunKm: Number(elements.recentLongRun.value) || null,
+        recentRaceTime: elements.recentRaceTime.value.trim(),
+        intensityTolerance: elements.intensityTolerance.value,
+        motivation: elements.trainingMotivation.value,
+        assessmentMethod: elements.initialAssessmentMethod.value,
+        availability: {
+          days: availableDays,
+          specificDayOne: elements.specificDayOne.value,
+          specificDayTwo: elements.specificDayTwo.value,
+          longRunDay: elements.longRunDay.value,
+          weekdayDurationMinutes: Number(elements.weekdayDuration.value),
+          weekendDurationMinutes: Number(elements.weekendDuration.value),
+          preferredTime: elements.preferredTime.value,
+          flexibility: elements.trainingFlexibility.value
+        },
+        updatedAt: new Date().toISOString()
+      };
 
-      elements.physiologyPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      localStorage.setItem(
+        "atlasRunningProfile",
+        JSON.stringify(savedProfile)
+      );
+      window.dispatchEvent(new CustomEvent(
+        "atlas:zones-updated",
+        { detail: { zones, thresholds, profile: savedProfile } }
+      ));
+      elements.profileSaveStatus.textContent =
+        "Profil enregistré · zones recalculées automatiquement.";
+      showAtlasProfileNotification(
+        "Profil physiologique et disponibilités enregistrés."
+      );
     } catch (error) {
       showValidation(error.message);
     }
@@ -887,6 +913,27 @@
       setAtlasNumberField(elements.vma, saved.vma);
       setAtlasNumberField(elements.hrMax, saved.hrMax);
       setAtlasNumberField(elements.hrRest, saved.hrRest);
+      setAtlasNumberField(elements.vo2MaxProfile, saved.vo2Max);
+      setAtlasNumberField(elements.weeklyVolume, saved.weeklyVolumeKm);
+      setAtlasNumberField(elements.recentLongRun, saved.recentLongRunKm);
+      if (saved.recentRaceTime) elements.recentRaceTime.value = saved.recentRaceTime;
+      if (saved.experience) elements.runningExperience.value = saved.experience;
+      if (saved.intensityTolerance) elements.intensityTolerance.value = saved.intensityTolerance;
+      if (saved.motivation) elements.trainingMotivation.value = saved.motivation;
+      if (saved.assessmentMethod) elements.initialAssessmentMethod.value = saved.assessmentMethod;
+      if (saved.availability) {
+        const availability = saved.availability;
+        elements.availabilityDays.querySelectorAll("input").forEach(input => {
+          input.checked = (availability.days || []).includes(input.value);
+        });
+        if (availability.specificDayOne) elements.specificDayOne.value = availability.specificDayOne;
+        if (availability.specificDayTwo) elements.specificDayTwo.value = availability.specificDayTwo;
+        if (availability.longRunDay) elements.longRunDay.value = availability.longRunDay;
+        setAtlasNumberField(elements.weekdayDuration, availability.weekdayDurationMinutes);
+        setAtlasNumberField(elements.weekendDuration, availability.weekendDurationMinutes);
+        if (availability.preferredTime) elements.preferredTime.value = availability.preferredTime;
+        if (availability.flexibility) elements.trainingFlexibility.value = availability.flexibility;
+      }
 
       if (saved.daysPerWeek) {
         elements.daysPerWeek.value = String(saved.daysPerWeek);
@@ -1031,6 +1078,18 @@
     syncMeasuredThresholdFields
   );
 
+  elements.initialAssessmentMethod.addEventListener("change", () => {
+    elements.halfCooperPanel.hidden =
+      elements.initialAssessmentMethod.value !== "half-cooper";
+  });
+  elements.halfCooperDistance.addEventListener("input", () => {
+    const distance = Number(elements.halfCooperDistance.value);
+    const vma = distance > 0 ? distance / 100 : null;
+    elements.halfCooperResult.textContent = vma
+      ? `VMA calculée : ${vma.toFixed(1).replace(".", ",")} km/h`
+      : "VMA calculée : —";
+    if (vma) elements.vma.value = vma.toFixed(1);
+  });
   elements.calculateButton.addEventListener("click", calculate);
   elements.printButton.addEventListener("click", () => window.print());
 
