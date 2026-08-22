@@ -186,29 +186,37 @@ def _microdose_protocol(
 
 
 def build_hill_neuromuscular_sprints_protocol() -> TrainingResearchProtocol:
-    return _microdose_protocol(
+    protocol = _microdose_protocol(
         protocol_id="hill_neuromuscular_sprints",
-        title="Microdose côte · chaîne postérieure",
+        title="Microdose côte · 6 à 8 répétitions",
         intensity_basis="effort_powerful_technical",
         repetitions=6,
         duration_seconds=12,
         recovery_seconds=150,
         gradient_min=4,
         gradient_max=7,
-        instructions="Effort puissant mais non épuisant ; récupération complète et arrêt à la première dégradation technique.",
+        instructions="Commencer par 6 × 12 s puis progresser vers 7 et 8 répétitions seulement si la technique reste propre ; récupération complète et arrêt à la première dégradation.",
     )
+    protocol.research_notes.append(
+        "Progression Atlas : 6 répétitions à la première exposition, puis 7 et 8 après validation de la technique, de la douleur et de la récupération à J+1."
+    )
+    return protocol
 
 
 def build_flat_relaxed_strides_protocol() -> TrainingResearchProtocol:
-    return _microdose_protocol(
+    protocol = _microdose_protocol(
         protocol_id="flat_relaxed_strides",
-        title="Lignes droites relâchées",
+        title="Lignes droites relâchées · 6 à 8 répétitions",
         intensity_basis="relaxed_max_speed",
         repetitions=6,
         duration_seconds=20,
         recovery_seconds=120,
-        instructions="85–92 % de la vitesse maximale, relâché, sans sprint final.",
+        instructions="Commencer par 6 × 20 s puis progresser vers 7 et 8 répétitions à 85–92 % de la vitesse maximale, relâché et sans sprint final.",
     )
+    protocol.research_notes.append(
+        "La progression porte sur le nombre de répétitions, jamais simultanément sur la vitesse."
+    )
+    return protocol
 
 
 def build_gentle_downhill_eccentric_protocol() -> TrainingResearchProtocol:
