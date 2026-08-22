@@ -120,6 +120,58 @@ def load_authorized_training_program():
     filtered["access_control"]["display_name"] = entitlement["display_name"]
     return filtered
 
+
+def load_historical_workouts(private_dir=None):
+    """Restitue les séances des versions successives du programme.
+
+    Une activation remplace le programme courant, mais ne doit pas effacer
+    l'intention des séances déjà courues. Seules les séances sont exposées :
+    les autres données privées des sauvegardes restent côté serveur.
+    """
+
+    directory = Path(private_dir) if private_dir else PROGRAM_PATH.parent
+    paths = sorted(
+        directory.glob("training-program*.json"),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    workouts = {}
+
+    for path in paths:
+        try:
+            with path.open("r", encoding="utf-8") as source:
+                document = json.load(source)
+        except (OSError, json.JSONDecodeError):
+            continue
+
+        week_groups = document.get("weeks") or []
+        if not week_groups and isinstance(document.get("pilot"), dict):
+            week_groups = document["pilot"].get("weeks") or []
+
+        for week in week_groups:
+            for workout in week.get("workouts") or []:
+                workout_date = str(workout.get("workout_date") or "")[:10]
+                workout_id = str(workout.get("workout_id") or "")
+                if not workout_date or not workout_id:
+                    continue
+                key = (workout_date, workout_id)
+                workouts.setdefault(
+                    key,
+                    {
+                        **workout,
+                        "archived_program": path != PROGRAM_PATH,
+                        "program_archive": path.name,
+                    },
+                )
+
+    return sorted(
+        workouts.values(),
+        key=lambda workout: (
+            str(workout.get("workout_date") or ""),
+            str(workout.get("workout_id") or ""),
+        ),
+    )
+
 WORKOUT_DECISIONS_PATH = (
     ROOT
     / "atlas-data"
@@ -2095,6 +2147,19 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
                     404,
                     {"ok": False, "error": str(error)},
                 )
+            return
+
+        if parsed.path == "/api/atlas-coach/historical-workouts":
+            try:
+                self.send_json(
+                    200,
+                    {
+                        "ok": True,
+                        "workouts": load_historical_workouts(),
+                    },
+                )
+            except OSError as error:
+                self.send_json(500, {"ok": False, "error": str(error)})
             return
 
         if parsed.path in {

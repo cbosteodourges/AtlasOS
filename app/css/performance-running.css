@@ -7293,6 +7293,24 @@ body[data-coach-section]
   -webkit-line-clamp: 2;
 }
 
+.history-day-meta {
+  color: #55e0ad;
+  display: block;
+  font-size: .6rem;
+  line-height: 1.2;
+  margin-top: 4px;
+  text-align: left;
+}
+
+.history-month-grid.is-compact .history-day-meta {
+  display: none;
+}
+
+.calendar-session-completed-detail {
+  color: #55e0ad !important;
+  font-weight: 800;
+}
+
 .history-day.has-workout:hover .history-day-summary,
 .history-day.is-selected .history-day-summary {
   color: #dff8ff;

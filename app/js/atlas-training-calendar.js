@@ -58,6 +58,116 @@
   let activeProgram = null;
   let workoutDecisions = loadWorkoutDecisions();
   const executionReportCache = new Map();
+  let historicalCompletedWorkouts = [];
+
+  function executionSessionLabel(execution) {
+    const type = String(
+      execution.activity?.session_type ||
+      execution.analysis?.session_type || ""
+    ).toLowerCase();
+    return {
+      vo2: "VO₂max",
+      vma: "VO₂max / VMA",
+      interval: "Fractionné",
+      threshold: "Seuil SV2",
+      tempo: "Tempo",
+      endurance: "Endurance fondamentale",
+      recovery: "Récupération",
+      long_run: "Sortie longue"
+    }[type] || "Séance analysée par Atlas";
+  }
+
+  function historicalWorkoutForExecution(execution, archivedWorkouts) {
+    const executionDate = String(execution.start_time || "").slice(0, 10);
+    const sport = String(execution.activity?.sport || "running");
+    const sessionType = String(
+      execution.activity?.session_type ||
+      execution.analysis?.session_type || ""
+    ).toLowerCase();
+    const candidates = archivedWorkouts.filter(workout => (
+      workout.archived_program &&
+      workout.workout_date === executionDate &&
+      String(workout.sport || "running") === sport
+    ));
+    const compatible = candidates.find(workout => {
+      const type = String(workout.workout_type || "").toLowerCase();
+      if (["vo2", "vma", "interval"].includes(sessionType)) {
+        return type.includes("vo2") || type.includes("vma");
+      }
+      if (sessionType === "threshold") {
+        return type.includes("threshold") || type.includes("sv2");
+      }
+      return false;
+    });
+    return compatible || candidates[0] || null;
+  }
+
+  async function loadHistoricalCompletedWorkouts(program) {
+    try {
+      const [historyResponse, executionsResponse] = await Promise.all([
+        fetch(`/api/atlas-coach/historical-workouts?v=${Date.now()}`, {
+          cache: "no-store"
+        }),
+        fetch(`/api/atlas-coach/executions?limit=100&v=${Date.now()}`, {
+          cache: "no-store"
+        })
+      ]);
+      if (!historyResponse.ok || !executionsResponse.ok) return [];
+
+      const historyPayload = await historyResponse.json();
+      const executionsPayload = await executionsResponse.json();
+      const archived = historyPayload.workouts || [];
+      const current = (program.weeks || []).flatMap(
+        week => week.workouts || []
+      );
+
+      return (executionsPayload.executions || []).flatMap((execution, index) => {
+        const executionDate = String(execution.start_time || "").slice(0, 10);
+        const activityId = String(execution.activity_id || "");
+        const match = execution.workout_match || {};
+        const alreadyRepresented = current.some(workout => (
+          workout.workout_date === executionDate &&
+          match.matched &&
+          workout.workout_id === match.workout_id
+        ));
+        if (alreadyRepresented || !executionDate) return [];
+
+        const archivedWorkout = historicalWorkoutForExecution(
+          execution,
+          archived
+        );
+        const activity = execution.activity || {};
+        const syntheticId = `completed-${activityId || index}`;
+        workoutDecisions[syntheticId] = {
+          status: "completed",
+          source: "historical_fit",
+          activity_id: activityId,
+          execution_score: match.execution?.execution_score
+        };
+
+        return [{
+          ...(archivedWorkout || {}),
+          workout_id: syntheticId,
+          report_activity_id: activityId,
+          workout_date: executionDate,
+          title: archivedWorkout?.title || executionSessionLabel(execution),
+          sport: activity.sport || archivedWorkout?.sport || "running",
+          planned_duration_minutes:
+            Number(activity.duration_minutes) ||
+            Number(archivedWorkout?.planned_duration_minutes),
+          actual_duration_minutes: Number(activity.duration_minutes),
+          distance_km: Number(activity.distance_km),
+          average_heart_rate_bpm: Number(activity.average_heart_rate_bpm),
+          execution_score: Number(match.execution?.execution_score),
+          historical_execution: true,
+          analysis_available: true
+        }];
+      });
+    } catch (error) {
+      console.warn("Séances historiques non réintégrées :", error);
+      return [];
+    }
+  }
 
   async function loadExecutionReport(workoutId, activityId = "") {
     const cacheKey = activityId
@@ -1121,8 +1231,22 @@ const target = compactTarget(workout, zone);
         </span>
         <strong>${escapeHtml(workout.title)}</strong>
         <small>${escapeHtml(
-          formatMinutes(workout.planned_duration_minutes)
-        )}</small>
+          formatMinutes(
+            workout.actual_duration_minutes ||
+            workout.planned_duration_minutes
+          )
+        )}${workout.distance_km ? ` · ${escapeHtml(
+          Number(workout.distance_km).toLocaleString("fr-FR", {
+            maximumFractionDigits: 2
+          })
+        )} km` : ""}</small>
+        ${workout.historical_execution ? `
+          <small class="calendar-session-completed-detail">
+            Réalisée${Number.isFinite(workout.execution_score)
+              ? ` · score ${Math.round(workout.execution_score)}/100`
+              : ""}
+          </small>
+        ` : ""}
     ${target ? `
       <small class="calendar-session-target">
         ${escapeHtml(target)}
@@ -1153,7 +1277,7 @@ const target = compactTarget(workout, zone);
     program,
     mobileSelected = false
   ) {
-    const active = (
+    const active = workouts.some(workout => workout.historical_execution) || (
       value >= program.start_date &&
       value <= program.end_date
     );
@@ -1213,8 +1337,13 @@ const target = compactTarget(workout, zone);
   function renderWeek(week, program) {
     const start = parseDate(week.start_date);
     const workoutsByDate = new Map();
+    const historical = historicalCompletedWorkouts.filter(workout => (
+      workout.workout_date >= week.start_date &&
+      workout.workout_date <= week.end_date
+    ));
+    const displayedWorkouts = [...week.workouts, ...historical];
 
-    week.workouts.forEach(workout => {
+    displayedWorkouts.forEach(workout => {
       const existing = workoutsByDate.get(
         workout.workout_date
       ) || [];
@@ -1258,6 +1387,13 @@ const target = compactTarget(workout, zone);
       );
     });
 
+    const completedMinutes = historical.reduce(
+      (total, workout) => total + Number(
+        workout.actual_duration_minutes || 0
+      ),
+      0
+    );
+
     return `
       <details
         class="premium-week phase-${escapeHtml(week.phase)}"
@@ -1278,7 +1414,9 @@ const target = compactTarget(workout, zone);
             →
             ${escapeHtml(formatDate(week.end_date))}
             · ${escapeHtml(
-              formatMinutes(week.target_duration_minutes)
+              formatMinutes(
+                Number(week.target_duration_minutes || 0) + completedMinutes
+              )
             )}
           </span>
         </summary>
@@ -3962,6 +4100,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     activeProgram = program;
     workoutIndex.clear();
     await restoreOptional(program);
+    historicalCompletedWorkouts = await loadHistoricalCompletedWorkouts(
+      program
+    );
     renderCoachZones(program);
     physiologicalRibbon(program.athlete_snapshot);
     renderOverview(program);
