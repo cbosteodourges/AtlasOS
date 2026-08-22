@@ -296,26 +296,91 @@ def execution_summary(item):
 
 
 def load_execution_summaries():
-    """Charge les comptes-rendus synthétiques du plus récent au plus ancien."""
+    """Agrège les comptes-rendus FIT actifs et archivés, sans dépendre du plan."""
 
-    if not EXECUTIONS_PATH.exists():
-        return []
+    candidate_paths = {EXECUTIONS_PATH}
+    if EXECUTIONS_PATH.parent.exists():
+        candidate_paths.update(
+            EXECUTIONS_PATH.parent.glob("atlas-coach-executions*.json")
+        )
+        candidate_paths.update(
+            EXECUTIONS_PATH.parent.glob("*executions*.backup*.json")
+        )
 
-    with EXECUTIONS_PATH.open("r", encoding="utf-8") as source:
-        data = json.load(source)
+    items = []
+    for path in sorted(candidate_paths):
+        if not path.is_file():
+            continue
+        try:
+            with path.open("r", encoding="utf-8") as source:
+                loaded = json.load(source)
+        except (OSError, json.JSONDecodeError):
+            continue
+        items.extend(loaded if isinstance(loaded, list) else [loaded])
 
-    items = data if isinstance(data, list) else [data]
-    summaries = [
-        summary
-        for summary in (execution_summary(item) for item in items)
-        if summary is not None
-    ]
+    deduplicated = {}
+    for item in items:
+        summary = execution_summary(item)
+        if summary is None:
+            continue
+        activity = summary.get("activity") or {}
+        key = str(
+            summary.get("activity_id")
+            or (
+                str(summary.get("start_time") or "")
+                + "|"
+                + str(activity.get("distance_km") or "")
+                + "|"
+                + str(activity.get("duration_minutes") or "")
+            )
+        )
+        deduplicated[key] = summary
 
     return sorted(
-        summaries,
+        deduplicated.values(),
         key=lambda item: str(item.get("start_time") or ""),
         reverse=True,
     )
+
+
+def load_physiological_reference():
+    """Relit les références physiologiques conservées dans le programme actif."""
+
+    if not PROGRAM_PATH.is_file():
+        return {}
+    try:
+        with PROGRAM_PATH.open("r", encoding="utf-8") as source:
+            program = json.load(source)
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+    snapshot = program.get("athlete_snapshot") or {}
+    sv1 = snapshot.get("sv1") or {}
+    sv2 = snapshot.get("sv2") or {}
+    return {
+        "vo2_max": _wellness_number(snapshot.get("vo2_max")),
+        "vma_kmh": _wellness_number(
+            snapshot.get("vma_estimated_from_vo2_kmh")
+            or snapshot.get("vma_kmh")
+            or snapshot.get("vma_training_reference_kmh")
+        ),
+        "vma_training_reference_kmh": _wellness_number(
+            snapshot.get("vma_training_reference_kmh")
+            or snapshot.get("vma_kmh")
+        ),
+        "maximum_heart_rate_bpm": _wellness_number(
+            snapshot.get("maximum_heart_rate_bpm")
+        ),
+        "resting_heart_rate_bpm": _wellness_number(
+            snapshot.get("resting_heart_rate_bpm")
+        ),
+        "sv1_speed_kmh": _wellness_number(sv1.get("speed_kmh")),
+        "sv1_heart_rate_bpm": _wellness_number(sv1.get("heart_rate_bpm")),
+        "sv1_status": sv1.get("status"),
+        "sv2_speed_kmh": _wellness_number(sv2.get("speed_kmh")),
+        "sv2_heart_rate_bpm": _wellness_number(sv2.get("heart_rate_bpm")),
+        "sv2_status": sv2.get("status"),
+    }
 
 def load_workout_contexts():
     """Charge l’historique des contextes déclarés."""
@@ -1121,6 +1186,8 @@ def _athlete_analysis(history):
     strengths = []
     vigilance = []
     priorities = []
+    physiology = load_physiological_reference()
+    longitudinal_report = _longitudinal_training_report(history)
 
     latest_hrv = latest.get("hrv_last_night_ms")
     latest_weekly = latest.get("hrv_weekly_average_ms")
@@ -1168,10 +1235,43 @@ def _athlete_analysis(history):
             "la disponibilité du jour ne doit pas être déduite de cet instantané."
         )
 
+    vo2_max = physiology.get("vo2_max")
+    vma = physiology.get("vma_kmh")
+    sv1_speed = physiology.get("sv1_speed_kmh")
+    sv2_speed = physiology.get("sv2_speed_kmh")
+    if vo2_max is not None:
+        strengths.append(
+            f"Capacité aérobie de référence : VO₂max {vo2_max:.0f} ml/kg/min."
+        )
+    if vma is not None:
+        strengths.append(
+            f"Vitesse aérobie de référence : VMA estimée {vma:.2f} km/h."
+        )
+    if sv1_speed is not None and sv2_speed is not None:
+        strengths.append(
+            f"Seuils physiologiques suivis : SV1 {sv1_speed:.1f} km/h et "
+            f"SV2 {sv2_speed:.1f} km/h."
+        )
+
+    for conclusion in longitudinal_report.get("conclusions", []):
+        topic = str(conclusion.get("topic") or "")
+        statement = str(conclusion.get("conclusion") or "")
+        evidence = str(conclusion.get("evidence") or "")
+        combined = f"{topic} : {statement} {evidence}".strip()
+        lowered = statement.lower()
+        if any(word in lowered for word in (
+            "progression", "régulier", "stable", "compatible", "sans hausse"
+        )):
+            strengths.append(combined)
+        elif any(word in lowered for word in (
+            "retrait", "surveiller", "variable", "défavorablement", "suspendre"
+        )):
+            vigilance.append(combined)
+
     priorities.extend([
         "Préserver la majorité du volume en endurance fondamentale et suivre la dérive cardiaque.",
-        "Conserver un renforcement utile au coureur, progressif et compatible avec la récupération.",
-        "N’augmenter l’intensité que si sommeil, VFC et ressenti convergent favorablement.",
+        "Utiliser les tendances FIT allure/FC, charge et exécution pour ajuster la progression.",
+        "N’augmenter l’intensité que si sommeil, VFC, exécution FIT et ressenti convergent favorablement.",
     ])
 
     if not strengths:
@@ -1183,12 +1283,12 @@ def _athlete_analysis(history):
         "generated_for": latest.get("day"),
         "profile": "Profil d’endurance en construction longitudinale",
         "summary": (
-            "Atlas croise les tendances de sommeil, VFC, fréquence cardiaque de repos, "
-            "récupération et charge disponible. Les conclusions ci-dessous sont reliées "
-            "aux données observées et distinguent clairement les informations manquantes."
+            "Atlas croise les tendances Wellness, les références physiologiques et "
+            "les séances FIT actives ou archivées. Les forces, vigilances et priorités "
+            "sont reliées aux données observées, indépendamment du programme en cours."
         ),
-        "strengths": strengths[:3],
-        "vigilance": vigilance[:3],
+        "strengths": strengths[:5],
+        "vigilance": vigilance[:5],
         "priorities": priorities,
         "confidence": {
             "score": max(0, min(100, confidence)),
@@ -1205,7 +1305,8 @@ def _athlete_analysis(history):
             ),
         },
         "performance_comparison": _performance_comparison(history),
-        "longitudinal_report": _longitudinal_training_report(history),
+        "longitudinal_report": longitudinal_report,
+        "physiology": physiology,
         "benchmarks": {
             "hrv_28d": hrv_mean,
             "sleep_score_28d": sleep_mean,
