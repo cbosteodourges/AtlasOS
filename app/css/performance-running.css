@@ -7196,3 +7196,56 @@ body[data-coach-section]
   .availability-days { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .competition-cards { grid-template-columns: 1fr; }
 }
+
+.program-access-banner {
+  align-items: center;
+  background: linear-gradient(135deg, rgba(30, 48, 70, .94), rgba(7, 23, 37, .96));
+  border: 1px solid #b28b35;
+  border-radius: 15px;
+  display: flex;
+  gap: 12px 24px;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 16px 18px;
+}
+.program-access-banner strong {
+  color: #ffd66c;
+}
+.program-access-banner span {
+  color: #9cb9cb;
+  font-size: .82rem;
+}
+.program-access-banner.is-founder {
+  border-color: #4cd99a;
+}
+.program-access-banner.is-founder strong {
+  color: #57e5a3;
+}
+.locked-program-week {
+  align-items: center;
+  background: rgba(5, 18, 29, .72);
+  border: 1px dashed #385064;
+  display: flex;
+  justify-content: space-between;
+  min-height: 125px;
+  opacity: .82;
+  padding: 22px;
+}
+.locked-program-week h3 {
+  color: #a6bac7;
+  margin: 6px 0;
+}
+.locked-program-week p,
+.locked-program-week span {
+  color: #657f90;
+}
+.locked-program-week > strong {
+  filter: grayscale(1);
+  font-size: 1.7rem;
+}
+@media (max-width: 620px) {
+  .program-access-banner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
