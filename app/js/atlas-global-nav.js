@@ -103,6 +103,7 @@
     setExpandedLayout();
     const panels = [...document.querySelectorAll("[data-coach-section]")];
     const buttons = [...nav.querySelectorAll("[data-coach-nav]")];
+    let sectionChosenByUser = false;
 
     const showCoachSection = requested => {
       const selected = panels.some(panel => panel.dataset.coachSection === requested)
@@ -127,7 +128,10 @@
     };
 
     buttons.forEach(button => {
-      button.addEventListener("click", () => showCoachSection(button.dataset.coachNav));
+      button.addEventListener("click", () => {
+        sectionChosenByUser = true;
+        showCoachSection(button.dataset.coachNav);
+      });
     });
 
     window.addEventListener("atlas:coach-section-request", event => {
@@ -142,6 +146,24 @@
       sensorSetupComplete
         ? (rememberedSection || "plan")
         : "sensors"
+    );
+
+    const showPlanForConfiguredUser = () => {
+      if (
+        !sectionChosenByUser &&
+        document.body.dataset.coachSection === "sensors"
+      ) {
+        showCoachSection("plan");
+      }
+    };
+
+    window.addEventListener(
+      "atlas:athlete-profile-loaded",
+      showPlanForConfiguredUser
+    );
+    window.addEventListener(
+      "atlas:training-program-loaded",
+      showPlanForConfiguredUser
     );
   }
 
