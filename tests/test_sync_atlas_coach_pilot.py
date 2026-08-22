@@ -48,6 +48,10 @@ class AutomaticWorkoutConfirmationTests(unittest.TestCase):
             self.assertEqual(len(workouts), 2)
             self.assertEqual(workouts[0]["title"], "Dernière version")
             self.assertEqual(workouts[1]["workout_id"], "optional-2")
+            self.assertEqual(
+                len(json.loads(source.read_text(encoding="utf-8"))),
+                2,
+            )
 
     def test_reliable_match_marks_workout_completed(self):
         with tempfile.TemporaryDirectory() as directory:
