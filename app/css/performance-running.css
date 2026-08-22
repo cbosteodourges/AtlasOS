@@ -6955,3 +6955,31 @@ body[data-coach-section]
     grid-template-columns: 1fr;
   }
 }
+
+.provider-button-manual {
+  border-color: rgba(241, 189, 67, .55);
+  grid-column: 1 / -1;
+  text-align: center;
+}
+.provider-button-manual strong {
+  color: #ffd978;
+}
+.connector-readiness {
+  background: rgba(5, 24, 39, .85);
+  border: 1px solid #24516a;
+  border-radius: 12px;
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+}
+.connector-readiness span,
+.connector-readiness small {
+  color: #82aac2;
+}
+.connector-readiness strong {
+  color: #f4fbff;
+}
+.external-provider-form input:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
