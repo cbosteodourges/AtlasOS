@@ -134,7 +134,15 @@
       showCoachSection(event.detail?.section);
     });
 
-    showCoachSection(localStorage.getItem("atlasCoachActiveSection") || "plan");
+    const sensorSetupComplete =
+      localStorage.getItem("atlasCoachSensorSetupComplete") === "true";
+    const rememberedSection =
+      localStorage.getItem("atlasCoachActiveSection");
+    showCoachSection(
+      sensorSetupComplete
+        ? (rememberedSection || "plan")
+        : "sensors"
+    );
   }
 
   if (isHub) {
