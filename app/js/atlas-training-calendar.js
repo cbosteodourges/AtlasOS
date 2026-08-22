@@ -3953,6 +3953,11 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     if (program?.athlete_snapshot) {
       physiologicalRibbon(program.athlete_snapshot);
     }
+    if (program?.weeks && program?.goal && !activeProgram) {
+      render(program).catch(error => {
+        console.warn("Programme Atlas non affiché.", error);
+      });
+    }
   });
 
   calendar.addEventListener("click", event => {
@@ -4031,6 +4036,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     }
   }
 
-  loadProgram();
+  if (window.ATLAS_ACTIVE_PROGRAM?.weeks &&
+      window.ATLAS_ACTIVE_PROGRAM?.goal) {
+    render(window.ATLAS_ACTIVE_PROGRAM).catch(error => {
+      console.warn("Programme Atlas non affiché.", error);
+    });
+  } else {
+    loadProgram();
+  }
 })();
 /* FIN GRILLE HEBDOMADAIRE PREMIUM ATLAS COACH */

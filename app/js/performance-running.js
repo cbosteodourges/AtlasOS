@@ -1034,17 +1034,17 @@
           physiology.vma_kmh
         );
         setAtlasNumberField(
+          elements.vo2MaxProfile,
+          physiology.vo2_max
+        );
+        setAtlasNumberField(
           elements.hrMax,
           physiology.maximum_heart_rate_bpm
         );
-        if (physiology.resting_heart_rate_bpm == null) {
-            elements.hrRest.value = "";
-          } else {
-            setAtlasNumberField(
-              elements.hrRest,
-              physiology.resting_heart_rate_bpm
-            );
-          }
+        setAtlasNumberField(
+          elements.hrRest,
+          physiology.resting_heart_rate_bpm
+        );
 
         const sv1 = physiology.sv1 || {};
         const sv2 = physiology.sv2 || {};
@@ -1111,6 +1111,31 @@
 
     syncMeasuredThresholdFields();
   }
+
+  async function loadLatestWellnessReferences() {
+    try {
+      const response = await fetch(
+        `/api/atlas/wellness-history?v=${Date.now()}`,
+        { cache: "no-store" }
+      );
+      if (!response.ok) return;
+      const payload = await response.json();
+      const observations = Array.isArray(payload.history)
+        ? [...payload.history].reverse()
+        : [];
+      const restingHeartRate = observations.find(
+        item => Number.isFinite(Number(item.resting_heart_rate_bpm))
+      )?.resting_heart_rate_bpm;
+      const wellnessVo2 = observations.find(
+        item => Number.isFinite(Number(item.vo2_max))
+      )?.vo2_max;
+
+      setAtlasNumberField(elements.hrRest, restingHeartRate);
+      setAtlasNumberField(elements.vo2MaxProfile, wellnessVo2);
+    } catch (error) {
+      console.debug("Références Wellness indisponibles.", error);
+    }
+  }
   elements.thresholdSource.addEventListener(
     "change",
     syncMeasuredThresholdFields
@@ -1133,6 +1158,7 @@
 
   setDefaultDate();
   loadAtlasAthleteProfile();
+  loadLatestWellnessReferences();
   const syncProviderButtons =
     document.querySelectorAll(".provider-button");
 
@@ -2359,6 +2385,13 @@
 
     planPanel.hidden = false;
     hydrateGoalFields(program);
+
+    const snapshot = program.athlete_snapshot || {};
+    setAtlasNumberField(elements.vo2MaxProfile, snapshot.vo2_max);
+    setAtlasNumberField(
+      elements.hrRest,
+      snapshot.resting_heart_rate_bpm
+    );
   }
 
   function hydrateGoalFields(program) {
@@ -2428,6 +2461,7 @@
         }
 
         renderRealProgram(program);
+        window.ATLAS_ACTIVE_PROGRAM = program;
         window.dispatchEvent(new CustomEvent(
           "atlas:training-program-loaded",
           { detail: program }
