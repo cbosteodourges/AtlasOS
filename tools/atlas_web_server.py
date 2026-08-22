@@ -7,6 +7,7 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
+import os
 from pathlib import Path
 import socket
 import sys
@@ -30,6 +31,10 @@ from src.training.post_workout_context_analyzer import (
     PostWorkoutContextAnalyzer,
 )
 from src.training.user_workout_decision import UserWorkoutDecisionEngine
+from src.training.subscription_access import (
+    filter_program_for_subscription,
+    normalize_tier,
+)
 
 
 def calculate_age(birth_date):
@@ -67,6 +72,54 @@ def serialize(value):
 
 
 PROGRAM_PATH = ROOT / "atlas-data" / "private" / "training-program.json"
+SUBSCRIPTION_PATH = (
+    ROOT / "atlas-data" / "private" / "atlas-subscription.json"
+)
+
+
+def load_subscription_entitlement():
+    """Charge le droit local ; le compte fondateur conserve l'accès complet."""
+
+    configured = os.environ.get("ATLAS_SUBSCRIPTION_TIER")
+    account = {}
+    if SUBSCRIPTION_PATH.is_file():
+        try:
+            with SUBSCRIPTION_PATH.open("r", encoding="utf-8") as source:
+                loaded = json.load(source)
+                if isinstance(loaded, dict):
+                    account = loaded
+        except (OSError, json.JSONDecodeError):
+            account = {}
+
+    tier = normalize_tier(
+        configured
+        or account.get("tier")
+        or account.get("role")
+        or "founder_admin"
+    )
+    return {
+        "tier": tier,
+        "account_id": account.get("account_id") or "local-founder",
+        "display_name": account.get("display_name") or "Christophe",
+    }
+
+
+def load_authorized_training_program():
+    """Retourne le programme filtré avant toute transmission au navigateur."""
+
+    if not PROGRAM_PATH.is_file():
+        raise FileNotFoundError("Aucun programme Atlas actif.")
+    with PROGRAM_PATH.open("r", encoding="utf-8") as source:
+        program = json.load(source)
+    entitlement = load_subscription_entitlement()
+    filtered = filter_program_for_subscription(
+        program,
+        entitlement["tier"],
+    )
+    filtered["access_control"]["account_id"] = entitlement["account_id"]
+    filtered["access_control"]["display_name"] = entitlement["display_name"]
+    return filtered
+
 WORKOUT_DECISIONS_PATH = (
     ROOT
     / "atlas-data"
@@ -2030,6 +2083,29 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
 
         query = parse_qs(parsed.query)
+
+        if parsed.path == "/api/atlas-coach/program":
+            try:
+                self.send_json(200, load_authorized_training_program())
+            except (OSError, json.JSONDecodeError) as error:
+                self.send_json(
+                    404,
+                    {"ok": False, "error": str(error)},
+                )
+            return
+
+        if parsed.path in {
+            "/atlas-data/private/training-program.json",
+            "/atlas-data/private/three-plus-one-pilot-preview.json",
+        }:
+            self.send_json(
+                403,
+                {
+                    "ok": False,
+                    "error": "Programme protégé : utilisez l’API Atlas.",
+                },
+            )
+            return
 
         if parsed.path == "/api/atlas-coach/optional-workouts":
             try:
