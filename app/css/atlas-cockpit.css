@@ -489,3 +489,67 @@ body[data-avatar="female"] .twin-panel img {
 .longitudinal-evidence article{padding:17px;border:1px solid var(--line);border-radius:16px;background:rgba(3,15,28,.7)}.longitudinal-evidence article div{display:flex;justify-content:space-between;gap:12px;color:var(--cyan);font-size:12px;text-transform:uppercase;letter-spacing:.05em}.longitudinal-evidence article div b{color:var(--green);white-space:nowrap}.longitudinal-evidence article>strong{display:block;margin:11px 0 7px;line-height:1.4}.longitudinal-evidence article>small{color:var(--muted);line-height:1.45}.longitudinal-evidence details{margin-top:15px;color:var(--muted)}.longitudinal-evidence summary{cursor:pointer;font-weight:800;color:#c5d7e6}.longitudinal-evidence li{margin:8px 0;line-height:1.45}
 @media(max-width:850px){.longitudinal-evidence>[data-longitudinal-conclusions]{grid-template-columns:1fr}}
 @media(max-width:700px){.longitudinal-evidence{padding:17px;border-radius:17px}.longitudinal-evidence h3{font-size:20px}.longitudinal-evidence article div{display:block}.longitudinal-evidence article div b{display:block;margin-top:5px}}
+
+.physiology-reference {
+  background: linear-gradient(135deg, rgba(12, 41, 59, .92), rgba(5, 20, 34, .96));
+  border: 1px solid rgba(72, 216, 243, .35);
+  border-radius: 22px;
+  padding: 24px;
+}
+.physiology-reference header {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.physiology-reference header h3 {
+  color: #f4fbff;
+  font-size: 1.45rem;
+  margin: 4px 0 0;
+}
+.physiology-reference header small {
+  color: #7fb0ca;
+}
+.physiology-reference-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.physiology-reference-grid article {
+  background: rgba(2, 15, 27, .72);
+  border: 1px solid rgba(53, 135, 172, .38);
+  border-radius: 15px;
+  min-width: 0;
+  padding: 16px;
+}
+.physiology-reference-grid span,
+.physiology-reference-grid small {
+  color: #86abc2;
+  display: block;
+}
+.physiology-reference-grid strong {
+  color: #47d7ff;
+  display: block;
+  font-size: 1.35rem;
+  margin: 7px 0;
+}
+.physiology-reference-grid small {
+  font-size: .72rem;
+  line-height: 1.4;
+}
+@media (max-width: 1100px) {
+  .physiology-reference-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 620px) {
+  .physiology-reference-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .physiology-reference header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
