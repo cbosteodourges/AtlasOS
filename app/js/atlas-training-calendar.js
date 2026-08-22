@@ -104,17 +104,22 @@
 
   async function loadHistoricalCompletedWorkouts(program) {
     try {
-      const [historyResponse, executionsResponse] = await Promise.all([
-        fetch(`/api/atlas-coach/historical-workouts?v=${Date.now()}`, {
-          cache: "no-store"
-        }),
-        fetch(`/api/atlas-coach/executions?limit=100&v=${Date.now()}`, {
-          cache: "no-store"
-        })
-      ]);
-      if (!historyResponse.ok || !executionsResponse.ok) return [];
+      const executionsResponse = await fetch(
+        `/api/atlas-coach/executions?limit=100&v=${Date.now()}`,
+        { cache: "no-store" }
+      );
+      if (!executionsResponse.ok) return [];
 
-      const historyPayload = await historyResponse.json();
+      let historyPayload = {};
+      try {
+        const historyResponse = await fetch(
+          `/api/atlas-coach/historical-workouts?v=${Date.now()}`,
+          { cache: "no-store" }
+        );
+        if (historyResponse.ok) historyPayload = await historyResponse.json();
+      } catch (error) {
+        console.debug("Archives de programme facultatives indisponibles.", error);
+      }
       const executionsPayload = await executionsResponse.json();
       const archived = historyPayload.workouts || [];
       const current = (program.weeks || []).flatMap(
@@ -159,6 +164,30 @@
           distance_km: Number(activity.distance_km),
           average_heart_rate_bpm: Number(activity.average_heart_rate_bpm),
           execution_score: Number(match.execution?.execution_score),
+          objective: archivedWorkout?.objective ||
+            "Séance réellement effectuée, reconstruite depuis Garmin FIT.",
+          planned_distance_km: Number(activity.distance_km),
+          blocks: (execution.analysis?.blocks || []).map(block => ({
+            block_type: block.block_type || "continuous",
+            name: `Bloc réalisé · ${String(
+              block.block_type || "course"
+            ).replaceAll("_", " ")}`,
+            duration_seconds: Number(block.duration_seconds),
+            distance_meters: Number(block.distance_meters),
+            repetitions: 1,
+            actual_block: true,
+            target: {
+              zone: ({
+                warm_up: 1, cool_down: 1, recovery: 1, z1: 1,
+                z2: 2, z3: 3, tempo: 3, sv2: 3,
+                vma: 4, vo2: 4, sprint: 5, acceleration: 5
+              })[block.block_type] || 1,
+              speed_min_kmh: Number(block.average_speed_kmh),
+              speed_max_kmh: Number(block.average_speed_kmh),
+              heart_rate_min_bpm: Number(block.average_heart_rate_bpm),
+              heart_rate_max_bpm: Number(block.average_heart_rate_bpm)
+            }
+          })),
           historical_execution: true,
           analysis_available: true
         }];
@@ -4100,9 +4129,16 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     activeProgram = program;
     workoutIndex.clear();
     await restoreOptional(program);
-    historicalCompletedWorkouts = await loadHistoricalCompletedWorkouts(
-      program
-    );
+    const embeddedHistory = program.historical_completed_workouts || [];
+    const browserHistory = await loadHistoricalCompletedWorkouts(program);
+    const historyByActivity = new Map();
+    [...embeddedHistory, ...browserHistory].forEach(workout => {
+      historyByActivity.set(
+        workout.report_activity_id || workout.workout_id,
+        workout
+      );
+    });
+    historicalCompletedWorkouts = [...historyByActivity.values()];
     renderCoachZones(program);
     physiologicalRibbon(program.athlete_snapshot);
     renderOverview(program);

@@ -118,6 +118,9 @@ def load_authorized_training_program():
     )
     filtered["access_control"]["account_id"] = entitlement["account_id"]
     filtered["access_control"]["display_name"] = entitlement["display_name"]
+    filtered["historical_completed_workouts"] = (
+        historical_completed_workouts_for_program(filtered)
+    )
     return filtered
 
 
@@ -447,6 +450,153 @@ def load_execution_summaries():
         key=lambda item: str(item.get("start_time") or ""),
         reverse=True,
     )
+
+
+def _session_title(session_type):
+    return {
+        "vo2": "VO₂max",
+        "vma": "VO₂max / VMA",
+        "interval": "Fractionné VO₂max",
+        "threshold": "Seuil SV2",
+        "tempo": "Tempo",
+        "endurance": "Endurance fondamentale",
+        "recovery": "Récupération",
+        "long_run": "Sortie longue",
+    }.get(str(session_type or "").lower(), "Séance analysée par Atlas")
+
+
+def _actual_blocks(analysis):
+    """Convertit les blocs FIT en étapes lisibles dans la séance initiale."""
+
+    zone_by_type = {
+        "warm_up": 1, "cool_down": 1, "recovery": 1, "z1": 1,
+        "z2": 2, "z3": 3, "tempo": 3, "sv2": 3,
+        "vma": 4, "vo2": 4, "sprint": 5, "acceleration": 5,
+    }
+    names = {
+        "warm_up": "Échauffement réalisé",
+        "cool_down": "Retour au calme réalisé",
+        "recovery": "Récupération réalisée",
+        "z1": "Récupération réalisée",
+        "z2": "Endurance réalisée",
+        "z3": "Tempo réalisé",
+        "tempo": "Tempo réalisé",
+        "sv2": "Travail au seuil réalisé",
+        "vma": "Intervalle VO₂max réalisé",
+        "vo2": "Intervalle VO₂max réalisé",
+        "sprint": "Sprint réalisé",
+        "acceleration": "Accélération réalisée",
+    }
+    converted = []
+    for block in (analysis or {}).get("blocks") or []:
+        block_type = str(block.get("block_type") or "continuous")
+        speed = number(block.get("average_speed_kmh"), 0)
+        heart_rate = number(block.get("average_heart_rate_bpm"), 0)
+        target = {"zone": zone_by_type.get(block_type, 1)}
+        if speed > 0:
+            target.update({
+                "speed_min_kmh": round(speed, 2),
+                "speed_max_kmh": round(speed, 2),
+            })
+        if heart_rate > 0:
+            target.update({
+                "heart_rate_min_bpm": round(heart_rate),
+                "heart_rate_max_bpm": round(heart_rate),
+            })
+        converted.append({
+            "block_type": block_type,
+            "name": names.get(block_type, "Bloc réalisé"),
+            "duration_seconds": number(block.get("duration_seconds"), 0),
+            "distance_meters": number(block.get("distance_meters"), 0),
+            "repetitions": 1,
+            "target": target,
+            "actual_block": True,
+        })
+    return converted
+
+
+def historical_completed_workouts_for_program(
+    program,
+    executions=None,
+    archived_workouts=None,
+):
+    """Ajoute les activités FIT passées aux semaines du programme affiché."""
+
+    weeks = program.get("weeks") or []
+    if not weeks:
+        return []
+    start_date = min(str(week.get("start_date") or "") for week in weeks)
+    end_date = max(str(week.get("end_date") or "") for week in weeks)
+    current = [
+        workout
+        for week in weeks
+        for workout in (week.get("workouts") or [])
+    ]
+    executions = load_execution_summaries() if executions is None else executions
+    archived_workouts = (
+        load_historical_workouts()
+        if archived_workouts is None
+        else archived_workouts
+    )
+    restored = []
+
+    for index, execution in enumerate(executions):
+        execution_date = str(execution.get("start_time") or "")[:10]
+        if not execution_date or not start_date <= execution_date <= end_date:
+            continue
+        match = execution.get("workout_match") or {}
+        already_present = any(
+            workout.get("workout_date") == execution_date
+            and match.get("matched")
+            and workout.get("workout_id") == match.get("workout_id")
+            for workout in current
+        )
+        if already_present:
+            continue
+
+        activity = execution.get("activity") or {}
+        analysis = execution.get("analysis") or {}
+        sport = str(activity.get("sport") or "running")
+        candidates = [
+            workout
+            for workout in archived_workouts
+            if workout.get("archived_program")
+            and workout.get("workout_date") == execution_date
+            and str(workout.get("sport") or "running") == sport
+        ]
+        archived = candidates[0] if candidates else {}
+        session_type = activity.get("session_type") or analysis.get("session_type")
+        activity_id = str(execution.get("activity_id") or index)
+        duration_minutes = number(activity.get("duration_minutes"), 0)
+        distance_km = number(activity.get("distance_km"), 0)
+        execution_data = match.get("execution") or {}
+
+        restored.append({
+            **archived,
+            "workout_id": f"completed-{activity_id}",
+            "report_activity_id": activity_id,
+            "workout_date": execution_date,
+            "title": archived.get("title") or _session_title(session_type),
+            "objective": (
+                "Séance réellement effectuée et reconstruite à partir "
+                "des données Garmin FIT."
+            ),
+            "sport": sport,
+            "workout_type": archived.get("workout_type") or session_type,
+            "planned_duration_minutes": duration_minutes,
+            "actual_duration_minutes": duration_minutes,
+            "planned_distance_km": distance_km,
+            "distance_km": distance_km,
+            "average_heart_rate_bpm": activity.get("average_heart_rate_bpm"),
+            "maximum_heart_rate_bpm": activity.get("maximum_heart_rate_bpm"),
+            "execution_score": execution_data.get("execution_score"),
+            "blocks": _actual_blocks(analysis),
+            "historical_execution": True,
+            "analysis_available": True,
+            "history_status": "completed",
+        })
+
+    return restored
 
 
 def load_physiological_reference():
