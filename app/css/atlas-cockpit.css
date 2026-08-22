@@ -80,6 +80,17 @@ a { text-decoration: none; }
 .atlas-user > span { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--cyan); border-radius: 50%; }
 .atlas-user strong, .atlas-user small { display: block; }
 .atlas-user small { color: var(--muted); font-size: .68rem; }
+.change-avatar-link {
+  color: var(--cyan);
+  display: inline-block;
+  font-size: .68rem;
+  margin-top: 5px;
+  text-decoration: none;
+}
+.change-avatar-link:hover,
+.change-avatar-link:focus-visible {
+  text-decoration: underline;
+}
 
 .atlas-home {
   min-height: 100dvh;
