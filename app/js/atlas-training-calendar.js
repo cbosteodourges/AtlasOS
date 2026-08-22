@@ -2716,17 +2716,32 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const adaptedWorkout = cancelled
       ? workout
       : preparation?.adaptation?.adapted_workout || workout;
+    const hasAdaptation = Boolean(
+      !cancelled &&
+      preparation?.adaptation?.adapted_workout &&
+      preparation?.decision?.action &&
+      preparation.decision.action !== "maintain"
+    );
 
     content.innerHTML = `
-      <nav class="session-dialog-tabs" aria-label="Fiche de séance">
+      <nav class="session-dialog-tabs${hasAdaptation ? " has-adaptation" : ""}" aria-label="Fiche de séance">
         <button
           type="button"
           class="active"
           data-session-tab="planned"
           aria-selected="true"
         >
-          Séance prévue
+          Séance initiale
         </button>
+        ${hasAdaptation ? `
+          <button
+            type="button"
+            data-session-tab="adapted"
+            aria-selected="false"
+          >
+            Proposition Atlas
+          </button>
+        ` : ""}
         <button
           type="button"
           data-session-tab="report"
@@ -2741,10 +2756,24 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         class="session-tab-panel active"
         data-session-panel="planned"
       >
-          ${detailHtml(adaptedWorkout)}
+          ${detailHtml(workout)}
           ${dailyPreparationDetailHtml(preparation, workout)}
-          ${workoutActionsHtml(adaptedWorkout)}
+          ${workoutActionsHtml(workout)}
       </section>
+
+      ${hasAdaptation ? `
+        <section
+          class="session-tab-panel"
+          data-session-panel="adapted"
+          hidden
+        >
+          <div class="adapted-session-heading">
+            <span>PROPOSITION ADAPTÉE À LA RÉCUPÉRATION DU JOUR</span>
+            <p>Cette proposition n’efface jamais la séance initialement programmée.</p>
+          </div>
+          ${detailHtml(adaptedWorkout)}
+        </section>
+      ` : ""}
 
       <section
         class="session-tab-panel"
