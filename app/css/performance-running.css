@@ -7306,3 +7306,45 @@ body[data-coach-section]
   font-weight: 800;
   margin-top: 7px;
 }
+
+button.history-session-card {
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  width: 100%;
+}
+
+button.history-session-card:hover,
+button.history-session-card:focus-visible {
+  background: #0d2b3f;
+  box-shadow: 0 0 0 2px rgba(85, 224, 245, .38);
+  outline: 0;
+}
+
+.history-session-card > aside {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-session-card > aside > strong,
+.history-execution-score {
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: #b9d7e9;
+  font-size: .72rem;
+  padding: 7px 10px;
+  white-space: nowrap;
+}
+
+.history-execution-score {
+  color: #55e0ad;
+}
+
+@media (max-width: 620px) {
+  .history-session-card > aside {
+    align-items: flex-start;
+  }
+}

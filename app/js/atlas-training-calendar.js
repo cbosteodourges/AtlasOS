@@ -59,13 +59,19 @@
   let workoutDecisions = loadWorkoutDecisions();
   const executionReportCache = new Map();
 
-  async function loadExecutionReport(workoutId) {
-    if (executionReportCache.has(workoutId)) {
-      return executionReportCache.get(workoutId);
+  async function loadExecutionReport(workoutId, activityId = "") {
+    const cacheKey = activityId
+      ? `activity:${activityId}`
+      : `workout:${workoutId}`;
+    if (executionReportCache.has(cacheKey)) {
+      return executionReportCache.get(cacheKey);
     }
 
+    const lookup = activityId
+      ? `activity_id=${encodeURIComponent(activityId)}`
+      : `workout_id=${encodeURIComponent(workoutId)}`;
     const response = await fetch(
-      `/api/atlas-coach/executions?workout_id=${encodeURIComponent(workoutId)}&limit=1`,
+      `/api/atlas-coach/executions?${lookup}&limit=1`,
       { cache: "no-store" }
     );
     const payload = await response.json();
@@ -80,7 +86,7 @@
     // Ne jamais mémoriser durablement une absence de rapport : le Watcher
     // peut terminer l'analyse quelques secondes après l'ouverture du volet.
     if (report) {
-      executionReportCache.set(workoutId, report);
+      executionReportCache.set(cacheKey, report);
     }
     return report;
   }
@@ -3230,7 +3236,10 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     };
 
     Promise.all([
-      loadExecutionReport(workout.workout_id),
+      loadExecutionReport(
+        workout.workout_id,
+        workout.report_activity_id || ""
+      ),
       loadWorkoutContext(workout.workout_id)
     ])
       .then(async ([report, userContext]) => {
@@ -3246,7 +3255,10 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             dialog.dataset.workoutId !== workout.workout_id
           ) return;
 
-          const refreshed = await loadExecutionReport(workout.workout_id);
+          const refreshed = await loadExecutionReport(
+            workout.workout_id,
+            workout.report_activity_id || ""
+          );
           if (!refreshed) continue;
 
           await displayExecutionReport(refreshed, userContext);
@@ -4017,6 +4029,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         console.warn("Programme Atlas non affiché.", error);
       });
     }
+  });
+
+  window.addEventListener("atlas:open-history-workout", event => {
+    const workout = event.detail?.workout;
+    if (!workout?.workout_id) return;
+    openWorkout(workout, null);
   });
 
   calendar.addEventListener("click", event => {
