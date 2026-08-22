@@ -6,6 +6,7 @@ import unittest
 
 from src.training.training_program_loader import TrainingProgramLoader
 from src.training.validated_program_activation import (
+    CYCLE_START_DATE,
     EVENT_DATE,
     START_DATE,
     activate_program,
@@ -33,19 +34,21 @@ class ValidatedProgramActivationTests(unittest.TestCase):
             "warnings": [],
         }
 
-    def test_builds_nine_monday_to_sunday_weeks(self):
+    def test_starts_on_august_22_then_builds_nine_full_weeks(self):
         weeks = build_validated_weeks(self.snapshot)
-        self.assertEqual(len(weeks), 9)
+        self.assertEqual(len(weeks), 10)
         self.assertEqual(weeks[0]["start_date"], START_DATE.isoformat())
+        self.assertEqual(weeks[0]["end_date"], "2026-08-23")
+        self.assertEqual(weeks[1]["start_date"], CYCLE_START_DATE.isoformat())
         self.assertEqual(weeks[-1]["end_date"], EVENT_DATE.isoformat())
         self.assertTrue(all(
-            week["start_date"] < week["end_date"]
+            week["start_date"] <= week["end_date"]
             for week in weeks
         ))
 
     def test_first_cycle_keeps_validated_hybrid_rotation(self):
         weeks = build_validated_weeks(self.snapshot)
-        saturday = [week["workouts"][5] for week in weeks[:3]]
+        saturday = [week["workouts"][5] for week in weeks[1:4]]
         self.assertEqual(
             [item["title"] for item in saturday],
             [
@@ -61,7 +64,7 @@ class ValidatedProgramActivationTests(unittest.TestCase):
 
     def test_second_cycle_reintroduces_400_and_1000_formats(self):
         weeks = build_validated_weeks(self.snapshot)
-        week_five = weeks[4]["workouts"]
+        week_five = weeks[5]["workouts"]
         titles = [item["title"] for item in week_five]
         self.assertTrue(any("400 m" in title for title in titles))
         self.assertTrue(any("1000 m" in title for title in titles))
@@ -72,18 +75,18 @@ class ValidatedProgramActivationTests(unittest.TestCase):
                 for item in week["workouts"]
                 if item["workout_type"] == "long_run"
             )
-            for week in weeks[4:7]
+            for week in weeks[5:8]
         ]
         self.assertEqual(long_durations, [95, 100, 95])
 
     def test_includes_consolidation_taper_and_race_week(self):
         weeks = build_validated_weeks(self.snapshot)
-        self.assertEqual(weeks[3]["phase"], "recovery")
-        self.assertTrue(weeks[3]["is_recovery_week"])
-        self.assertEqual(weeks[7]["phase"], "taper")
-        self.assertEqual(weeks[8]["phase"], "race_week")
+        self.assertEqual(weeks[4]["phase"], "recovery")
+        self.assertTrue(weeks[4]["is_recovery_week"])
+        self.assertEqual(weeks[8]["phase"], "taper")
+        self.assertEqual(weeks[9]["phase"], "race_week")
         race = [
-            item for item in weeks[8]["workouts"]
+            item for item in weeks[9]["workouts"]
             if item["workout_type"] == "race_specific"
         ]
         self.assertEqual(len(race), 1)
@@ -95,11 +98,23 @@ class ValidatedProgramActivationTests(unittest.TestCase):
         result = activate_program(self.active)
         self.assertEqual(self.active["weeks"], original_weeks)
         self.assertTrue(result["validated_three_plus_one"]["activated"])
-        self.assertEqual(result["duration_weeks"], 9)
+        self.assertEqual(result["duration_weeks"], 10)
         workouts = TrainingProgramLoader().from_payload(result)
         self.assertEqual(len(workouts), result["total_workouts"])
         identifiers = [item.workout_id for item in workouts]
         self.assertEqual(len(identifiers), len(set(identifiers)))
+
+    def test_introductory_hybrid_is_strictly_below_sv2(self):
+        weeks = build_validated_weeks(self.snapshot)
+        intro = weeks[0]["workouts"][0]
+        target = next(
+            block["target"] for block in intro["blocks"]
+            if block["block_type"] == "work"
+        )
+        self.assertLess(target["speed_max_kmh"], self.snapshot["sv2"]["speed_kmh"])
+        self.assertLess(target["heart_rate_max_bpm"], self.snapshot["sv2"]["heart_rate_bpm"])
+        self.assertEqual(target["rpe_0_10"], 5.5)
+        self.assertEqual(intro["title"], "Sortie longue hybride · 3 × 6 min sous SV2")
 
     def test_rejects_an_unexpected_event_date(self):
         self.active["goal"]["event_date"] = "2026-11-01"
