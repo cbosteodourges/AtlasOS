@@ -5,6 +5,13 @@ from datetime import date, timedelta
 
 
 FULL_ACCESS_TIERS = {"annual", "founder_admin"}
+MONTHLY_ROLLING_WEEKS = 1
+ATLAS_PERFORMANCE = {
+    "code": "atlas_performance",
+    "name": "Atlas Performance",
+    "monthly_price_eur": 6.99,
+    "annual_price_eur": 49.99,
+}
 
 
 def normalize_tier(value):
@@ -41,6 +48,7 @@ def filter_program_for_subscription(program, tier, today=None):
         result["weeks"] = weeks
         result["locked_weeks"] = []
         result["access_control"] = {
+            "plan": deepcopy(ATLAS_PERFORMANCE),
             "tier": normalized,
             "full_access": True,
             "rolling_weeks": None,
@@ -59,7 +67,7 @@ def filter_program_for_subscription(program, tier, today=None):
         ),
         len(weeks),
     )
-    rolling_weeks = 2 if normalized == "trial" else 4
+    rolling_weeks = 2 if normalized == "trial" else MONTHLY_ROLLING_WEEKS
     future_limit = (
         first_future_index
         if normalized == "expired"
@@ -76,7 +84,10 @@ def filter_program_for_subscription(program, tier, today=None):
             "end_date": week.get("end_date"),
             "phase": week.get("phase"),
             "unlock_date": (
-                (_day(week.get("start_date")) - timedelta(days=21)).isoformat()
+                (
+                    _day(week.get("start_date"))
+                    - timedelta(days=7 * (MONTHLY_ROLLING_WEEKS - 1))
+                ).isoformat()
                 if normalized == "monthly" and _day(week.get("start_date"))
                 else None
             ),
@@ -84,6 +95,7 @@ def filter_program_for_subscription(program, tier, today=None):
         for week in locked
     ]
     result["access_control"] = {
+        "plan": deepcopy(ATLAS_PERFORMANCE),
         "tier": normalized,
         "full_access": False,
         "rolling_weeks": 0 if normalized == "expired" else rolling_weeks,

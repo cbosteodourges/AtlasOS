@@ -4,18 +4,31 @@
 
 Atlas reste un prototype mono-utilisateur exécuté localement. Il ne possède encore ni comptes clients, ni paiement, ni hébergement de données de santé, ni sauvegarde distante. Une présentation commerciale ne doit pas laisser penser que ces fonctions sont déjà actives.
 
-## Offres de travail à valider
+## Offre de lancement validée
 
-| Fonction | Atlas Coach | Atlas Pro |
+Atlas propose une seule offre complète afin que le croisement des données ne
+soit pas artificiellement réparti entre plusieurs niveaux.
+
+| Offre | Mensuel | Annuel |
 |---|---:|---:|
-| Prix mensuel envisagé | 3,99 € | 6,99 € |
-| Prix annuel envisagé | 29,99 € | 49,99 € |
-| Programme et analyse des séances | Oui | Oui |
-| Ressenti et adaptation expliquée | Oui | Oui |
-| Rapport longitudinal avancé | Synthèse | Complet |
-| Export et suivi approfondi | Limité | Étendu |
+| Atlas Performance | 6,99 € | 49,99 € |
 
-Ces prix sont des hypothèses produit, pas encore des tarifs publiés. Le contenu exact des deux niveaux doit être stabilisé avant toute communication.
+Atlas Performance comprend le programme personnalisé et évolutif, l’analyse
+physiologique, biomécanique et des séances, l’historique des entraînements,
+l’historique des données physiologiques et wellness, l’analyse FIT, le suivi
+longitudinal, la gestion de plusieurs objectifs et les adaptations expliquées
+selon la récupération et le ressenti.
+
+### Visibilité du programme
+
+- mensuel : une semaine détaillée et glissante ; les échéances et les grandes
+  phases restent visibles, mais les séances suivantes ne sont pas transmises ;
+- annuel : programme détaillé jusqu’aux échéances enregistrées ;
+- fondateur administrateur : programme intégral, impression et export inclus.
+
+La semaine suivante est présentée comme une adaptation en cours. Atlas la
+recalcule selon la progression et les données physiologiques, biomécaniques et
+de récupération de l'utilisateur.
 
 ## Passage obligatoire avant une bêta
 
@@ -31,7 +44,7 @@ Ces prix sont des hypothèses produit, pas encore des tarifs publiés. Le conten
 
 ## Modèle de coûts à renseigner
 
-Le seuil de rentabilité devra intégrer, pour chaque formule : TVA applicable, commission de paiement, hébergement, stockage, sauvegardes, e-mails, surveillance, support, comptabilité, assurance et fiscalité. Aucun calcul sérieux n’est possible tant que le volume d’utilisateurs, le pays de vente et l’architecture d’hébergement ne sont pas arrêtés.
+Le seuil de rentabilité devra intégrer, pour chaque périodicité : TVA applicable, commission de paiement, hébergement, stockage, sauvegardes, e-mails, surveillance, support, comptabilité, assurance et fiscalité. Aucun calcul sérieux n’est possible tant que le volume d’utilisateurs, le pays de vente et l’architecture d’hébergement ne sont pas arrêtés.
 
 ## Période d’essai
 

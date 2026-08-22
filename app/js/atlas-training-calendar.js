@@ -3865,10 +3865,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
 
     const access = program.access_control || {};
     const lockedWeeks = program.locked_weeks || [];
+    const rollingLabel = access.rolling_weeks === 1
+      ? "1 semaine glissante"
+      : `${access.rolling_weeks} semaines glissantes`;
     const accessBanner = access.tier === "monthly"
       ? `<section class="program-access-banner">
-          <strong>Abonnement mensuel · ${access.rolling_weeks} semaines glissantes</strong>
-          <span>La suite du programme est calculée par Atlas et se déverrouille progressivement.</span>
+          <strong>Atlas Performance mensuel · ${rollingLabel}</strong>
+          <span>Atlas recalcule la suite selon votre progression et vos données physiologiques, biomécaniques et de récupération.</span>
         </section>`
       : access.tier === "founder_admin"
         ? `<section class="program-access-banner is-founder">
@@ -3881,7 +3884,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       <section class="premium-week locked-program-week">
         <div>
           <span>SEMAINE ${escapeHtml(week.week_number ?? "—")}</span>
-          <h3>Contenu verrouillé</h3>
+          <h3>La suite de votre programme est en cours d’adaptation</h3>
           <p>${escapeHtml(week.start_date || "")}
             ${week.unlock_date
               ? ` · disponible le ${escapeHtml(week.unlock_date)}`
