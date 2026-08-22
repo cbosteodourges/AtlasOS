@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#020713">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Atlas OS — Atlas Coach</title>
-  <link rel="stylesheet" href="./css/performance-running.css?v=49">
+  <link rel="stylesheet" href="./css/performance-running.css?v=50">
   <link rel="stylesheet" href="./css/atlas-training-history.css?v=1">
   <link rel="stylesheet" href="./css/atlas-global-nav.css?v=10"><link rel="stylesheet" href="./css/atlas-conversation.css?v=8"><link rel="stylesheet" href="./css/atlas-conversation-refinement.css?v=1"><link rel="stylesheet" href="./css/atlas-responsive.css?v=1">
 </head>
@@ -107,6 +107,21 @@
       </button>
     </div>
 
+    <section class="sensor-onboarding" aria-labelledby="sensorOnboardingTitle">
+      <div>
+        <p>PREMIÈRE SYNCHRONISATION</p>
+        <h3 id="sensorOnboardingTitle">Choisissez la source principale de vos données</h3>
+        <span>Atlas indiquera clairement les données réellement disponibles avant de construire votre profil.</span>
+      </div>
+      <ol>
+        <li>Choix de la source</li>
+        <li>Consentement et période</li>
+        <li>Analyse des données disponibles</li>
+      </ol>
+    </section>
+
+    <section class="sensor-connection-wizard" id="sensorConnectionWizard" hidden aria-live="polite"></section>
+    <section class="sensor-connection-summary" id="sensorConnectionSummary" hidden></section>
     <p id="syncStatus" role="status">Aucune source connectée.</p>
       <article
       class="garmin-activity-card"
@@ -431,7 +446,7 @@
 <script src="./js/atlas-conversation.js?v=9"></script>
 <script src="./js/atlas-pwa.js?v=1"></script>
 <script src="./js/atlas-global-nav.js?v=8"></script>
-<script src="./js/performance-running.js?v=3"></script>
+<script src="./js/performance-running.js?v=4"></script>
 <script src="./js/atlas-training-calendar.js?v=50"></script>
 <script src="./js/atlas-training-history.js?v=1"></script>
 </body>
