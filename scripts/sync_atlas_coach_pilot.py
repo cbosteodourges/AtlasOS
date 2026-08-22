@@ -200,16 +200,51 @@ def load_analysis_profile(program_path: str | Path) -> AthleteProfile:
     )
 
 
-def load_optional_workouts(path: str | Path, loader):
-    """Charge les séances UI en normalisant leurs types vers le moteur."""
+def load_concatenated_json_lists(path: str | Path):
+    """Récupère une ou plusieurs listes JSON accolées dans un même fichier.
 
+    Une écriture interrompue ou concurrente peut laisser deux tableaux JSON
+    valides à la suite. Le décodeur standard refuse alors le fichier avec
+    ``Extra data``. Atlas fusionne les tableaux et conserve la dernière
+    version de chaque séance.
+    """
     source = Path(path)
     if not source.exists():
         return []
-    with source.open("r", encoding="utf-8") as input_file:
-        items = json.load(input_file)
-    if not isinstance(items, list):
-        return []
+
+    content = source.read_text(encoding="utf-8-sig")
+    decoder = json.JSONDecoder()
+    cursor = 0
+    items = []
+
+    while cursor < len(content):
+        while cursor < len(content) and content[cursor].isspace():
+            cursor += 1
+        if cursor >= len(content):
+            break
+        loaded, cursor = decoder.raw_decode(content, cursor)
+        if isinstance(loaded, list):
+            items.extend(loaded)
+        elif isinstance(loaded, dict):
+            items.append(loaded)
+
+    by_id = {}
+    without_id = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        workout_id = str(item.get("workout_id") or "").strip()
+        if workout_id:
+            by_id[workout_id] = item
+        else:
+            without_id.append(item)
+    return [*without_id, *by_id.values()]
+
+
+def load_optional_workouts(path: str | Path, loader):
+    """Charge les séances UI en normalisant leurs types vers le moteur."""
+
+    items = load_concatenated_json_lists(path)
 
     aliases = {
         "endurance_run": "endurance_z2",
@@ -420,10 +455,7 @@ def persist_restored_optional_workouts(records, output_path: str | Path):
     destination = Path(output_path)
     history = []
     if destination.exists():
-        with destination.open("r", encoding="utf-8") as source:
-            loaded = json.load(source)
-            if isinstance(loaded, list):
-                history = loaded
+        history = load_concatenated_json_lists(destination)
 
     restored_by_id = {
         str(item.get("workout_id")): item
