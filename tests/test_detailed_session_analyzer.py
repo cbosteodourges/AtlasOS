@@ -736,6 +736,55 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
             )
         )
 
+    def test_detects_work_duration_inside_composite_manual_lap(
+        self,
+    ) -> None:
+        samples = [
+            self._sample(
+                second,
+                3.4 if second < 302 else 2.0,
+                second * 3.4,
+                140,
+            )
+            for second in range(422)
+        ]
+        activity = LongitudinalActivity(
+            atlas_id="garmin:composite-manual-lap",
+            start_time=self.start,
+            activity_type="running",
+            distance_km=1.3,
+            duration_minutes=422 / 60,
+            samples=samples,
+            workout_steps=[{
+                "message_index": 0,
+                "duration_type": "time",
+                "duration_time": 360,
+                "custom_target_speed_low": 3.3,
+                "custom_target_speed_high": 3.5,
+                "intensity": "active",
+            }],
+        )
+        block = SessionBlock(
+            block_index=1,
+            block_type="z3",
+            start_offset_seconds=0,
+            end_offset_seconds=420.694,
+            duration_seconds=420.694,
+            distance_meters=1241.87,
+            detection_reasons=[
+                "Tour manuel marqué par l'athlète."
+            ],
+        )
+
+        duration = self.analyzer._structured_partial_work_duration(
+            activity,
+            samples,
+            [block],
+            12.8,
+        )
+
+        self.assertEqual(duration, 302.0)
+
     def test_flags_heart_rate_above_declared_limit(
         self,
     ) -> None:
