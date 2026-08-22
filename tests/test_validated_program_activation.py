@@ -8,6 +8,7 @@ from src.training.training_program_loader import TrainingProgramLoader
 from src.training.validated_program_activation import (
     CYCLE_START_DATE,
     EVENT_DATE,
+    INTRO_WEEK_START,
     START_DATE,
     activate_program,
     build_validated_weeks,
@@ -37,8 +38,12 @@ class ValidatedProgramActivationTests(unittest.TestCase):
     def test_starts_on_august_22_then_builds_nine_full_weeks(self):
         weeks = build_validated_weeks(self.snapshot)
         self.assertEqual(len(weeks), 10)
-        self.assertEqual(weeks[0]["start_date"], START_DATE.isoformat())
+        self.assertEqual(weeks[0]["start_date"], INTRO_WEEK_START.isoformat())
         self.assertEqual(weeks[0]["end_date"], "2026-08-23")
+        self.assertEqual(
+            [item["workout_date"] for item in weeks[0]["workouts"]],
+            ["2026-08-22", "2026-08-23"],
+        )
         self.assertEqual(weeks[1]["start_date"], CYCLE_START_DATE.isoformat())
         self.assertEqual(weeks[-1]["end_date"], EVENT_DATE.isoformat())
         self.assertTrue(all(
