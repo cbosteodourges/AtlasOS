@@ -16,8 +16,8 @@
   const coachSubnav = isCoach ? `
     <div class="atlas-context-subnav" data-context-title="ESPACE ENTRAÎNEMENT" aria-label="Sous-menu Entraînement">
       <button type="button" data-coach-nav="sensors"><span class="atlas-context-icon">⌁</span><span>Montres et capteurs</span></button>
-      <button type="button" data-coach-nav="profile"><span class="atlas-context-icon">◇</span><span>Profil et objectif</span></button>
-      <button type="button" data-coach-nav="deadline"><span class="atlas-context-icon">◎</span><span>Prochaine échéance</span></button>
+      <button type="button" data-coach-nav="profile"><span class="atlas-context-icon">◇</span><span>Profil et disponibilités</span></button>
+      <button type="button" data-coach-nav="deadline"><span class="atlas-context-icon">◎</span><span>Objectifs et échéances</span></button>
       <button type="button" data-coach-nav="plan"><span class="atlas-context-icon">▦</span><span>Plan personnalisé</span></button>
       <button type="button" data-coach-nav="history"><span class="atlas-context-icon">↝</span><span>Historique des séances</span></button>
     </div>` : "";
