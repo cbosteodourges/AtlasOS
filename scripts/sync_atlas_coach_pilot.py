@@ -217,13 +217,20 @@ def load_concatenated_json_lists(path: str | Path):
     cursor = 0
     items = []
     document_count = 0
+    repair_needed = False
 
     while cursor < len(content):
         while cursor < len(content) and content[cursor].isspace():
             cursor += 1
         if cursor >= len(content):
             break
-        loaded, cursor = decoder.raw_decode(content, cursor)
+        try:
+            loaded, cursor = decoder.raw_decode(content, cursor)
+        except json.JSONDecodeError:
+            if not items:
+                raise
+            repair_needed = True
+            break
         document_count += 1
         if isinstance(loaded, list):
             items.extend(loaded)
@@ -241,7 +248,13 @@ def load_concatenated_json_lists(path: str | Path):
         else:
             without_id.append(item)
     merged = [*without_id, *by_id.values()]
-    if document_count > 1:
+    if document_count > 1 or repair_needed:
+        backup = source.with_name(
+            f"{source.stem}.corrupt-backup-"
+            f"{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+            f"{source.suffix}"
+        )
+        backup.write_text(content, encoding="utf-8")
         temporary = source.with_suffix(".json.repair.tmp")
         with temporary.open("w", encoding="utf-8", newline="\n") as output:
             json.dump(merged, output, ensure_ascii=False, indent=2)
