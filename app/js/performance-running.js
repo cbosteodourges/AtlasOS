@@ -1686,9 +1686,10 @@
    FIN NAVIGATION ATLAS COACH
    ████████████████████████████████████████████████████████████ */
 
-/* GESTION DES COMPÉTITIONS ATLAS COACH */
+/* GESTION MULTI-OBJECTIFS ATLAS COACH */
 (() => {
   const fields = {
+    id: document.getElementById("competitionId"),
     name: document.getElementById("competitionName"),
     type: document.getElementById("competitionType"),
     date: document.getElementById("competitionDate"),
@@ -1696,67 +1697,209 @@
     priority: document.getElementById("competitionPriority"),
     courseProfile: document.getElementById("competitionCourseProfile")
   };
-
+  const cards = document.getElementById("competitionCards");
+  const empty = document.getElementById("competitionEmpty");
+  const editor = document.getElementById("competitionEditor");
+  const editorTitle = document.getElementById("competitionEditorTitle");
+  const addButton = document.getElementById("addCompetitionButton");
   const saveButton = document.getElementById("saveCompetitionButton");
+  const cancelButtons = [
+    document.getElementById("cancelCompetitionButton"),
+    document.getElementById("cancelCompetitionAction")
+  ].filter(Boolean);
   const saveStatus = document.getElementById("competitionSaveStatus");
   const trainingType = document.getElementById("eventType");
   const trainingDate = document.getElementById("eventDate");
-  const storageKey = "atlasCoachCompetition";
+  const storageKey = "atlasCoachCompetitions";
+  const legacyKey = "atlasCoachCompetition";
+  const priorityLabels = {
+    a: "A · Objectif principal",
+    b: "B · Objectif intermédiaire",
+    c: "C · Course préparatoire"
+  };
+  const typeLabels = {
+    "5k": "5 km", "10k": "10 km", half: "Semi-marathon",
+    marathon: "Marathon", "trail-short": "Trail court",
+    "trail-long": "Trail long", ultra: "Ultra-trail"
+  };
+  let competitions = [];
 
-  if (!saveButton || !saveStatus) {
-    return;
-  }
+  if (!cards || !editor || !saveButton) return;
 
-  function applyCompetition(competition) {
-    Object.entries(fields).forEach(([key, field]) => {
-      if (field && competition[key] != null) {
-        field.value = competition[key];
+  const escapeHtml = value => String(value ?? "")
+    .replaceAll("&", "&amp;").replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;").replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
+  function loadCompetitions() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+      if (Array.isArray(saved)) return saved;
+      const legacy = JSON.parse(localStorage.getItem(legacyKey) || "null");
+      if (legacy?.name && legacy?.date) {
+        const migrated = [{
+          ...legacy,
+          id: `objective-${Date.now()}`,
+          priority: legacy.priority || "a"
+        }];
+        localStorage.setItem(storageKey, JSON.stringify(migrated));
+        return migrated;
       }
+    } catch (error) {
+      console.warn("Objectifs Atlas illisibles.", error);
+    }
+    return [];
+  }
+
+  function synchronizePrimaryObjective() {
+    const primary = competitions.find(item => item.priority === "a")
+      || competitions[0];
+    if (!primary) return;
+    if (trainingType) trainingType.value = primary.type || "10k";
+    if (trainingDate) trainingDate.value = primary.date || "";
+    try {
+      const profile = JSON.parse(
+        localStorage.getItem("atlasRunningProfile") || "{}"
+      );
+      profile.eventType = primary.type;
+      profile.eventDate = primary.date;
+      profile.primaryObjectiveId = primary.id;
+      localStorage.setItem("atlasRunningProfile", JSON.stringify(profile));
+    } catch (error) {
+      console.warn("Profil Atlas non synchronisé avec l’objectif.", error);
+    }
+  }
+
+  function persist() {
+    localStorage.setItem(storageKey, JSON.stringify(competitions));
+    synchronizePrimaryObjective();
+  }
+
+  function render() {
+    const ordered = [...competitions].sort((a, b) => {
+      if (a.priority !== b.priority) return a.priority.localeCompare(b.priority);
+      return String(a.date).localeCompare(String(b.date));
     });
-
-    if (trainingType && competition.type) {
-      trainingType.value = competition.type;
-    }
-
-    if (trainingDate && competition.date) {
-      trainingDate.value = competition.date;
-    }
+    empty.hidden = ordered.length > 0;
+    cards.innerHTML = ordered.map(item => {
+      const date = item.date
+        ? new Date(`${item.date}T12:00:00`).toLocaleDateString(
+            "fr-FR", { day: "numeric", month: "long", year: "numeric" }
+          )
+        : "Date à définir";
+      return `
+        <article class="competition-objective-card priority-${item.priority}">
+          <header>
+            <span>${priorityLabels[item.priority] || priorityLabels.c}</span>
+            <strong>${escapeHtml(date)}</strong>
+          </header>
+          <h3>${escapeHtml(item.name)}</h3>
+          <p>${escapeHtml(typeLabels[item.type] || item.type)}
+            ${item.targetTime ? ` · objectif ${escapeHtml(item.targetTime)}` : ""}
+          </p>
+          <footer>
+            <button type="button" data-objective-edit="${item.id}">Modifier</button>
+            <button type="button" data-objective-delete="${item.id}">Supprimer</button>
+          </footer>
+        </article>
+      `;
+    }).join("");
+    synchronizePrimaryObjective();
   }
 
-  try {
-    const savedCompetition = JSON.parse(
-      localStorage.getItem(storageKey) || "null"
-    );
-
-    if (savedCompetition) {
-      applyCompetition(savedCompetition);
-      saveStatus.textContent = "Compétition enregistrée et restaurée.";
-    }
-  } catch (error) {
-    console.warn("Compétition Atlas Coach illisible.", error);
+  function resetForm() {
+    fields.id.value = "";
+    fields.name.value = "";
+    fields.type.value = "half";
+    fields.date.value = "";
+    fields.targetTime.value = "";
+    fields.priority.value = competitions.some(item => item.priority === "a")
+      ? "b" : "a";
+    fields.courseProfile.value = "flat";
+    saveStatus.textContent = "";
   }
+
+  function openEditor(objective = null) {
+    editor.hidden = false;
+    if (objective) {
+      Object.entries(fields).forEach(([key, field]) => {
+        if (field && objective[key] != null) field.value = objective[key];
+      });
+      editorTitle.textContent = "Modifier cet objectif";
+    } else {
+      resetForm();
+      editorTitle.textContent = "Ajouter une échéance";
+    }
+    editor.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function closeEditor() {
+    editor.hidden = true;
+    saveStatus.textContent = "";
+  }
+
+  addButton?.addEventListener("click", () => openEditor());
+  cancelButtons.forEach(button =>
+    button.addEventListener("click", closeEditor)
+  );
 
   saveButton.addEventListener("click", () => {
-    const competition = Object.fromEntries(
+    const objective = Object.fromEntries(
       Object.entries(fields).map(([key, field]) => [
-        key,
-        field ? field.value.trim() : ""
+        key, field ? field.value.trim() : ""
       ])
     );
-
-    if (!competition.name || !competition.date) {
-      saveStatus.textContent =
-        "Indiquez le nom et la date de la compétition.";
+    if (!objective.name || !objective.date) {
+      saveStatus.textContent = "Indiquez le nom et la date de l’objectif.";
       return;
     }
-
-    localStorage.setItem(storageKey, JSON.stringify(competition));
-    applyCompetition(competition);
-    saveStatus.textContent =
-      "Compétition enregistrée et transmise au plan d’entraînement.";
+    if (new Date(`${objective.date}T12:00:00`) <= new Date()) {
+      saveStatus.textContent = "Choisissez une échéance future.";
+      return;
+    }
+    objective.id = objective.id || `objective-${Date.now()}`;
+    if (objective.priority === "a") {
+      competitions = competitions.map(item => (
+        item.id !== objective.id && item.priority === "a"
+          ? { ...item, priority: "b" }
+          : item
+      ));
+    }
+    const index = competitions.findIndex(item => item.id === objective.id);
+    if (index >= 0) competitions[index] = objective;
+    else competitions.push(objective);
+    persist();
+    render();
+    closeEditor();
   });
+
+  cards.addEventListener("click", event => {
+    const edit = event.target.closest("[data-objective-edit]");
+    const remove = event.target.closest("[data-objective-delete]");
+    if (edit) {
+      openEditor(
+        competitions.find(item => item.id === edit.dataset.objectiveEdit)
+      );
+    }
+    if (remove) {
+      competitions = competitions.filter(
+        item => item.id !== remove.dataset.objectiveDelete
+      );
+      if (
+        competitions.length &&
+        !competitions.some(item => item.priority === "a")
+      ) {
+        competitions[0].priority = "a";
+      }
+      persist();
+      render();
+    }
+  });
+
+  competitions = loadCompetitions();
+  render();
 })();
-/* FIN GESTION DES COMPÉTITIONS ATLAS COACH */
+/* FIN GESTION MULTI-OBJECTIFS ATLAS COACH */
 
 /* PROGRAMME RÉEL ATLAS RESEARCH */
 (() => {
