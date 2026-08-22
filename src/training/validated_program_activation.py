@@ -8,6 +8,7 @@ from typing import Any
 
 
 START_DATE = date(2026, 8, 22)
+INTRO_WEEK_START = date(2026, 8, 17)
 CYCLE_START_DATE = date(2026, 8, 24)
 EVENT_DATE = date(2026, 10, 25)
 SPECIFIC_CAP_MINUTES = 60
@@ -228,7 +229,7 @@ def build_validated_weeks(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
 
     introduction = _week(
         1,
-        START_DATE,
+        INTRO_WEEK_START,
         "development",
         "Introduction sous-seuil avant le premier cycle complet",
         [
@@ -236,7 +237,6 @@ def build_validated_weeks(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
             _cycling(START_DATE + timedelta(days=1), 45),
         ],
     )
-    introduction["end_date"] = (START_DATE + timedelta(days=1)).isoformat()
     weeks.append(introduction)
 
     for i, (vo2, threshold, hybrid) in enumerate([
