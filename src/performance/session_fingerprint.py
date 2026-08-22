@@ -167,6 +167,7 @@ class DetailedSessionAnalysis:
     recovery_duration_seconds: float = 0.0
     work_distance_meters: float = 0.0
     recovery_distance_meters: float = 0.0
+    partial_work_duration_seconds: float = 0.0
 
     physiological_load_score: int = 0
     biomechanical_load_score: int = 0
