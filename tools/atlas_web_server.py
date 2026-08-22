@@ -302,6 +302,7 @@ def execution_summary(item):
                     "work_distance_meters",
                     "recovery_duration_seconds",
                     "recovery_distance_meters",
+                    "partial_work_duration_seconds",
                     "interpretation",
                     "planning_influences",
                     "threshold_observations",
