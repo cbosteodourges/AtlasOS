@@ -1255,8 +1255,14 @@
     document.getElementById("sensorConnectionWizard");
   const connectionSummary =
     document.getElementById("sensorConnectionSummary");
+  const sensorOnboarding =
+    document.getElementById("sensorOnboarding");
   const SENSOR_CONNECTION_KEY = "atlasCoachSensorConnection";
   const SENSOR_SETUP_KEY = "atlasCoachSensorSetupComplete";
+
+  function setSensorOnboardingComplete(complete) {
+    if (sensorOnboarding) sensorOnboarding.hidden = Boolean(complete);
+  }
 
   function activityPeriod(activities) {
     const dated = activities
@@ -1323,6 +1329,20 @@
     document.querySelector('[data-provider="garmin"]')?.classList.add("connected");
     localStorage.setItem(SENSOR_CONNECTION_KEY, JSON.stringify(config));
     localStorage.setItem(SENSOR_SETUP_KEY, "true");
+    setSensorOnboardingComplete(true);
+  }
+
+  function renderManualConnectionSummary() {
+    connectionWizard.hidden = true;
+    connectionSummary.hidden = false;
+    connectionSummary.innerHTML = `
+      <header><div><span>MODE D’ENTRAÎNEMENT</span>
+      <h3>Profil manuel sans montre connectée</h3></div>
+      <strong>✓ Profil conservé</strong></header>
+      <p>Vos informations et votre programme restent disponibles. Une montre pourra être ajoutée ultérieurement.</p>
+    `;
+    syncStatus.textContent = "Mode manuel actif · profil Atlas conservé.";
+    setSensorOnboardingComplete(true);
   }
 
   async function synchronizeGarmin(config) {
@@ -1502,16 +1522,7 @@
         updated_at: new Date().toISOString()
       }));
       localStorage.setItem(SENSOR_SETUP_KEY, "true");
-      connectionWizard.hidden = true;
-      connectionSummary.hidden = false;
-      connectionSummary.innerHTML = `
-        <header><div><span>MODE D’ENTRAÎNEMENT</span>
-        <h3>Profil manuel sans montre connectée</h3></div>
-        <strong>✓ Prêt à configurer</strong></header>
-        <p>Vous pourrez ajouter une montre ultérieurement sans perdre votre profil.</p>
-      `;
-      syncStatus.textContent =
-        "Mode manuel activé · renseignez maintenant votre profil et votre objectif.";
+      renderManualConnectionSummary();
       window.dispatchEvent(new CustomEvent(
         "atlas:coach-section-request",
         { detail: { section: "profile" } }
@@ -1577,12 +1588,25 @@
     const storedConnection = JSON.parse(
       localStorage.getItem(SENSOR_CONNECTION_KEY) || "null"
     );
+    setSensorOnboardingComplete(
+      localStorage.getItem(SENSOR_SETUP_KEY) === "true" ||
+      Boolean(storedConnection) ||
+      Boolean(localStorage.getItem("atlasRunningProfile"))
+    );
     if (storedConnection?.provider === "garmin") {
       synchronizeGarmin(storedConnection);
+    } else if (storedConnection?.provider === "manual") {
+      renderManualConnectionSummary();
     }
   } catch {
     localStorage.removeItem(SENSOR_CONNECTION_KEY);
+    localStorage.removeItem(SENSOR_SETUP_KEY);
+    setSensorOnboardingComplete(false);
   }
+
+  window.addEventListener("atlas:athlete-profile-loaded", () => {
+    setSensorOnboardingComplete(true);
+  });
 })();
 
 /* ████████████████████████████████████████████████████████████

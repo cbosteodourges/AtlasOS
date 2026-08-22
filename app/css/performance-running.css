@@ -6813,6 +6813,9 @@ body[data-coach-section]
 .sensor-onboarding.coach-section-panel {
   margin-bottom: 14px;
 }
+.sensor-onboarding[hidden] {
+  display: none !important;
+}
 .sensor-onboarding p,
 .sensor-consent-form header span,
 .sensor-wizard-message > span,
