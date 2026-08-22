@@ -60,11 +60,28 @@ class ThreePlusOnePilotTests(unittest.TestCase):
             ]
             self.assertTrue(all(gap >= 48 for gap in gaps))
 
-    def test_specific_minutes_stay_below_independent_cap(self):
-        self.assertTrue(all(
-            week.specific_minutes <= 60
+    def test_specific_minutes_progress_without_exceeding_cap(self):
+        planned = [week.specific_minutes for week in self.plan.weeks[:3]]
+        maximum = [
+            sum(item.specific_minutes_max for item in week.sessions)
             for week in self.plan.weeks[:3]
-        ))
+        ]
+        self.assertEqual(planned, sorted(planned))
+        self.assertTrue(all(value <= 60 for value in planned))
+        self.assertTrue(all(value <= 60 for value in maximum))
+
+    def test_specific_sessions_offer_autoregulated_repetition_ranges(self):
+        for week in self.plan.weeks[:3]:
+            specific = [item for item in week.sessions if item.is_specific]
+            self.assertEqual(len(specific), 3)
+            self.assertTrue(all(item.repetitions_min < item.repetitions_max for item in specific))
+            self.assertTrue(all(item.specific_minutes_min < item.specific_minutes_max for item in specific))
+            self.assertTrue(all(
+                any("encore une répétition propre" in rule for rule in item.instructions)
+                for item in specific
+            ))
+        self.assertIn("6 à 8", self.plan.weeks[0].sessions[1].title)
+        self.assertIn("3 à 4", self.plan.weeks[0].sessions[2].title)
 
     def test_week_four_reduces_volume_and_uses_only_microdoses(self):
         week = self.plan.weeks[3]
