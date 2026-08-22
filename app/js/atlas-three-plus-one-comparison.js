@@ -26,7 +26,7 @@
       weekday: "short", day: "numeric"
     }) : "—";
     const specific = session.is_specific ? '<i title="Séance spécifique">SPÉCIFIQUE</i>' : "";
-    return `<li><span>${esc(label)}</span><div><strong>${esc(session.title)}</strong><small>${minutes(session.duration_minutes)}${pilot && session.specific_minutes ? ` · ${esc(session.specific_minutes_min)}–${esc(session.specific_minutes_max)} min possibles` : ""}</small></div>${specific}</li>`;
+    return `<li><span>${esc(label)}</span><div><strong>${esc(session.title)}</strong><small>${minutes(session.duration_minutes)}${pilot && session.specific_minutes ? ` · ${session.specific_minutes_min === session.specific_minutes_max ? esc(session.specific_minutes_min) : `${esc(session.specific_minutes_min)}–${esc(session.specific_minutes_max)}`} min spécifiques` : ""}</small></div>${specific}</li>`;
   }).join("");
 
   const totalDuration = sessions => (sessions || []).reduce(
