@@ -77,6 +77,12 @@ class ThreePlusOnePilotTests(unittest.TestCase):
             {item.protocol_id for item in week.sessions if item.protocol_id},
             {"hill_neuromuscular_sprints", "flat_relaxed_strides"},
         )
+        microdoses = [item for item in week.sessions if item.protocol_id]
+        self.assertTrue(all("6 à 8" in item.title for item in microdoses))
+        self.assertTrue(all(
+            any("7 puis 8" in rule for rule in item.instructions)
+            for item in microdoses
+        ))
 
     def test_orange_reduces_specific_volume_without_raising_intensity(self):
         orange = self.planner.build(
