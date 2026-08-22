@@ -2344,8 +2344,7 @@
   async function loadRealProgram() {
     const candidates = [
       window.ATLAS_TRAINING_PROGRAM_URL,
-      "../atlas-data/private/training-program.json",
-      "/atlas-data/private/training-program.json"
+      "/api/atlas-coach/program"
     ].filter(Boolean);
 
     for (const source of candidates) {
