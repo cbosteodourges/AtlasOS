@@ -217,19 +217,25 @@ class ThreePlusOnePilotPlanner:
             PilotSession(
                 monday + timedelta(days=1),
                 "easy_hill_microdose",
-                "Endurance + microdose côte",
+                "Endurance + microdose côte · 6 à 8 répétitions",
                 40,
                 protocol_id="hill_neuromuscular_sprints",
-                instructions=["6 × 12 s, pente 4–7 %, récupération complète 2 min 30."],
+                instructions=[
+                    "Première exposition : 6 × 12 s, pente 4–7 %, récupération complète 2 min 30.",
+                    "Passer à 7 puis 8 seulement si technique, douleur et récupération à J+1 sont favorables.",
+                ],
             ),
             PilotSession(monday + timedelta(days=3), "easy", "Endurance facile", 35),
             PilotSession(
                 monday + timedelta(days=4),
                 "easy_flat_microdose",
-                "Endurance + lignes droites relâchées",
+                "Endurance + lignes droites · 6 à 8 répétitions",
                 40,
                 protocol_id="flat_relaxed_strides",
-                instructions=["6 × 20 s à 85–92 %, récupération complète 2 min."],
+                instructions=[
+                    "Première exposition : 6 × 20 s à 85–92 %, récupération complète 2 min.",
+                    "Progresser vers 7 puis 8 répétitions sans augmenter simultanément la vitesse.",
+                ],
             ),
             PilotSession(
                 monday + timedelta(days=6),
