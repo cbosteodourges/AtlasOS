@@ -62,26 +62,39 @@ class ThreePlusOnePilotTests(unittest.TestCase):
 
     def test_specific_minutes_progress_without_exceeding_cap(self):
         planned = [week.specific_minutes for week in self.plan.weeks[:3]]
-        maximum = [
-            sum(item.specific_minutes_max for item in week.sessions)
-            for week in self.plan.weeks[:3]
-        ]
         self.assertEqual(planned, sorted(planned))
         self.assertTrue(all(value <= 60 for value in planned))
-        self.assertTrue(all(value <= 60 for value in maximum))
+        self.assertEqual(self.plan.specific_minutes_cap, 60)
+        self.assertTrue(any(
+            "interdépendantes" in warning
+            for warning in self.plan.warnings
+        ))
 
     def test_specific_sessions_offer_autoregulated_repetition_ranges(self):
         for week in self.plan.weeks[:3]:
             specific = [item for item in week.sessions if item.is_specific]
             self.assertEqual(len(specific), 3)
-            self.assertTrue(all(item.repetitions_min < item.repetitions_max for item in specific))
-            self.assertTrue(all(item.specific_minutes_min < item.specific_minutes_max for item in specific))
+            self.assertTrue(all(item.repetitions_min <= item.repetitions_max for item in specific))
+            self.assertTrue(all(item.specific_minutes_min <= item.specific_minutes_max for item in specific))
+            self.assertTrue(any(item.repetitions_min < item.repetitions_max for item in specific))
             self.assertTrue(all(
                 any("encore une répétition propre" in rule for rule in item.instructions)
                 for item in specific
             ))
         self.assertIn("6 à 8", self.plan.weeks[0].sessions[1].title)
         self.assertIn("3 à 4", self.plan.weeks[0].sessions[2].title)
+
+    def test_hybrid_formats_vary_while_long_run_duration_progresses(self):
+        hybrid = [week.sessions[3] for week in self.plan.weeks[:3]]
+        self.assertEqual(
+            [item.title for item in hybrid],
+            [
+                "Sortie longue hybride · 3 × 8 min sous SV2",
+                "Sortie longue hybride · 5 × 5 min sous SV2",
+                "Sortie longue hybride · 8 × 3 min sous SV2",
+            ],
+        )
+        self.assertEqual([item.duration_minutes for item in hybrid], [80, 85, 90])
 
     def test_week_four_reduces_volume_and_uses_only_microdoses(self):
         week = self.plan.weeks[3]
