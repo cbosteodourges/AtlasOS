@@ -2027,6 +2027,8 @@ def atlas_conversation(payload):
     }
 
 class AtlasRequestHandler(SimpleHTTPRequestHandler):
+    server_version = "AtlasOS/1.0"
+
     def __init__(self, *args, **kwargs):
         super().__init__(
             *args,
@@ -2394,7 +2396,12 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             )
 
 if __name__ == "__main__":
-    address = ("0.0.0.0", 8000)
+    try:
+        port = int(os.environ.get("ATLAS_PORT", "8000"))
+    except ValueError:
+        port = 8000
+
+    address = ("0.0.0.0", port)
     server = ThreadingHTTPServer(
         address,
         AtlasRequestHandler,
@@ -2402,18 +2409,18 @@ if __name__ == "__main__":
 
     print(
         "ATLAS OS disponible sur "
-        "http://localhost:8000/app/atlas-cockpit.html"
+        f"http://localhost:{port}/app/atlas-cockpit.html"
     )
     try:
         local_ip = socket.gethostbyname(socket.gethostname())
         print(
             "Accès smartphone (même Wi-Fi) : "
-            f"http://{local_ip}:8000/app/atlas-cockpit.html"
+            f"http://{local_ip}:{port}/app/atlas-cockpit.html"
         )
     except OSError:
         print(
             "Accès smartphone : utilisez l’adresse IPv4 du PC "
-            "sur le port 8000."
+            f"sur le port {port}."
         )
     print(
         "Passerelle Atlas Brain active sur "
