@@ -337,10 +337,16 @@
 
   async function syncWorkoutDecisions() {
     try {
-      const response = await fetch(
-        `/api/atlas-coach/workout-decisions?v=${Date.now()}`,
-        { cache: "no-store" }
-      );
+      const [response, executionsResponse] = await Promise.all([
+        fetch(
+          `/api/atlas-coach/workout-decisions?v=${Date.now()}`,
+          { cache: "no-store" }
+        ),
+        fetch(
+          `/api/atlas-coach/executions?limit=100&v=${Date.now()}`,
+          { cache: "no-store" }
+        )
+      ]);
       const payload = await response.json();
 
       if (!response.ok || !payload.ok) {
@@ -351,6 +357,32 @@
         ...workoutDecisions,
         ...(payload.decisions || {})
       };
+
+      if (executionsResponse.ok) {
+        const executionsPayload = await executionsResponse.json();
+        (executionsPayload.executions || []).forEach((execution) => {
+          const match = execution.workout_match || {};
+          const workoutId = String(match.workout_id || "");
+          const executionDate = String(execution.start_time || "").slice(0, 10);
+          const plannedDate = workoutId.slice(0, 10);
+
+          // Une activité supplémentaire peut ressembler à une séance du plan.
+          // Elle ne doit la valider que si le moteur a confirmé l'association
+          // et si elle a réellement eu lieu le jour prévu.
+          if (!match.matched || !workoutId || executionDate !== plannedDate) {
+            return;
+          }
+
+          workoutDecisions[workoutId] = {
+            ...workoutDecisions[workoutId],
+            status: "completed",
+            source: "fit_execution",
+            activity_id: execution.activity_id,
+            execution_score: match.execution?.execution_score,
+            updated_at: execution.start_time
+          };
+        });
+      }
       localStorage.setItem(
         DECISIONS_STORAGE_KEY,
         JSON.stringify(workoutDecisions)

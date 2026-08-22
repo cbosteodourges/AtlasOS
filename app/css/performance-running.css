@@ -7315,6 +7315,38 @@ button.history-session-card {
   width: 100%;
 }
 
+.history-session-main {
+  min-width: 0;
+  width: 100%;
+}
+
+.history-session-metrics {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  margin-top: 13px;
+}
+
+.history-session-metrics > span {
+  background: rgba(4, 20, 32, .62);
+  border: 1px solid rgba(76, 157, 194, .24);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 9px 11px;
+}
+
+.history-session-metrics small {
+  color: #79a7c2;
+  font-size: .68rem;
+}
+
+.history-session-metrics strong {
+  color: #eaf9ff;
+  font-size: .82rem;
+}
+
 button.history-session-card:hover,
 button.history-session-card:focus-visible {
   background: #0d2b3f;
@@ -7344,6 +7376,10 @@ button.history-session-card:focus-visible {
 }
 
 @media (max-width: 620px) {
+  .history-session-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .history-session-card > aside {
     align-items: flex-start;
   }
