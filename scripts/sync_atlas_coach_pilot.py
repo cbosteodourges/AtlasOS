@@ -216,6 +216,7 @@ def load_concatenated_json_lists(path: str | Path):
     decoder = json.JSONDecoder()
     cursor = 0
     items = []
+    document_count = 0
 
     while cursor < len(content):
         while cursor < len(content) and content[cursor].isspace():
@@ -223,6 +224,7 @@ def load_concatenated_json_lists(path: str | Path):
         if cursor >= len(content):
             break
         loaded, cursor = decoder.raw_decode(content, cursor)
+        document_count += 1
         if isinstance(loaded, list):
             items.extend(loaded)
         elif isinstance(loaded, dict):
@@ -238,7 +240,13 @@ def load_concatenated_json_lists(path: str | Path):
             by_id[workout_id] = item
         else:
             without_id.append(item)
-    return [*without_id, *by_id.values()]
+    merged = [*without_id, *by_id.values()]
+    if document_count > 1:
+        temporary = source.with_suffix(".json.repair.tmp")
+        with temporary.open("w", encoding="utf-8", newline="\n") as output:
+            json.dump(merged, output, ensure_ascii=False, indent=2)
+        temporary.replace(source)
+    return merged
 
 
 def load_optional_workouts(path: str | Path, loader):
