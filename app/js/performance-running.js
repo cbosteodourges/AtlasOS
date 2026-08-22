@@ -2293,6 +2293,20 @@
     );
   }
 
+  function setProgramNumberField(id, value) {
+    const field = document.getElementById(id);
+    const numericValue = Number(value);
+
+    if (
+      field &&
+      value !== null &&
+      value !== "" &&
+      Number.isFinite(numericValue)
+    ) {
+      field.value = String(numericValue);
+    }
+  }
+
   function renderRealProgram(program) {
     const researchCount = program.weeks.reduce(
       (total, week) => total + week.workouts.filter(
@@ -2387,9 +2401,9 @@
     hydrateGoalFields(program);
 
     const snapshot = program.athlete_snapshot || {};
-    setAtlasNumberField(elements.vo2MaxProfile, snapshot.vo2_max);
-    setAtlasNumberField(
-      elements.hrRest,
+    setProgramNumberField("vo2MaxProfile", snapshot.vo2_max);
+    setProgramNumberField(
+      "hrRest",
       snapshot.resting_heart_rate_bpm
     );
   }
