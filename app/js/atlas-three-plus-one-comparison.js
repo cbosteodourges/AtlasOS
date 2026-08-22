@@ -26,7 +26,7 @@
       weekday: "short", day: "numeric"
     }) : "—";
     const specific = session.is_specific ? '<i title="Séance spécifique">SPÉCIFIQUE</i>' : "";
-    return `<li><span>${esc(label)}</span><div><strong>${esc(session.title)}</strong><small>${minutes(session.duration_minutes)}${pilot && session.specific_minutes ? ` · ${esc(session.specific_minutes)} min spécifiques` : ""}</small></div>${specific}</li>`;
+    return `<li><span>${esc(label)}</span><div><strong>${esc(session.title)}</strong><small>${minutes(session.duration_minutes)}${pilot && session.specific_minutes ? ` · ${esc(session.specific_minutes_min)}–${esc(session.specific_minutes_max)} min possibles` : ""}</small></div>${specific}</li>`;
   }).join("");
 
   const totalDuration = sessions => (sessions || []).reduce(
@@ -73,7 +73,7 @@
           <strong class="pilot-status">NON ACTIVÉ</strong>
         </header>
         <div class="pilot-safety">
-          <span>Plafond : ${esc(pilot.specific_minutes_cap)} min spécifiques/semaine</span>
+          <span>Plafond absolu : ${esc(pilot.specific_minutes_cap)} min spécifiques/semaine</span>
           <span>Wellness : ${esc(pilot.wellness_status)}</span>
           <span>Surface : ${esc(pilot.goal_surface)}</span>
         </div>
