@@ -1154,76 +1154,214 @@
     return activities;
   }
 
-  syncProviderButtons.forEach((button) => {
-    button.addEventListener("click", async () => {
-      const provider = button.dataset.provider;
-      const providerName =
-        button.querySelector("strong")?.textContent ||
-        "Source de données";
+  const connectionWizard =
+    document.getElementById("sensorConnectionWizard");
+  const connectionSummary =
+    document.getElementById("sensorConnectionSummary");
+  const SENSOR_CONNECTION_KEY = "atlasCoachSensorConnection";
+  const SENSOR_SETUP_KEY = "atlasCoachSensorSetupComplete";
 
-      syncProviderButtons.forEach((item) =>
-        item.classList.remove("connected")
+  function activityPeriod(activities) {
+    const dated = activities
+      .filter(activity => activity.start_time)
+      .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+    if (!dated.length) return "Période inconnue";
+    const format = value => new Date(value).toLocaleDateString("fr-FR");
+    return `${format(dated[0].start_time)} → ${format(
+      dated[dated.length - 1].start_time
+    )}`;
+  }
+
+  function filterActivitiesByHistory(activities, history) {
+    if (history === "all") return activities;
+    const months = Number(history);
+    if (!Number.isFinite(months)) return activities;
+    const limit = new Date();
+    limit.setMonth(limit.getMonth() - months);
+    return activities.filter(activity =>
+      activity.start_time && new Date(activity.start_time) >= limit
+    );
+  }
+
+  async function loadWellnessCount() {
+    try {
+      const response = await fetch(
+        `/api/atlas/wellness-history?v=${Date.now()}`,
+        { cache: "no-store" }
       );
+      if (!response.ok) return 0;
+      const payload = await response.json();
+      return Number(payload.count) || 0;
+    } catch {
+      return 0;
+    }
+  }
 
-      if (provider !== "garmin") {
-        button.classList.add("connected");
+  function renderConnectionSummary(config, activities, wellnessCount) {
+    const latest = [...activities].sort(
+      (a, b) => new Date(b.start_time) - new Date(a.start_time)
+    )[0];
+    connectionSummary.hidden = false;
+    connectionSummary.innerHTML = `
+      <header>
+        <div><span>SOURCE PRINCIPALE</span><h3>Garmin connecté au prototype Atlas</h3></div>
+        <strong>✓ Données détectées</strong>
+      </header>
+      <div class="sensor-summary-grid">
+        <article><span>Activités trouvées</span><strong>${activities.length}</strong></article>
+        <article><span>Journées Wellness</span><strong>${wellnessCount || "—"}</strong></article>
+        <article><span>Période analysée</span><strong>${activityPeriod(activities)}</strong></article>
+        <article><span>Dernière vérification</span><strong>${new Date().toLocaleString("fr-FR")}</strong></article>
+      </div>
+      <footer>
+        <span>Mode actuel : données Garmin déjà importées sur cet appareil.</span>
+        <button type="button" data-sensor-resync>Synchroniser maintenant</button>
+        <button type="button" data-sensor-manage>Gérer la connexion</button>
+      </footer>
+    `;
+    if (latest) displayGarminActivity(latest);
+    syncStatus.textContent =
+      `Garmin · ${activities.length} activité(s) exploitable(s) · ` +
+      `${wellnessCount} journée(s) Wellness`;
+    document.querySelector('[data-provider="garmin"]')?.classList.add("connected");
+    localStorage.setItem(SENSOR_CONNECTION_KEY, JSON.stringify(config));
+    localStorage.setItem(SENSOR_SETUP_KEY, "true");
+  }
+
+  async function synchronizeGarmin(config) {
+    syncStatus.textContent = "Analyse des données Garmin disponibles…";
+    try {
+      const [allActivities, wellnessCount] = await Promise.all([
+        loadGarminActivities(),
+        config.wellness ? loadWellnessCount() : Promise.resolve(0)
+      ]);
+      const activities = filterActivitiesByHistory(
+        allActivities,
+        config.history
+      );
+      if (!activities.length) {
+        connectionSummary.hidden = true;
         syncStatus.textContent =
-          `${providerName} sélectionné. Ce connecteur sera activé prochainement.`;
+          "Aucune activité Garmin trouvée sur la période choisie. " +
+          "Un export Garmin doit d’abord être importé dans Atlas.";
         return;
       }
-
+      renderConnectionSummary(config, activities, wellnessCount);
+      connectionWizard.hidden = true;
+    } catch (error) {
+      console.error(error);
+      connectionSummary.hidden = true;
       syncStatus.textContent =
-        "Import des activités Garmin en cours…";
+        "Aucune donnée Garmin importée n’a été trouvée. " +
+        "Le prototype local nécessite encore un export Garmin préalable.";
+      connectionWizard.hidden = false;
+      connectionWizard.innerHTML = `
+        <div class="sensor-wizard-message is-warning">
+          <span>GARMIN · DONNÉES ABSENTES</span>
+          <h3>Préparer le premier import</h3>
+          <p>La connexion en ligne Garmin n’est pas encore activée dans ce prototype.
+          Exportez vos données Garmin, puis utilisez l’import Atlas avant de relancer cette vérification.</p>
+          <button type="button" data-provider-retry="garmin">Réessayer la détection</button>
+        </div>
+      `;
+    }
+  }
 
-      try {
-        const activities = await loadGarminActivities();
+  function openProviderWizard(button) {
+    const provider = button.dataset.provider;
+    const providerName =
+      button.querySelector("strong")?.textContent || "Source de données";
+    syncProviderButtons.forEach(item => item.classList.remove("selected"));
+    button.classList.add("selected");
+    connectionWizard.hidden = false;
 
-        if (activities.length === 0) {
-          button.classList.add("connected");
-          syncStatus.textContent =
-            "Garmin est connecté, mais aucune activité n’a été trouvée.";
-          return;
-        }
+    if (provider !== "garmin") {
+      connectionWizard.innerHTML = `
+        <div class="sensor-wizard-message">
+          <span>${providerName.toUpperCase()}</span>
+          <h3>Connecteur en préparation</h3>
+          <p>Cette source n’est pas encore raccordée au prototype. Atlas ne la
+          marquera pas comme connectée tant qu’aucune donnée réelle n’aura été reçue.</p>
+        </div>
+      `;
+      syncStatus.textContent =
+        `${providerName} sélectionné · connexion prochainement disponible.`;
+      return;
+    }
 
-        const latestActivity = [...activities].sort(
-          (first, second) =>
-            new Date(second.start_time) -
-            new Date(first.start_time)
-        )[0];
-              displayGarminActivity(latestActivity);
-        const distanceKm = (
-          Number(latestActivity.distance_meters || 0) / 1000
-        ).toFixed(2);
+    connectionWizard.innerHTML = `
+      <form class="sensor-consent-form" id="garminConsentForm">
+        <header><span>GARMIN · ÉTAPE 2 SUR 3</span><h3>Autoriser l’analyse des données disponibles</h3></header>
+        <label><input type="checkbox" name="activities" required>
+          <span><strong>Activités sportives</strong><small>Distance, durée, allure, FC, dénivelé et appareil.</small></span>
+        </label>
+        <label><input type="checkbox" name="wellness" checked>
+          <span><strong>Physiologie et récupération</strong><small>Sommeil, VFC, stress et fréquence cardiaque de repos.</small></span>
+        </label>
+        <label class="sensor-history-choice"><span>Période à prendre en compte</span>
+          <select name="history">
+            <option value="3">3 derniers mois</option>
+            <option value="12" selected>12 derniers mois</option>
+            <option value="all">Tout l’historique disponible</option>
+          </select>
+        </label>
+        <p>Dans la version locale actuelle, Atlas analyse les fichiers Garmin déjà
+        importés sur cet appareil. Aucune connexion en ligne n’est simulée.</p>
+        <button type="submit">Analyser les données disponibles</button>
+      </form>
+    `;
+  }
 
-        const averageHeartRate =
-          latestActivity.average_heart_rate_bpm
-            ? `${Math.round(
-                latestActivity.average_heart_rate_bpm
-              )} bpm`
-            : "FC indisponible";
-
-        const sampleCount =
-          Array.isArray(latestActivity.samples)
-            ? latestActivity.samples.length
-            : 0;
-
-        button.classList.add("connected");
-        syncStatus.textContent =
-          `Garmin connecté · ${activities.length} activité(s) · ` +
-          `Dernière séance : ${distanceKm} km en ` +
-          `${formatActivityDuration(
-            latestActivity.duration_seconds
-          )} · ${averageHeartRate} · ` +
-          `${sampleCount} mesures`;
-      } catch (error) {
-        console.error(error);
-        syncStatus.textContent =
-          "Import Garmin impossible. Lancez d’abord la commande " +
-          "py scripts\\import_garmin.py puis ouvrez ATLAS " +
-          "avec un serveur local.";
-      }
-    });
+  syncProviderButtons.forEach(button => {
+    button.addEventListener("click", () => openProviderWizard(button));
   });
+
+  connectionWizard.addEventListener("submit", event => {
+    if (event.target.id !== "garminConsentForm") return;
+    event.preventDefault();
+    const form = new FormData(event.target);
+    const config = {
+      provider: "garmin",
+      activities: form.get("activities") === "on",
+      wellness: form.get("wellness") === "on",
+      history: form.get("history") || "12",
+      updated_at: new Date().toISOString()
+    };
+    if (config.activities) synchronizeGarmin(config);
+  });
+
+  connectionWizard.addEventListener("click", event => {
+    if (event.target.closest('[data-provider-retry="garmin"]')) {
+      openProviderWizard(
+        document.querySelector('[data-provider="garmin"]')
+      );
+    }
+  });
+
+  connectionSummary.addEventListener("click", event => {
+    const stored = JSON.parse(
+      localStorage.getItem(SENSOR_CONNECTION_KEY) || "null"
+    );
+    if (event.target.closest("[data-sensor-resync]") && stored) {
+      synchronizeGarmin(stored);
+    }
+    if (event.target.closest("[data-sensor-manage]")) {
+      openProviderWizard(
+        document.querySelector('[data-provider="garmin"]')
+      );
+    }
+  });
+
+  try {
+    const storedConnection = JSON.parse(
+      localStorage.getItem(SENSOR_CONNECTION_KEY) || "null"
+    );
+    if (storedConnection?.provider === "garmin") {
+      synchronizeGarmin(storedConnection);
+    }
+  } catch {
+    localStorage.removeItem(SENSOR_CONNECTION_KEY);
+  }
 })();
 
 /* ████████████████████████████████████████████████████████████
