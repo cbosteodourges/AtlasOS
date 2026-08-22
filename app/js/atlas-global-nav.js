@@ -15,7 +15,6 @@
 
   const coachSubnav = isCoach ? `
     <div class="atlas-context-subnav" data-context-title="ESPACE ENTRAÎNEMENT" aria-label="Sous-menu Entraînement">
-      <button type="button" data-coach-nav="overview"><span class="atlas-context-icon">⌂</span><span>Vue d’ensemble</span></button>
       <button type="button" data-coach-nav="sensors"><span class="atlas-context-icon">⌁</span><span>Montres et capteurs</span></button>
       <button type="button" data-coach-nav="profile"><span class="atlas-context-icon">◇</span><span>Profil et objectif</span></button>
       <button type="button" data-coach-nav="deadline"><span class="atlas-context-icon">◎</span><span>Prochaine échéance</span></button>
@@ -108,7 +107,7 @@
     const showCoachSection = requested => {
       const selected = panels.some(panel => panel.dataset.coachSection === requested)
         ? requested
-        : "overview";
+        : "plan";
 
       panels.forEach(panel => {
         const active = panel.dataset.coachSection === selected;
@@ -135,7 +134,7 @@
       showCoachSection(event.detail?.section);
     });
 
-    showCoachSection(localStorage.getItem("atlasCoachActiveSection") || "overview");
+    showCoachSection(localStorage.getItem("atlasCoachActiveSection") || "plan");
   }
 
   if (isHub) {
