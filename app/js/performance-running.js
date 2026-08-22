@@ -1078,23 +1078,6 @@
 
         syncMeasuredThresholdFields();
 
-        const summary = [
-          physiology.maximum_heart_rate_bpm
-            ? `FC max ${physiology.maximum_heart_rate_bpm} bpm`
-            : null,
-          sv1.heart_rate_bpm
-            ? `SV1 ${sv1.heart_rate_bpm} bpm`
-            : null,
-          sv2.heart_rate_bpm
-            ? `SV2 ${sv2.heart_rate_bpm} bpm`
-            : null
-        ].filter(Boolean).join(" · ");
-
-        showAtlasProfileNotification(
-          summary
-            ? `Profil Atlas chargé : ${summary}.`
-            : "Profil Atlas personnel chargé."
-        );
         window.dispatchEvent(new CustomEvent(
           "atlas:athlete-profile-loaded",
           { detail: payload }
