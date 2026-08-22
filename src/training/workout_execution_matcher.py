@@ -138,9 +138,19 @@ class AtlasWorkoutExecutionMatcher:
                 BlockType.COOL_DOWN,
             }
         ]
+        repeated_blocks = [
+            block
+            for block in planned_active_blocks
+            if block.repetitions > 1
+        ]
+        repetition_blocks = (
+            repeated_blocks
+            if repeated_blocks
+            else planned_active_blocks
+        )
         planned_repetitions = sum(
             block.repetitions
-            for block in planned_active_blocks
+            for block in repetition_blocks
         )
         expected_types = self._expected_execution_types(
             planned_workout
@@ -196,6 +206,21 @@ class AtlasWorkoutExecutionMatcher:
                 "apprendre automatiquement."
             )
 
+        structured_execution = analysis.workout_execution
+        if (
+            activity.workout_steps
+            and structured_execution.planned_repetition_count > 0
+        ):
+            completed_repetitions = min(
+                planned_repetitions,
+                structured_execution.completed_repetition_count,
+            )
+        else:
+            completed_repetitions = min(
+                planned_repetitions,
+                len(executed_active_blocks),
+            )
+
         execution = WorkoutExecutionSummary(
             workout_name=planned_workout.title,
             workout_origin="atlas",
@@ -206,10 +231,7 @@ class AtlasWorkoutExecutionMatcher:
             ),
             executed_block_count=len(analysis.blocks),
             planned_repetition_count=planned_repetitions,
-            completed_repetition_count=min(
-                planned_repetitions,
-                len(executed_active_blocks),
-            ),
+            completed_repetition_count=completed_repetitions,
             target_compliance_score=target_score,
             recovery_compliance_score=recovery_score,
             execution_score=execution_score,
