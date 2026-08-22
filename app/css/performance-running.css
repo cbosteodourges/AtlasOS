@@ -7269,3 +7269,13 @@ body[data-coach-section]
     flex-direction: column;
   }
 }
+
+/* Rebalance the report inside the modal: the vertical scrollbar and the
+   detailed cards make its visual centre appear slightly too far right. */
+@media (min-width: 900px) {
+  #atlasSessionDialog.atlas-session-dialog
+    [data-session-panel="report"]
+    .execution-report {
+    transform: translateX(-28px);
+  }
+}
