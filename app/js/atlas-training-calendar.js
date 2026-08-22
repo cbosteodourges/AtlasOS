@@ -3863,11 +3863,41 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     physiologicalRibbon(program.athlete_snapshot);
     renderOverview(program);
 
-    calendar.innerHTML = `
+    const access = program.access_control || {};
+    const lockedWeeks = program.locked_weeks || [];
+    const accessBanner = access.tier === "monthly"
+      ? `<section class="program-access-banner">
+          <strong>Abonnement mensuel · ${access.rolling_weeks} semaines glissantes</strong>
+          <span>La suite du programme est calculée par Atlas et se déverrouille progressivement.</span>
+        </section>`
+      : access.tier === "founder_admin"
+        ? `<section class="program-access-banner is-founder">
+            <strong>Accès Fondateur Atlas · programme intégral</strong>
+            <span>Vous pouvez consulter, tester, imprimer et exporter toutes les semaines.</span>
+          </section>`
+        : "";
 
-${program.weeks.map(
+    const lockedMarkup = lockedWeeks.map(week => `
+      <section class="premium-week locked-program-week">
+        <div>
+          <span>SEMAINE ${escapeHtml(week.week_number ?? "—")}</span>
+          <h3>Contenu verrouillé</h3>
+          <p>${escapeHtml(week.start_date || "")}
+            ${week.unlock_date
+              ? ` · disponible le ${escapeHtml(week.unlock_date)}`
+              : ""}
+          </p>
+        </div>
+        <strong aria-label="Semaine verrouillée">🔒</strong>
+      </section>
+    `).join("");
+
+    calendar.innerHTML = `
+      ${accessBanner}
+      ${program.weeks.map(
         week => renderWeek(week, program)
       ).join("")}
+      ${lockedMarkup}
     `;
 
     planPanel.hidden = false;
@@ -3943,8 +3973,7 @@ ${program.weeks.map(
     await syncWorkoutDecisions();
     const sources = [
       window.ATLAS_TRAINING_PROGRAM_URL,
-      "../atlas-data/private/training-program.json",
-      "/atlas-data/private/training-program.json"
+      "/api/atlas-coach/program"
     ].filter(Boolean);
 
     for (const source of sources) {
