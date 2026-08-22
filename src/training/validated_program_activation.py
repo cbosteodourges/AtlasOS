@@ -7,7 +7,8 @@ from datetime import date, timedelta
 from typing import Any
 
 
-START_DATE = date(2026, 8, 24)
+START_DATE = date(2026, 8, 22)
+CYCLE_START_DATE = date(2026, 8, 24)
 EVENT_DATE = date(2026, 10, 25)
 SPECIFIC_CAP_MINUTES = 60
 
@@ -25,6 +26,10 @@ def _target(snapshot: dict[str, Any], kind: str) -> dict[str, Any]:
         return {"zone": 4, "speed_min_kmh": round(vma * .95, 1), "speed_max_kmh": round(vma, 1),
                 "heart_rate_min_bpm": round(maximum_hr * .88), "heart_rate_max_bpm": round(maximum_hr * .95),
                 "rpe_0_10": 7, "intensity_pattern": "interval"}
+    if kind == "subthreshold":
+        return {"zone": 3, "speed_min_kmh": round(sv2_speed * .92, 1), "speed_max_kmh": round(sv2_speed * .97, 1),
+                "heart_rate_min_bpm": max(sv1_hr + 2, sv2_hr - 10), "heart_rate_max_bpm": sv2_hr - 3,
+                "rpe_0_10": 5.5, "intensity_pattern": "interval"}
     if kind == "sv2":
         return {"zone": 3, "speed_min_kmh": round(sv2_speed * .97, 1), "speed_max_kmh": round(sv2_speed, 1),
                 "heart_rate_min_bpm": max(sv1_hr + 3, sv2_hr - 7), "heart_rate_max_bpm": sv2_hr,
@@ -196,8 +201,8 @@ def _hybrid(day: date, reps: int, work_minutes: int, total_minutes: int,
                 target=_target(snapshot, "z2")),
          _block(f"{reps} × {work_minutes} min sous SV2", "work",
                 duration=work_minutes, repetitions=reps, recovery=2,
-                target=_target(snapshot, "sv2"),
-                instructions="RPE 5–6/10 ; ne jamais transformer le dernier bloc en test.")],
+                target=_target(snapshot, "subthreshold"),
+                instructions="RPE 5–6/10 ; rester sous SV2 et ne jamais transformer le dernier bloc en test.")],
         snapshot, [f"Volume spécifique : {work} min. Durée totale : {total_minutes} min."])
 
 
@@ -215,11 +220,24 @@ def _week(number: int, start: date, phase: str, objective: str,
 
 def build_validated_weeks(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
     weeks: list[dict[str, Any]] = []
-    starts = [START_DATE + timedelta(weeks=i) for i in range(9)]
+    starts = [CYCLE_START_DATE + timedelta(weeks=i) for i in range(9)]
 
     def build_week(index: int, workouts: list[dict[str, Any]], phase: str, objective: str,
                    recovery: bool = False) -> None:
-        weeks.append(_week(index + 1, starts[index], phase, objective, workouts, recovery))
+        weeks.append(_week(index + 2, starts[index], phase, objective, workouts, recovery))
+
+    introduction = _week(
+        1,
+        START_DATE,
+        "development",
+        "Introduction sous-seuil avant le premier cycle complet",
+        [
+            _hybrid(START_DATE, 3, 6, 70, snapshot, "intro-hybrid-3x6"),
+            _cycling(START_DATE + timedelta(days=1), 45),
+        ],
+    )
+    introduction["end_date"] = (START_DATE + timedelta(days=1)).isoformat()
+    weeks.append(introduction)
 
     for i, (vo2, threshold, hybrid) in enumerate([
         (lambda d: _vo2_distance(d, 400, 6, 8, snapshot, 48),
@@ -314,7 +332,7 @@ def activate_program(active: dict[str, Any]) -> dict[str, Any]:
         for week in weeks for workout in week["workouts"]
     )
     result["explanation"] = (
-        "Programme Norwegian Singles 3+1 validé : deux cycles variables, "
+        "Programme Norwegian Singles 3+1 validé dès le 22 août : introduction sous-seuil, deux cycles variables, "
         "consolidation, affûtage et semaine de course. "
         "Bornes autorégulées et plafond hebdomadaire de 60 min spécifiques."
     )
