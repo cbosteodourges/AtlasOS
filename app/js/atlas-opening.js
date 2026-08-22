@@ -36,7 +36,18 @@
     window.scrollTo({ top: 0, behavior: "instant" });
   }
 
-  enterButton.addEventListener("click", () => showPage("avatar"));
+  enterButton.addEventListener("click", () => {
+    const savedAvatar = localStorage.getItem("atlasPreselectedAvatar");
+    if (savedAvatar === "male" || savedAvatar === "female") {
+      window.location.href = "./atlas-cockpit.html";
+      return;
+    }
+    showPage("avatar");
+  });
+
+  if (window.location.hash === "#avatar") {
+    showPage("avatar");
+  }
 
   if (window.location.hash === "#hub") {
     selectedAvatar = localStorage.getItem("atlasPreselectedAvatar") || "male";
