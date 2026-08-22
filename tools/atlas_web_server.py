@@ -702,11 +702,14 @@ def _atlas_recovery_index(
 ):
     """Indice Atlas transparent, normalisé uniquement sur les données disponibles."""
     components = []
+    physiological_component_count = 0
 
     if snapshot.sleep_recovery_score is not None:
         components.append(("Récupération du sommeil", snapshot.sleep_recovery_score, 30))
+        physiological_component_count += 1
     if snapshot.sleep_score is not None:
         components.append(("Sommeil", snapshot.sleep_score, 25))
+        physiological_component_count += 1
 
     hrv = _wellness_number(snapshot.hrv_last_night_ms)
     lower = _wellness_number(snapshot.hrv_baseline_lower_ms)
@@ -720,10 +723,17 @@ def _atlas_recovery_index(
         else:
             hrv_score = 75
         components.append(("VFC nocturne", max(0, min(100, hrv_score)), 30))
+        physiological_component_count += 1
 
     stress = _wellness_number(snapshot.sleep_average_stress)
     if stress is not None:
         components.append(("Stress nocturne", max(0, 100 - stress * 2), 10))
+        physiological_component_count += 1
+
+    # Une archive sans mesure physiologique ne doit jamais produire un faux
+    # score de récupération à partir de la seule qualité technique ou charge.
+    if not physiological_component_count:
+        return {"score": None, "components": []}
 
     load = _wellness_number(training_load)
     load_baseline = _wellness_number(training_load_baseline)
@@ -735,7 +745,10 @@ def _atlas_recovery_index(
             load_score = 65
         components.append(("Charge sur 7 jours", load_score, 10))
 
-    if snapshot.data_quality_score is not None:
+    if (
+        snapshot.data_quality_score is not None
+        and snapshot.data_quality_score > 0
+    ):
         components.append(("Qualité des données", snapshot.data_quality_score, 5))
 
     total_weight = sum(weight for _, _, weight in components)
@@ -751,6 +764,23 @@ def _atlas_recovery_index(
             for label, value, weight in components
         ],
     }
+
+
+def _has_actionable_wellness(snapshot) -> bool:
+    """Vrai si l'instantané peut réellement guider une décision d'entraînement."""
+    quality = _wellness_number(getattr(snapshot, "data_quality_score", None))
+    if quality is not None and quality <= 0:
+        return False
+    return any(
+        _wellness_number(getattr(snapshot, field, None)) is not None
+        for field in (
+            "sleep_score",
+            "sleep_recovery_score",
+            "hrv_last_night_ms",
+            "resting_heart_rate_bpm",
+            "sleep_average_stress",
+        )
+    )
 
 
 def _complete_wellness_calendar(history, end_day=None):
@@ -1434,6 +1464,7 @@ def load_wellness_history(refresh_latest=True):
         refresh_latest
         and snapshots
         and getattr(snapshots[-1], "sleep_duration_minutes", None) is None
+        and _has_actionable_wellness(snapshots[-1])
     ):
         archive_day = snapshots[-1].day.isoformat()
         candidates = sorted(
@@ -1518,6 +1549,22 @@ def load_wellness_history(refresh_latest=True):
             if lower is not None and upper is not None else
             _personal_baseline(history, index, "hrv_last_night_ms")
         )
+    actionable_history = [
+        item for item, snapshot in zip(history, snapshots)
+        if _has_actionable_wellness(snapshot)
+    ]
+    latest_observation = history[-1] if history else None
+    latest = actionable_history[-1] if actionable_history else None
+    latest_unavailable = (
+        {
+            "day": latest_observation.get("day"),
+            "reason": "Données physiologiques absentes ou incomplètes",
+            "data_quality_score": latest_observation.get("data_quality_score"),
+        }
+        if latest_observation
+        and (not latest or latest_observation.get("day") != latest.get("day"))
+        else None
+    )
     complete_history = _complete_wellness_calendar(
         history,
         end_day=date.today(),
@@ -1527,10 +1574,12 @@ def load_wellness_history(refresh_latest=True):
         "count": len(history),
         "calendar_day_count": len(complete_history),
         "source_status": source_status,
-        "latest": history[-1] if history else None,
+        "latest": latest,
+        "latest_observation": latest_observation,
+        "latest_unavailable": latest_unavailable,
         "history": complete_history,
         "program_progress": _program_progress(),
-        "athlete_analysis": _athlete_analysis(history),
+        "athlete_analysis": _athlete_analysis(actionable_history),
         "index_explanation": {
             "title": "Indice Atlas de disponibilité",
             "summary": (

@@ -276,11 +276,20 @@
     if (sync) {
       const latestDay = new Date(`${latest.day}T12:00:00`);
       const ageDays = Math.floor((Date.now() - latestDay.getTime()) / 86400000);
-      sync.lastChild.textContent =
-        ageDays <= 1
-          ? ` Données du ${latestDay.toLocaleDateString("fr-FR")}`
-          : ` Dernières données : ${latestDay.toLocaleDateString("fr-FR")}`;
-      sync.classList.toggle("is-stale", ageDays > 1);
+      const unavailable = payload.latest_unavailable;
+      if (unavailable?.day) {
+        const missingDay = new Date(`${unavailable.day}T12:00:00`);
+        sync.lastChild.textContent =
+          ` Nuit du ${missingDay.toLocaleDateString("fr-FR")} non mesurée · ` +
+          `dernières données fiables : ${latestDay.toLocaleDateString("fr-FR")}`;
+        sync.classList.add("is-stale");
+      } else {
+        sync.lastChild.textContent =
+          ageDays <= 1
+            ? ` Données du ${latestDay.toLocaleDateString("fr-FR")}`
+            : ` Dernières données : ${latestDay.toLocaleDateString("fr-FR")}`;
+        sync.classList.toggle("is-stale", ageDays > 1);
+      }
     }
   };
 
