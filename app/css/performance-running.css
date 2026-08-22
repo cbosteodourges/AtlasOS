@@ -6983,3 +6983,216 @@ body[data-coach-section]
   cursor: not-allowed;
   opacity: .45;
 }
+
+.profile-availability-title {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+.profile-source-badge {
+  border: 1px solid #4edcf5;
+  border-radius: 999px;
+  color: #6be8ff;
+  font-size: .75rem;
+  font-weight: 900;
+  padding: 8px 12px;
+}
+.profile-subsection {
+  background: rgba(4, 19, 32, .68);
+  border: 1px solid rgba(40, 103, 137, .48);
+  border-radius: 18px;
+  margin-top: 18px;
+  padding: 20px;
+}
+.profile-subsection > header {
+  align-items: flex-start;
+  display: flex;
+  gap: 13px;
+  margin-bottom: 18px;
+}
+.profile-subsection > header > span {
+  align-items: center;
+  background: #4edcf5;
+  border-radius: 50%;
+  color: #03101b;
+  display: flex;
+  flex: 0 0 30px;
+  font-weight: 900;
+  height: 30px;
+  justify-content: center;
+}
+.profile-subsection h2 {
+  color: #f5fbff;
+  font-size: 1.2rem;
+  margin: 1px 0 5px;
+}
+.profile-subsection header p {
+  color: #82a9c1;
+  margin: 0;
+}
+.initial-test-choice {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+.initial-test-choice > label {
+  display: grid;
+  gap: 7px;
+  max-width: 560px;
+}
+.half-cooper-panel {
+  align-items: center;
+  background: linear-gradient(135deg, rgba(30, 62, 84, .7), rgba(7, 25, 39, .92));
+  border: 1px solid #397b9e;
+  border-radius: 14px;
+  display: grid;
+  gap: 15px;
+  grid-template-columns: 1fr minmax(220px, .5fr) auto;
+  padding: 16px;
+}
+.half-cooper-panel[hidden] {
+  display: none;
+}
+.half-cooper-panel p {
+  color: #91b4ca;
+  margin: 5px 0 0;
+}
+.half-cooper-panel output {
+  color: #62e4fb;
+  font-weight: 900;
+}
+.availability-days {
+  display: grid;
+  gap: 9px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin-bottom: 18px;
+}
+.availability-days label {
+  cursor: pointer;
+}
+.availability-days input {
+  position: absolute;
+  opacity: 0;
+}
+.availability-days span {
+  background: #071a29;
+  border: 1px solid #214b63;
+  border-radius: 11px;
+  color: #82a9c1;
+  display: block;
+  font-weight: 900;
+  padding: 12px 6px;
+  text-align: center;
+}
+.availability-days input:checked + span {
+  background: #0a4255;
+  border-color: #58def5;
+  color: #f4fcff;
+}
+.profile-save-actions {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+}
+#profileSaveStatus {
+  color: #58d99a;
+  font-size: .82rem;
+}
+.add-objective-button {
+  white-space: nowrap;
+}
+.competition-cards {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.competition-objective-card {
+  background: #071a29;
+  border: 1px solid #23506a;
+  border-top: 4px solid #53ddf5;
+  border-radius: 15px;
+  padding: 17px;
+}
+.competition-objective-card.priority-a { border-top-color: #f1bd43; }
+.competition-objective-card.priority-b { border-top-color: #4edcf5; }
+.competition-objective-card.priority-c { border-top-color: #8e79ff; }
+.competition-objective-card header,
+.competition-objective-card footer {
+  align-items: center;
+  display: flex;
+  gap: 9px;
+  justify-content: space-between;
+}
+.competition-objective-card header span {
+  color: #6edff5;
+  font-size: .72rem;
+  font-weight: 900;
+}
+.competition-objective-card header strong,
+.competition-objective-card p {
+  color: #83abc2;
+  font-size: .78rem;
+}
+.competition-objective-card h3 {
+  color: #f6fbff;
+  margin: 16px 0 7px;
+}
+.competition-objective-card footer {
+  border-top: 1px solid #173c52;
+  margin-top: 16px;
+  padding-top: 12px;
+}
+.competition-objective-card footer button,
+.competition-editor > header button {
+  background: transparent;
+  border: 1px solid #2c607c;
+  border-radius: 8px;
+  color: #9bd3ed;
+  cursor: pointer;
+  padding: 7px 10px;
+}
+.competition-empty {
+  border: 1px dashed #2a5a74;
+  border-radius: 15px;
+  color: #82a9c1;
+  display: grid;
+  gap: 5px;
+  margin-top: 14px;
+  padding: 28px;
+  text-align: center;
+}
+.competition-empty[hidden] { display: none; }
+.competition-empty strong { color: #eaf8ff; }
+.competition-editor {
+  background: rgba(5, 23, 37, .96);
+  border: 1px solid #2b627f;
+  border-radius: 17px;
+  margin-top: 18px;
+  padding: 20px;
+}
+.competition-editor[hidden] { display: none; }
+.competition-editor > header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.competition-editor > header span {
+  color: #58def5;
+  font-size: .72rem;
+  font-weight: 900;
+}
+.competition-editor > header h3 {
+  color: #f4fbff;
+  margin: 4px 0 0;
+}
+@media (max-width: 980px) {
+  .competition-cards { grid-template-columns: 1fr 1fr; }
+  .half-cooper-panel { grid-template-columns: 1fr; }
+}
+@media (max-width: 620px) {
+  .profile-availability-title,
+  .profile-save-actions { align-items: flex-start; flex-direction: column; }
+  .availability-days { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .competition-cards { grid-template-columns: 1fr; }
+}
