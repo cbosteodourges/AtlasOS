@@ -1267,6 +1267,34 @@
     }
   }
 
+  const PROVIDER_CONNECTORS = {
+    "health-connect": {
+      method: "Permissions natives Android",
+      availability: "Application Android Atlas requise",
+      wellness: true
+    },
+    polar: {
+      method: "OAuth 2.0 · Polar AccessLink",
+      availability: "Identifiants d’application à configurer",
+      wellness: true
+    },
+    suunto: {
+      method: "OAuth 2.0 · Suunto Cloud API",
+      availability: "Accès partenaire à configurer",
+      wellness: true
+    },
+    coros: {
+      method: "OAuth 2.0 · COROS API",
+      availability: "Validation COROS et identifiants requis",
+      wellness: true
+    },
+    strava: {
+      method: "OAuth 2.0 · Strava API v3",
+      availability: "Application Strava à enregistrer",
+      wellness: false
+    }
+  };
+
   function openProviderWizard(button) {
     const provider = button.dataset.provider;
     const providerName =
@@ -1275,17 +1303,62 @@
     button.classList.add("selected");
     connectionWizard.hidden = false;
 
-    if (provider !== "garmin") {
+    if (provider === "manual") {
       connectionWizard.innerHTML = `
-        <div class="sensor-wizard-message">
-          <span>${providerName.toUpperCase()}</span>
-          <h3>Connecteur en préparation</h3>
-          <p>Cette source n’est pas encore raccordée au prototype. Atlas ne la
-          marquera pas comme connectée tant qu’aucune donnée réelle n’aura été reçue.</p>
-        </div>
+        <form class="sensor-consent-form" id="manualSensorForm">
+          <header><span>SANS MONTRE CONNECTÉE</span><h3>Construire mon profil manuellement</h3></header>
+          <p>Atlas peut créer un programme à partir de votre âge, de vos objectifs,
+          de vos chronos et, si vous les connaissez, de votre FC maximale, VMA,
+          VO₂max, SV1 et SV2. Une montre pourra être ajoutée plus tard.</p>
+          <label><input type="checkbox" name="manualConsent" required>
+            <span><strong>J’accepte la saisie de mes données sportives</strong>
+            <small>Ces informations serviront uniquement à personnaliser Atlas.</small></span>
+          </label>
+          <button type="submit">Continuer vers mon profil</button>
+        </form>
       `;
       syncStatus.textContent =
-        `${providerName} sélectionné · connexion prochainement disponible.`;
+        "Mode sans montre sélectionné · profil et séances saisis manuellement.";
+      return;
+    }
+
+    if (provider !== "garmin") {
+      const connector = PROVIDER_CONNECTORS[provider];
+      connectionWizard.innerHTML = `
+        <form class="sensor-consent-form external-provider-form"
+          id="externalProviderConsentForm" data-provider="${provider}"
+          data-provider-name="${providerName}">
+          <header><span>${providerName.toUpperCase()} · PARCOURS PRÉPARÉ</span>
+            <h3>Autoriser les données à synchroniser</h3></header>
+          <div class="connector-readiness">
+            <span>Méthode prévue</span><strong>${connector.method}</strong>
+            <small>${connector.availability}</small>
+          </div>
+          <label><input type="checkbox" name="activities" required>
+            <span><strong>Activités sportives</strong>
+            <small>Distance, durée, allure, fréquence cardiaque, dénivelé et tours.</small></span>
+          </label>
+          <label><input type="checkbox" name="wellness"
+            ${connector.wellness ? "checked" : "disabled"}>
+            <span><strong>Physiologie et récupération</strong>
+            <small>${connector.wellness
+              ? "Sommeil, VFC, stress et fréquence cardiaque de repos selon les données proposées."
+              : "Cette source ne fournit pas ce niveau de données à Atlas."}</small></span>
+          </label>
+          <label class="sensor-history-choice"><span>Période souhaitée</span>
+            <select name="history">
+              <option value="3">3 derniers mois</option>
+              <option value="12" selected>12 derniers mois</option>
+              <option value="all">Tout l’historique autorisé</option>
+            </select>
+          </label>
+          <p>Atlas enregistrera ces préférences. La connexion deviendra active
+          dès que les identifiants développeur du fournisseur seront configurés.</p>
+          <button type="submit">Enregistrer cette configuration</button>
+        </form>
+      `;
+      syncStatus.textContent =
+        `${providerName} sélectionné · ${connector.availability}.`;
       return;
     }
 
@@ -1317,17 +1390,68 @@
   });
 
   connectionWizard.addEventListener("submit", event => {
-    if (event.target.id !== "garminConsentForm") return;
+    const formElement = event.target;
+    if (![
+      "garminConsentForm",
+      "externalProviderConsentForm",
+      "manualSensorForm"
+    ].includes(formElement.id)) return;
     event.preventDefault();
-    const form = new FormData(event.target);
+    const form = new FormData(formElement);
+
+    if (formElement.id === "manualSensorForm") {
+      localStorage.setItem(SENSOR_CONNECTION_KEY, JSON.stringify({
+        provider: "manual",
+        updated_at: new Date().toISOString()
+      }));
+      localStorage.setItem(SENSOR_SETUP_KEY, "true");
+      connectionWizard.hidden = true;
+      connectionSummary.hidden = false;
+      connectionSummary.innerHTML = `
+        <header><div><span>MODE D’ENTRAÎNEMENT</span>
+        <h3>Profil manuel sans montre connectée</h3></div>
+        <strong>✓ Prêt à configurer</strong></header>
+        <p>Vous pourrez ajouter une montre ultérieurement sans perdre votre profil.</p>
+      `;
+      syncStatus.textContent =
+        "Mode manuel activé · renseignez maintenant votre profil et votre objectif.";
+      window.dispatchEvent(new CustomEvent(
+        "atlas:coach-section-request",
+        { detail: { section: "profile" } }
+      ));
+      return;
+    }
+
     const config = {
-      provider: "garmin",
+      provider: formElement.dataset.provider || "garmin",
+      provider_name: formElement.dataset.providerName || "Garmin",
       activities: form.get("activities") === "on",
       wellness: form.get("wellness") === "on",
       history: form.get("history") || "12",
       updated_at: new Date().toISOString()
     };
-    if (config.activities) synchronizeGarmin(config);
+
+    if (config.provider === "garmin") {
+      if (config.activities) synchronizeGarmin(config);
+      return;
+    }
+
+    localStorage.setItem(
+      "atlasCoachPendingSensorConnection",
+      JSON.stringify(config)
+    );
+    const connector = PROVIDER_CONNECTORS[config.provider];
+    connectionWizard.innerHTML = `
+      <div class="sensor-wizard-message">
+        <span>${config.provider_name.toUpperCase()} · CONFIGURATION ENREGISTRÉE</span>
+        <h3>Connecteur prêt à recevoir ses identifiants</h3>
+        <p>${connector.availability}. Atlas conservera le choix de la période et
+        des catégories de données, mais aucune source ne sera marquée connectée
+        avant une authentification réelle.</p>
+      </div>
+    `;
+    syncStatus.textContent =
+      `${config.provider_name} · configuration préparée, authentification en attente.`;
   });
 
   connectionWizard.addEventListener("click", event => {
