@@ -1974,9 +1974,6 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       plannedMainBlock?.repetitions ||
       1
     );
-    const completedRepetitions = Number(
-      execution.completed_repetition_count
-    );
     const matchingWorkBlocks = detailedBlocks.filter(
       block => block.block_type === dominantType
     );
@@ -1993,9 +1990,10 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const workBlocks = intervalGroups.length
       ? intervalGroups.map(group => group.block)
       : rawWorkBlocks;
-    const validatedRepetitions = Number.isFinite(completedRepetitions)
-      ? Math.min(completedRepetitions, workBlocks.length)
-      : workBlocks.length;
+    // Les blocs reconstruits et affichés dans le tableau constituent la
+    // référence visuelle. Le compteur Garmin peut rester inférieur quand
+    // un Auto Lap a fragmenté une étape chronométrée.
+    const validatedRepetitions = workBlocks.length;
     const incompleteRepetitions = Math.max(
       plannedRepetitions - validatedRepetitions,
       0
@@ -2004,21 +2002,23 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       plannedMainBlock?.duration_minutes
     ) * 60 || Number(plannedMainBlock?.duration_seconds) || 0;
     const completeBlockSources = new Set(rawWorkBlocks);
+    const plannedWorkZone = atlasDisplayZone(workout, plannedMainBlock);
     const partialWorkBlocks = incompleteRepetitions > 0 &&
       plannedWorkDurationSeconds > 0
       ? detailedBlocks.filter(block => {
           const duration = Number(block.duration_seconds) || 0;
           return !completeBlockSources.has(block) &&
-            !["warm_up", "cool_down", "recovery", "z1"].includes(
-              block.block_type
-            ) &&
-            duration >= plannedWorkDurationSeconds * 0.5 &&
+            atlasDisplayZone(workout, block) === plannedWorkZone &&
+            duration > 0 &&
             duration < plannedWorkDurationSeconds - 5;
-        }).slice(0, incompleteRepetitions)
+        })
       : [];
-    const partialWorkDurationSeconds = partialWorkBlocks.reduce(
-      (total, block) => total + Number(block.duration_seconds || 0),
-      0
+    const partialWorkDurationSeconds = Math.min(
+      partialWorkBlocks.reduce(
+        (total, block) => total + Number(block.duration_seconds || 0),
+        0
+      ),
+      incompleteRepetitions * plannedWorkDurationSeconds
     );
     const workDistanceKm = workBlocks.reduce(
       (total, block) => total + Number(block.distance_meters || 0),
