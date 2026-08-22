@@ -2000,6 +2000,26 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       plannedRepetitions - validatedRepetitions,
       0
     );
+    const plannedWorkDurationSeconds = Number(
+      plannedMainBlock?.duration_minutes
+    ) * 60 || Number(plannedMainBlock?.duration_seconds) || 0;
+    const completeBlockSources = new Set(rawWorkBlocks);
+    const partialWorkBlocks = incompleteRepetitions > 0 &&
+      plannedWorkDurationSeconds > 0
+      ? detailedBlocks.filter(block => {
+          const duration = Number(block.duration_seconds) || 0;
+          return !completeBlockSources.has(block) &&
+            !["warm_up", "cool_down", "recovery", "z1"].includes(
+              block.block_type
+            ) &&
+            duration >= plannedWorkDurationSeconds * 0.5 &&
+            duration < plannedWorkDurationSeconds - 5;
+        }).slice(0, incompleteRepetitions)
+      : [];
+    const partialWorkDurationSeconds = partialWorkBlocks.reduce(
+      (total, block) => total + Number(block.duration_seconds || 0),
+      0
+    );
     const workDistanceKm = workBlocks.reduce(
       (total, block) => total + Number(block.distance_meters || 0),
       0
@@ -2008,6 +2028,16 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       (total, block) => total + Number(block.duration_seconds || 0),
       0
     );
+    const totalSpecificDurationSeconds = workDurationSeconds +
+      partialWorkDurationSeconds;
+    const plannedSpecificDurationSeconds = plannedWorkDurationSeconds *
+      plannedRepetitions;
+    const specificCompletionPercent = plannedSpecificDurationSeconds > 0
+      ? Math.round(
+          totalSpecificDurationSeconds /
+          plannedSpecificDurationSeconds * 100
+        )
+      : Number.NaN;
     const mergedWork = mergeReportBlocks(workBlocks);
     const averageWorkSpeed = Number(mergedWork.average_speed_kmh);
     const averageWorkHeartRate = Number(
@@ -2235,15 +2265,21 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                 interrompue${incompleteRepetitions > 1 ? "s" : ""} ou incomplète${incompleteRepetitions > 1 ? "s" : ""} :
                 conservée${incompleteRepetitions > 1 ? "s" : ""} dans la chronologie,
                 mais exclue${incompleteRepetitions > 1 ? "s" : ""} des moyennes ci-dessous.
+                ${partialWorkDurationSeconds > 0 ? `Durée retenue pour cette répétition :
+                  ${reportBlockTime(partialWorkDurationSeconds)}.` : ""}
               </p>
             ` : ""}
           </div>
 
           <div class="interval-result-grid">
             <article>
-              <span>${dominantType === "sv2" ? "Travail au seuil" : "Travail rapide"}</span>
-              <strong>${reportBlockTime(workDurationSeconds)}</strong>
-              <small>${reportNumber(workDistanceKm, 2)} km</small>
+              <span>${dominantType === "sv2" ? "Volume spécifique" : "Travail rapide"}</span>
+              <strong>${reportBlockTime(totalSpecificDurationSeconds)}</strong>
+              <small>
+                ${plannedSpecificDurationSeconds > 0
+                  ? `${reportBlockTime(plannedSpecificDurationSeconds)} prévus · ${reportNumber(specificCompletionPercent, 0)} %`
+                  : `${reportNumber(workDistanceKm, 2)} km`}
+              </small>
             </article>
             <article>
               <span>Allure moyenne</span>
@@ -2303,6 +2339,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                       comme complète${incompleteRepetitions > 1 ? "s" : ""}.
                       ${incompleteRepetitions > 1 ? "Ces répétitions restent visibles" : "Cette répétition reste visible"}
                       dans la chronologie sans fausser les statistiques des blocs complets.
+                      ${partialWorkDurationSeconds > 0 ? `Le volume spécifique total atteint
+                        ${reportBlockTime(totalSpecificDurationSeconds)} sur
+                        ${reportBlockTime(plannedSpecificDurationSeconds)} prévus.` : ""}
                     </p>
                   ` : ""}
                   <div class="drift-reading-line">
