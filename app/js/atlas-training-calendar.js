@@ -1974,6 +1974,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       plannedMainBlock?.repetitions ||
       1
     );
+    const completedRepetitions = Number(
+      execution.completed_repetition_count
+    );
     const matchingWorkBlocks = detailedBlocks.filter(
       block => block.block_type === dominantType
     );
@@ -1990,6 +1993,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const workBlocks = intervalGroups.length
       ? intervalGroups.map(group => group.block)
       : rawWorkBlocks;
+    const validatedRepetitions = Number.isFinite(completedRepetitions)
+      ? Math.min(completedRepetitions, workBlocks.length)
+      : workBlocks.length;
+    const incompleteRepetitions = Math.max(
+      plannedRepetitions - validatedRepetitions,
+      0
+    );
     const workDistanceKm = workBlocks.reduce(
       (total, block) => total + Number(block.distance_meters || 0),
       0
@@ -2158,25 +2168,14 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         </div>
       `;
     }).join("");
-    const plannedIntervalLabel = Number(plannedMainBlock?.duration_minutes) > 0
-      ? `${plannedRepetitions} blocs de ${reportNumber(
-          plannedMainBlock.duration_minutes,
-          0
-        )} min`
-      : Number(plannedMainBlock?.distance_meters) > 0
-        ? `${plannedRepetitions} × ${reportNumber(
-            plannedMainBlock.distance_meters,
-            0
-          )} m`
-        : `${plannedRepetitions} répétitions`;
     const completedIntervalLabel = Number(
       plannedMainBlock?.duration_minutes
     ) > 0
-      ? `${workBlocks.length} blocs de ${reportNumber(
+      ? `${validatedRepetitions} blocs de ${reportNumber(
           plannedMainBlock.duration_minutes,
           0
         )} min`
-      : `${workBlocks.length} répétitions`;
+      : `${validatedRepetitions} répétitions`;
     const intervalCompletionSummary = Number(
       plannedMainBlock?.duration_minutes
     ) > 0
@@ -2230,6 +2229,14 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                 ? `Bloc principal exécuté avec une conformité de ${reportScore(targetScore)}.`
                 : targetConclusion}
             </p>
+            ${isIntervalSession && incompleteRepetitions > 0 ? `
+              <p class="report-interval-warning">
+                ${incompleteRepetitions} répétition${incompleteRepetitions > 1 ? "s" : ""}
+                interrompue${incompleteRepetitions > 1 ? "s" : ""} ou incomplète${incompleteRepetitions > 1 ? "s" : ""} :
+                conservée${incompleteRepetitions > 1 ? "s" : ""} dans la chronologie,
+                mais exclue${incompleteRepetitions > 1 ? "s" : ""} des moyennes ci-dessous.
+              </p>
+            ` : ""}
           </div>
 
           <div class="interval-result-grid">
@@ -2284,11 +2291,20 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                     <h3>Une série régulière jusqu’au dernier bloc</h3>
                   </div>
                   <p>
-                    Les ${plannedIntervalLabel}
+                    Les blocs complets (${completedIntervalLabel})
                     ont été réalisés à ${reportPace(3600 / averageWorkSpeed)}
                     de moyenne. L’écart d’allure de ${reportNumber(paceSpread, 0)} s/km
                     confirme une exécution homogène.
                   </p>
+                  ${incompleteRepetitions > 0 ? `
+                    <p>
+                      ${incompleteRepetitions} répétition${incompleteRepetitions > 1 ? "s" : ""}
+                      prévue${incompleteRepetitions > 1 ? "s" : ""} n’a pas été validée${incompleteRepetitions > 1 ? "s" : ""}
+                      comme complète${incompleteRepetitions > 1 ? "s" : ""}.
+                      ${incompleteRepetitions > 1 ? "Ces répétitions restent visibles" : "Cette répétition reste visible"}
+                      dans la chronologie sans fausser les statistiques des blocs complets.
+                    </p>
+                  ` : ""}
                   <div class="drift-reading-line">
                     <div>
                       <span>Première</span>
