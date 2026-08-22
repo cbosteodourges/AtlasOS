@@ -1614,7 +1614,9 @@ const target = compactTarget(workout, zone);
     };
 
     const compactStep = (block, options = {}) => {
+      const repetitions = Number(block.repetitions) || 1;
       const distance = blockDistance({ ...block, repetitions: 1 });
+      const totalDistance = blockDistance(block);
       const displayZone = atlasDisplayZone(workout, block);
       const type = canonicalBlockType(block);
       const title = options.title || ({
@@ -1640,7 +1642,7 @@ const target = compactTarget(workout, zone);
             <b>${escapeHtml(blockDuration(durationBlock))}</b>
           </div>
           <span>${escapeHtml(options.target || compactTargetLine(block))}</span>
-          ${distance ? `<small>Distance estimée : ${distance.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km</small>` : ""}
+          ${distance ? `<small>${repetitions > 1 ? `Distance estimée : ${distance.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km par répétition · ${totalDistance.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km au total` : `Distance estimée : ${distance.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km`}</small>` : ""}
         </article>
       `;
     };
