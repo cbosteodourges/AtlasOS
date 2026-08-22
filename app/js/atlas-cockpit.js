@@ -148,6 +148,65 @@
         "[data-analysis-coverage]",
         analysis.confidence ? `${analysis.confidence.coverage_28d} %` : "—"
       );
+      const physiology = analysis.physiology || {};
+      const decimal = value => String(value).replace(".", ",");
+      setText(
+        "[data-physiology-vo2]",
+        physiology.vo2_max != null
+          ? `${decimal(physiology.vo2_max)} ml/kg/min`
+          : "Non disponible"
+      );
+      setText(
+        "[data-physiology-vma]",
+        physiology.vma_kmh != null
+          ? `${decimal(physiology.vma_kmh)} km/h`
+          : "Non disponible"
+      );
+      setText(
+        "[data-physiology-vma-reference]",
+        physiology.vma_training_reference_kmh != null
+          ? `Référence d’entraînement : ${decimal(physiology.vma_training_reference_kmh)} km/h`
+          : "Référence à confirmer"
+      );
+      setText(
+        "[data-physiology-sv1]",
+        physiology.sv1_speed_kmh != null
+          ? `${decimal(physiology.sv1_speed_kmh)} km/h`
+          : "Non disponible"
+      );
+      setText(
+        "[data-physiology-sv1-hr]",
+        physiology.sv1_heart_rate_bpm != null
+          ? `${Math.round(physiology.sv1_heart_rate_bpm)} bpm · ${physiology.sv1_status || "référence"}`
+          : "FC à confirmer"
+      );
+      setText(
+        "[data-physiology-sv2]",
+        physiology.sv2_speed_kmh != null
+          ? `${decimal(physiology.sv2_speed_kmh)} km/h`
+          : "Non disponible"
+      );
+      setText(
+        "[data-physiology-sv2-hr]",
+        physiology.sv2_heart_rate_bpm != null
+          ? `${Math.round(physiology.sv2_heart_rate_bpm)} bpm · ${physiology.sv2_status || "référence"}`
+          : "FC à confirmer"
+      );
+      setText(
+        "[data-physiology-hrmax]",
+        physiology.maximum_heart_rate_bpm != null
+          ? `${Math.round(physiology.maximum_heart_rate_bpm)} bpm`
+          : "Non disponible"
+      );
+      const fitCount = analysis.longitudinal_report?.activity_count || 0;
+      const runningFitCount =
+        analysis.longitudinal_report?.running_activity_count || 0;
+      setText(
+        "[data-fit-archive-count]",
+        fitCount
+          ? `${fitCount} séance${fitCount > 1 ? "s" : ""} FIT retrouvée${fitCount > 1 ? "s" : ""}, dont ${runningFitCount} en course`
+          : "Aucune séance FIT structurée retrouvée dans les archives"
+      );
       setText(
         "[data-analysis-hrv]",
         analysis.benchmarks?.hrv_28d != null
