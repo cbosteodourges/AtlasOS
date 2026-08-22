@@ -7279,3 +7279,30 @@ body[data-coach-section]
     transform: translateX(-28px);
   }
 }
+
+/* Historique : rendre les séances visibles sans dépendre des seuls points. */
+.history-day-summary {
+  color: #86acc3;
+  display: -webkit-box;
+  font-size: .68rem;
+  line-height: 1.25;
+  margin-top: 7px;
+  overflow: hidden;
+  text-align: left;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.history-day.has-workout:hover .history-day-summary,
+.history-day.is-selected .history-day-summary {
+  color: #dff8ff;
+}
+
+.history-analysis-badge {
+  color: #55e0ad;
+  display: block;
+  font-size: .72rem;
+  font-style: normal;
+  font-weight: 800;
+  margin-top: 7px;
+}
