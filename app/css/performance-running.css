@@ -3087,6 +3087,30 @@ body[data-coach-section]
   backdrop-filter: blur(15px);
 }
 
+.session-dialog-tabs.has-adaptation {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.adapted-session-heading {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border-left: 3px solid #53e5ad;
+  border-radius: 8px;
+  background: rgba(83, 229, 173, .07);
+}
+
+.adapted-session-heading span {
+  color: #53e5ad;
+  font-size: .68rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.adapted-session-heading p {
+  margin: 5px 0 0;
+  color: #a9bfcd;
+}
+
 .session-dialog-tabs button {
   min-height: 46px;
   padding: 9px 16px;
@@ -6753,4 +6777,10 @@ body[data-coach-section]
   .report-main-score strong { font-size: 1.65rem; }
   .report-mini-avatar { width: 52px; height: 62px; }
   .context-range-ticks i { font-size: .52rem; }
+}
+
+@media (max-width: 720px) {
+  .session-dialog-tabs.has-adaptation {
+    grid-template-columns: 1fr;
+  }
 }
