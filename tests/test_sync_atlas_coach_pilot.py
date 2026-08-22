@@ -53,6 +53,34 @@ class AutomaticWorkoutConfirmationTests(unittest.TestCase):
                 2,
             )
 
+    def test_discards_corrupt_trailing_fragment_after_valid_list(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "optional.json"
+            source.write_text(
+                json.dumps([{
+                    "workout_id": "optional-valid",
+                    "title": "Séance conservée",
+                }]) + "\n]fragment incomplet",
+                encoding="utf-8",
+            )
+
+            workouts = load_concatenated_json_lists(source)
+
+            self.assertEqual(len(workouts), 1)
+            self.assertEqual(workouts[0]["workout_id"], "optional-valid")
+            self.assertEqual(
+                json.loads(source.read_text(encoding="utf-8")),
+                workouts,
+            )
+            backups = list(
+                Path(directory).glob("optional.corrupt-backup-*.json")
+            )
+            self.assertEqual(len(backups), 1)
+            self.assertIn(
+                "fragment incomplet",
+                backups[0].read_text(encoding="utf-8"),
+            )
+
     def test_reliable_match_marks_workout_completed(self):
         with tempfile.TemporaryDirectory() as directory:
             destination = Path(directory) / "decisions.json"
