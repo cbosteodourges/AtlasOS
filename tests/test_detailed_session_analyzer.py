@@ -716,6 +716,19 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
             result.workout_execution.execution_score,
             80,
         )
+        self.assertEqual(len(result.blocks), 6)
+        self.assertAlmostEqual(
+            result.blocks[0].duration_seconds,
+            603,
+        )
+        self.assertAlmostEqual(
+            result.blocks[0].distance_meters,
+            1600,
+        )
+        self.assertFalse(any(
+            block.duration_seconds == 381
+            for block in result.blocks
+        ))
         self.assertTrue(
             any(
                 "progression prudente" in influence
