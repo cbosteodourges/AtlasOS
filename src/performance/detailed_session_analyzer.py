@@ -56,11 +56,13 @@ class DetailedSessionAnalyzer:
         threshold_speed_kmh = self._threshold_speed(
             profile
         )
-        if activity.laps:
+        analysis_laps = self._analysis_laps(activity)
+        if analysis_laps:
             blocks = self._blocks_from_laps(
                 activity,
                 vma_kmh,
                 threshold_speed_kmh,
+                laps=analysis_laps,
             )
         else:
             intervals = self._build_intervals(
@@ -759,17 +761,146 @@ class DetailedSessionAnalyzer:
             for lap in laps
         )
 
+    @classmethod
+    def _analysis_laps(
+        cls,
+        activity: LongitudinalActivity,
+    ) -> List[dict]:
+        """Neutralise les tours distance dans une séance structurée.
+
+        Garmin peut fermer un tour kilométrique au milieu d'une étape
+        chronométrée. Ce tour et la fin de l'étape sont alors séquentiels :
+        Atlas les fusionne jusqu'au prochain marqueur workout_step, manuel
+        ou de fin de séance. Sur une sortie libre, les tours restent intacts.
+        """
+        laps = list(activity.laps or [])
+        if not laps or not activity.workout_steps:
+            return laps
+
+        boundaries = {
+            "manual",
+            "time",
+            "workout_step",
+            "session_end",
+        }
+        groups: List[List[dict]] = []
+        pending: List[dict] = []
+
+        for lap in laps:
+            pending.append(lap)
+            trigger = str(
+                lap.get("lap_trigger", "")
+            ).strip().lower()
+            if trigger in boundaries:
+                groups.append(pending)
+                pending = []
+
+        if pending:
+            groups.append(pending)
+
+        return [
+            cls._merge_structured_laps(group)
+            for group in groups
+            if group
+        ]
+
+    @classmethod
+    def _merge_structured_laps(
+        cls,
+        laps: List[dict],
+    ) -> dict:
+        """Réunit les fragments Auto Lap appartenant à la même étape."""
+        if len(laps) == 1:
+            return dict(laps[0])
+
+        merged = dict(laps[-1])
+        duration_fields = (
+            "total_timer_time",
+            "total_elapsed_time",
+        )
+        for field in duration_fields:
+            values = [cls._number(lap.get(field)) for lap in laps]
+            available = [value for value in values if value is not None]
+            if available:
+                merged[field] = sum(available)
+
+        distances = [
+            cls._number(lap.get("total_distance"))
+            for lap in laps
+        ]
+        available_distances = [
+            value for value in distances if value is not None
+        ]
+        if available_distances:
+            merged["total_distance"] = sum(available_distances)
+
+        durations = [
+            cls._number(
+                lap.get(
+                    "total_timer_time",
+                    lap.get("total_elapsed_time"),
+                )
+            ) or 0.0
+            for lap in laps
+        ]
+        weighted_fields = (
+            "avg_heart_rate",
+            "avg_power",
+            "avg_running_cadence",
+            "avg_cadence",
+            "avg_stance_time",
+            "avg_vertical_ratio",
+            "avg_step_length",
+            "avg_vertical_oscillation",
+        )
+        for field in weighted_fields:
+            weighted = [
+                (cls._number(lap.get(field)), duration)
+                for lap, duration in zip(laps, durations)
+                if cls._number(lap.get(field)) is not None
+                and duration > 0
+            ]
+            if weighted:
+                merged[field] = sum(
+                    value * duration for value, duration in weighted
+                ) / sum(duration for _value, duration in weighted)
+
+        for field in ("max_heart_rate", "enhanced_max_speed", "max_speed"):
+            values = [cls._number(lap.get(field)) for lap in laps]
+            available = [value for value in values if value is not None]
+            if available:
+                merged[field] = max(available)
+
+        total_duration = cls._number(
+            merged.get("total_timer_time")
+        )
+        total_distance = cls._number(
+            merged.get("total_distance")
+        )
+        if total_duration and total_distance is not None:
+            merged["enhanced_avg_speed"] = (
+                total_distance / total_duration
+            )
+
+        merged["start_time"] = laps[0].get(
+            "start_time",
+            merged.get("start_time"),
+        )
+        merged["atlas_merged_auto_laps"] = len(laps) - 1
+        return merged
+
     def _blocks_from_laps(
         self,
         activity: LongitudinalActivity,
         vma_kmh: Optional[float],
         threshold_speed_kmh: Optional[float],
+        laps: Optional[List[dict]] = None,
     ) -> List[SessionBlock]:
-        """Utilise les tours manuels comme structure prioritaire."""
+        """Utilise les limites d'étapes Garmin comme structure prioritaire."""
         blocks = []
         elapsed = 0.0
         previous_type = None
-        laps = activity.laps
+        laps = laps if laps is not None else activity.laps
 
         for index, lap in enumerate(laps, start=1):
             duration = self._number(
