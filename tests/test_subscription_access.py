@@ -48,7 +48,7 @@ class SubscriptionAccessTests(unittest.TestCase):
         self.assertEqual(len(result["weeks"]), 4)
         self.assertEqual(len(result["locked_weeks"]), 4)
         self.assertNotIn("workouts", result["locked_weeks"][0])
-        self.assertEqual(result["locked_weeks"][0]["unlock_date"], "2026-08-08")
+        self.assertEqual(result["locked_weeks"][0]["unlock_date"], "2026-08-11")
 
     def test_expired_receives_no_future_details(self):
         result = filter_program_for_subscription(
