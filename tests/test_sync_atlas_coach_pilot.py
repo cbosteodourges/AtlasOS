@@ -15,6 +15,7 @@ sys.modules.setdefault("garmin_fit_sdk", garmin_fit_sdk)
 from scripts.sync_atlas_coach_pilot import (
     confirm_matched_workouts,
     detected_optional_threshold_workout,
+    load_concatenated_json_lists,
     load_optional_workouts,
     persist_restored_optional_workouts,
 )
@@ -23,6 +24,31 @@ from src.training import TrainingProgramLoader
 
 
 class AutomaticWorkoutConfirmationTests(unittest.TestCase):
+    def test_recovers_concatenated_optional_workout_lists(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "optional.json"
+            source.write_text(
+                json.dumps([{
+                    "workout_id": "optional-1",
+                    "title": "Ancienne version",
+                }])
+                + "\n"
+                + json.dumps([{
+                    "workout_id": "optional-1",
+                    "title": "Dernière version",
+                }, {
+                    "workout_id": "optional-2",
+                    "title": "Deuxième séance",
+                }]),
+                encoding="utf-8",
+            )
+
+            workouts = load_concatenated_json_lists(source)
+
+            self.assertEqual(len(workouts), 2)
+            self.assertEqual(workouts[0]["title"], "Dernière version")
+            self.assertEqual(workouts[1]["workout_id"], "optional-2")
+
     def test_reliable_match_marks_workout_completed(self):
         with tempfile.TemporaryDirectory() as directory:
             destination = Path(directory) / "decisions.json"
