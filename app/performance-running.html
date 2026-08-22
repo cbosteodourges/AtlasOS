@@ -7,6 +7,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Atlas OS — Atlas Coach</title>
   <link rel="stylesheet" href="./css/performance-running.css?v=49">
+  <link rel="stylesheet" href="./css/atlas-training-history.css?v=1">
   <link rel="stylesheet" href="./css/atlas-global-nav.css?v=10"><link rel="stylesheet" href="./css/atlas-conversation.css?v=8"><link rel="stylesheet" href="./css/atlas-conversation-refinement.css?v=1"><link rel="stylesheet" href="./css/atlas-responsive.css?v=1">
 </head>
 <body>
@@ -417,12 +418,10 @@
       Retrouvez ici les séances réalisées, non effectuées, déplacées
       ou remplacées, ainsi que leur analyse FIT et la réponse d’Atlas.
     </p>
-    <div class="coach-history-empty">
-      <strong>Historique Atlas en préparation</strong>
-      <span>
-        Les prochaines activités Garmin importées apparaîtront
-        automatiquement dans cette rubrique.
-      </span>
+    <div class="atlas-training-history" id="trainingHistory" aria-live="polite">
+      <div class="coach-history-empty">
+        <strong>Chargement de la mémoire Atlas…</strong>
+      </div>
     </div>
   </section>
 
@@ -434,5 +433,6 @@
 <script src="./js/atlas-global-nav.js?v=7"></script>
 <script src="./js/performance-running.js?v=3"></script>
 <script src="./js/atlas-training-calendar.js?v=50"></script>
+<script src="./js/atlas-training-history.js?v=1"></script>
 </body>
 </html>
