@@ -95,17 +95,17 @@ class ThreePlusOnePilotPlanner:
         {
             "vo2": ("VO₂max contrôlée · 6 à 8 × 400 m", 11, 10, 13, 6, 8),
             "threshold": ("SV2 contrôlé · 3 à 4 × 1000 m", 17, 14, 19, 3, 4),
-            "hybrid": ("Sortie longue hybride · 3 à 4 × 6 min sous SV2", 20, 18, 24, 3, 4),
+            "hybrid": ("Sortie longue hybride · 3 × 8 min sous SV2", 24, 24, 24, 3, 3),
         },
         {
-            "vo2": ("VO₂max contrôlée · 6 à 8 × 400 m", 12, 10, 13, 6, 8),
-            "threshold": ("SV2 contrôlé · 3 à 4 × 1200 m", 20, 17, 23, 3, 4),
-            "hybrid": ("Sortie longue hybride · 3 à 4 × 6 min sous SV2", 23, 18, 24, 3, 4),
+            "vo2": ("VO₂max pyramidal · 2 × 3 min + 2 × 2 min + 1 à 2 × 1 min 30", 12, 10, 13, 5, 6),
+            "threshold": ("SV2 descendant · 2000 m + 1600 m + 1200 m facultatif", 20, 17, 22, 2, 3),
+            "hybrid": ("Sortie longue hybride · 5 × 5 min sous SV2", 25, 25, 25, 5, 5),
         },
         {
-            "vo2": ("VO₂max contrôlée · 6 à 8 × 500 m", 15, 14, 17, 6, 8),
+            "vo2": ("Temps de soutien VO₂max · 4 à 6 × 3 min", 15, 12, 18, 4, 6),
             "threshold": ("SV2 contrôlé · 4 à 5 × 1000 m", 21, 19, 23, 4, 5),
-            "hybrid": ("Sortie longue hybride · 3 à 4 × 5 min sous SV2", 20, 15, 20, 3, 4),
+            "hybrid": ("Sortie longue hybride · 8 × 3 min sous SV2", 24, 24, 24, 8, 8),
         },
     )
 
@@ -140,6 +140,7 @@ class ThreePlusOnePilotPlanner:
         warnings = [
             "Pilote Atlas Research : le programme actif reste inchangé.",
             "Ne jamais augmenter simultanément l'allure et le volume spécifique.",
+            "Les options hautes sont interdépendantes : plafond absolu de 60 min spécifiques par semaine.",
             "Toute douleur localisée ou récupération rouge remplace les stimuli par du facile.",
         ]
         if surface == "road":
@@ -183,7 +184,7 @@ class ThreePlusOnePilotPlanner:
             ),
             PilotSession(
                 monday + timedelta(days=5), "hybrid_long_subthreshold", hybrid_title,
-                80 + (number - 1) * 3,
+                80 + (number - 1) * 5,
                 specific_minutes=hybrid_planned, specific_minutes_min=hybrid_min,
                 specific_minutes_max=hybrid_max, repetitions_min=hybrid_reps_min,
                 repetitions_max=hybrid_reps_max, is_specific=True, is_metabolic=True,
@@ -214,9 +215,12 @@ class ThreePlusOnePilotPlanner:
             sessions = self._replace_with_easy(sessions)
 
         planned_specific = sum(item.specific_minutes for item in sessions)
-        maximum_specific = sum(item.specific_minutes_max for item in sessions)
-        if planned_specific > self.SPECIFIC_MINUTES_CAP or maximum_specific > self.SPECIFIC_MINUTES_CAP:
-            raise ValueError("Le plafond hebdomadaire de minutes spécifiques est dépassé.")
+        if planned_specific > self.SPECIFIC_MINUTES_CAP:
+            raise ValueError("Le plafond hebdomadaire planifié de minutes spécifiques est dépassé.")
+        if wellness == "green":
+            sessions[-2].instructions.append(
+                "Les bornes hautes du mardi et du jeudi ne sont pas cumulables au-delà de 60 min spécifiques sur la semaine."
+            )
         return PilotWeek(number, monday, sessions)
 
     def _consolidation_week(
