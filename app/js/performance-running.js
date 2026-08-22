@@ -1061,6 +1061,10 @@
             ? `Profil Atlas chargé : ${summary}.`
             : "Profil Atlas personnel chargé."
         );
+        window.dispatchEvent(new CustomEvent(
+          "atlas:athlete-profile-loaded",
+          { detail: payload }
+        ));
         return;
       } catch (error) {
         console.debug(
@@ -2366,6 +2370,10 @@
         }
 
         renderRealProgram(program);
+        window.dispatchEvent(new CustomEvent(
+          "atlas:training-program-loaded",
+          { detail: program }
+        ));
         document.body.classList.add(
           "has-atlas-research-program"
         );

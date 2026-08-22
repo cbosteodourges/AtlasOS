@@ -6796,6 +6796,9 @@ body[data-coach-section]
   margin: 18px 0;
   padding: 18px 22px;
 }
+.sensor-onboarding.coach-section-panel {
+  margin-bottom: 14px;
+}
 .sensor-onboarding p,
 .sensor-consent-form header span,
 .sensor-wizard-message > span,

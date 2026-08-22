@@ -3928,6 +3928,33 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     loadTodayPreparations(program);
   }
 
+  window.addEventListener("atlas:athlete-profile-loaded", event => {
+    const payload = event.detail || {};
+    const physiology = payload.physiological || payload;
+
+    if (!physiology || typeof physiology !== "object") return;
+
+    physiologicalRibbon({
+      ...physiology,
+      age_years:
+        physiology.age_years ?? payload.age_years ??
+        payload.demographics?.age_years,
+      sex:
+        physiology.sex ?? payload.sex ?? payload.demographics?.sex,
+      profile_confidence_score:
+        physiology.profile_confidence_score ??
+        payload.profile_confidence_score ??
+        payload.confidence_score ?? 90
+    });
+  });
+
+  window.addEventListener("atlas:training-program-loaded", event => {
+    const program = event.detail;
+    if (program?.athlete_snapshot) {
+      physiologicalRibbon(program.athlete_snapshot);
+    }
+  });
+
   calendar.addEventListener("click", event => {
     const mobileDay = event.target.closest("[data-mobile-day]");
 
