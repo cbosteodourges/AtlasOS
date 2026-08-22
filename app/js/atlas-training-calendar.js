@@ -2013,13 +2013,17 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             duration < plannedWorkDurationSeconds - 5;
         })
       : [];
-    const partialWorkDurationSeconds = Math.min(
-      partialWorkBlocks.reduce(
+    const detectedPartialWorkDuration = Number(
+      analysis.partial_work_duration_seconds
+    );
+    const partialWorkDurationSeconds = Number.isFinite(
+      detectedPartialWorkDuration
+    ) && detectedPartialWorkDuration > 0
+      ? detectedPartialWorkDuration
+      : Math.min(partialWorkBlocks.reduce(
         (total, block) => total + Number(block.duration_seconds || 0),
         0
-      ),
-      incompleteRepetitions * plannedWorkDurationSeconds
-    );
+      ), incompleteRepetitions * plannedWorkDurationSeconds);
     const workDistanceKm = workBlocks.reduce(
       (total, block) => total + Number(block.distance_meters || 0),
       0
