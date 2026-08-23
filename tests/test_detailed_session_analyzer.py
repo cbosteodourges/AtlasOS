@@ -241,6 +241,47 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
         )
         self.assertTrue(result.data_integrity.heart_rate_reliable)
 
+    def test_cycling_keeps_brief_plausible_late_peak(self) -> None:
+        heart_rates = (
+            [171] * 180
+            + [125] * (3300 - 180 - 5)
+            + [154] * 5
+        )
+        samples = [
+            self._sample(second, 7.3, second * 7.3, heart_rate)
+            for second, heart_rate in enumerate(heart_rates)
+        ]
+        activity = LongitudinalActivity(
+            atlas_id="garmin:cycling-brief-late-peak",
+            start_time=self.start,
+            activity_type="road",
+            distance_km=24.25,
+            duration_minutes=55.2,
+            average_speed_kmh=26.38,
+            average_heart_rate_bpm=125,
+            maximum_heart_rate_bpm=171,
+            samples=samples,
+        )
+        profile = AthleteProfile(
+            athlete_id="cycling-brief-late-peak-profile",
+            declared_level="intermediate",
+            observed_level="intermediate",
+            physiological=PhysiologicalReferences(
+                maximum_heart_rate_bpm=170,
+            ),
+        )
+
+        result = self.analyzer.analyze(activity, profile)
+
+        self.assertEqual(activity.maximum_heart_rate_bpm, 171)
+        self.assertEqual(result.blocks[0].maximum_heart_rate_bpm, 154)
+        self.assertTrue(result.data_integrity.heart_rate_spike_filtered)
+        self.assertEqual(
+            result.data_integrity.corrected_maximum_heart_rate_bpm,
+            154,
+        )
+        self.assertTrue(result.data_integrity.heart_rate_reliable)
+
     def test_observes_sv1_and_sv2_transitions(
         self,
     ) -> None:
