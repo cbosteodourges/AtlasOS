@@ -18,6 +18,12 @@ from .manual_recovery import (
     ManualRecoveryConnector,
 )
 from .registry import ConnectorRegistry
+from .source_catalog import (
+    SourceCapability,
+    canonical_provider,
+    get_source_capability,
+    list_source_capabilities,
+)
 from .strava import StravaConnector
 from .sync_service import ActivitySyncService
 
@@ -35,5 +41,9 @@ __all__ = [
     "ManualRecoveryConnector",
     "NormalizedActivity",
     "RawActivity",
+    "SourceCapability",
     "StravaConnector",
+    "canonical_provider",
+    "get_source_capability",
+    "list_source_capabilities",
 ]
