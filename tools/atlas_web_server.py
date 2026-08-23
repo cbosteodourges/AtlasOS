@@ -2743,22 +2743,21 @@ if __name__ == "__main__":
 
     print(
         "ATLAS OS disponible sur "
-        f"http://localhost:{port}/app/atlas-cockpit.html"
+        f"http://localhost:{port}/app/atlas-cockpit.html",
+        flush=True,
     )
-    try:
-        local_ip = socket.gethostbyname(socket.gethostname())
-        print(
-            "Accès smartphone (même Wi-Fi) : "
-            f"http://{local_ip}:{port}/app/atlas-cockpit.html"
-        )
-    except OSError:
-        print(
-            "Accès smartphone : utilisez l’adresse IPv4 du PC "
-            f"sur le port {port}."
-        )
+    # Ne pas résoudre le nom de la machine avant ``serve_forever``.
+    # Sous Windows cette résolution peut rester bloquée alors que le socket
+    # écoute déjà, donnant l'impression d'un serveur actif qui ne répond pas.
+    print(
+        "Accès smartphone : utilisez l’adresse IPv4 du PC "
+        f"sur le port {port}.",
+        flush=True,
+    )
     print(
         "Passerelle Atlas Brain active sur "
-        "/api/atlas-brain/analyse"
+        "/api/atlas-brain/analyse",
+        flush=True,
     )
 
     try:
