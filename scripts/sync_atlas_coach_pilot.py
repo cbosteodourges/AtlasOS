@@ -534,7 +534,7 @@ def build_record(
     candidates = loader.candidates_for_activity(
         workouts,
         activity_date=longitudinal.start_time.date(),
-        sport=longitudinal.activity_type,
+        sport=fingerprint.sport,
     )
 
     matches = [
