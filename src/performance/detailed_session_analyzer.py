@@ -433,7 +433,25 @@ class DetailedSessionAnalyzer:
                     and early_sustained - later_sustained >= 10
                 )
                 if acquisition_artifact:
-                    sustained = later_sustained
+                    # Le maximum soutenu sur 15 points décrit la charge,
+                    # mais peut effacer une courte montée réelle. Après avoir
+                    # isolé le verrouillage initial, Atlas conserve aussi un
+                    # pic tardif confirmé sur au moins trois mesures, tant
+                    # qu'il reste physiologiquement plausible par rapport à
+                    # la FC maximale déclarée.
+                    plausible_limit = declared_maximum * 0.96
+                    later_confirmed_peaks = [
+                        median(later_values[index:index + 3])
+                        for index in range(len(later_values) - 2)
+                        if median(later_values[index:index + 3])
+                        <= plausible_limit
+                    ]
+                    later_confirmed = (
+                        max(later_confirmed_peaks)
+                        if later_confirmed_peaks
+                        else later_sustained
+                    )
+                    sustained = max(later_sustained, later_confirmed)
                     spike_filtered = True
 
         return (
