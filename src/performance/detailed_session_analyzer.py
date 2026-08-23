@@ -59,7 +59,7 @@ class DetailedSessionAnalyzer:
         is_cycling = self._is_cycling(activity)
         analysis_laps = self._analysis_laps(activity)
         if is_cycling:
-            blocks = self._cycling_blocks(activity)
+            blocks = self._cycling_blocks(activity, profile)
         elif analysis_laps:
             blocks = self._blocks_from_laps(
                 activity,
@@ -308,6 +308,7 @@ class DetailedSessionAnalyzer:
     def _cycling_blocks(
         cls,
         activity: LongitudinalActivity,
+        profile: Optional[AthleteProfile] = None,
     ) -> List[SessionBlock]:
         """Conserve une sortie vélo continue sans interpréter les Auto Lap.
 
@@ -322,6 +323,7 @@ class DetailedSessionAnalyzer:
         biomechanical_load = min(100, round(activity.duration_minutes / 10))
         corrected_maximum, spike_filtered = cls._sustained_heart_rate_maximum(
             activity,
+            profile,
         )
         reasons = [
             "Sortie vélo analysée comme un effort continu ; tours distance Garmin neutralisés."
@@ -359,37 +361,81 @@ class DetailedSessionAnalyzer:
     def _sustained_heart_rate_maximum(
         cls,
         activity: LongitudinalActivity,
+        profile: Optional[AthleteProfile] = None,
     ) -> tuple[Optional[float], bool]:
-        """Écarte un pic cardio bref sans effacer la mesure brute Garmin."""
+        """Écarte les pics cardio optiques sans effacer la mesure Garmin."""
         raw_maximum = activity.maximum_heart_rate_bpm
-        ordered = cls._ordered_samples(activity.samples)
-        values = [
-            float(sample.heart_rate_bpm)
-            for sample in ordered
+        ordered = [
+            sample
+            for sample in cls._ordered_samples(activity.samples)
             if sample.heart_rate_bpm is not None
             and 30 <= float(sample.heart_rate_bpm) <= 240
         ]
+        values = [float(sample.heart_rate_bpm) for sample in ordered]
         if not values:
             return raw_maximum, False
 
-        # Une médiane glissante de 15 points élimine les décrochages optiques
-        # très courts tout en conservant une vraie montée cardiaque prolongée.
-        if len(values) >= 15:
-            sustained = max(
-                median(values[index:index + 15])
-                for index in range(len(values) - 14)
+        def sustained_maximum(series: List[float]) -> float:
+            if len(series) < 15:
+                return max(series)
+            return max(
+                median(series[index:index + 15])
+                for index in range(len(series) - 14)
             )
-        else:
-            sustained = max(values)
 
+        # Le filtre médian neutralise les décrochages très courts.
+        sustained = sustained_maximum(values)
         observed_raw = max(
             [float(raw_maximum)] if raw_maximum is not None else []
             + values
         )
-        spike_filtered = (
-            len(values) >= 15
-            and observed_raw - sustained >= 10
+        spike_filtered = len(values) >= 15 and observed_raw - sustained >= 10
+
+        # Une mauvaise acquisition optique peut toutefois durer plusieurs
+        # minutes au démarrage (montre froide, peau sèche, cadence verrouillée).
+        # Sur une sortie facile, un plateau initial proche de la FC maximale
+        # connue, suivi d'une courbe durablement bien plus basse, n'est pas un
+        # véritable effort maximal. On conserve le brut mais on retient le
+        # maximum soutenu observé après la phase d'acquisition.
+        declared_maximum = (
+            profile.physiological.maximum_heart_rate_bpm
+            if profile
+            else None
         )
+        if (
+            declared_maximum is not None
+            and len(ordered) >= 30
+            and activity.average_heart_rate_bpm is not None
+            and activity.average_heart_rate_bpm <= declared_maximum * 0.82
+        ):
+            start = cls._date(ordered[0].timestamp)
+            acquisition_seconds = min(
+                600.0,
+                max(120.0, activity.duration_minutes * 60 * 0.20),
+            )
+            early_values = [
+                float(sample.heart_rate_bpm)
+                for sample in ordered
+                if (cls._date(sample.timestamp) - start).total_seconds()
+                <= acquisition_seconds
+            ]
+            later_values = [
+                float(sample.heart_rate_bpm)
+                for sample in ordered
+                if (cls._date(sample.timestamp) - start).total_seconds()
+                > acquisition_seconds
+            ]
+            if len(early_values) >= 15 and len(later_values) >= 15:
+                early_sustained = sustained_maximum(early_values)
+                later_sustained = sustained_maximum(later_values)
+                acquisition_artifact = (
+                    early_sustained >= declared_maximum - 3
+                    and early_sustained - later_sustained >= 10
+                )
+                if acquisition_artifact:
+                    sustained = later_sustained
+                    spike_filtered = True
+
         return (
             round(sustained, 1) if spike_filtered else observed_raw,
             spike_filtered,
@@ -413,7 +459,10 @@ class DetailedSessionAnalyzer:
             else None
         )
         corrected_maximum, spike_filtered = (
-            DetailedSessionAnalyzer._sustained_heart_rate_maximum(activity)
+            DetailedSessionAnalyzer._sustained_heart_rate_maximum(
+                activity,
+                profile,
+            )
             if DetailedSessionAnalyzer._is_cycling(activity)
             else (activity.maximum_heart_rate_bpm, False)
         )
