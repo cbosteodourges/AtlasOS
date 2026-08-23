@@ -113,6 +113,52 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
             for text in result.interpretation
         ))
 
+    def test_cycling_distance_laps_are_not_running_sprints(self) -> None:
+        samples = [
+            self._sample(0, 7.0, 0, 115),
+            self._sample(3300, 7.3, 24250, 124),
+        ]
+        activity = LongitudinalActivity(
+            atlas_id="garmin:cycling-road",
+            start_time=self.start,
+            activity_type="road",
+            distance_km=24.25,
+            duration_minutes=55,
+            average_speed_kmh=26.45,
+            average_heart_rate_bpm=124,
+            maximum_heart_rate_bpm=156,
+            samples=samples,
+            laps=[
+                {
+                    "total_timer_time": 700,
+                    "total_distance": 5000,
+                    "enhanced_avg_speed": 7.14,
+                    "lap_trigger": "distance",
+                },
+                {
+                    "total_timer_time": 600,
+                    "total_distance": 5000,
+                    "enhanced_avg_speed": 8.33,
+                    "lap_trigger": "distance",
+                },
+                {
+                    "total_timer_time": 620,
+                    "total_distance": 5000,
+                    "enhanced_avg_speed": 8.06,
+                    "lap_trigger": "distance",
+                },
+            ],
+        )
+
+        result = self.analyzer.analyze(activity, self.profile)
+
+        self.assertEqual(result.session_type, "cycling")
+        self.assertEqual(result.dominant_work_type, "cycling")
+        self.assertEqual(len(result.blocks), 1)
+        self.assertEqual(result.blocks[0].block_type, "cycling")
+        self.assertAlmostEqual(result.work_distance_meters, 24250)
+        self.assertFalse(result.threshold_observations)
+
 
     def test_observes_sv1_and_sv2_transitions(
         self,
