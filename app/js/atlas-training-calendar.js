@@ -1808,7 +1808,7 @@ const target = compactTarget(workout, zone);
         );
         const fastPace = paceFromSpeed(maximum);
         const slowPace = paceFromSpeed(minimum);
-        if (fastPace && slowPace) {
+        if (workout.sport !== "cycling" && fastPace && slowPace) {
           values.push(`${fastPace.replace("/km", "")}–${slowPace}`);
         }
       } else if (blockTarget.pace_min_per_km) {
@@ -2147,6 +2147,90 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     `;
   }
 
+  function cyclingExecutionReportHtml(report, workout) {
+    const match = report.workout_match || {};
+    const execution = match.execution || {};
+    const activity = report.activity || {};
+    const analysis = report.analysis || {};
+    const block = Array.isArray(analysis.blocks) ? analysis.blocks[0] || {} : {};
+    const duration = Number(activity.duration_minutes) ||
+      Number(block.duration_seconds) / 60;
+    const distance = Number(activity.distance_km) ||
+      Number(block.distance_meters) / 1000;
+    const speed = Number(activity.average_speed_kmh) ||
+      Number(block.average_speed_kmh);
+    const averageHeartRate = Number(activity.average_heart_rate_bpm) ||
+      Number(block.average_heart_rate_bpm);
+    const maximumHeartRate = Number(activity.maximum_heart_rate_bpm) ||
+      Number(block.maximum_heart_rate_bpm);
+    const elevation = Number(activity.elevation_gain_m);
+    const confidence = Number(match.match_confidence_score);
+    const plannedDuration = Number(workout.planned_duration_minutes);
+    const durationDifference = duration - plannedDuration;
+    const closeToPlan = Number.isFinite(durationDifference) &&
+      Math.abs(durationDifference) <= 15;
+
+    return `
+      <section class="execution-report execution-report-narrative">
+        <header class="report-cockpit-header">
+          <div>
+            <span>ANALYSE ATLAS · SORTIE VÉLO</span>
+            <h2>${escapeHtml(workout.title || "Sortie vélo")}</h2>
+            <p>
+              Effort continu · les tours automatiques Garmin ont été neutralisés.
+              ${Number.isFinite(confidence) ? `Confiance d’association : ${reportScore(confidence)}.` : ""}
+            </p>
+          </div>
+          <div class="report-main-score">
+            <strong>${Number.isFinite(Number(execution.execution_score)) ? reportScore(execution.execution_score) : "—"}</strong>
+            <span>Score d’exécution</span>
+          </div>
+        </header>
+
+        ${timelineHtml([{
+          zone: 1,
+          duration: Math.max(duration || 1, 1),
+          label: "Sortie vélo continue"
+        }], "Sortie vélo réalisée")}
+
+        <section class="interval-result-summary">
+          <div class="report-heading">
+            <span class="report-kicker">RÉSULTAT</span>
+            <h3>${closeToPlan
+              ? "La séance vélo de récupération est cohérente avec le plan."
+              : "La sortie vélo est enregistrée comme un effort continu."}</h3>
+            <p>
+              ${closeToPlan
+                ? `Durée réalisée proche des ${reportNumber(plannedDuration, 0)} min prévues.`
+                : "Atlas n’interprète plus les tours de 5 km comme des sprints."}
+            </p>
+          </div>
+          <div class="interval-result-grid">
+            <article><span>Temps roulé</span><strong>${reportBlockTime(duration * 60)}</strong><small>${reportNumber(distance, 2)} km</small></article>
+            <article><span>Vitesse moyenne</span><strong>${reportNumber(speed, 2)} km/h</strong><small>Aucune allure course à pied</small></article>
+            <article><span>Fréquence cardiaque</span><strong>${reportNumber(averageHeartRate, 0)} bpm</strong><small>max. ${reportNumber(maximumHeartRate, 0)} bpm</small></article>
+            <article><span>Dénivelé positif</span><strong>${reportNumber(elevation, 0)} m</strong><small>Contrainte externe</small></article>
+          </div>
+        </section>
+
+        <details class="report-more">
+          <summary>Voir l’analyse physiologique complète</summary>
+          <div class="report-analysis-layout"><main>
+            <section class="narrative-analysis-section">
+              <div class="report-heading"><span class="report-kicker">LECTURE ATLAS</span><h3>Une charge croisée sans impact de course</h3></div>
+              <p>
+                Cette activité est analysée avec ses données propres au cyclisme : durée,
+                distance, vitesse, fréquence cardiaque, puissance et dénivelé lorsqu’ils
+                sont disponibles. Les zones VMA et les allures au kilomètre de course à
+                pied ne sont pas utilisées.
+              </p>
+            </section>
+          </main></div>
+        </details>
+      </section>
+    `;
+  }
+
   function executionReportHtml(report, workout, userContext = null) {
     if (!report) {
       return `
@@ -2168,6 +2252,11 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const detailedBlocks = Array.isArray(analysis.blocks)
       ? analysis.blocks
       : [];
+    const isCycling = String(activity.sport || workout.sport || "") === "cycling" ||
+      String(analysis.session_type || "") === "cycling";
+    if (isCycling) {
+      return cyclingExecutionReportHtml(report, workout);
+    }
     const dominantType = String(
       analysis.dominant_work_type || ""
     );
