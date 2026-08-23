@@ -320,6 +320,16 @@ class DetailedSessionAnalyzer:
             return []
         physiological_load = min(100, round(activity.duration_minutes / 4))
         biomechanical_load = min(100, round(activity.duration_minutes / 10))
+        corrected_maximum, spike_filtered = cls._sustained_heart_rate_maximum(
+            activity,
+        )
+        reasons = [
+            "Sortie vélo analysée comme un effort continu ; tours distance Garmin neutralisés."
+        ]
+        if spike_filtered:
+            reasons.append(
+                "Pic cardiaque isolé neutralisé ; la FC maximale affichée correspond à un effort soutenu."
+            )
         return [SessionBlock(
             block_index=1,
             block_type="cycling",
@@ -336,16 +346,54 @@ class DetailedSessionAnalyzer:
                 for lap in (activity.laps or [{}])
             ) or activity.average_speed_kmh,
             average_heart_rate_bpm=activity.average_heart_rate_bpm,
-            maximum_heart_rate_bpm=activity.maximum_heart_rate_bpm,
+            maximum_heart_rate_bpm=corrected_maximum,
             average_power_watts=activity.dynamics.average_power_watts,
             average_cadence_spm=activity.dynamics.average_cadence_spm,
             physiological_load_score=physiological_load,
             biomechanical_load_score=biomechanical_load,
             confidence_score=max(70, min(95, activity.data_quality_score or 85)),
-            detection_reasons=[
-                "Sortie vélo analysée comme un effort continu ; tours distance Garmin neutralisés."
-            ],
+            detection_reasons=reasons,
         )]
+
+    @classmethod
+    def _sustained_heart_rate_maximum(
+        cls,
+        activity: LongitudinalActivity,
+    ) -> tuple[Optional[float], bool]:
+        """Écarte un pic cardio bref sans effacer la mesure brute Garmin."""
+        raw_maximum = activity.maximum_heart_rate_bpm
+        ordered = cls._ordered_samples(activity.samples)
+        values = [
+            float(sample.heart_rate_bpm)
+            for sample in ordered
+            if sample.heart_rate_bpm is not None
+            and 30 <= float(sample.heart_rate_bpm) <= 240
+        ]
+        if not values:
+            return raw_maximum, False
+
+        # Une médiane glissante de 15 points élimine les décrochages optiques
+        # très courts tout en conservant une vraie montée cardiaque prolongée.
+        if len(values) >= 15:
+            sustained = max(
+                median(values[index:index + 15])
+                for index in range(len(values) - 14)
+            )
+        else:
+            sustained = max(values)
+
+        observed_raw = max(
+            [float(raw_maximum)] if raw_maximum is not None else []
+            + values
+        )
+        spike_filtered = (
+            len(values) >= 15
+            and observed_raw - sustained >= 10
+        )
+        return (
+            round(sustained, 1) if spike_filtered else observed_raw,
+            spike_filtered,
+        )
 
     @staticmethod
     def _data_integrity(
@@ -364,22 +412,36 @@ class DetailedSessionAnalyzer:
             if profile
             else None
         )
-        observed_values = [
-            value
-            for value in (
-                activity.maximum_heart_rate_bpm,
-                *[
-                    sample.heart_rate_bpm
-                    for sample in activity.samples
-                ],
-            )
-            if value is not None
-        ]
+        corrected_maximum, spike_filtered = (
+            DetailedSessionAnalyzer._sustained_heart_rate_maximum(activity)
+            if DetailedSessionAnalyzer._is_cycling(activity)
+            else (activity.maximum_heart_rate_bpm, False)
+        )
+        observed_values = (
+            [corrected_maximum]
+            if spike_filtered and corrected_maximum is not None
+            else [
+                value
+                for value in (
+                    corrected_maximum,
+                    *[
+                        sample.heart_rate_bpm
+                        for sample in activity.samples
+                    ],
+                )
+                if value is not None
+            ]
+        )
         observed_maximum = (
             max(observed_values)
             if observed_values
             else None
         )
+        if spike_filtered:
+            warnings.append(
+                "Pic cardiaque isolé probablement lié au capteur ; valeur brute conservée et maximum soutenu utilisé."
+            )
+            sensor_quality -= 5
 
         if (
             declared_maximum is not None
@@ -429,6 +491,9 @@ class DetailedSessionAnalyzer:
                 sensor_quality,
             ),
             recommended_action=action,
+            raw_maximum_heart_rate_bpm=activity.maximum_heart_rate_bpm,
+            corrected_maximum_heart_rate_bpm=corrected_maximum,
+            heart_rate_spike_filtered=spike_filtered,
             anomalies=anomalies,
             warnings=warnings,
         )
