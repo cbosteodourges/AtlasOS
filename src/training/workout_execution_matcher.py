@@ -536,12 +536,27 @@ class AtlasWorkoutExecutionMatcher:
             "course",
             "course à pied",
         }
+        cycling_aliases = {
+            "cycling",
+            "cyclisme",
+            "bike",
+            "biking",
+            "road",
+            "vtt",
+            "mountain_biking",
+            "gravel_cycling",
+        }
 
         if planned == actual:
             return 100
         if (
             planned in running_aliases
             and actual in running_aliases
+        ):
+            return 100
+        if (
+            planned in cycling_aliases
+            and actual in cycling_aliases
         ):
             return 100
         return 0
