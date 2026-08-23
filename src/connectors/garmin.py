@@ -7,7 +7,15 @@ import hashlib
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+)
 
 try:
     from garmin_fit_sdk import Decoder, Stream
@@ -28,8 +36,20 @@ class GarminConnector(ActivityConnector):
 
     provider = "garmin"
 
-    def __init__(self, activities_directory: str) -> None:
+    def __init__(
+        self,
+        activities_directory: str,
+        *,
+        fit_paths: Optional[Sequence[Path]] = None,
+        progress_callback: Optional[Callable[[Path, int, int], None]] = None,
+    ) -> None:
         self.activities_directory = Path(activities_directory)
+        self.fit_paths = (
+            tuple(Path(path) for path in fit_paths)
+            if fit_paths is not None
+            else None
+        )
+        self.progress_callback = progress_callback
         self.connected = False
 
     def connect(self) -> None:
@@ -61,9 +81,20 @@ class GarminConnector(ActivityConnector):
         activities: List[RawActivity] = []
         seen_hashes: set[str] = set()
 
-        for fit_path in sorted(
-            self.activities_directory.rglob("*.fit")
-        ):
+        fit_paths = (
+            sorted(self.fit_paths)
+            if self.fit_paths is not None
+            else sorted(
+                path
+                for path in self.activities_directory.rglob("*")
+                if path.is_file() and path.suffix.lower() == ".fit"
+            )
+        )
+
+        for index, fit_path in enumerate(fit_paths, start=1):
+            if self.progress_callback is not None:
+                self.progress_callback(fit_path, index, len(fit_paths))
+
             file_hash = hashlib.sha256(
                 fit_path.read_bytes()
             ).hexdigest()
