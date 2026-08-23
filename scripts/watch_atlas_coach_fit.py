@@ -420,14 +420,22 @@ def main() -> None:
                             "Statut : proposed"
                             in revision.stdout
                         )
+                        revision_rejected = (
+                            "Statut : rejected_incompatible"
+                            in revision.stdout
+                        )
                         write_log(
                             "Boucle FIT + Wellness terminée : "
                             + (
                                 "adaptation proposée."
                                 if revision_proposed
                                 else (
-                                    "programme vérifié sans "
-                                    "modification."
+                                    "proposition incohérente rejetée."
+                                    if revision_rejected
+                                    else (
+                                        "programme vérifié sans "
+                                        "modification."
+                                    )
                                 )
                             )
                         )
@@ -438,8 +446,13 @@ def main() -> None:
                                 "du programme attend votre validation."
                                 if revision_proposed
                                 else (
-                                    f"{count} activité(s) analysée(s) ; "
-                                    "programme vérifié sans modification."
+                                    "Proposition incompatible rejetée ; "
+                                    "programme actif conservé."
+                                    if revision_rejected
+                                    else (
+                                        f"{count} activité(s) analysée(s) ; "
+                                        "programme vérifié sans modification."
+                                    )
                                 )
                             ),
                         )

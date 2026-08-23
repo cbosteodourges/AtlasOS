@@ -227,12 +227,20 @@ def main() -> None:
                     revision_proposed = (
                         "Statut : proposed" in revision.stdout
                     )
+                    revision_rejected = (
+                        "Statut : rejected_incompatible"
+                        in revision.stdout
+                    )
                     write_log(
                         "Programme Atlas réévalué : "
                         + (
                             "adaptation proposée."
                             if revision_proposed
-                            else "aucune modification nécessaire."
+                            else (
+                                "proposition incohérente rejetée."
+                                if revision_rejected
+                                else "aucune modification nécessaire."
+                            )
                         )
                     )
                     notify_windows(
@@ -242,9 +250,15 @@ def main() -> None:
                             "disponible pour validation."
                             if revision_proposed
                             else (
-                                f"{len(stable_archives)} journée(s) "
-                                "Wellness intégrée(s) ; programme "
-                                "vérifié sans modification."
+                                "Wellness intégré ; proposition "
+                                "incompatible rejetée et programme "
+                                "actif conservé."
+                                if revision_rejected
+                                else (
+                                    f"{len(stable_archives)} journée(s) "
+                                    "Wellness intégrée(s) ; programme "
+                                    "vérifié sans modification."
+                                )
                             )
                         ),
                     )

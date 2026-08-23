@@ -79,6 +79,26 @@ class TrainingProgramRevisionEngine:
             candidate_program,
             as_of=as_of,
         )
+
+        incompatibility = self._incompatibility_reason(
+            active_program,
+            candidate_program,
+            active,
+            candidate,
+        )
+        if incompatibility:
+            return TrainingProgramRevisionProposal(
+                as_of=as_of,
+                status="rejected_incompatible",
+                explanations=[
+                    incompatibility,
+                    (
+                        "Le programme actif est conservé intégralement ; "
+                        "aucune validation n'est proposée."
+                    ),
+                ],
+            )
+
         changes: list[TrainingProgramChange] = []
 
         for workout_id in sorted(active.keys() | candidate.keys()):
@@ -154,6 +174,51 @@ class TrainingProgramRevisionEngine:
                 ),
             ],
         )
+
+    @classmethod
+    def _incompatibility_reason(
+        cls,
+        active_program: dict[str, Any],
+        candidate_program: dict[str, Any],
+        active: dict[str, dict[str, Any]],
+        candidate: dict[str, dict[str, Any]],
+    ) -> str | None:
+        """Bloque un candidat issu d'une autre lignée de programme."""
+
+        active_validated = bool(
+            (active_program.get("validated_three_plus_one") or {}).get(
+                "activated"
+            )
+        )
+        candidate_validated = bool(
+            (candidate_program.get("validated_three_plus_one") or {}).get(
+                "activated"
+            )
+        )
+        if active_validated and not candidate_validated:
+            return (
+                "Candidat rejeté : le programme Norwegian Singles 3+1 "
+                "validé ne peut pas être remplacé par le générateur "
+                "générique."
+            )
+
+        active_ids = set(active)
+        candidate_ids = set(candidate)
+        largest_count = max(len(active_ids), len(candidate_ids), 1)
+        shared_ratio = len(active_ids & candidate_ids) / largest_count
+
+        if (
+            min(len(active_ids), len(candidate_ids)) >= 5
+            and shared_ratio < 0.40
+        ):
+            return (
+                "Candidat rejeté : plus de 60 % des identifiants des "
+                "séances futures ont été renouvelés. Il s'agit d'un "
+                "remplacement de calendrier, pas d'une adaptation "
+                "Wellness ciblée."
+            )
+
+        return None
 
     @classmethod
     def _future_workouts(

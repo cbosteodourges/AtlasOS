@@ -94,6 +94,48 @@ class TrainingProgramRevisionEngineTests(unittest.TestCase):
         self.assertEqual(proposal.changes, [])
         self.assertFalse(proposal.requires_approval)
 
+    def test_rejects_generic_candidate_for_validated_three_plus_one(self) -> None:
+        active = build_program("8 × 400 m VO₂max")
+        active["validated_three_plus_one"] = {"activated": True}
+        candidate = build_program("10 × 400 m VO₂max")
+
+        proposal = TrainingProgramRevisionEngine().compare(
+            active,
+            candidate,
+            as_of=date(2026, 8, 15),
+        )
+
+        self.assertEqual(proposal.status, "rejected_incompatible")
+        self.assertEqual(proposal.changes, [])
+        self.assertFalse(proposal.requires_approval)
+        self.assertFalse(proposal.automatically_applied)
+        self.assertIn("Norwegian Singles 3+1", proposal.explanations[0])
+
+    def test_rejects_mass_identifier_churn(self) -> None:
+        def calendar(prefix: str) -> dict:
+            return {
+                "weeks": [{
+                    "workouts": [
+                        {
+                            "workout_id": f"{prefix}-{index}",
+                            "workout_date": f"2026-08-{18 + index:02d}",
+                            "title": f"Séance {index}",
+                        }
+                        for index in range(6)
+                    ]
+                }]
+            }
+
+        proposal = TrainingProgramRevisionEngine().compare(
+            calendar("active"),
+            calendar("candidate"),
+            as_of=date(2026, 8, 15),
+        )
+
+        self.assertEqual(proposal.status, "rejected_incompatible")
+        self.assertEqual(proposal.changes, [])
+        self.assertIn("60 %", proposal.explanations[0])
+
 
 if __name__ == "__main__":
     unittest.main()
