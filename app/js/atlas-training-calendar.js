@@ -4217,7 +4217,6 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
   async function render(program, historyLoaded = false) {
     activeProgram = program;
     workoutIndex.clear();
-    await restoreOptional(program);
     const embeddedHistory = program.historical_completed_workouts || [];
     const historyByActivity = new Map();
     embeddedHistory.forEach(workout => {
@@ -4300,9 +4299,10 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     // actif, puis on enrichit les semaines en arrière-plan lorsque les
     // exécutions historiques sont disponibles.
     if (!historyLoaded) {
-      loadHistoricalCompletedWorkouts(program).then(browserHistory => {
-        if (!browserHistory.length) return;
-
+      Promise.all([
+        restoreOptional(program),
+        loadHistoricalCompletedWorkouts(program)
+      ]).then(([, browserHistory]) => {
         const mergedHistory = new Map();
         [...embeddedHistory, ...browserHistory].forEach(workout => {
           mergedHistory.set(
