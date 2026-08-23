@@ -159,6 +159,42 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
         self.assertAlmostEqual(result.work_distance_meters, 24250)
         self.assertFalse(result.threshold_observations)
 
+    def test_cycling_isolated_heart_rate_spike_is_filtered(self) -> None:
+        samples = [
+            self._sample(second, 7.3, second * 7.3, heart_rate)
+            for second, heart_rate in enumerate(
+                [171, 168, 155, 138, 130] + [125] * 20 + [140] * 20
+            )
+        ]
+        activity = LongitudinalActivity(
+            atlas_id="garmin:cycling-spike",
+            start_time=self.start,
+            activity_type="road",
+            distance_km=24.25,
+            duration_minutes=55.2,
+            average_speed_kmh=26.38,
+            average_heart_rate_bpm=125,
+            maximum_heart_rate_bpm=171,
+            samples=samples,
+        )
+
+        profile = AthleteProfile(
+            athlete_id="cycling-spike-profile",
+            declared_level="intermediate",
+            observed_level="intermediate",
+            physiological=PhysiologicalReferences(
+                maximum_heart_rate_bpm=145,
+            ),
+        )
+        result = self.analyzer.analyze(activity, profile)
+
+        self.assertEqual(activity.maximum_heart_rate_bpm, 171)
+        self.assertEqual(result.blocks[0].maximum_heart_rate_bpm, 140)
+        self.assertTrue(result.data_integrity.heart_rate_spike_filtered)
+        self.assertEqual(result.data_integrity.raw_maximum_heart_rate_bpm, 171)
+        self.assertEqual(result.data_integrity.corrected_maximum_heart_rate_bpm, 140)
+        self.assertTrue(result.data_integrity.heart_rate_reliable)
+
 
     def test_observes_sv1_and_sv2_transitions(
         self,
