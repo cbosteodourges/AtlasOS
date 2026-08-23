@@ -2161,8 +2161,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       Number(block.average_speed_kmh);
     const averageHeartRate = Number(activity.average_heart_rate_bpm) ||
       Number(block.average_heart_rate_bpm);
-    const maximumHeartRate = Number(activity.maximum_heart_rate_bpm) ||
-      Number(block.maximum_heart_rate_bpm);
+    const integrity = analysis.data_integrity || {};
+    const maximumHeartRate = Number(integrity.corrected_maximum_heart_rate_bpm) ||
+      Number(block.maximum_heart_rate_bpm) || Number(activity.maximum_heart_rate_bpm);
+    const rawMaximumHeartRate = Number(integrity.raw_maximum_heart_rate_bpm) ||
+      Number(activity.maximum_heart_rate_bpm);
+    const heartRateSpikeFiltered = Boolean(integrity.heart_rate_spike_filtered);
     const elevation = Number(activity.elevation_gain_m);
     const confidence = Number(match.match_confidence_score);
     const plannedDuration = Number(workout.planned_duration_minutes);
@@ -2208,7 +2212,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           <div class="interval-result-grid">
             <article><span>Temps roulé</span><strong>${reportBlockTime(duration * 60)}</strong><small>${reportNumber(distance, 2)} km</small></article>
             <article><span>Vitesse moyenne</span><strong>${reportNumber(speed, 2)} km/h</strong><small>Aucune allure course à pied</small></article>
-            <article><span>Fréquence cardiaque</span><strong>${reportNumber(averageHeartRate, 0)} bpm</strong><small>max. ${reportNumber(maximumHeartRate, 0)} bpm</small></article>
+            <article><span>Fréquence cardiaque</span><strong>${reportNumber(averageHeartRate, 0)} bpm</strong><small>max. ${reportNumber(maximumHeartRate, 0)} bpm${heartRateSpikeFiltered ? ` · pic capteur ${reportNumber(rawMaximumHeartRate, 0)} neutralisé` : ""}</small></article>
             <article><span>Dénivelé positif</span><strong>${reportNumber(elevation, 0)} m</strong><small>Contrainte externe</small></article>
           </div>
         </section>
