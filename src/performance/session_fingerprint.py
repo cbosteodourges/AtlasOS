@@ -112,6 +112,9 @@ class DataIntegrityAssessment:
     identity_confidence_score: int = 100
     sensor_quality_score: int = 100
     recommended_action: str = "use_all_data"
+    raw_maximum_heart_rate_bpm: Optional[float] = None
+    corrected_maximum_heart_rate_bpm: Optional[float] = None
+    heart_rate_spike_filtered: bool = False
     anomalies: List[str] = field(
         default_factory=list
     )
