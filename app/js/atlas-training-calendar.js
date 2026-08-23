@@ -4214,14 +4214,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     });
   }
 
-  async function render(program) {
+  async function render(program, historyLoaded = false) {
     activeProgram = program;
     workoutIndex.clear();
     await restoreOptional(program);
     const embeddedHistory = program.historical_completed_workouts || [];
-    const browserHistory = await loadHistoricalCompletedWorkouts(program);
     const historyByActivity = new Map();
-    [...embeddedHistory, ...browserHistory].forEach(workout => {
+    embeddedHistory.forEach(workout => {
       historyByActivity.set(
         workout.report_activity_id || workout.workout_id,
         workout
@@ -4295,6 +4294,32 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       });
     }
     loadTodayPreparations(program);
+
+    // Le calendrier principal ne doit jamais dépendre de la vitesse de
+    // reconstruction de l'historique Garmin. On affiche d'abord le programme
+    // actif, puis on enrichit les semaines en arrière-plan lorsque les
+    // exécutions historiques sont disponibles.
+    if (!historyLoaded) {
+      loadHistoricalCompletedWorkouts(program).then(browserHistory => {
+        if (!browserHistory.length) return;
+
+        const mergedHistory = new Map();
+        [...embeddedHistory, ...browserHistory].forEach(workout => {
+          mergedHistory.set(
+            workout.report_activity_id || workout.workout_id,
+            workout
+          );
+        });
+        render({
+          ...program,
+          historical_completed_workouts: [...mergedHistory.values()]
+        }, true).catch(error => {
+          console.warn("Historique Atlas non ajouté au calendrier.", error);
+        });
+      }).catch(error => {
+        console.warn("Historique Atlas non ajouté au calendrier.", error);
+      });
+    }
   }
 
   window.addEventListener("atlas:athlete-profile-loaded", event => {
