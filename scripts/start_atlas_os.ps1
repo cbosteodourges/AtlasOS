@@ -5,6 +5,21 @@ $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $atlasPort = 8010
 $atlasUrl = "http://127.0.0.1:$atlasPort/app/atlas-opening.html"
+$lanAddress = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+    Where-Object {
+        $_.IPAddress -notlike "127.*" -and
+        $_.IPAddress -notlike "169.254.*" -and
+        ($_.InterfaceAlias -match "Wi-Fi|Ethernet")
+    } |
+    Sort-Object {
+        if ($_.InterfaceAlias -match "Wi-Fi") { 0 } else { 1 }
+    } |
+    Select-Object -First 1 -ExpandProperty IPAddress
+$smartphoneUrl = if ($lanAddress) {
+    "http://${lanAddress}:$atlasPort/app/atlas-opening.html"
+} else {
+    $null
+}
 $python = Join-Path $env:LOCALAPPDATA "Programs\Python\Python314\python.exe"
 $logDirectory = Join-Path $projectRoot "atlas-data\private"
 
@@ -87,6 +102,18 @@ if (-not (Test-AtlasProcess "watch_atlas_wellness.py")) {
         -Script ".\scripts\watch_atlas_wellness.py" `
         -OutputLog "atlas-wellness-watcher-output.log" `
         -ErrorLog "atlas-wellness-watcher-error.log"
+}
+
+Write-Host ""
+Write-Host "Atlas OS prêt :" -ForegroundColor Green
+Write-Host "PC : $atlasUrl"
+if ($smartphoneUrl) {
+    Write-Host "Smartphone (même Wi-Fi) : $smartphoneUrl"
+} else {
+    Write-Host (
+        "Smartphone : adresse Wi-Fi non détectée. " +
+        "Vérifiez que le PC est connecté au Wi-Fi."
+    ) -ForegroundColor Yellow
 }
 
 if (-not $BackgroundOnly) {
