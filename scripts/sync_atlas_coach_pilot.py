@@ -82,6 +82,13 @@ def parse_arguments() -> argparse.Namespace:
         help="Historique privé des activités analysées.",
     )
     parser.add_argument(
+        "--fit-index",
+        default=(
+            "atlas-data/private/atlas-coach-fit-index.json"
+        ),
+        help="Index privé des fichiers FIT déjà examinés.",
+    )
+    parser.add_argument(
         "--force",
         action="store_true",
         help="Recalcule aussi les activités déjà traitées.",
@@ -89,13 +96,99 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def discover_fit_files(input_directory: str) -> list[Path]:
+    """Liste les fichiers FIT sans les décoder."""
+    root = Path(input_directory)
+    if not root.exists():
+        raise FileNotFoundError(f"Dossier Garmin introuvable : {root}")
+    return sorted(
+        path
+        for path in root.rglob("*")
+        if path.is_file() and path.suffix.lower() == ".fit"
+    )
+
+
+def fit_file_signature(path: Path) -> str:
+    """Construit une signature rapide et stable pour un fichier FIT."""
+    stat = path.stat()
+    return f"{path.resolve()}|{stat.st_size}|{stat.st_mtime_ns}"
+
+
+def load_fit_index(index_path: str) -> set[str]:
+    """Charge les signatures FIT déjà examinées."""
+    source = Path(index_path)
+    if not source.exists():
+        return set()
+    try:
+        payload = json.loads(source.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return set()
+    values = payload.get("processed_files", []) if isinstance(payload, dict) else []
+    return {str(value) for value in values}
+
+
+def select_fit_files(
+    input_directory: str,
+    index_path: str,
+    output_path: str,
+    *,
+    force: bool = False,
+) -> tuple[list[Path], set[str], bool]:
+    """Sélectionne uniquement les FIT nouveaux ou modifiés."""
+    files = discover_fit_files(input_directory)
+    signatures = load_fit_index(index_path)
+    bootstrapped = False
+
+    if not signatures and not force:
+        history = Path(output_path)
+        if history.exists():
+            history_mtime = history.stat().st_mtime_ns
+            signatures.update(
+                fit_file_signature(path)
+                for path in files
+                if path.stat().st_mtime_ns <= history_mtime
+            )
+            bootstrapped = bool(signatures)
+
+    selected = (
+        files
+        if force
+        else [
+            path
+            for path in files
+            if fit_file_signature(path) not in signatures
+        ]
+    )
+    return selected, signatures, bootstrapped
+
+
+def save_fit_index(index_path: str, signatures: set[str]) -> Path:
+    """Enregistre atomiquement l'index incrémental FIT."""
+    return write_json_atomic(
+        index_path,
+        {
+            "version": 1,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "processed_files": sorted(signatures),
+        },
+    )
+
+
 def synchronize_garmin(
     input_directory: str,
+    fit_paths: list[Path] | None = None,
 ):
-    """Exécute le connecteur Garmin existant."""
+    """Exécute le connecteur Garmin avec une progression visible."""
+    def report(path: Path, index: int, total: int) -> None:
+        print(f"[{index}/{total}] Analyse Garmin : {path.name}", flush=True)
+
     registry = ConnectorRegistry()
     registry.register(
-        GarminConnector(input_directory)
+        GarminConnector(
+            input_directory,
+            fit_paths=fit_paths,
+            progress_callback=report,
+        )
     )
     return ActivitySyncService(
         registry
@@ -122,7 +215,7 @@ def load_history(
 
 def write_json_atomic(
     output_path: str,
-    payload: list[dict[str, Any]],
+    payload: Any,
 ) -> Path:
     """Écrit le JSON sans risquer un fichier partiel."""
     destination = Path(output_path)
@@ -615,8 +708,29 @@ def main() -> None:
         load_optional_workouts(arguments.optional_workouts, loader)
     )
     profile = load_analysis_profile(arguments.program)
-    activities = synchronize_garmin(arguments.input)
     history = load_history(arguments.output)
+    fit_paths, fit_signatures, bootstrapped = select_fit_files(
+        arguments.input,
+        arguments.fit_index,
+        arguments.output,
+        force=arguments.force,
+    )
+    total_fit_files = len(discover_fit_files(arguments.input))
+    if bootstrapped:
+        print(
+            "Index FIT initialisé depuis l'historique existant : "
+            f"{len(fit_signatures)} fichier(s) déjà traité(s)."
+        )
+    print(
+        f"Fichiers FIT à analyser : {len(fit_paths)}/"
+        f"{total_fit_files}.",
+        flush=True,
+    )
+    activities = (
+        synchronize_garmin(arguments.input, fit_paths)
+        if fit_paths
+        else []
+    )
 
     known_ids = {
         str(item.get("activity_id"))
@@ -656,6 +770,14 @@ def main() -> None:
         arguments.output,
         history,
     )
+    fit_signatures.update(
+        fit_file_signature(path)
+        for path in fit_paths
+    )
+    fit_index = save_fit_index(
+        arguments.fit_index,
+        fit_signatures,
+    )
     persist_restored_optional_workouts(
         new_records,
         arguments.optional_workouts,
@@ -694,6 +816,7 @@ def main() -> None:
             f"{match.get('workout_id') or 'sans identifiant'}"
         )
     print(f"Historique privé : {destination}")
+    print(f"Index FIT : {fit_index}")
 
 
 if __name__ == "__main__":
