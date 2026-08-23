@@ -18,12 +18,76 @@ from scripts.sync_atlas_coach_pilot import (
     load_concatenated_json_lists,
     load_optional_workouts,
     persist_restored_optional_workouts,
+    fit_file_signature,
+    load_fit_index,
+    save_fit_index,
+    select_fit_files,
 )
 from src.performance import AthleteProfile, PhysiologicalReferences
 from src.training import TrainingProgramLoader
 
 
 class AutomaticWorkoutConfirmationTests(unittest.TestCase):
+
+    def test_incremental_fit_index_selects_only_new_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            old_fit = root / "old.fit"
+            new_fit = root / "new.FIT"
+            old_fit.write_bytes(b"old")
+            new_fit.write_bytes(b"new")
+            index = root / "fit-index.json"
+            save_fit_index(index, {fit_file_signature(old_fit)})
+
+            selected, signatures, bootstrapped = select_fit_files(
+                str(root),
+                str(index),
+                str(root / "history.json"),
+            )
+
+            self.assertEqual(selected, [new_fit])
+            self.assertIn(fit_file_signature(old_fit), signatures)
+            self.assertFalse(bootstrapped)
+
+    def test_existing_history_bootstraps_fit_index_without_redecode(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fit_path = root / "already-treated.fit"
+            fit_path.write_bytes(b"fit")
+            history = root / "history.json"
+            history.write_text("[]", encoding="utf-8")
+
+            selected, signatures, bootstrapped = select_fit_files(
+                str(root),
+                str(root / "missing-index.json"),
+                str(history),
+            )
+
+            self.assertEqual(selected, [])
+            self.assertIn(fit_file_signature(fit_path), signatures)
+            self.assertTrue(bootstrapped)
+
+    def test_force_keeps_all_fit_files_selected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fit_path = root / "activity.fit"
+            fit_path.write_bytes(b"fit")
+            index = root / "fit-index.json"
+            save_fit_index(index, {fit_file_signature(fit_path)})
+
+            selected, _, _ = select_fit_files(
+                str(root),
+                str(index),
+                str(root / "history.json"),
+                force=True,
+            )
+
+            self.assertEqual(selected, [fit_path])
+            self.assertEqual(
+                load_fit_index(str(index)),
+                {fit_file_signature(fit_path)},
+            )
+
     def test_recovers_concatenated_optional_workout_lists(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "optional.json"
