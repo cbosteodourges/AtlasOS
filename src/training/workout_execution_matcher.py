@@ -403,6 +403,10 @@ class AtlasWorkoutExecutionMatcher:
             ))
 
         if not weighted_scores and target.zone is not None:
+            if analysis.dominant_work_type == "cycling":
+                # Une sortie vélo facultative ne doit pas être comparée aux
+                # vitesses ni aux zones VMA de course à pied.
+                return 85 if target.zone == 1 else 70
             expected_type = f"z{target.zone}"
             return (
                 100
