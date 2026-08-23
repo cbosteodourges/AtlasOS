@@ -842,7 +842,12 @@ class SessionFingerprintBuilder:
             "cycling" in activity_type
             or "cyclisme" in activity_type
             or "biking" in activity_type
-            or activity_type == "vtt"
+            or activity_type in {
+                "road",
+                "vtt",
+                "mountain_biking",
+                "gravel_cycling",
+            }
         ):
             return "cycling"
 
