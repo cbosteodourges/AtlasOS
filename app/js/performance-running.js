@@ -893,6 +893,13 @@
         "atlasRunningProfile",
         JSON.stringify(savedProfile)
       );
+      fetch("/api/atlas-user/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile: savedProfile })
+      }).catch(error => console.debug(
+        "Profil Atlas conservé localement ; serveur indisponible.", error
+      ));
       window.dispatchEvent(new CustomEvent(
         "atlas:zones-updated",
         { detail: { zones, thresholds, profile: savedProfile } }
@@ -1011,6 +1018,31 @@
   }
 
   async function loadAtlasAthleteProfile() {
+    try {
+      const response = await fetch("/api/atlas-user/profile", {
+        cache: "no-store"
+      });
+      if (response.ok) {
+        const payload = await response.json();
+        if (payload?.profile && Object.keys(payload.profile).length) {
+          localStorage.setItem(
+            "atlasRunningProfile",
+            JSON.stringify(payload.profile)
+          );
+        } else {
+          const local = JSON.parse(
+            localStorage.getItem("atlasRunningProfile") || "null"
+          );
+          if (local) fetch("/api/atlas-user/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ profile: local })
+          }).catch(() => {});
+        }
+      }
+    } catch (error) {
+      console.debug("Profil Atlas serveur indisponible.", error);
+    }
     const saved = restoreAtlasRunningProfile();
     const preserveMeasured = saved?.thresholdSource === "measured";
     const sources = [
@@ -1843,7 +1875,41 @@
 
   function persist() {
     localStorage.setItem(storageKey, JSON.stringify(competitions));
+    fetch("/api/atlas-user/objectives", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ objectives: competitions })
+    }).catch(error => console.debug(
+      "Objectifs conservés localement ; serveur indisponible.", error
+    ));
     synchronizePrimaryObjective();
+  }
+
+  async function restoreServerObjectives() {
+    const local = loadCompetitions();
+    competitions = local;
+    render();
+    try {
+      const response = await fetch("/api/atlas-user/objectives", {
+        cache: "no-store"
+      });
+      if (!response.ok) return;
+      const payload = await response.json();
+      const server = Array.isArray(payload.objectives)
+        ? payload.objectives : [];
+      if (!payload.persisted && local.length) {
+        competitions = local;
+        persist();
+      } else if (server.length) {
+        competitions = server;
+        localStorage.setItem(storageKey, JSON.stringify(competitions));
+        render();
+      } else if (local.length) {
+        persist();
+      }
+    } catch (error) {
+      console.debug("Objectifs Atlas serveur indisponibles.", error);
+    }
   }
 
   function render() {
@@ -1967,8 +2033,7 @@
     }
   });
 
-  competitions = loadCompetitions();
-  render();
+  restoreServerObjectives();
 })();
 /* FIN GESTION MULTI-OBJECTIFS ATLAS COACH */
 

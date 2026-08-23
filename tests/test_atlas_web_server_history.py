@@ -2,14 +2,59 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from tools.atlas_web_server import (
     historical_completed_workouts_for_program,
     load_historical_workouts,
+    load_user_objectives,
+    load_user_profile,
+    save_user_objectives,
+    save_user_profile,
 )
 
 
 class AtlasWebServerHistoryTests(unittest.TestCase):
+    def test_profile_is_persisted_outside_browser_storage(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "profile.json"
+            saved = save_user_profile({"vma": 14.57}, path)
+            loaded = load_user_profile(path)
+
+            self.assertEqual(loaded["vma"], 14.57)
+            self.assertIn("updatedAt", saved)
+
+    def test_objectives_are_persisted_and_invalid_items_ignored(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "objectives.json"
+            saved = save_user_objectives([
+                {"name": "Semi de Lille", "date": "2026-10-25"},
+                {"name": "Sans date"},
+            ], path)
+
+            self.assertEqual(len(saved), 1)
+            self.assertEqual(load_user_objectives(path)[0]["name"], "Semi de Lille")
+
+    def test_objective_is_rebuilt_from_active_program_when_absent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "missing-objectives.json"
+            program = {
+                "goal": {
+                    "name": "Semi-marathon de Lille",
+                    "event_date": "2026-10-25",
+                    "distance_km": 21.1,
+                    "target_time_minutes": 109,
+                }
+            }
+            with patch(
+                "tools.atlas_web_server.load_authorized_training_program",
+                return_value=program,
+            ):
+                objectives = load_user_objectives(path)
+
+            self.assertEqual(objectives[0]["type"], "half")
+            self.assertEqual(objectives[0]["targetTime"], "01:49:00")
+
     def test_loads_workouts_from_active_and_archived_programs(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

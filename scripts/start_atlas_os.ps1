@@ -3,7 +3,8 @@ param([switch]$BackgroundOnly)
 $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$atlasUrl = "http://127.0.0.1:8000/app/atlas-opening.html"
+$atlasPort = 8010
+$atlasUrl = "http://127.0.0.1:$atlasPort/app/atlas-opening.html"
 $python = Join-Path $env:LOCALAPPDATA "Programs\Python\Python314\python.exe"
 $logDirectory = Join-Path $projectRoot "atlas-data\private"
 
@@ -58,8 +59,10 @@ function Start-AtlasPythonProcess {
         )
 }
 
+$env:ATLAS_PORT = [string]$atlasPort
+
 $serverRunning = Get-NetTCPConnection `
-    -LocalPort 8000 `
+    -LocalPort $atlasPort `
     -State Listen `
     -ErrorAction SilentlyContinue
 

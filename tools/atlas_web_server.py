@@ -75,6 +75,92 @@ PROGRAM_PATH = ROOT / "atlas-data" / "private" / "training-program.json"
 SUBSCRIPTION_PATH = (
     ROOT / "atlas-data" / "private" / "atlas-subscription.json"
 )
+USER_PROFILE_PATH = (
+    ROOT / "atlas-data" / "private" / "atlas-user-profile.json"
+)
+USER_OBJECTIVES_PATH = (
+    ROOT / "atlas-data" / "private" / "atlas-objectives.json"
+)
+
+
+def _read_private_json(path, default):
+    if not path.is_file():
+        return default
+    with path.open("r", encoding="utf-8") as source:
+        return json.load(source)
+
+
+def _write_private_json(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    with temporary.open("w", encoding="utf-8", newline="\n") as output:
+        json.dump(value, output, ensure_ascii=False, indent=2)
+        output.write("\n")
+    temporary.replace(path)
+
+
+def load_user_profile(path=None):
+    """Profil persistant, commun à tous les ports et navigateurs Atlas."""
+    loaded = _read_private_json(path or USER_PROFILE_PATH, {})
+    return loaded if isinstance(loaded, dict) else {}
+
+
+def save_user_profile(profile, path=None):
+    if not isinstance(profile, dict):
+        raise ValueError("Le profil Atlas doit être un objet JSON.")
+    cleaned = dict(profile)
+    cleaned["updatedAt"] = datetime.now().astimezone().isoformat()
+    _write_private_json(path or USER_PROFILE_PATH, cleaned)
+    return cleaned
+
+
+def _objective_from_program():
+    try:
+        program = load_authorized_training_program()
+    except (OSError, json.JSONDecodeError):
+        return []
+    goal = program.get("goal") or {}
+    if not goal.get("name") or not goal.get("event_date"):
+        return []
+    distance = number(goal.get("distance_km"), 0)
+    event_type = (
+        "marathon" if distance >= 40 else
+        "half" if distance >= 20 else
+        "10k" if distance >= 9 else "5k"
+    )
+    target_minutes = number(goal.get("target_time_minutes"), 0)
+    target_time = ""
+    if target_minutes > 0:
+        hours, minutes = divmod(int(target_minutes), 60)
+        target_time = f"{hours:02d}:{minutes:02d}:00"
+    return [{
+        "id": "active-program-primary-goal",
+        "name": goal["name"],
+        "type": event_type,
+        "date": goal["event_date"],
+        "targetTime": target_time,
+        "priority": "a",
+        "courseProfile": "flat",
+        "source": "active_program",
+    }]
+
+
+def load_user_objectives(path=None):
+    loaded = _read_private_json(path or USER_OBJECTIVES_PATH, [])
+    if isinstance(loaded, list) and loaded:
+        return loaded
+    return _objective_from_program()
+
+
+def save_user_objectives(objectives, path=None):
+    if not isinstance(objectives, list):
+        raise ValueError("Les objectifs Atlas doivent former une liste.")
+    cleaned = [
+        dict(item) for item in objectives
+        if isinstance(item, dict) and item.get("name") and item.get("date")
+    ]
+    _write_private_json(path or USER_OBJECTIVES_PATH, cleaned)
+    return cleaned
 
 
 def load_subscription_entitlement():
@@ -2299,6 +2385,24 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
                 )
             return
 
+        if parsed.path == "/api/atlas-user/profile":
+            try:
+                self.send_json(200, {"ok": True, "profile": load_user_profile()})
+            except (OSError, json.JSONDecodeError) as error:
+                self.send_json(500, {"ok": False, "error": str(error)})
+            return
+
+        if parsed.path == "/api/atlas-user/objectives":
+            try:
+                self.send_json(200, {
+                    "ok": True,
+                    "objectives": load_user_objectives(),
+                    "persisted": USER_OBJECTIVES_PATH.is_file(),
+                })
+            except (OSError, json.JSONDecodeError) as error:
+                self.send_json(500, {"ok": False, "error": str(error)})
+            return
+
         if parsed.path == "/api/atlas-coach/historical-workouts":
             try:
                 self.send_json(
@@ -2514,6 +2618,8 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             "/api/atlas-coach/optional-workout",
             "/api/atlas-coach/daily-preparation",
             "/api/atlas/conversation",
+            "/api/atlas-user/profile",
+            "/api/atlas-user/objectives",
         }
 
         if self.path not in allowed_routes:
@@ -2529,6 +2635,18 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             )
             raw_body = self.rfile.read(content_length)
             payload = json.loads(raw_body.decode("utf-8"))
+
+            if self.path == "/api/atlas-user/profile":
+                profile = save_user_profile(payload.get("profile", payload))
+                self.send_json(200, {"ok": True, "profile": profile})
+                return
+
+            if self.path == "/api/atlas-user/objectives":
+                objectives = save_user_objectives(
+                    payload.get("objectives", payload)
+                )
+                self.send_json(200, {"ok": True, "objectives": objectives})
+                return
 
             if self.path == "/api/atlas/conversation":
                 result = atlas_conversation(payload)
@@ -2613,9 +2731,9 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     try:
-        port = int(os.environ.get("ATLAS_PORT", "8000"))
+        port = int(os.environ.get("ATLAS_PORT", "8010"))
     except ValueError:
-        port = 8000
+        port = 8010
 
     address = ("0.0.0.0", port)
     server = ThreadingHTTPServer(
