@@ -56,8 +56,11 @@ class DetailedSessionAnalyzer:
         threshold_speed_kmh = self._threshold_speed(
             profile
         )
+        is_cycling = self._is_cycling(activity)
         analysis_laps = self._analysis_laps(activity)
-        if analysis_laps:
+        if is_cycling:
+            blocks = self._cycling_blocks(activity)
+        elif analysis_laps:
             blocks = self._blocks_from_laps(
                 activity,
                 vma_kmh,
@@ -132,7 +135,8 @@ class DetailedSessionAnalyzer:
             )
         )
         threshold_observations = (
-            self._threshold_observations(blocks)
+            [] if is_cycling
+            else self._threshold_observations(blocks)
         )
 
         if not data_integrity.heart_rate_reliable:
@@ -283,6 +287,65 @@ class DetailedSessionAnalyzer:
                     return round(offset, 3)
 
         return 0.0
+
+    @staticmethod
+    def _is_cycling(activity: LongitudinalActivity) -> bool:
+        activity_type = str(activity.activity_type or "").strip().lower()
+        return (
+            "cycling" in activity_type
+            or "cyclisme" in activity_type
+            or "biking" in activity_type
+            or activity_type in {
+                "road",
+                "bike",
+                "vtt",
+                "mountain_biking",
+                "gravel_cycling",
+            }
+        )
+
+    @classmethod
+    def _cycling_blocks(
+        cls,
+        activity: LongitudinalActivity,
+    ) -> List[SessionBlock]:
+        """Conserve une sortie vélo continue sans interpréter les Auto Lap.
+
+        Les tours distance Garmin servent à l'affichage des kilomètres, pas
+        à détecter des répétitions. Ils ne doivent donc jamais devenir des
+        sprints ou des zones de course à pied.
+        """
+        duration_seconds = max(0.0, activity.duration_minutes * 60)
+        if duration_seconds <= 0:
+            return []
+        physiological_load = min(100, round(activity.duration_minutes / 4))
+        biomechanical_load = min(100, round(activity.duration_minutes / 10))
+        return [SessionBlock(
+            block_index=1,
+            block_type="cycling",
+            start_offset_seconds=0.0,
+            end_offset_seconds=duration_seconds,
+            duration_seconds=duration_seconds,
+            distance_meters=max(0.0, activity.distance_km * 1000),
+            average_speed_kmh=activity.average_speed_kmh,
+            maximum_speed_kmh=max(
+                (
+                    cls._number(lap.get("enhanced_max_speed", lap.get("max_speed")))
+                    or 0.0
+                ) * 3.6
+                for lap in (activity.laps or [{}])
+            ) or activity.average_speed_kmh,
+            average_heart_rate_bpm=activity.average_heart_rate_bpm,
+            maximum_heart_rate_bpm=activity.maximum_heart_rate_bpm,
+            average_power_watts=activity.dynamics.average_power_watts,
+            average_cadence_spm=activity.dynamics.average_cadence_spm,
+            physiological_load_score=physiological_load,
+            biomechanical_load_score=biomechanical_load,
+            confidence_score=max(70, min(95, activity.data_quality_score or 85)),
+            detection_reasons=[
+                "Sortie vélo analysée comme un effort continu ; tours distance Garmin neutralisés."
+            ],
+        )]
 
     @staticmethod
     def _data_integrity(
@@ -1990,6 +2053,8 @@ class DetailedSessionAnalyzer:
         dominant_work_type: str,
     ) -> str:
         """Classe la nature globale sans déduire une intensité absente."""
+        if DetailedSessionAnalyzer._is_cycling(activity):
+            return "cycling"
         types = {block.block_type for block in work_blocks}
         if not work_blocks or dominant_work_type == "unknown":
             return "unknown"
@@ -2027,6 +2092,7 @@ class DetailedSessionAnalyzer:
             "tempo": "travail tempo",
             "threshold": "travail au seuil",
             "vma": "travail VMA ou vitesse",
+            "cycling": "sortie vélo",
             "unknown": "nature non déterminée",
         }
         interpretation = [
