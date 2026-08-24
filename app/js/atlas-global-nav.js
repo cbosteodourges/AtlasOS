@@ -22,38 +22,18 @@
       <button type="button" data-coach-nav="history"><span class="atlas-context-icon">↝</span><span>Historique des séances</span></button>
     </div>` : "";
 
-  const healthModules = isHub ? `
-    <div class="atlas-health-modules">
-      <button class="atlas-health-modules-toggle" type="button"
-        data-health-modules-toggle aria-expanded="false">
-        <span class="atlas-nav-icon">＋</span>
-        <span>Modules spécialisés</span>
-        <i aria-hidden="true">⌄</i>
-      </button>
-      <div class="atlas-health-modules-list" data-health-modules-list hidden>
-        <a href="./physiologie.html"><span>∿</span><span>Physiologie</span></a>
-        <a href="./biomecanique.html"><span>◇</span><span>Atlas Physio</span></a>
-        <a href="./prevention.html"><span>△</span><span>Prévention</span></a>
-        <a href="./memoire.html"><span>▣</span><span>Mémoire Atlas</span></a>
-      </div>
-    </div>` : "";
-
   const healthSubnav = isHub ? `
     <div class="atlas-context-subnav atlas-health-subnav"
       data-context-title="ESPACE SANTÉ" aria-label="Sous-menu Santé">
-      <button type="button" data-tab="health" data-health-nav="health">
-        <span class="atlas-context-icon">♡</span><span>Santé globale</span>
-      </button>
       <button type="button" data-tab="injuries" data-health-nav="injuries">
-        <span class="atlas-context-icon">⌁</span><span>Douleurs et blessures</span>
+        <span class="atlas-context-icon">⌁</span><span>Signaler une douleur</span>
       </button>
-      <a href="./atlas-cockpit.html#athlete-analysis" data-health-nav="analysis">
-        <span class="atlas-context-icon">✦</span><span>Analyse Atlas</span>
-      </a>
+      <button type="button" data-tab="prevention" data-health-nav="prevention">
+        <span class="atlas-context-icon">△</span><span>Prévention et charge</span>
+      </button>
       <button type="button" data-tab="timeline" data-health-nav="timeline">
-        <span class="atlas-context-icon">↝</span><span>Chronologie</span>
+        <span class="atlas-context-icon">↝</span><span>L’histoire de votre corps</span>
       </button>
-      ${healthModules}
     </div>` : "";
 
   const nav = document.createElement("aside");
@@ -69,7 +49,7 @@
       ${primaryItem({ href: "./atlas-cockpit.html", icon: "⌂", label: "Aujourd’hui", active: page === "atlas-cockpit.html" })}
       ${primaryItem({ href: "./performance-running.html", icon: "◎", label: "Entraînement", active: isCoach })}
       ${coachSubnav}
-      ${primaryItem({ href: "./atlas-hub.html#health", tab: "health", icon: "♡", label: "Santé", active: isHub, extra: 'data-health-root="true"' })}
+      ${primaryItem({ href: "./atlas-hub.html#injuries", tab: "injuries", icon: "♡", label: "Santé", active: isHub, extra: 'data-health-root="true"' })}
       ${healthSubnav}
     </nav>
 
@@ -191,19 +171,11 @@
       button.addEventListener("click", () => syncHealthNavigation(button.dataset.tab));
     });
 
-    const moduleToggle = nav.querySelector("[data-health-modules-toggle]");
-    const moduleList = nav.querySelector("[data-health-modules-list]");
-    moduleToggle?.addEventListener("click", () => {
-      const expanded = moduleToggle.getAttribute("aria-expanded") === "true";
-      moduleToggle.setAttribute("aria-expanded", String(!expanded));
-      moduleList.hidden = expanded;
-    });
-
     window.addEventListener("load", () => {
       const requested = location.hash.replace("#", "");
-      const selected = ["health", "injuries", "analysis", "timeline"].includes(requested)
+      const selected = ["injuries", "prevention", "timeline"].includes(requested)
         ? requested
-        : "health";
+        : "injuries";
       nav.querySelector(`[data-health-nav="${selected}"]`)?.click();
       syncHealthNavigation(selected);
     });
