@@ -86,6 +86,11 @@
 
   const app = document.querySelector(".app");
   if (isHub && app) {
+    // atlas-hub.html conserve encore sa navigation historique dans le HTML.
+    // La laisser à côté de la navigation globale crée une troisième colonne et
+    // repousse le contenu Santé hors de l'écran. La navigation globale devient
+    // l'unique navigation visible du Hub.
+    app.querySelector(":scope > .sidebar")?.remove();
     app.prepend(nav);
     app.classList.add("has-atlas-global-nav");
   } else {

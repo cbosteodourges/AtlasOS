@@ -632,7 +632,8 @@ body.has-atlas-global-nav > .atlas-global-nav {
   }
 
   body.has-atlas-context-nav .coach-navigation,
-  .app.has-atlas-context-nav > main > .top .tabs {
+  .app.has-atlas-context-nav > main > .top .tabs,
+  .app.has-atlas-context-nav > .main > .top .tabs {
     display: none !important;
   }
 }

@@ -57,6 +57,15 @@ class PwaAssetsTests(unittest.TestCase):
                     f"{page_name}: {reference}",
                 )
 
+    def test_hub_global_navigation_replaces_legacy_sidebar(self):
+        navigation = (APP_ROOT / "js" / "atlas-global-nav.js").read_text(
+            encoding="utf-8"
+        )
+        hub = (APP_ROOT / "atlas-hub.html").read_text(encoding="utf-8")
+
+        self.assertIn('app.querySelector(":scope > .sidebar")?.remove()', navigation)
+        self.assertIn("atlas-global-nav.js?v=8", hub)
+
 
 if __name__ == "__main__":
     unittest.main()
