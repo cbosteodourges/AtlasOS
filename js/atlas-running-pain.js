@@ -174,10 +174,22 @@
       rest_intensity: rest, effort_intensity: effort, flags: checked,
       note: guided.querySelector("#painNote").value.trim(), triage_level: level
     };
-    const key = "atlas.running_pain_reports.v2";
-    const history = JSON.parse(localStorage.getItem(key) || "[]");
-    history.push(report);
-    localStorage.setItem(key, JSON.stringify(history));
+    const canonicalKey = "atlas.health.pain_reports.v2";
+    const anatomyLegacyKey = "atlas.running_pain_reports.v2";
+    const readReports = key => {
+      try {
+        const stored = JSON.parse(localStorage.getItem(key) || "[]");
+        return Array.isArray(stored) ? stored : [];
+      } catch (_) {
+        return [];
+      }
+    };
+    const canonicalReports = readReports(canonicalKey);
+    if (!canonicalReports.some(item => item?.id === report.id)) canonicalReports.unshift(report);
+    localStorage.setItem(canonicalKey, JSON.stringify(canonicalReports));
+    const anatomyReports = readReports(anatomyLegacyKey);
+    if (!anatomyReports.some(item => item?.id === report.id)) anatomyReports.push(report);
+    localStorage.setItem(anatomyLegacyKey, JSON.stringify(anatomyReports));
     window.dispatchEvent(new CustomEvent("atlas:pain-report-saved", { detail: report }));
     guided.querySelector("#painResult").innerHTML = `
       <span class="result-level ${level}">${level}</span><h2>${title}</h2>
