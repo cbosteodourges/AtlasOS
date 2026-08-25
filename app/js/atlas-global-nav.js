@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 (() => {
   const page = location.pathname.split("/").pop() || "";
@@ -80,7 +80,7 @@
 
   const setExpandedLayout = () => {
     nav.classList.add("is-expanded");
-    document.body.classList.add("has-atlas-context-nav");
+    document.body.classList.toggle("has-atlas-context-nav", !isHub);
     app?.classList.add("has-atlas-context-nav");
   };
 
@@ -189,3 +189,4 @@
     nav.addEventListener("dblclick", () => nav.classList.toggle("is-expanded"));
   }
 })();
+

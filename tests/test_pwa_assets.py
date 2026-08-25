@@ -1,4 +1,4 @@
-"""Contrôles statiques de la fondation PWA Atlas."""
+﻿"""Contrôles statiques de la fondation PWA Atlas."""
 
 import json
 import unittest
@@ -64,8 +64,9 @@ class PwaAssetsTests(unittest.TestCase):
         hub = (APP_ROOT / "atlas-hub.html").read_text(encoding="utf-8")
 
         self.assertIn('app.querySelector(":scope > .sidebar")?.remove()', navigation)
-        self.assertIn("atlas-global-nav.js?v=10", hub)
+        self.assertIn("atlas-global-nav.js?v=12", hub)
 
 
 if __name__ == "__main__":
     unittest.main()
+
