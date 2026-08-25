@@ -4,3 +4,104 @@
 
 .pain-report-main{min-width:0;flex:1}.pain-coach-impact{display:grid;gap:6px;margin-top:14px;padding:14px;border:1px solid #28718d;border-radius:12px;background:#052536}.pain-coach-impact span{color:var(--health-cyan);font-size:.72rem;font-weight:800;letter-spacing:.1em}.pain-coach-impact strong{font-size:.95rem}.pain-coach-impact small{color:#a8c5d3}.pain-coach-impact em{color:var(--health-yellow);font-size:.78rem;font-style:normal}
 @media(max-width:700px){.pain-report button{width:100%}.pain-coach-impact{padding:12px}.pain-actions>*{width:100%}}
+
+/* ATLAS_HEALTH_LAYOUT_FIX_V5 */
+body main.app > section.main.atlas-health-main {
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow: visible !important;
+    padding: 34px 42px 64px !important;
+    box-sizing: border-box !important;
+}
+
+body main.app > section.main.atlas-health-main > header.health-header {
+    position: static !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 24px !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    margin: 0 0 28px !important;
+}
+
+body main.app > section.main.atlas-health-main .health-header-copy {
+    position: static !important;
+    width: 100% !important;
+    max-width: 760px !important;
+}
+
+body main.app > section.main.atlas-health-main .health-header h1,
+body main.app > section.main.atlas-health-main .health-header p {
+    position: static !important;
+    margin-left: 0 !important;
+    transform: none !important;
+}
+
+body main.app > section.main.atlas-health-main .health-tabs {
+    position: static !important;
+    align-self: flex-end !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    width: auto !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    transform: none !important;
+}
+
+body main.app > section.main.atlas-health-main > section.view {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+}
+
+body main.app > section.main.atlas-health-main .section-head {
+    position: static !important;
+    display: grid !important;
+    grid-template-columns: minmax(240px, 0.8fr) minmax(320px, 1.2fr) !important;
+    align-items: end !important;
+    gap: 32px !important;
+    width: 100% !important;
+    margin: 0 0 34px !important;
+}
+
+body main.app > section.main.atlas-health-main .section-head > * {
+    position: static !important;
+    min-width: 0 !important;
+    margin-top: 0 !important;
+    transform: none !important;
+}
+
+body main.app > section.main.atlas-health-main .injury-workspace {
+    position: static !important;
+    display: grid !important;
+    grid-template-columns: minmax(320px, 445px) minmax(420px, 1fr) !important;
+    align-items: start !important;
+    gap: 28px !important;
+    width: 100% !important;
+    margin-top: 0 !important;
+}
+
+@media (max-width: 1100px) {
+    body main.app > section.main.atlas-health-main {
+        padding: 24px 20px 48px !important;
+    }
+
+    body main.app > section.main.atlas-health-main .health-tabs {
+        align-self: stretch !important;
+    }
+
+    body main.app > section.main.atlas-health-main .section-head,
+    body main.app > section.main.atlas-health-main .injury-workspace {
+        grid-template-columns: 1fr !important;
+    }
+}
