@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 
 (() => {
   const page = location.pathname.split("/").pop() || "";
@@ -80,6 +80,10 @@
 
   const setExpandedLayout = () => {
     nav.classList.add("is-expanded");
+    // Dans le Hub, la navigation appartient déjà à la grille `.app` : ajouter
+    // aussi un retrait au body réserverait deux fois sa largeur et décalerait
+    // toute la page Santé vers la droite. Le Coach conserve au contraire une
+    // navigation fixe directement rattachée au body et a besoin de ce retrait.
     document.body.classList.toggle("has-atlas-context-nav", !isHub);
     app?.classList.add("has-atlas-context-nav");
   };
@@ -189,4 +193,3 @@
     nav.addEventListener("dblclick", () => nav.classList.toggle("is-expanded"));
   }
 })();
-
