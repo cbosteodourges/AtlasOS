@@ -51,6 +51,7 @@
       ${coachSubnav}
       ${primaryItem({ href: "./atlas-hub.html#injuries", tab: "injuries", icon: "♡", label: "Santé", active: isHub, extra: 'data-health-root="true"' })}
       ${healthSubnav}
+      ${primaryItem({ href: "./atlas-hub.html#timeline", tab: "timeline", icon: "↝", label: "Historique", extra: 'data-history-root="true"' })}
     </nav>
 
     <button class="atlas-talk-button" type="button" data-atlas-talk>
@@ -160,6 +161,7 @@
     setExpandedLayout();
     const contextButtons = [...nav.querySelectorAll("[data-health-nav]")];
     const healthRoot = nav.querySelector("[data-health-root]");
+    const historyRoot = nav.querySelector("[data-history-root]");
 
     const syncHealthNavigation = selected => {
       contextButtons.forEach(button => {
@@ -167,8 +169,9 @@
         button.classList.toggle("active", active);
         button.setAttribute("aria-pressed", String(active));
       });
-      healthRoot?.classList.add("active");
+      healthRoot?.classList.toggle("active", selected !== "timeline");
       healthRoot?.setAttribute("aria-expanded", "true");
+      historyRoot?.classList.toggle("active", selected === "timeline");
     };
 
     nav.querySelectorAll("[data-tab]").forEach(button => {

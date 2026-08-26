@@ -202,7 +202,7 @@ body.has-atlas-global-nav > .atlas-global-nav {
     display: none;
   }
 
-  .atlas-global-nav .atlas-nav-items {
+  .atlas-global-nav .atlas-primary-nav {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 2px;

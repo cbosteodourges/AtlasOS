@@ -64,13 +64,16 @@ class PwaAssetsTests(unittest.TestCase):
         hub = (APP_ROOT / "atlas-hub.html").read_text(encoding="utf-8")
 
         self.assertIn('app.querySelector(":scope > .sidebar")?.remove()', navigation)
-        self.assertIn("atlas-global-nav.js?v=12", hub)
+        self.assertIn("atlas-global-nav.js?v=13", hub)
         self.assertIn(
             'document.body.classList.toggle("has-atlas-context-nav", !isHub)',
             navigation,
         )
     def test_mobile_global_navigation_keeps_four_labeled_destinations(self):
         navigation_css = (APP_ROOT / "css" / "atlas-global-nav.css").read_text(
+            encoding="utf-8"
+        )
+        navigation = (APP_ROOT / "js" / "atlas-global-nav.js").read_text(
             encoding="utf-8"
         )
         health_css = (APP_ROOT / "css" / "atlas-health.css").read_text(
@@ -81,6 +84,8 @@ class PwaAssetsTests(unittest.TestCase):
             "grid-template-columns: repeat(4, minmax(0, 1fr))",
             navigation_css,
         )
+        self.assertIn(".atlas-global-nav .atlas-primary-nav", navigation_css)
+        self.assertIn('data-history-root="true"', navigation)
         self.assertIn(".atlas-global-nav .atlas-nav-label", navigation_css)
         self.assertIn("opacity: 1", navigation_css)
         self.assertIn(".app.has-atlas-global-nav", navigation_css)
