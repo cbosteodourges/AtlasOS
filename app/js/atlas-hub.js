@@ -22,9 +22,91 @@
     back: ["Région lombaire", "Sacrum / bassin", "Articulation sacro-iliaque"]
   };
   const regionLabels = { foot: "Pied", ankle: "Cheville", leg: "Jambe", knee: "Genou", thigh: "Cuisse", hip: "Hanche / aine", glute: "Région fessière", back: "Dos / bassin" };
+  const anatomyPlans = {
+    foot: {
+      views: { plantar: "Plantaire", dorsal: "Dorsale" },
+      outline: "M92 32 C126 22 165 34 183 62 C198 86 192 120 177 149 L152 207 C142 232 118 249 91 244 C63 239 48 216 52 187 L63 119 C66 92 58 66 69 46 C74 38 82 34 92 32 Z",
+      landmarks: ["M83 42 C98 75 99 132 86 216", "M122 38 C128 83 137 140 130 222", "M67 151 C98 144 140 147 177 156"],
+      zones: [
+        ["Voûte plantaire", "plantar", 101, 157, 25], ["Talon", "plantar", 103, 217, 22],
+        ["Têtes des métatarsiens", "plantar", 119, 92, 28], ["Orteils", "plantar", 130, 49, 27],
+        ["Tendons extenseurs", "dorsal", 114, 135, 26], ["Têtes des métatarsiens", "dorsal", 126, 88, 27], ["Orteils", "dorsal", 132, 48, 27], ["Talon", "dorsal", 91, 219, 20]
+      ]
+    },
+    ankle: {
+      views: { lateral: "Latérale", medial: "Médiale", posterior: "Postérieure" },
+      outline: "M82 25 L153 25 L148 116 C151 137 175 151 180 179 C186 207 164 231 130 232 L68 232 C48 231 43 214 58 204 L90 181 C99 170 94 145 87 126 Z",
+      landmarks: ["M115 28 L112 178", "M73 185 C103 181 133 181 171 193", "M95 127 C115 112 143 115 156 135"],
+      zones: [
+        ["Ligaments externes", "lateral", 145, 151, 27], ["Articulation", "lateral", 118, 169, 24], ["Arrière du talon", "lateral", 77, 204, 22],
+        ["Ligaments internes", "medial", 95, 151, 27], ["Articulation", "medial", 119, 172, 24], ["Arrière du talon", "medial", 75, 204, 22],
+        ["Tendon d’Achille", "posterior", 113, 105, 24], ["Arrière du talon", "posterior", 104, 197, 23], ["Articulation", "posterior", 126, 165, 23]
+      ]
+    },
+    leg: {
+      views: { anterior: "Antérieure", posterior: "Postérieure", medial: "Médiale", lateral: "Latérale" },
+      outline: "M74 24 C91 15 147 15 166 25 L157 105 C153 135 151 170 148 222 L91 222 C87 170 85 136 80 105 Z",
+      landmarks: ["M119 28 L114 214", "M91 43 C110 67 113 139 103 206", "M145 42 C130 83 132 150 139 210"],
+      zones: [
+        ["Jambier antérieur", "anterior", 104, 91, 27], ["Tendons releveurs des orteils", "anterior", 112, 187, 24],
+        ["Mollet", "posterior", 121, 92, 38], ["Bord interne du tibia", "medial", 101, 128, 29],
+        ["Face externe de la jambe", "lateral", 145, 116, 32], ["Mollet", "lateral", 115, 78, 31]
+      ]
+    }
+  };
   const sideLabels = { left: "gauche", right: "droite", center: "central", gauche: "gauche", droite: "droite", bilatéral: "bilatéral", central: "central" };
   let selectedRegion = "";
   let selectedSide = "";
+
+  function anatomySvg(plan, view) {
+    const zones = plan.zones.filter((zone) => zone[1] === view);
+    return `<svg class="anatomy-svg" viewBox="0 0 240 270" role="img" aria-label="Planche anatomique, vue ${escapeHtml(plan.views[view])}">
+      <path class="anatomy-outline" d="${plan.outline}"/>
+      ${plan.landmarks.map((path) => `<path class="anatomy-landmark" d="${path}"/>`).join("")}
+      ${zones.map(([label, , x, y, radius], index) => `<g class="anatomy-zone" data-anatomy-zone="${escapeHtml(label)}" tabindex="0" role="button" aria-label="Sélectionner ${escapeHtml(label)}"><circle cx="${x}" cy="${y}" r="${radius}"/><text x="${x}" y="${y + 4}">${index + 1}</text></g>`).join("")}
+    </svg><ol class="anatomy-legend">${zones.map(([label], index) => `<li><button type="button" data-anatomy-zone="${escapeHtml(label)}"><span>${index + 1}</span>${escapeHtml(label)}</button></li>`).join("")}</ol>`;
+  }
+
+  function syncAnatomySelection(zone) {
+    const visible = $$('[data-anatomy-zone]');
+    if (anatomyPlans[selectedRegion] && !visible.some((item) => item.dataset.anatomyZone === zone)) {
+      const match = anatomyPlans[selectedRegion].zones.find((item) => item[0] === zone);
+      if (match) { renderAnatomy(selectedRegion, match[1]); return; }
+    }
+    visible.forEach((item) => item.classList.toggle("active", item.dataset.anatomyZone === zone));
+  }
+
+  function selectAnatomyZone(zone) {
+    const input = $$('[name="zone"]', $("[data-pain-form]")).find((item) => item.value === zone);
+    if (input) { input.checked = true; input.dispatchEvent(new Event("change", { bubbles: true })); }
+  }
+
+  function bindAnatomyZones() {
+    $$('[data-anatomy-zone]').forEach((item) => {
+      item.addEventListener("click", () => selectAnatomyZone(item.dataset.anatomyZone));
+      item.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectAnatomyZone(item.dataset.anatomyZone); } });
+    });
+  }
+
+  function renderAnatomy(region, requestedView) {
+    const plan = anatomyPlans[region];
+    const board = $("[data-anatomy-board]");
+    const views = $("[data-anatomy-views]");
+    if (!plan) {
+      views.innerHTML = "";
+      board.innerHTML = '<div class="anatomy-coming"><span>◎</span><strong>Planche régionale en préparation</strong><p>La sélection détaillée reste disponible ci-dessous pendant la validation anatomique de cette région.</p></div>';
+      $("[data-anatomy-help]").textContent = "Prototype interactif actuellement disponible pour le pied, la cheville et la jambe.";
+      return;
+    }
+    const view = requestedView && plan.views[requestedView] ? requestedView : Object.keys(plan.views)[0];
+    views.innerHTML = Object.entries(plan.views).map(([key, label]) => `<button type="button" data-anatomy-view="${key}" class="${key === view ? "active" : ""}">${label}</button>`).join("");
+    board.innerHTML = anatomySvg(plan, view);
+    $("[data-anatomy-help]").textContent = "Touchez un repère numéroté ou son intitulé. Les deux sélections restent synchronisées.";
+    $$('[data-anatomy-view]').forEach((button) => button.addEventListener("click", () => renderAnatomy(region, button.dataset.anatomyView)));
+    bindAnatomyZones();
+    const checked = $('[name="zone"]:checked', $("[data-pain-form]"));
+    if (checked) syncAnatomySelection(checked.value);
+  }
 
   function normalizeReport(item = {}) {
     const date = String(item.date || item.recorded_at || new Date().toISOString()).slice(0, 10);
@@ -94,6 +176,8 @@
     $("[data-pain-form]").hidden = false;
     $("[data-region-title]").textContent = regionLabels[region];
     $("[data-zone-options]").innerHTML = regions[region].map((zone, index) => `<label><input type="radio" name="zone" value="${escapeHtml(zone)}" ${index === 0 ? "checked" : ""}><span>${escapeHtml(zone)}</span></label>`).join("");
+    $$('[name="zone"]', $("[data-pain-form]")).forEach((input) => input.addEventListener("change", () => syncAnatomySelection(input.value)));
+    renderAnatomy(region);
     $(".pain-detail").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 

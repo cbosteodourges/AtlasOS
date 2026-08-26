@@ -136,6 +136,36 @@ body .atlas-health-main > section.view > .section-head{
 .advanced-anatomy {
   display: none !important;
 }
+
+/* Prototype anatomique 2D : le corps entier choisit seulement la région,
+   la planche agrandie assure ensuite la localisation précise. */
+@media(min-width:1051px){
+  .pain-workspace{grid-template-columns:minmax(230px,.48fr) minmax(520px,1.52fr)}
+  .avatar-stage{max-width:190px}
+}
+.regional-anatomy{margin:18px 0 4px;padding:18px;border:1px solid var(--health-line);border-radius:18px;background:#031522}
+.regional-anatomy header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.regional-anatomy h4{margin:5px 0;font-size:1.05rem}
+.anatomy-views{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:7px}
+.anatomy-views button{border:1px solid #28718d;background:#092537;color:#bfe9f5;border-radius:999px;padding:8px 11px;cursor:pointer}
+.anatomy-views button.active{background:var(--health-cyan);color:#00131d}
+.anatomy-board{display:grid;grid-template-columns:minmax(240px,.9fr) minmax(230px,1.1fr);align-items:center;gap:18px;min-height:315px;margin-top:12px}
+.anatomy-svg{display:block;width:100%;max-width:330px;height:300px;margin:auto;filter:drop-shadow(0 0 14px rgba(69,232,240,.12))}
+.anatomy-outline{fill:#092b3d;stroke:#67dce8;stroke-width:2}
+.anatomy-landmark{fill:none;stroke:#418ba2;stroke-width:2;stroke-linecap:round;stroke-dasharray:4 4}
+.anatomy-zone{cursor:pointer;outline:none}
+.anatomy-zone circle{fill:rgba(29,159,232,.2);stroke:#7debf2;stroke-width:2;transition:.18s}
+.anatomy-zone text{fill:#fff;text-anchor:middle;font-size:12px;font-weight:800;pointer-events:none}
+.anatomy-zone:hover circle,.anatomy-zone:focus circle,.anatomy-zone.active circle{fill:rgba(242,201,76,.68);stroke:#fff;stroke-width:3}
+.anatomy-legend{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.anatomy-legend button{display:flex;align-items:center;gap:10px;width:100%;border:1px solid var(--health-line);border-radius:11px;padding:10px;background:#071f2e;color:#c9e8f1;text-align:left;cursor:pointer}
+.anatomy-legend button span{display:grid;place-items:center;flex:0 0 25px;height:25px;border-radius:50%;background:#12465c;color:#fff;font-weight:800}
+.anatomy-legend button:hover,.anatomy-legend button:focus,.anatomy-legend button.active{border-color:var(--health-yellow);background:#16313a;color:#fff}
+.anatomy-legend button.active span{background:var(--health-yellow);color:#14210a}
+.anatomy-help{margin:4px 0 0;color:#86adbf;font-size:.88rem}
+.anatomy-coming{grid-column:1/-1;display:grid;place-items:center;text-align:center;color:#8db3c6;padding:30px}
+.anatomy-coming span{font-size:3rem;color:var(--health-cyan)}
+.anatomy-coming strong{color:#fff;margin:8px}
 @media(max-width:700px){
   body > main.app{
     display:block!important;
@@ -163,4 +193,11 @@ body .atlas-health-main > section.view > .section-head{
     min-width:0;
     padding:16px;
   }
+  .avatar-stage{max-width:150px}
+  .body-selector>p{text-align:center}
+  .regional-anatomy{padding:14px}
+  .regional-anatomy header{display:block}
+  .anatomy-views{justify-content:flex-start;margin-top:12px}
+  .anatomy-board{grid-template-columns:1fr;min-height:0;gap:8px}
+  .anatomy-svg{height:260px}
 }
