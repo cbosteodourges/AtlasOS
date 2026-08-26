@@ -35,6 +35,7 @@ from src.training.subscription_access import (
     filter_program_for_subscription,
     normalize_tier,
 )
+from src.training.schedule_rescheduler import reschedule_workout
 
 
 def calculate_age(birth_date):
@@ -97,6 +98,37 @@ def _write_private_json(path, value):
         json.dump(value, output, ensure_ascii=False, indent=2)
         output.write("\n")
     temporary.replace(path)
+
+
+def reschedule_program_request(payload, program_path=None):
+    """Prévisualise ou applique un déplacement avec sauvegarde du plan."""
+
+    path = Path(program_path) if program_path else PROGRAM_PATH
+    if not path.is_file():
+        raise ValueError("Programme Atlas actif introuvable.")
+    workout_id = str(payload.get("workout_id") or "").strip()
+    target_date = str(payload.get("target_date") or "").strip()
+    if not workout_id or not target_date:
+        raise ValueError("Séance et nouvelle date obligatoires.")
+    with path.open("r", encoding="utf-8") as source:
+        program = json.load(source)
+    result = reschedule_workout(program, workout_id, target_date)
+    applied = bool(payload.get("apply"))
+    backup_path = None
+    if applied:
+        stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+        backup_path = path.with_name(
+            f"{path.stem}.backup-before-reschedule-{stamp}{path.suffix}"
+        )
+        _write_private_json(backup_path, program)
+        _write_private_json(path, result["program"])
+    return {
+        "applied": applied,
+        "summary": result["summary"],
+        "changes": result["changes"],
+        "requires_confirmation": not applied,
+        "backup": backup_path.name if backup_path else None,
+    }
 
 
 def load_user_profile(path=None):
@@ -2617,6 +2649,7 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             "/api/atlas-coach/workout-context",
             "/api/atlas-coach/optional-workout",
             "/api/atlas-coach/daily-preparation",
+            "/api/atlas-coach/reschedule-workout",
             "/api/atlas/conversation",
             "/api/atlas-user/profile",
             "/api/atlas-user/objectives",
@@ -2656,6 +2689,11 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             if self.path == "/api/atlas-coach/optional-workout":
                 workout = record_optional_workout(payload)
                 self.send_json(200, {"ok": True, "workout": workout})
+                return
+
+            if self.path == "/api/atlas-coach/reschedule-workout":
+                result = reschedule_program_request(payload)
+                self.send_json(200, {"ok": True, **result})
                 return
 
             if self.path == "/api/atlas-coach/daily-preparation":

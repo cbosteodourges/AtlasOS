@@ -2905,7 +2905,11 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           >
             Supprimer cette activité facultative
           </button>
-        ` : ""}
+        ` : `
+          <button class="reschedule-workout" type="button" data-reschedule-workout>
+            <b>↔</b> Déplacer cette séance
+          </button>
+        `}
 
         <p class="workout-actions-note">
           Atlas conservera votre décision et l’utilisera pour adapter
@@ -2922,6 +2926,97 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       ),
       String(reason || "")
     );
+  }
+
+  function openReschedulePanel(workout) {
+    const dialog = ensureDialog();
+    const content = dialog.querySelector(".dialog-content");
+    const source = parseDate(workout.workout_date);
+    const monday = addDays(source, -((source.getDay() + 6) % 7));
+    const days = Array.from({ length: 7 }, (_, index) => {
+      const value = isoDate(addDays(monday, index));
+      return `
+        <button type="button" data-reschedule-date="${value}"
+          ${value === workout.workout_date ? "disabled" : ""}>
+          <span>${DAY_LABELS[index]}</span>
+          <strong>${formatDate(value)}</strong>
+          ${value === workout.workout_date ? "<small>Jour actuel</small>" : ""}
+        </button>`;
+    }).join("");
+
+    content.innerHTML = `
+      <section class="reschedule-panel">
+        <button type="button" class="reschedule-back" data-reschedule-back>← Retour à la séance</button>
+        <span class="session-kicker">ORGANISATION INTELLIGENTE</span>
+        <h2>Déplacer « ${escapeHtml(workout.title)} »</h2>
+        <p>Choisissez un jour de la même semaine. Atlas vérifiera les séances difficiles voisines avant tout enregistrement.</p>
+        <div class="reschedule-days">${days}</div>
+        <div class="reschedule-preview" data-reschedule-preview aria-live="polite">
+          <p>Sélectionnez une nouvelle journée pour afficher les conséquences.</p>
+        </div>
+      </section>`;
+
+    const preview = content.querySelector("[data-reschedule-preview]");
+    let selectedDate = null;
+
+    const request = async apply => {
+      const response = await fetch("/api/atlas-coach/reschedule-workout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify({
+          workout_id: workout.workout_id,
+          target_date: selectedDate,
+          apply
+        })
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "Déplacement Atlas indisponible.");
+      }
+      return payload;
+    };
+
+    content.onclick = async event => {
+      if (event.target.closest("[data-reschedule-back]")) {
+        openWorkout(workout, dailyPreparationCache.get(workout.workout_id) || null);
+        return;
+      }
+      const dayButton = event.target.closest("[data-reschedule-date]");
+      if (dayButton) {
+        selectedDate = dayButton.dataset.rescheduleDate;
+        content.querySelectorAll("[data-reschedule-date]").forEach(button => {
+          button.classList.toggle("selected", button === dayButton);
+        });
+        preview.innerHTML = "<p>Atlas vérifie la cohérence de la semaine…</p>";
+        try {
+          const result = await request(false);
+          preview.innerHTML = `
+            <h3>${escapeHtml(result.summary)}</h3>
+            <ul>${result.changes.map(change => `
+              <li><strong>${escapeHtml(change.title)}</strong><span>${formatDate(change.from)} → ${formatDate(change.to)}</span><small>${escapeHtml(change.reason)}</small></li>
+            `).join("")}</ul>
+            <p>Aucune modification n’est encore enregistrée.</p>
+            <button type="button" data-reschedule-confirm>Valider cette organisation</button>`;
+        } catch (error) {
+          preview.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+        }
+        return;
+      }
+      const confirmButton = event.target.closest("[data-reschedule-confirm]");
+      if (!confirmButton || !selectedDate) return;
+      confirmButton.disabled = true;
+      confirmButton.textContent = "Enregistrement…";
+      try {
+        const result = await request(true);
+        preview.innerHTML = `<h3>Organisation enregistrée</h3><p>${escapeHtml(result.summary)}</p><small>Sauvegarde créée : ${escapeHtml(result.backup || "programme protégé")}</small>`;
+        await loadProgram();
+        window.setTimeout(() => dialog.close(), 850);
+      } catch (error) {
+        confirmButton.disabled = false;
+        confirmButton.textContent = "Valider cette organisation";
+        preview.insertAdjacentHTML("beforeend", `<p class="error">${escapeHtml(error.message)}</p>`);
+      }
+    };
   }
   function dailyPreparationDetailHtml(preparation, originalWorkout) {
     if (!preparation) return "";
@@ -3268,6 +3363,11 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       const removeButton = event.target.closest(
         "[data-remove-optional-workout]"
       );
+
+      if (event.target.closest("[data-reschedule-workout]")) {
+        openReschedulePanel(workout);
+        return;
+      }
 
       if (removeButton) {
         const confirmed = await atlasConfirm(
