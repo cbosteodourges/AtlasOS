@@ -8,6 +8,7 @@ APP_ROOT = Path(__file__).resolve().parents[1] / "app"
 class AtlasHealthUiTests(unittest.TestCase):
     def setUp(self):
         self.page = (APP_ROOT / "atlas-hub.html").read_text(encoding="utf-8")
+        self.styles = (APP_ROOT / "css" / "atlas-health.css").read_text(encoding="utf-8")
         self.script = (APP_ROOT / "js" / "atlas-hub.js").read_text(encoding="utf-8")
         self.navigation = (APP_ROOT / "js" / "atlas-global-nav.js").read_text(encoding="utf-8")
 
@@ -19,6 +20,16 @@ class AtlasHealthUiTests(unittest.TestCase):
         ):
             self.assertIn(label, self.page)
             self.assertIn(label, self.navigation)
+
+    def test_health_views_do_not_inherit_the_hub_fixed_grid(self):
+        self.assertIn("atlas-health.css?v=5", self.page)
+        self.assertIn(".atlas-health-main{display:block;min-height:100vh}", self.styles)
+        self.assertIn(".atlas-health-main>.view{padding:0;overflow:visible}", self.styles)
+        self.assertIn(
+            "body > main.app > section.main.atlas-health-main{",
+            self.styles,
+        )
+        self.assertNotIn("body .app > main.main.atlas-health-main{", self.styles)
 
     def test_pain_reporting_covers_key_running_regions(self):
         for region in ("foot", "ankle", "leg", "knee", "thigh", "hip", "glute"):
