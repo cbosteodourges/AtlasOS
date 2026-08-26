@@ -69,6 +69,23 @@ class PwaAssetsTests(unittest.TestCase):
             'document.body.classList.toggle("has-atlas-context-nav", !isHub)',
             navigation,
         )
+    def test_mobile_global_navigation_keeps_four_labeled_destinations(self):
+        navigation_css = (APP_ROOT / "css" / "atlas-global-nav.css").read_text(
+            encoding="utf-8"
+        )
+        health_css = (APP_ROOT / "css" / "atlas-health.css").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "grid-template-columns: repeat(4, minmax(0, 1fr))",
+            navigation_css,
+        )
+        self.assertIn(".atlas-global-nav .atlas-nav-label", navigation_css)
+        self.assertIn("opacity: 1", navigation_css)
+        self.assertIn(".app.has-atlas-global-nav", navigation_css)
+        self.assertIn("body > main.app", health_css)
+        self.assertIn("grid-template-columns:minmax(0,1fr)!important", health_css)
 
 
 if __name__ == "__main__":

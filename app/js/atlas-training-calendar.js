@@ -3581,7 +3581,8 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     ["threshold_run", "Seuil SV2", "Travail au seuil", false],
     ["vo2max_run", "VO₂max", "Intervalles intensifs", false],
     ["strength", "Renforcement", "Force et prévention", false],
-    ["mobility", "Mobilité", "Souplesse et amplitude", false],
+    ["mobility", "Mobilité", "Amplitude articulaire", false],
+    ["stretching", "Étirements", "Souplesse des tissus", false],
     ["cycling", "Vélo", "Endurance sans impact", false],
     ["double_session", "Double séance", "Deux entraînements le même jour", true],
     ["double_threshold", "Double seuil", "Deux séances au seuil", true]
@@ -3616,6 +3617,11 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       title: "Mobilité", sport: "mobility", duration: 20,
       objective: "Entretenir les amplitudes et réduire les raideurs.",
       physiological: 10, biomechanical: 12, recovery: [4, 10]
+    },
+    stretching: {
+      title: "Étirements", sport: "mobility", duration: 20,
+      objective: "Entretenir la souplesse des tissus sans provoquer de douleur.",
+      physiological: 6, biomechanical: 8, recovery: [2, 8]
     },
     cycling: {
       title: "Vélo", sport: "cycling", duration: 60,
@@ -3698,6 +3704,25 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         instructions: (
           "Mobiliser chevilles, hanches et rachis sans forcer " +
           "dans la douleur."
+        )
+      }];
+    }
+
+    if (type === "stretching") {
+      return [{
+        name: "Souplesse tissulaire",
+        block_type: "mobility",
+        repetitions: 1,
+        duration_minutes: 20,
+        recovery_minutes: null,
+        target: {
+          zone: null, rpe_0_10: 2,
+          intensity_pattern: "progressive"
+        },
+        instructions: (
+          "À distance de la séance intense, explorer doucement les tensions " +
+          "des mollets, cuisses, hanches et chaîne postérieure. Ne jamais " +
+          "forcer une douleur vive, croissante ou inhabituelle."
         )
       }];
     }

@@ -42,8 +42,6 @@ summary:focus-visible, input:focus-visible, textarea:focus-visible {
     padding-bottom: calc(74px + env(safe-area-inset-bottom));
   }
   .atlas-global-nav, .atlas-global-nav:hover, .atlas-global-nav.is-expanded {
-    height: calc(68px + env(safe-area-inset-bottom));
-    padding-bottom: calc(7px + env(safe-area-inset-bottom));
     overscroll-behavior-x: contain;
     scrollbar-width: none;
   }
