@@ -366,12 +366,16 @@ def load_optional_workouts(path: str | Path, loader):
         "vo2max_run": "vma_short",
         "double_session": "endurance_z2",
         "double_threshold": "threshold_sv2",
+        # L\'interface historique nomme parfois les séances de mobilité
+        # « stretching ». Le moteur utilise une famille unique MOBILITY.
+        "stretching": "mobility",
     }
     block_aliases = {
         "warmup": "warm_up",
         "interval": "work",
         "cooldown": "cool_down",
         "circuit": "strength",
+        "stretching": "mobility",
     }
     normalized = []
     for raw in items:
