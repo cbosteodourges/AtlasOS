@@ -151,12 +151,31 @@ body .atlas-health-main > section.view > .section-head{
 .anatomy-views button.active{background:var(--health-cyan);color:#00131d}
 .anatomy-board{display:grid;grid-template-columns:minmax(240px,.9fr) minmax(230px,1.1fr);align-items:center;gap:18px;min-height:315px;margin-top:12px}
 .anatomy-svg{display:block;width:100%;max-width:330px;height:300px;margin:auto;filter:drop-shadow(0 0 14px rgba(69,232,240,.12))}
-.anatomy-outline{fill:#092b3d;stroke:#67dce8;stroke-width:2}
-.anatomy-landmark{fill:none;stroke:#418ba2;stroke-width:2;stroke-linecap:round;stroke-dasharray:4 4}
+.clinical-region-map{margin:14px 0;padding:12px;border:1px solid rgba(69,232,240,.16);border-radius:18px;background:linear-gradient(160deg,#041723,#082334)}
+.clinical-region-map svg{display:block;width:100%;max-height:330px}
+.region-figure>path:first-child{fill:#092c3e;stroke:#62cbd9;stroke-width:2}
+.region-figure>path:nth-child(2){fill:none;stroke:#3f8398;stroke-width:1.5}
+.region-figure .region-muscle{fill:rgba(193,80,76,.42);stroke:#dc8378;stroke-width:1.3}
+.region-figure .region-bone{fill:none;stroke:#e6dfc8;stroke-width:3;stroke-linecap:round}
+.region-figure text{fill:#80aabd;font-size:10px;font-weight:800;letter-spacing:.12em;text-anchor:middle}
+.region-atlas-heading h2{margin:5px 0 8px;font-size:1.25rem}
+.region-atlas-heading p:last-child{margin:0;color:#89aebe;line-height:1.45}
+.region-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.region-shortcuts button{position:relative;padding-left:34px;text-align:left}
+.region-shortcuts button::before{content:"";position:absolute;left:13px;top:50%;width:9px;height:9px;border:1px solid #6bdbe7;border-radius:3px;transform:translateY(-50%);background:#0c3445}
+.region-shortcuts button.active::before{border-color:#00131d;background:#00131d}
+.anatomy-plate-background{fill:#02111c;stroke:#17485d;stroke-width:1}
+.anatomy-outline{fill:url(#tissueGradient);stroke:#67dce8;stroke-width:2}
+.anatomy-landmark{fill:none;stroke:#3b7185;stroke-width:1.4;stroke-linecap:round;stroke-dasharray:3 4}
+.anatomy-structure{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.anatomy-bone{stroke:#e9dfc4;stroke-width:4}
+.anatomy-tendon{stroke:#69d9cf;stroke-width:3}
+.anatomy-ligament{stroke:#f2c66f;stroke-width:4}
+.anatomy-muscle{stroke:#d97871;stroke-width:7;opacity:.82}
 .anatomy-zone{cursor:pointer;outline:none}
-.anatomy-zone circle{fill:rgba(29,159,232,.2);stroke:#7debf2;stroke-width:2;transition:.18s}
+.anatomy-zone ellipse{fill:rgba(29,159,232,.16);stroke:#7debf2;stroke-width:1.5;transition:.18s}
 .anatomy-zone text{fill:#fff;text-anchor:middle;font-size:12px;font-weight:800;pointer-events:none}
-.anatomy-zone:hover circle,.anatomy-zone:focus circle,.anatomy-zone.active circle{fill:rgba(242,201,76,.68);stroke:#fff;stroke-width:3}
+.anatomy-zone:hover ellipse,.anatomy-zone:focus ellipse,.anatomy-zone.active ellipse{fill:rgba(242,201,76,.5);stroke:#fff;stroke-width:2.5}
 .anatomy-legend{display:grid;gap:8px;margin:0;padding:0;list-style:none}
 .anatomy-legend button{display:flex;align-items:center;gap:10px;width:100%;border:1px solid var(--health-line);border-radius:11px;padding:10px;background:#071f2e;color:#c9e8f1;text-align:left;cursor:pointer}
 .anatomy-legend button span{display:grid;place-items:center;flex:0 0 25px;height:25px;border-radius:50%;background:#12465c;color:#fff;font-weight:800}

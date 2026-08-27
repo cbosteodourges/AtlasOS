@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 40891)
-Total output lines: 7424
-
 /* ╔══════════════════════════════════════════════════════════════╗
    ║ ATLAS OS — GENESIS 2.0 — PERFORMANCE & RUNNING             ║
    ╚══════════════════════════════════════════════════════════════╝ */
@@ -2335,6 +2332,29 @@ select option:checked {
   gap: 10px;
 }
 
+.workout-prescription-decision {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(300px,.8fr);
+  align-items: center;
+  gap: 18px;
+  margin: 18px 0;
+  padding: 18px;
+  border: 1px solid rgba(53,204,255,.28);
+  border-radius: 15px;
+  background: linear-gradient(135deg,rgba(20,112,151,.16),rgba(5,18,31,.72));
+}
+.workout-prescription-decision span,
+.workout-outcome-heading span { color:#35ccff;font-size:.65rem;font-weight:850;letter-spacing:.12em; }
+.workout-prescription-decision strong,
+.workout-outcome-heading strong { display:block;margin-top:5px;color:#f4fbff; }
+.workout-prescription-decision p { margin:7px 0 0;color:#9eb7c7;line-height:1.45; }
+.workout-prescription-buttons { display:grid;gap:9px; }
+.workout-prescription-buttons button { min-height:44px;padding:10px 13px;color:#eaf7ff;font-weight:800;cursor:pointer;border:1px solid rgba(53,204,255,.3);border-radius:10px;background:#071b2b; }
+.workout-prescription-buttons button:last-child { color:#031714;border-color:#53e2aa;background:#53dca6; }
+.workout-prescription-buttons button.selected { box-shadow:inset 4px 0 #f0cf4f; }
+.workout-outcome-heading { margin:22px 0 12px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1); }
+@media(max-width:700px){.workout-prescription-decision{grid-template-columns:1fr}}
+
 .workout-primary-actions button {
   display: flex;
   align-items: center;
@@ -3556,7 +3576,205 @@ body[data-coach-section]
 .report-cockpit-header {
   display: flex;
   align-items: center;
-  justify-content: space-between…891 tokens truncated…ont-style: normal;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 18px 28px 22px;
+  border-bottom: 1px solid rgba(53,204,255,.22);
+  background: linear-gradient(90deg,rgba(11,55,82,.55),transparent 72%);
+}
+
+.report-cockpit-header > div:first-child > span,
+.report-kicker {
+  display: block;
+  color: #35ccff;
+  font-size: .65rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.report-cockpit-header h2 {
+  margin: 5px 0 3px;
+  font-size: clamp(1.55rem,2vw,2.25rem);
+}
+
+.report-cockpit-header p {
+  margin: 0;
+  color: #9eb7c7;
+}
+
+.report-main-score {
+  display: grid;
+  min-width: 118px;
+  text-align: right;
+}
+
+.report-main-score strong {
+  color: #53e5ad;
+  font-size: 1.8rem;
+}
+
+.report-main-score span {
+  color: #8faabd;
+  font-size: .67rem;
+}
+
+.atlas-reading,
+.planned-realized-section,
+.narrative-analysis-section,
+.recovery-story {
+  padding: 24px 28px;
+  border-bottom: 1px solid rgba(255,255,255,.09);
+}
+
+.atlas-reading {
+  display: grid;
+  grid-template-columns:minmax(0,1.5fr) minmax(420px,.8fr);
+  gap: 30px;
+  align-items: end;
+}
+
+.atlas-reading h3,
+.report-heading h3,
+.narrative-analysis-section h3,
+.atlas-decision-column h3 {
+  margin: 5px 0 8px;
+  color: #f2f9fc;
+  font-size: 1.25rem;
+}
+
+.atlas-reading p,
+.report-heading p,
+.narrative-analysis-section p,
+.atlas-decision-column p,
+.recovery-story p {
+  margin: 0;
+  color: #b7cad6;
+  font-size: .92rem;
+  line-height: 1.62;
+}
+
+.report-confidence-line {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 0;
+  border-top: 1px solid rgba(255,255,255,.1);
+  border-bottom: 1px solid rgba(255,255,255,.1);
+}
+
+.report-confidence-line span {
+  padding: 10px 12px;
+  color: #809cac;
+  font-size: .64rem;
+  text-align: center;
+}
+
+.report-confidence-line span + span {
+  border-left: 1px solid rgba(255,255,255,.09);
+}
+
+.report-confidence-line strong {
+  display: block;
+  margin-top: 3px;
+  color: #35ccff;
+  font-size: .88rem;
+}
+
+.report-heading {
+  margin-bottom: 16px;
+}
+
+.planned-realized-table {
+  overflow: hidden;
+  border-top: 1px solid rgba(255,255,255,.13);
+  border-bottom: 1px solid rgba(255,255,255,.13);
+}
+
+.comparison-row {
+  display: grid;
+  grid-template-columns: minmax(130px,.65fr) minmax(180px,1fr) minmax(180px,1fr) minmax(220px,1.25fr);
+  align-items: center;
+  min-height: 53px;
+}
+
+.comparison-row + .comparison-row {
+  border-top: 1px solid rgba(255,255,255,.07);
+}
+
+.comparison-row > * {
+  padding: 9px 14px;
+}
+
+.comparison-row > * + * {
+  border-left: 1px solid rgba(255,255,255,.07);
+}
+
+.comparison-row strong {
+  color: #eef8fc;
+}
+
+.comparison-row span {
+  color: #b1c6d2;
+  line-height: 1.35;
+}
+
+.comparison-row b {
+  color: #53e5ad;
+  font-size: .78rem;
+  line-height: 1.4;
+}
+
+.comparison-header {
+  min-height: 35px;
+  background: rgba(53,204,255,.055);
+}
+
+.comparison-header span {
+  color: #7898aa;
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.report-analysis-layout {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 350px;
+  align-items: stretch;
+}
+
+.report-analysis-layout > main {
+  min-width: 0;
+}
+
+.narrative-analysis-section p + p {
+  margin-top: 15px;
+}
+
+.narrative-analysis-section p strong {
+  color: #f0cf4f;
+}
+
+.drift-reading-line {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0;
+  padding: 15px 0;
+  border-top: 1px solid rgba(255,255,255,.1);
+  border-bottom: 1px solid rgba(255,255,255,.1);
+}
+
+.drift-reading-line > div {
+  display: grid;
+  gap: 3px;
+  text-align: center;
+}
+
+.drift-reading-line > i {
+  color: #527588;
+  font-size: 1.4rem;
+  font-style: normal;
 }
 
 .drift-reading-line span {

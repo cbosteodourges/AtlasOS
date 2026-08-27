@@ -55,10 +55,10 @@
       ${primaryItem({ href: "./atlas-cockpit.html#nutrition-hydratation", icon: "◒", label: "Nutrition & Hydratation", extra: 'data-nutrition-root' })}
     </nav>
 
-    <button class="atlas-talk-button" type="button" data-atlas-talk>
+    ${isCoach ? "" : `<button class="atlas-talk-button" type="button" data-atlas-talk>
       <span class="atlas-talk-orb">✦</span>
       <span class="atlas-talk-copy"><strong>Adapter ma séance</strong><small>Ressenti et choix guidé</small></span>
-    </button>
+    </button>`}
 
     <div class="atlas-profile atlas-nav-user">
       <span class="atlas-profile-avatar atlas-nav-avatar">CB</span>

@@ -2875,6 +2875,27 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           ${workoutStatusBadge(workout)}
         </div>
 
+        <section class="workout-prescription-decision">
+          <div>
+            <span>AVANT LA SÉANCE</span>
+            <strong>Quelle séance choisissez-vous ?</strong>
+            <p>Comparez la prescription prévue avec l’adaptation proposée à partir de votre état du jour.</p>
+          </div>
+          <div class="workout-prescription-buttons">
+            <button type="button" data-daily-selection="keep_original">
+              Suivre la séance initiale
+            </button>
+            <button type="button" data-daily-selection="accept_adaptation">
+              Choisir la proposition Atlas
+            </button>
+          </div>
+        </section>
+
+        <div class="workout-outcome-heading">
+          <span>APRÈS LA SÉANCE</span>
+          <strong>Qu’avez-vous réellement effectué ?</strong>
+        </div>
+
         ${currentStatus === "skipped" ? `
           <div class="workout-cancelled-decision">
             <span>SÉANCE ANNULÉE</span>

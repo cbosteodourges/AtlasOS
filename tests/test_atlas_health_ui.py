@@ -22,7 +22,7 @@ class AtlasHealthUiTests(unittest.TestCase):
             self.assertIn(label, self.navigation)
 
     def test_health_views_do_not_inherit_the_hub_fixed_grid(self):
-        self.assertIn("atlas-health.css?v=7", self.page)
+        self.assertIn("atlas-health.css?v=8", self.page)
         self.assertIn(".atlas-health-main{display:block;min-height:100vh}", self.styles)
         self.assertIn(".atlas-health-main>.view{padding:0;overflow:visible}", self.styles)
         self.assertIn(
@@ -33,7 +33,7 @@ class AtlasHealthUiTests(unittest.TestCase):
 
     def test_pain_reporting_covers_key_running_regions(self):
         for region in ("foot", "ankle", "leg", "knee", "thigh", "hip", "glute"):
-            self.assertIn(f'data-region="{region}"', self.page)
+            self.assertIn(f'{region}:', self.script)
         for structure in (
             "Tendon d’Achille",
             "Voûte plantaire",
@@ -55,6 +55,9 @@ class AtlasHealthUiTests(unittest.TestCase):
     def test_regional_anatomy_prototype_is_interactive_and_synchronised(self):
         self.assertIn('data-regional-anatomy', self.page)
         self.assertIn('data-anatomy-board', self.page)
+        self.assertIn('clinical-region-map', self.page)
+        self.assertNotIn('avatar-regions', self.page)
+        self.assertIn('anatomy-structure', self.script)
         self.assertIn('const anatomyPlans = {', self.script)
         for region in ("foot", "ankle", "leg"):
             self.assertIn(f"    {region}: {{", self.script)

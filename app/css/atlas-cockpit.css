@@ -67,6 +67,11 @@ a { text-decoration: none; }
   border-radius: 14px;
   background: rgba(10, 28, 47, .82);
 }
+.atlas-sidebar > .atlas-talk-button {
+  width: 100%;
+  margin: auto 0 14px;
+}
+.atlas-sidebar > .atlas-talk-button .atlas-talk-copy { opacity: 1; }
 .atlas-talk span {
   display: grid;
   place-items: center;
