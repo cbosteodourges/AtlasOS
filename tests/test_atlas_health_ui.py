@@ -22,7 +22,7 @@ class AtlasHealthUiTests(unittest.TestCase):
             self.assertIn(label, self.navigation)
 
     def test_health_views_do_not_inherit_the_hub_fixed_grid(self):
-        self.assertIn("atlas-health.css?v=9", self.page)
+        self.assertIn("atlas-health.css?v=10", self.page)
         self.assertIn(".atlas-health-main{display:block;min-height:100vh}", self.styles)
         self.assertIn(".atlas-health-main>.view{padding:0;overflow:visible}", self.styles)
         self.assertIn(
@@ -52,21 +52,27 @@ class AtlasHealthUiTests(unittest.TestCase):
         self.assertIn("[data-anatomy-toggle]", self.styles)
         self.assertIn("display: none !important", self.styles)
 
-    def test_regional_anatomy_is_professional_interactive_and_synchronised(self):
+    def test_regional_anatomy_supports_free_precise_pain_mapping(self):
         self.assertIn('data-regional-anatomy', self.page)
         self.assertIn('data-anatomy-board', self.page)
         self.assertIn('clinical-region-map', self.page)
         self.assertNotIn('avatar-regions', self.page)
         self.assertIn('medical-plate', self.script)
-        self.assertIn('anatomy-overlay', self.script)
+        self.assertIn('pain-map-canvas', self.script)
+        self.assertIn('data-pain-map-undo', self.script)
+        self.assertIn('data-pain-map-clear', self.script)
+        self.assertIn('painStrokes', self.script)
+        self.assertIn('painMap: painStrokes', self.script)
         self.assertIn('const anatomyPlans = {', self.script)
         for region in ("foot", "ankle"):
             self.assertIn(f"    {region}: {{", self.script)
-        for view in ("Face et dessus du pied", "Profil · os et ligaments", "Repérage de surface"):
+        for view in ("Face antérieure", "Profil latéral"):
             self.assertIn(view, self.script)
-        self.assertIn("selectAnatomyZone", self.script)
-        self.assertIn("syncAnatomySelection", self.script)
+        self.assertNotIn("selectAnatomyZone", self.script)
+        self.assertNotIn("syncAnatomySelection", self.script)
+        self.assertIn("https://www.z-anatomy.com/", self.script)
         self.assertIn(".medical-plate-visual", self.styles)
+        self.assertIn(".pain-map-canvas", self.styles)
         self.assertIn("Servier Medical Art", self.script)
         self.assertNotIn("repère numéroté", self.script)
 

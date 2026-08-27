@@ -25,72 +25,52 @@
   const anatomyPlans = {
     foot: {
       views: {
-        dorsal: { label: "Face et dessus du pied", asset: "./assets/anatomy/servier/foot-ankle-anterior.png", width: 213, height: 573, layer: "Repères de surface" },
-        lateral: { label: "Profil · os et ligaments", asset: "./assets/anatomy/servier/foot-ankle-lateral-deep.png", width: 632, height: 486, layer: "Structures profondes" }
-      },
-      zones: [
-        { label: "Tendons extenseurs", view: "dorsal", type: "Tendons", path: "M54 236 C74 218 136 218 158 238 L151 337 C132 355 80 356 59 335 Z" },
-        { label: "Têtes des métatarsiens", view: "dorsal", type: "Avant-pied", path: "M31 369 C60 349 157 349 184 381 L179 429 C143 448 62 445 31 418 Z" },
-        { label: "Orteils", view: "dorsal", type: "Avant-pied", path: "M18 428 C55 414 174 424 197 469 L184 548 C139 572 43 559 17 510 Z" },
-        { label: "Talon", view: "lateral", type: "Os et tissus", path: "M23 295 C58 244 143 244 183 285 L177 401 C132 454 45 429 17 374 Z" },
-        { label: "Voûte plantaire", view: "lateral", type: "Arche médiale", path: "M154 331 C242 292 370 299 454 338 L431 392 C346 369 261 373 181 414 Z" },
-        { label: "Têtes des métatarsiens", view: "lateral", type: "Avant-pied", path: "M420 318 C462 311 511 322 540 347 L528 389 C488 387 449 377 414 359 Z" },
-        { label: "Orteils", view: "lateral", type: "Avant-pied", path: "M525 333 C566 335 608 348 625 371 L614 408 C573 411 543 396 516 379 Z" }
-      ]
+        dorsal: { label: "Face antérieure", asset: "./assets/anatomy/servier/foot-ankle-anterior.png", width: 213, height: 573, layer: "Repère de surface" },
+        lateral: { label: "Profil latéral", asset: "./assets/anatomy/servier/foot-ankle-lateral-deep.png", width: 632, height: 486, layer: "Repère profond" }
+      }
     },
     ankle: {
       views: {
-        anterior: { label: "Repérage de surface", asset: "./assets/anatomy/servier/foot-ankle-anterior.png", width: 213, height: 573, layer: "Vue antérieure" },
-        lateral: { label: "Profil · os et ligaments", asset: "./assets/anatomy/servier/foot-ankle-lateral-deep.png", width: 632, height: 486, layer: "Structures profondes" }
-      },
-      zones: [
-        { label: "Ligaments externes", view: "anterior", type: "Ligaments", path: "M47 183 C61 167 86 163 102 181 L97 236 C76 248 52 235 43 216 Z" },
-        { label: "Ligaments internes", view: "anterior", type: "Ligaments", path: "M111 176 C130 161 160 168 173 188 L169 229 C149 244 122 238 109 217 Z" },
-        { label: "Articulation", view: "anterior", type: "Articulation", path: "M45 207 C71 187 142 185 174 207 L169 254 C136 272 75 272 45 249 Z" },
-        { label: "Ligaments externes", view: "lateral", type: "Ligaments", path: "M198 170 C235 147 303 158 337 196 L327 263 C279 286 222 265 194 226 Z" },
-        { label: "Articulation", view: "lateral", type: "Articulation", path: "M162 145 C215 116 320 126 365 178 L352 269 C300 311 209 298 160 242 Z" },
-        { label: "Tendon d’Achille", view: "lateral", type: "Tendon", path: "M73 92 C102 77 137 85 153 111 L147 306 C127 333 92 329 74 304 Z" },
-        { label: "Arrière du talon", view: "lateral", type: "Insertion", path: "M19 290 C50 255 119 252 160 288 L158 384 C119 427 50 413 19 374 Z" }
-      ]
+        anterior: { label: "Face antérieure", asset: "./assets/anatomy/servier/foot-ankle-anterior.png", width: 213, height: 573, layer: "Repère de surface" },
+        lateral: { label: "Profil latéral", asset: "./assets/anatomy/servier/foot-ankle-lateral-deep.png", width: 632, height: 486, layer: "Repère profond" }
+      }
     }
   };
   const sideLabels = { left: "gauche", right: "droite", center: "central", gauche: "gauche", droite: "droite", bilatéral: "bilatéral", central: "central" };
   let selectedRegion = "";
   let selectedSide = "";
+  let painStrokes = [];
 
   function anatomyPlate(plan, view) {
     const plate = plan.views[view];
-    const zones = plan.zones.filter((zone) => zone.view === view);
     return `<figure class="medical-plate">
       <div class="medical-plate-visual" style="--plate-ratio:${plate.width}/${plate.height}">
         <img src="${plate.asset}" width="${plate.width}" height="${plate.height}" alt="Planche anatomique ${escapeHtml(plate.label)}" loading="lazy">
-        <svg class="anatomy-overlay" viewBox="0 0 ${plate.width} ${plate.height}" aria-label="Zones anatomiques sélectionnables">
-          ${zones.map((zone) => `<path class="anatomy-zone" data-anatomy-zone="${escapeHtml(zone.label)}" tabindex="0" role="button" aria-label="Sélectionner ${escapeHtml(zone.label)}" d="${zone.path}"/>`).join("")}
-        </svg>
+        <canvas class="pain-map-canvas" data-pain-map width="${plate.width}" height="${plate.height}" aria-label="Dessinez précisément la zone douloureuse"></canvas>
       </div>
-      <figcaption>${escapeHtml(plate.layer)} · Illustration adaptée de <a href="https://smart.servier.com/" target="_blank" rel="noopener">Servier Medical Art</a>, CC BY 4.0.</figcaption>
-    </figure><ol class="anatomy-legend">${zones.map((zone) => `<li><button type="button" data-anatomy-zone="${escapeHtml(zone.label)}"><span aria-hidden="true"></span><div><strong>${escapeHtml(zone.label)}</strong><small>${escapeHtml(zone.type)}</small></div></button></li>`).join("")}</ol>`;
+      <figcaption>${escapeHtml(plate.layer)} · support provisoire Servier Medical Art, CC BY 4.0. Le tracé libre est la donnée de localisation principale.</figcaption>
+    </figure><div class="pain-map-tools"><p><strong>Localisation libre</strong><span>Pointe ou entoure l’endroit exact. Atlas n’attribue pas automatiquement ton tracé à un tendon, un muscle ou une articulation.</span></p><button type="button" data-pain-map-undo>Annuler le dernier tracé</button><button type="button" data-pain-map-clear>Effacer</button><a href="https://www.z-anatomy.com/" target="_blank" rel="noopener">Explorer l’atlas 3D musculotendineux ↗</a></div>`;
   }
 
-  function syncAnatomySelection(zone) {
-    const visible = $$('[data-anatomy-zone]');
-    if (anatomyPlans[selectedRegion] && !visible.some((item) => item.dataset.anatomyZone === zone)) {
-      const match = anatomyPlans[selectedRegion].zones.find((item) => item.label === zone);
-      if (match) { renderAnatomy(selectedRegion, match.view); return; }
-    }
-    visible.forEach((item) => item.classList.toggle("active", item.dataset.anatomyZone === zone));
-  }
-
-  function selectAnatomyZone(zone) {
-    const input = $$('[name="zone"]', $("[data-pain-form]")).find((item) => item.value === zone);
-    if (input) { input.checked = true; input.dispatchEvent(new Event("change", { bubbles: true })); }
-  }
-
-  function bindAnatomyZones() {
-    $$('[data-anatomy-zone]').forEach((item) => {
-      item.addEventListener("click", () => selectAnatomyZone(item.dataset.anatomyZone));
-      item.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectAnatomyZone(item.dataset.anatomyZone); } });
-    });
+  function bindPainMap() {
+    const canvas = $("[data-pain-map]");
+    if (!canvas) return;
+    const context = canvas.getContext("2d");
+    const redraw = () => {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.lineCap = "round"; context.lineJoin = "round"; context.strokeStyle = "#ff385c"; context.lineWidth = Math.max(5, canvas.width / 65);
+      painStrokes.forEach((stroke) => { if (!stroke.length) return; context.beginPath(); context.moveTo(stroke[0].x * canvas.width, stroke[0].y * canvas.height); stroke.slice(1).forEach((point) => context.lineTo(point.x * canvas.width, point.y * canvas.height)); context.stroke(); });
+      const field = $('[name="painMap"]'); if (field) field.value = JSON.stringify(painStrokes);
+    };
+    let drawing = false;
+    const point = (event) => { const box = canvas.getBoundingClientRect(); return { x: Math.max(0, Math.min(1, (event.clientX - box.left) / box.width)), y: Math.max(0, Math.min(1, (event.clientY - box.top) / box.height)) }; };
+    canvas.addEventListener("pointerdown", (event) => { drawing = true; canvas.setPointerCapture(event.pointerId); painStrokes.push([point(event)]); redraw(); });
+    canvas.addEventListener("pointermove", (event) => { if (!drawing) return; painStrokes[painStrokes.length - 1].push(point(event)); redraw(); });
+    canvas.addEventListener("pointerup", () => { drawing = false; redraw(); });
+    canvas.addEventListener("pointercancel", () => { drawing = false; });
+    $("[data-pain-map-undo]")?.addEventListener("click", () => { painStrokes.pop(); redraw(); });
+    $("[data-pain-map-clear]")?.addEventListener("click", () => { painStrokes = []; redraw(); });
+    redraw();
   }
 
   function renderAnatomy(region, requestedView) {
@@ -106,11 +86,9 @@
     const view = requestedView && plan.views[requestedView] ? requestedView : Object.keys(plan.views)[0];
     views.innerHTML = Object.entries(plan.views).map(([key, value]) => `<button type="button" data-anatomy-view="${key}" class="${key === view ? "active" : ""}">${escapeHtml(value.label)}</button>`).join("");
     board.innerHTML = anatomyPlate(plan, view);
-    $("[data-anatomy-help]").textContent = "Sélectionnez directement le contour de la structure ou son nom. Les zones colorées n’apparaissent qu’au survol ou après sélection.";
+    $("[data-anatomy-help]").textContent = "Dessine librement le point ou la surface douloureuse. La structure anatomique proposée plus bas reste une description séparée que tu peux corriger.";
     $$('[data-anatomy-view]').forEach((button) => button.addEventListener("click", () => renderAnatomy(region, button.dataset.anatomyView)));
-    bindAnatomyZones();
-    const checked = $('[name="zone"]:checked', $("[data-pain-form]"));
-    if (checked) syncAnatomySelection(checked.value);
+    bindPainMap();
   }
 
   function normalizeReport(item = {}) {
@@ -138,6 +116,7 @@
       trigger,
       redFlags: flags,
       notes: item.notes || item.note || "",
+      painMap: item.painMap || item.pain_map || [],
       resolved: Boolean(item.resolved),
       resolvedAt: item.resolvedAt || null,
       triageLevel: item.triageLevel || item.triage_level || null
@@ -181,7 +160,7 @@
     $("[data-pain-form]").hidden = false;
     $("[data-region-title]").textContent = regionLabels[region];
     $("[data-zone-options]").innerHTML = regions[region].map((zone, index) => `<label><input type="radio" name="zone" value="${escapeHtml(zone)}" ${index === 0 ? "checked" : ""}><span>${escapeHtml(zone)}</span></label>`).join("");
-    $$('[name="zone"]', $("[data-pain-form]")).forEach((input) => input.addEventListener("change", () => syncAnatomySelection(input.value)));
+    painStrokes = [];
     renderAnatomy(region);
     $(".pain-detail").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
@@ -224,13 +203,13 @@
       side: selectedSide, sideLabel: sideLabels[selectedSide],
       zone: form.elements.zone.value, intensity: Number(form.elements.intensity.value), onset: form.elements.onset.value,
       trigger: form.elements.trigger.value, redFlags: $$('[name="redFlag"]', form).filter((input) => input.checked).map((input) => input.value),
-      notes: form.elements.notes.value.trim(), resolved: false
+      notes: form.elements.notes.value.trim(), painMap: painStrokes, resolved: false
     });
     const reports = allReports(); reports.unshift(report); saveReports(reports);
     const guidance = advice(report);
     const events = read(EVENTS_KEY); events.unshift({ id: `pain-${report.id}`, date: report.date, type: "Douleur ou blessure", title: `${report.regionLabel} ${report.sideLabel} · ${report.zone}`, note: `${report.intensity}/10 — ${guidance.title}. Atlas Coach : ${guidance.coach}` }); write(EVENTS_KEY, events);
     window.dispatchEvent(new CustomEvent("atlas:health-report-updated", { detail: report }));
-    form.reset(); $("[data-intensity-value]").textContent = "3/10"; renderReports(); renderTimeline();
+    form.reset(); painStrokes = []; $("[data-intensity-value]").textContent = "3/10"; renderReports(); renderTimeline();
   }
 
   function renderTimeline() {
