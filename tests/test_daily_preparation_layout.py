@@ -17,6 +17,13 @@ class DailyPreparationLayoutTests(unittest.TestCase):
         self.assertNotIn("body { background: white; color: black; }", styles)
         self.assertNotIn(".panel { border: 0; background: white; }", styles)
 
+    def test_training_page_has_an_inline_dark_theme_guard(self):
+        page = (ROOT / "app" / "performance-running.html").read_text(encoding="utf-8")
+        self.assertIn('id="atlas-training-theme-guard"', page)
+        self.assertIn("#planPanel.panel", page)
+        self.assertIn("background: rgba(5,18,35,.96) !important", page)
+        self.assertIn("repeat(2,minmax(0,1fr)) !important", page)
+
 
 if __name__ == "__main__":
     unittest.main()

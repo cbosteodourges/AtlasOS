@@ -9,6 +9,32 @@
   <link rel="stylesheet" href="./css/performance-running.css?v=64">
   <link rel="stylesheet" href="./css/atlas-training-history.css?v=1">
   <link rel="stylesheet" href="./css/atlas-global-nav.css?v=13"><link rel="stylesheet" href="./css/atlas-conversation.css?v=8"><link rel="stylesheet" href="./css/atlas-conversation-refinement.css?v=1"><link rel="stylesheet" href="./css/atlas-responsive.css?v=2">
+  <style id="atlas-training-theme-guard">
+    html, body {
+      background: radial-gradient(circle at 50% 0%, rgba(32,113,190,.22), transparent 38%), #020713 !important;
+      color: #f5fbff !important;
+    }
+    .performance-app { background: transparent !important; }
+    #planPanel.panel {
+      color: #f5fbff !important;
+      border: 1px solid rgba(53,204,255,.22) !important;
+      background: rgba(5,18,35,.96) !important;
+    }
+    #planPanel .plan-title h2,
+    #planPanel .plan-title p,
+    #planPanel .plan-title span { color: #f5fbff !important; }
+    #planPanel .plan-overview article {
+      color: #f5fbff !important;
+      border-color: rgba(53,204,255,.2) !important;
+      background: rgba(8,28,52,.9) !important;
+    }
+    #planPanel .plan-overview span,
+    #planPanel .plan-overview article small { color: #9eb5c5 !important; }
+    #planPanel .plan-overview strong { color: #35ccff !important; }
+    .atlas-session-dialog .daily-preparation-input-grid {
+      grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+    }
+  </style>
 </head>
 <body>
 <main class="performance-app">
