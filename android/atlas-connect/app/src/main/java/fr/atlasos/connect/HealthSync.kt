@@ -5,6 +5,7 @@ import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.records.*
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
+import androidx.health.connect.client.permission.HealthPermission
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.Instant
@@ -22,9 +23,30 @@ class HealthSync(private val context: Context) {
         return result
     }
 
+    private suspend inline fun <reified T : Record> HealthConnectClient.availableRecords(
+        range: TimeRangeFilter,
+        granted: Set<String>,
+        skipped: JSONArray,
+    ): List<T> {
+        val permission = HealthPermission.getReadPermission(T::class)
+        if (permission !in granted) {
+            skipped.put(JSONObject().put("record_type", T::class.simpleName).put("reason", "permission_absent"))
+            return emptyList()
+        }
+        return try {
+            records<T>(range)
+        } catch (error: Exception) {
+            skipped.put(JSONObject().put("record_type", T::class.simpleName)
+                .put("reason", error.message ?: error.javaClass.simpleName))
+            emptyList()
+        }
+    }
+
     suspend fun run(): Int {
         require(HealthConnectClient.getSdkStatus(context) == HealthConnectClient.SDK_AVAILABLE) { "Santé Connect indisponible" }
         val client = HealthConnectClient.getOrCreate(context)
+        val granted = client.permissionController.getGrantedPermissions()
+        val skipped = JSONArray()
         val prefs = context.getSharedPreferences("atlas", Context.MODE_PRIVATE)
         val last = prefs.getLong("last_sync", 0L)
         // Instant supports fixed-duration units only. YEARS is calendar based and
@@ -35,14 +57,14 @@ class HealthSync(private val context: Context) {
             Instant.now().minus(3652, ChronoUnit.DAYS)
         }
         val range = TimeRangeFilter.between(start, Instant.now())
-        val exercises = client.records<ExerciseSessionRecord>(range)
-        val heartRates = client.records<HeartRateRecord>(range)
-        val distances = client.records<DistanceRecord>(range)
-        val speeds = client.records<SpeedRecord>(range)
-        val elevations = client.records<ElevationGainedRecord>(range)
-        val calories = client.records<TotalCaloriesBurnedRecord>(range)
-        val cadences = client.records<StepsCadenceRecord>(range)
-        val powers = client.records<PowerRecord>(range)
+        val exercises = client.availableRecords<ExerciseSessionRecord>(range, granted, skipped)
+        val heartRates = client.availableRecords<HeartRateRecord>(range, granted, skipped)
+        val distances = client.availableRecords<DistanceRecord>(range, granted, skipped)
+        val speeds = client.availableRecords<SpeedRecord>(range, granted, skipped)
+        val elevations = client.availableRecords<ElevationGainedRecord>(range, granted, skipped)
+        val calories = client.availableRecords<TotalCaloriesBurnedRecord>(range, granted, skipped)
+        val cadences = client.availableRecords<StepsCadenceRecord>(range, granted, skipped)
+        val powers = client.availableRecords<PowerRecord>(range, granted, skipped)
         val activities = JSONArray()
         exercises.forEach { exercise ->
             val hr = heartRates.flatMap { it.samples }.filter { it.time in exercise.startTime..exercise.endTime }
@@ -66,28 +88,28 @@ class HealthSync(private val context: Context) {
                 .put("samples", samples).put("source_device", exercise.metadata.dataOrigin.packageName))
         }
         val wellness = JSONArray()
-        client.records<SleepSessionRecord>(range).forEach { sleep ->
+        client.availableRecords<SleepSessionRecord>(range, granted, skipped).forEach { sleep ->
             val stages = JSONArray()
             sleep.stages.forEach { stages.put(JSONObject().put("stage", it.stage).put("start_time", it.startTime).put("end_time", it.endTime)) }
             wellness.put(JSONObject().put("source_id", sleep.metadata.id).put("type", "sleep")
                 .put("start_time", sleep.startTime).put("end_time", sleep.endTime)
                 .put("duration_seconds", sleep.endTime.epochSecond - sleep.startTime.epochSecond).put("stages", stages))
         }
-        client.records<RestingHeartRateRecord>(range).forEach { wellness.put(instant(it.metadata.id, "resting_heart_rate", it.time, it.beatsPerMinute)) }
-        client.records<HeartRateVariabilityRmssdRecord>(range).forEach { wellness.put(instant(it.metadata.id, "hrv_rmssd", it.time, it.heartRateVariabilityMillis)) }
-        client.records<WeightRecord>(range).forEach { wellness.put(instant(it.metadata.id, "weight", it.time, it.weight.inKilograms)) }
-        client.records<BodyFatRecord>(range).forEach { wellness.put(instant(it.metadata.id, "body_fat", it.time, it.percentage.value)) }
-        client.records<OxygenSaturationRecord>(range).forEach { wellness.put(instant(it.metadata.id, "oxygen_saturation", it.time, it.percentage.value)) }
-        client.records<RespiratoryRateRecord>(range).forEach { wellness.put(instant(it.metadata.id, "respiratory_rate", it.time, it.rate)) }
-        client.records<BodyTemperatureRecord>(range).forEach { wellness.put(instant(it.metadata.id, "body_temperature", it.time, it.temperature.inCelsius)) }
-        client.records<BloodPressureRecord>(range).forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
+        client.availableRecords<RestingHeartRateRecord>(range, granted, skipped).forEach { wellness.put(instant(it.metadata.id, "resting_heart_rate", it.time, it.beatsPerMinute)) }
+        client.availableRecords<HeartRateVariabilityRmssdRecord>(range, granted, skipped).forEach { wellness.put(instant(it.metadata.id, "hrv_rmssd", it.time, it.heartRateVariabilityMillis)) }
+        client.availableRecords<WeightRecord>(range, granted, skipped).forEach { wellness.put(instant(it.metadata.id, "weight", it.time, it.weight.inKilograms)) }
+        client.availableRecords<BodyFatRecord>(range, granted, skipped).forEach { wellness.put(instant(it.metadata.id, "body_fat", it.time, it.percentage.value)) }
+        client.availableRecords<OxygenSaturationRecord>(range, granted, skipped).forEach { wellness.put(instant(it.metadata.id, "oxygen_saturation", it.time, it.percentage.value)) }
+        client.availableRecords<RespiratoryRateRecord>(range, granted, skipped).forEach { wellness.put(instant(it.metadata.id, "respiratory_rate", it.time, it.rate)) }
+        client.availableRecords<BodyTemperatureRecord>(range, granted, skipped).forEach { wellness.put(instant(it.metadata.id, "body_temperature", it.time, it.temperature.inCelsius)) }
+        client.availableRecords<BloodPressureRecord>(range, granted, skipped).forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
             .put("type", "blood_pressure").put("start_time", it.time)
             .put("systolic_mmhg", it.systolic.inMillimetersOfMercury)
             .put("diastolic_mmhg", it.diastolic.inMillimetersOfMercury)) }
-        client.records<HydrationRecord>(range).forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
+        client.availableRecords<HydrationRecord>(range, granted, skipped).forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
             .put("type", "hydration").put("start_time", it.startTime).put("end_time", it.endTime)
             .put("volume_ml", it.volume.inLiters * 1000).put("source_device", it.metadata.dataOrigin.packageName)) }
-        client.records<NutritionRecord>(range).forEach { nutrition -> wellness.put(JSONObject()
+        client.availableRecords<NutritionRecord>(range, granted, skipped).forEach { nutrition -> wellness.put(JSONObject()
             .put("source_id", nutrition.metadata.id).put("type", "nutrition")
             .put("start_time", nutrition.startTime).put("end_time", nutrition.endTime)
             .putNullable("energy_kcal", nutrition.energy?.inKilocalories)
@@ -98,13 +120,13 @@ class HealthSync(private val context: Context) {
             .putNullable("sodium_mg", nutrition.sodium?.inGrams?.times(1000))
             .put("meal_type", nutrition.mealType).put("name", nutrition.name)
             .put("source_device", nutrition.metadata.dataOrigin.packageName)) }
-        client.records<StepsRecord>(range).forEach { wellness.put(interval(it.metadata.id, "steps", it.startTime, it.endTime, it.count)) }
-        client.records<FloorsClimbedRecord>(range).forEach { wellness.put(interval(it.metadata.id, "floors", it.startTime, it.endTime, it.floors)) }
+        client.availableRecords<StepsRecord>(range, granted, skipped).forEach { wellness.put(interval(it.metadata.id, "steps", it.startTime, it.endTime, it.count)) }
+        client.availableRecords<FloorsClimbedRecord>(range, granted, skipped).forEach { wellness.put(interval(it.metadata.id, "floors", it.startTime, it.endTime, it.floors)) }
         heartRates.forEach { record -> wellness.put(JSONObject().put("source_id", record.metadata.id).put("type", "heart_rate_series")
             .put("start_time", record.startTime).put("end_time", record.endTime)
             .put("samples", JSONArray(record.samples.map { JSONObject().put("timestamp", it.time).put("value", it.beatsPerMinute) }))) }
         AtlasTransport.ingest(prefs.getString("server", "")!!, prefs.getString("token", "")!!,
-            JSONObject().put("activities", activities).put("wellness", wellness))
+            JSONObject().put("activities", activities).put("wellness", wellness).put("skipped_record_types", skipped))
         prefs.edit().putLong("last_sync", System.currentTimeMillis()).apply()
         return activities.length() + wellness.length()
     }
