@@ -1,5 +1,5 @@
-Warning: truncated output (original token count: 40913)
-Total output lines: 7426
+Warning: truncated output (original token count: 40891)
+Total output lines: 7424
 
 /* ╔══════════════════════════════════════════════════════════════╗
    ║ ATLAS OS — GENESIS 2.0 — PERFORMANCE & RUNNING             ║
@@ -531,9 +531,7 @@ select option {
     display: none !important;
   }
 
-  body { background: white; color: black; }
   .performance-app { width: 100%; padding: 0; }
-  .panel { border: 0; background: white; }
   .training-week { break-inside: avoid; }
 }
 
@@ -3555,7 +3553,10 @@ body[data-coach-section]
   color: #dceaf2;
 }
 
-.report-co…913 tokens truncated…ont-style: normal;
+.report-cockpit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between…891 tokens truncated…ont-style: normal;
 }
 
 .drift-reading-line span {
