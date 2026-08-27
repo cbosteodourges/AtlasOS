@@ -2,7 +2,7 @@ plugins { id("com.android.application"); id("org.jetbrains.kotlin.android") }
 
 android {
     namespace = "fr.atlasos.connect"
-    compileSdk = 35
+    compileSdk = 36
     defaultConfig { applicationId = "fr.atlasos.connect"; minSdk = 28; targetSdk = 35; versionCode = 1; versionName = "0.1.0" }
 }
 
