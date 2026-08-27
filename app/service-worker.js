@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "atlas-shell-v2";
+const CACHE_NAME = "atlas-shell-v3";
 const APP_SHELL = [
   "./atlas-cockpit.html",
   "./performance-running.html",
@@ -45,6 +45,20 @@ self.addEventListener("fetch", event => {
         .catch(() => caches.match(event.request).then(
           cached => cached || caches.match("./offline.html")
         ))
+    );
+    return;
+  }
+  if (["style", "script"].includes(event.request.destination)) {
+    event.respondWith(
+      fetch(event.request, { cache: "no-store" })
+        .then(response => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
     );
     return;
   }

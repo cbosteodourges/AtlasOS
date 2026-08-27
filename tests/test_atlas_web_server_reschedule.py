@@ -48,7 +48,7 @@ class AtlasWebServerRescheduleTests(unittest.TestCase):
         self.assertIn('"/api/atlas-coach/reschedule-workout"', server)
         self.assertIn('data-reschedule-workout', calendar)
         self.assertIn('data-reschedule-confirm', calendar)
-        self.assertIn('performance-running.css?v=63', page)
+        self.assertIn('performance-running.css?v=64', page)
 
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@ window.atlasPwaStatus = {
 
 if ("serviceWorker" in navigator && atlasPwaSecure) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js").catch(() => {
+    navigator.serviceWorker.register("./service-worker.js?v=3").catch(() => {
       // Le fonctionnement local classique reste disponible sans service worker.
     });
   });

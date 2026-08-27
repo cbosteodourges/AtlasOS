@@ -65,10 +65,20 @@ class PwaAssetsTests(unittest.TestCase):
 
         self.assertIn('app.querySelector(":scope > .sidebar")?.remove()', navigation)
         self.assertIn("atlas-global-nav.js?v=14", hub)
+        self.assertIn("atlas-pwa.js?v=3", hub)
         self.assertIn(
             'document.body.classList.toggle("has-atlas-context-nav", !isHub)',
             navigation,
         )
+
+    def test_styles_and_scripts_are_network_first(self):
+        worker = (APP_ROOT / "service-worker.js").read_text(encoding="utf-8")
+        pwa = (APP_ROOT / "js" / "atlas-pwa.js").read_text(encoding="utf-8")
+        self.assertIn('CACHE_NAME = "atlas-shell-v3"', worker)
+        self.assertIn('["style", "script"]', worker)
+        self.assertIn('fetch(event.request, { cache: "no-store" })', worker)
+        self.assertIn('service-worker.js?v=3', pwa)
+
     def test_mobile_global_navigation_keeps_four_labeled_destinations(self):
         navigation_css = (APP_ROOT / "css" / "atlas-global-nav.css").read_text(
             encoding="utf-8"
