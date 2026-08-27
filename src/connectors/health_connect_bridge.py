@@ -7,11 +7,30 @@ import secrets
 import time
 from typing import Any
 
-from .activity_ingestion import ActivityStore
+from .activity_ingestion import ActivityStore, activity_fingerprint
 from .activity_schema import ActivitySample, NormalizedActivity
 
 
 class HealthConnectBridge:
+    EXERCISE_TYPES = {
+        "0": "other", "2": "badminton", "4": "baseball", "5": "basketball",
+        "8": "cycling", "9": "cycling_indoor", "10": "boot_camp", "11": "boxing",
+        "13": "calisthenics", "14": "cricket", "16": "dance", "25": "elliptical",
+        "26": "exercise_class", "27": "fencing", "28": "american_football",
+        "29": "australian_football", "31": "frisbee", "32": "golf",
+        "33": "guided_breathing", "34": "gymnastics", "35": "handball", "36": "hiit",
+        "37": "hiking", "38": "ice_hockey", "39": "ice_skating", "44": "martial_arts",
+        "46": "paddling", "47": "paragliding", "48": "pilates", "50": "racquetball",
+        "51": "rock_climbing", "52": "roller_hockey", "53": "rowing",
+        "54": "rowing_machine", "55": "rugby", "56": "running",
+        "57": "running_treadmill", "58": "sailing", "59": "scuba_diving",
+        "60": "skating", "61": "skiing", "62": "snowboarding", "63": "snowshoeing",
+        "64": "soccer", "65": "softball", "66": "squash", "68": "stair_climbing",
+        "69": "stair_climbing_machine", "70": "strength_training", "71": "stretching",
+        "72": "surfing", "73": "swimming_open_water", "74": "swimming_pool",
+        "75": "table_tennis", "76": "tennis", "78": "volleyball", "79": "walking",
+        "80": "water_polo", "81": "weightlifting", "82": "wheelchair", "83": "yoga",
+    }
     def __init__(self, private_dir: str | Path) -> None:
         self.private_dir = Path(private_dir)
         self.pairing_path = self.private_dir / "health-connect-pairing.json"
@@ -46,6 +65,7 @@ class HealthConnectBridge:
             str(item.get("token_hash", "")), token_hash)), None)
         if device is None:
             raise PermissionError("Téléphone Santé Connect non associé.")
+        self._normalize_stored_activity_types()
         normalized = [self._activity(item) for item in payload.get("activities", [])]
         total = len(ActivityStore(self.activities_path).ingest(normalized)) if normalized else len(ActivityStore(self.activities_path).load())
         wellness = self._read(self.wellness_path, [])
@@ -61,15 +81,17 @@ class HealthConnectBridge:
                 "recovery_index": (assessment.get("recovery") or {}).get("atlas_recovery_index"),
                 "program_proposal_available": assessment.get("program_proposal_available", False)}
 
-    @staticmethod
-    def _activity(item: dict[str, Any]) -> NormalizedActivity:
+    @classmethod
+    def _activity(cls, item: dict[str, Any]) -> NormalizedActivity:
         samples = [
             ActivitySample(**sample)
             for sample in item.get("samples", [])
             if isinstance(sample, dict)
         ]
+        raw_type = str(item.get("type", "unknown"))
+        activity_type = cls.EXERCISE_TYPES.get(raw_type, raw_type)
         return NormalizedActivity(provider="health_connect",
-            external_id=str(item["source_id"]), activity_type=str(item.get("type", "unknown")),
+            external_id=str(item["source_id"]), activity_type=activity_type,
             start_time=str(item["start_time"]), duration_seconds=float(item.get("duration_seconds", 0)),
             distance_meters=item.get("distance_meters"), calories_kcal=item.get("calories_kcal"),
             average_heart_rate_bpm=item.get("average_heart_rate_bpm"),
@@ -77,7 +99,29 @@ class HealthConnectBridge:
             average_speed_mps=item.get("average_speed_mps"),
             elevation_gain_m=item.get("elevation_gain_m"), source_device=item.get("source_device"),
             samples=samples,
-            raw_metadata={"health_connect": True})
+            raw_metadata={"health_connect": True, "health_connect_exercise_type": raw_type})
+
+    def _normalize_stored_activity_types(self) -> None:
+        store = ActivityStore(self.activities_path)
+        activities = store.load()
+        changed = False
+        for activity in activities:
+            if "health_connect" not in activity.source_ids:
+                continue
+            normalized_type = self.EXERCISE_TYPES.get(str(activity.activity_type))
+            if not normalized_type:
+                continue
+            activity.raw_metadata["health_connect_exercise_type"] = str(activity.activity_type)
+            activity.activity_type = normalized_type
+            activity.field_provenance["activity_type"] = "health_connect"
+            activity.canonical_id = activity_fingerprint(activity)
+            changed = True
+        if changed:
+            indexed = {activity.canonical_id: activity for activity in activities}
+            self._write(self.activities_path, [
+                activity.to_dict()
+                for activity in sorted(indexed.values(), key=lambda item: item.start_time)
+            ])
 
     @staticmethod
     def _hash(value: str) -> str:
