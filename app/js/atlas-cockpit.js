@@ -61,6 +61,28 @@
     });
   };
 
+  const renderSyncInsights = payload => {
+    const latest = payload?.recovery?.latest;
+    if (latest) {
+      setText("[data-atlas-index]", latest.atlas_recovery_index);
+      setText("[data-recovery-label]", recoveryLabel(latest.atlas_recovery_index));
+      setText("[data-recovery-detail]", `${latest.atlas_recovery_index}/100 · confiance ${latest.confidence}/100`);
+      setText("[data-index-summary]", latest.explanation);
+      renderIndexComponents(latest.components);
+    }
+    const physiology = payload?.physiology?.current;
+    if (physiology) {
+      const decimal = value => String(value).replace(".", ",");
+      setText("[data-physiology-vo2]", physiology.vo2_max != null ? `${decimal(physiology.vo2_max)} ml/kg/min` : "—");
+      setText("[data-physiology-vma]", physiology.vma_kmh != null ? `${decimal(physiology.vma_kmh)} km/h` : "—");
+      setText("[data-physiology-sv1]", physiology.sv1?.speed_kmh != null ? `${decimal(physiology.sv1.speed_kmh)} km/h` : "—");
+      setText("[data-physiology-sv1-hr]", physiology.sv1?.heart_rate_bpm != null ? `${physiology.sv1.heart_rate_bpm} bpm · estimation longitudinale` : "FC à confirmer");
+      setText("[data-physiology-sv2]", physiology.sv2?.speed_kmh != null ? `${decimal(physiology.sv2.speed_kmh)} km/h` : "—");
+      setText("[data-physiology-sv2-hr]", physiology.sv2?.heart_rate_bpm != null ? `${physiology.sv2.heart_rate_bpm} bpm · estimation longitudinale` : "FC à confirmer");
+      setText("[data-physiology-hrmax]", physiology.maximum_heart_rate_bpm != null ? `${physiology.maximum_heart_rate_bpm} bpm` : "—");
+    }
+  };
+
   const updateCockpit = payload => {
     const latest = payload.latest;
     if (!latest) return;
@@ -381,6 +403,32 @@
         sync.title = error.message;
       }
     });
+
+  fetch("/api/atlas/sync-insights", { cache: "no-store" })
+    .then(response => response.ok ? response.json() : null)
+    .then(renderSyncInsights)
+    .catch(error => console.warn("Atlas synchronisation :", error));
+
+  const dashboardPanel = document.querySelector("[data-dashboard-panel]");
+  const dashboardKey = "atlasCockpitVisibleMetrics";
+  const dashboardInputs = [...document.querySelectorAll("[data-dashboard-panel] input")];
+  const applyDashboard = () => {
+    let selected;
+    try { selected = JSON.parse(localStorage.getItem(dashboardKey) || "null"); } catch (_error) { selected = null; }
+    if (!Array.isArray(selected)) selected = dashboardInputs.map(input => input.value);
+    dashboardInputs.forEach(input => { input.checked = selected.includes(input.value); });
+    document.querySelectorAll("[data-dashboard-metric]").forEach(element => {
+      element.classList.toggle("is-dashboard-hidden", !selected.includes(element.dataset.dashboardMetric));
+    });
+  };
+  applyDashboard();
+  dashboardInputs.forEach(input => input.addEventListener("change", () => {
+    const selected = dashboardInputs.filter(item => item.checked).map(item => item.value);
+    localStorage.setItem(dashboardKey, JSON.stringify(selected));
+    applyDashboard();
+  }));
+  document.querySelector("[data-dashboard-settings]")?.addEventListener("click", () => { if (dashboardPanel) dashboardPanel.hidden = false; });
+  document.querySelector("[data-dashboard-close]")?.addEventListener("click", () => { if (dashboardPanel) dashboardPanel.hidden = true; });
 
   const popover = document.querySelector("[data-index-popover]");
   document.querySelector("[data-index-info]")?.addEventListener("click", () => {

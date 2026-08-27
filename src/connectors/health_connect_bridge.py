@@ -8,7 +8,7 @@ import time
 from typing import Any
 
 from .activity_ingestion import ActivityStore
-from .activity_schema import NormalizedActivity
+from .activity_schema import ActivitySample, NormalizedActivity
 
 
 class HealthConnectBridge:
@@ -54,18 +54,29 @@ class HealthConnectBridge:
         self._write(self.wellness_path, list(unique.values()))
         device["last_sync_at"] = int(time.time())
         self._write(self.devices_path, devices)
+        from src.training.post_sync_orchestrator import PostSyncOrchestrator
+        assessment = PostSyncOrchestrator(self.private_dir).run("health_connect")
         return {"activities_received": len(normalized), "activities_total": total,
-                "wellness_received": len(payload.get("wellness", [])), "wellness_total": len(unique)}
+                "wellness_received": len(payload.get("wellness", [])), "wellness_total": len(unique),
+                "recovery_index": (assessment.get("recovery") or {}).get("atlas_recovery_index"),
+                "program_proposal_available": assessment.get("program_proposal_available", False)}
 
     @staticmethod
     def _activity(item: dict[str, Any]) -> NormalizedActivity:
+        samples = [
+            ActivitySample(**sample)
+            for sample in item.get("samples", [])
+            if isinstance(sample, dict)
+        ]
         return NormalizedActivity(provider="health_connect",
             external_id=str(item["source_id"]), activity_type=str(item.get("type", "unknown")),
             start_time=str(item["start_time"]), duration_seconds=float(item.get("duration_seconds", 0)),
             distance_meters=item.get("distance_meters"), calories_kcal=item.get("calories_kcal"),
             average_heart_rate_bpm=item.get("average_heart_rate_bpm"),
             maximum_heart_rate_bpm=item.get("maximum_heart_rate_bpm"),
+            average_speed_mps=item.get("average_speed_mps"),
             elevation_gain_m=item.get("elevation_gain_m"), source_device=item.get("source_device"),
+            samples=samples,
             raw_metadata={"health_connect": True})
 
     @staticmethod

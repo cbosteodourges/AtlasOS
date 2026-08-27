@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Iterable
 
-from .activity_schema import NormalizedActivity
+from .activity_schema import ActivitySample, NormalizedActivity
 
 
 def activity_fingerprint(activity: NormalizedActivity) -> str:
@@ -58,7 +58,16 @@ class ActivityStore:
     def load(self) -> list[NormalizedActivity]:
         if not self.path.is_file():
             return []
-        return [NormalizedActivity(**item) for item in json.loads(self.path.read_text(encoding="utf-8"))]
+        loaded = []
+        for item in json.loads(self.path.read_text(encoding="utf-8")):
+            payload = dict(item)
+            payload["samples"] = [
+                sample if isinstance(sample, ActivitySample) else ActivitySample(**sample)
+                for sample in payload.get("samples", [])
+                if isinstance(sample, (dict, ActivitySample))
+            ]
+            loaded.append(NormalizedActivity(**payload))
+        return loaded
 
     def ingest(self, activities: Iterable[NormalizedActivity]) -> list[NormalizedActivity]:
         indexed = {}

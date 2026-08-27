@@ -4,12 +4,12 @@ Connecteur d'activités Strava.
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, Iterable, Optional
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from .activity_schema import NormalizedActivity, RawActivity
+from .activity_schema import ActivitySample, NormalizedActivity, RawActivity
 from .base import ActivityConnector
 
 
@@ -70,6 +70,58 @@ class StravaConnector(ActivityConnector):
         with urlopen(request, timeout=30) as response:
             return json.loads(response.read().decode("utf-8"))
 
+    def enrich(self, activity: RawActivity) -> RawActivity:
+        """Ajoute détail, tours et flux. À utiliser pour les nouvelles séances.
+
+        L'historique massif reste résumé pour respecter les quotas Strava ; les
+        FIT conservent la priorité pour les anciennes séances détaillées.
+        """
+        identifier = activity.external_id
+        detail = self._get_json(f"{self.api_base_url}/activities/{identifier}")
+        laps = self._get_json(f"{self.api_base_url}/activities/{identifier}/laps")
+        keys = "time,distance,latlng,altitude,velocity_smooth,heartrate,cadence,watts,temp,grade_smooth"
+        streams = self._get_json(
+            f"{self.api_base_url}/activities/{identifier}/streams?keys={keys}&key_by_type=true"
+        )
+        payload = {**activity.payload, **(detail if isinstance(detail, dict) else {})}
+        payload["laps"] = laps if isinstance(laps, list) else []
+        payload["streams"] = streams if isinstance(streams, dict) else {}
+        return RawActivity(provider=activity.provider, external_id=identifier,
+                           payload=payload, samples=self._stream_samples(
+                               payload["streams"], str(payload.get("start_date") or "")
+                           ))
+
+    @staticmethod
+    def _stream_samples(streams: Dict[str, Any], start_time: str = "") -> list[ActivitySample]:
+        def data(name: str) -> list[Any]:
+            value = streams.get(name) or {}
+            return value.get("data", []) if isinstance(value, dict) else []
+        times = data("time")
+        if not times:
+            return []
+        try:
+            start = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+        except ValueError:
+            start = None
+        samples = []
+        for index, elapsed in enumerate(times):
+            latlng = data("latlng")
+            coordinate = latlng[index] if index < len(latlng) else None
+            def at(name: str):
+                values = data(name)
+                return values[index] if index < len(values) else None
+            samples.append(ActivitySample(
+                timestamp=(start + timedelta(seconds=int(elapsed))).isoformat()
+                if start else str(int(elapsed)),
+                heart_rate_bpm=at("heartrate"), speed_mps=at("velocity_smooth"),
+                cadence_spm=at("cadence"), power_watts=at("watts"),
+                altitude_m=at("altitude"), distance_meters=at("distance"),
+                temperature_c=at("temp"),
+                latitude=coordinate[0] if coordinate else None,
+                longitude=coordinate[1] if coordinate else None,
+            ))
+        return samples
+
     def normalize(
         self,
         activity: RawActivity,
@@ -119,6 +171,12 @@ class StravaConnector(ActivityConnector):
                 "trainer": payload.get("trainer"),
                 "private": payload.get("private"),
                 "received_at": activity.received_at,
+                "laps": payload.get("laps", []),
+                "streams_available": sorted((payload.get("streams") or {}).keys()),
+                "average_cadence": payload.get("average_cadence"),
+                "average_power": payload.get("average_watts"),
+                "maximum_power": payload.get("max_watts"),
+                "weighted_average_power": payload.get("weighted_average_watts"),
             },
         )
 

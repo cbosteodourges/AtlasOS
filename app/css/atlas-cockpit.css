@@ -99,6 +99,16 @@ a { text-decoration: none; }
   background: radial-gradient(circle at 78% 34%, rgba(20, 109, 175, .15), transparent 34%);
 }
 .home-header { display: flex; justify-content: space-between; align-items: flex-start; max-width: 1440px; margin: 0 auto 28px; }
+.header-actions { display: flex; align-items: center; gap: 10px; }
+.dashboard-settings-button { padding: 10px 14px; cursor: pointer; color: var(--cyan); border: 1px solid var(--line); border-radius: 99px; background: var(--panel); }
+[data-dashboard-metric].is-dashboard-hidden { display: none !important; }
+.dashboard-settings { position: fixed; z-index: 60; inset: 50% auto auto 50%; display: grid; gap: 12px; width: min(420px, calc(100vw - 28px)); padding: 26px; border: 1px solid var(--line); border-radius: 20px; background: var(--panel-strong); box-shadow: 0 24px 80px rgba(0,0,0,.62); transform: translate(-50%,-50%); }
+.dashboard-settings[hidden] { display: none; }
+.dashboard-settings > button { position: absolute; top: 10px; right: 12px; cursor: pointer; border: 0; background: transparent; font-size: 1.5rem; }
+.dashboard-settings h2, .dashboard-settings p { margin: 0; }
+.dashboard-settings p { color: var(--muted); line-height: 1.5; }
+.dashboard-settings label { display: flex; align-items: center; gap: 10px; min-height: 36px; }
+.dashboard-settings input { accent-color: var(--cyan); }
 .eyebrow { color: var(--cyan); font-size: .72rem; font-weight: 700; letter-spacing: .13em; }
 h1 { margin: 8px 0 5px; font-size: clamp(1.9rem, 3vw, 3rem); }
 .home-header p { margin: 0; color: var(--muted); }
@@ -167,6 +177,7 @@ body[data-avatar="female"] .twin-panel img { filter: hue-rotate(70deg) brightnes
   .atlas-home { margin: 0; padding: 20px 14px calc(86px + env(safe-area-inset-bottom)); }
   .home-header { margin-bottom: 20px; }
   .sync-state { display: none; }
+  .dashboard-settings-button { font-size: .7rem; }
   .home-grid { display: flex; flex-direction: column; }
   .twin-panel { order: -1; min-height: 430px; }
   .twin-panel img { height: 76%; width: 78%; }

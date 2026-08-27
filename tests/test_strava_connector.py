@@ -84,6 +84,16 @@ class StravaConnectorTests(unittest.TestCase):
         self.assertEqual(len(activities), 101)
         self.assertIn("page=2", get_json.call_args_list[1].args[0])
 
+    def test_enrich_adds_laps_and_stream_samples(self) -> None:
+        connector = StravaConnector("test-token")
+        raw = RawActivity(provider="strava", external_id="42", payload={"id": 42})
+        streams = {"time": {"data": [0, 1]}, "heartrate": {"data": [140, 142]},
+                   "velocity_smooth": {"data": [3.0, 3.2]}}
+        with patch.object(connector, "_get_json", side_effect=[{"name": "Run"}, [{"id": 1}], streams]):
+            enriched = connector.enrich(raw)
+        self.assertEqual(enriched.payload["laps"], [{"id": 1}])
+        self.assertEqual(enriched.samples[1].heart_rate_bpm, 142)
+
 
 if __name__ == "__main__":
     unittest.main()

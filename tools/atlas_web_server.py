@@ -98,9 +98,23 @@ def synchronize_strava(full_history=False):
     if not full_history:
         existing = ActivityStore(ACTIVITIES_PATH).load()
         since = max((item.start_time for item in existing), default=None)
-    activities = [connector.normalize(item) for item in connector.fetch_activities(since=since)]
+    raw = list(connector.fetch_activities(since=since))
+    detail_limit = 25 if full_history else len(raw)
+    enriched = []
+    for index, item in enumerate(raw):
+        if index < detail_limit:
+            try:
+                item = connector.enrich(item)
+            except (OSError, ValueError):
+                pass
+        enriched.append(item)
+    activities = [connector.normalize(item) for item in enriched]
     merged = ActivityStore(ACTIVITIES_PATH).ingest(activities)
-    return {"received": len(activities), "total": len(merged)}
+    from src.training.post_sync_orchestrator import PostSyncOrchestrator
+    assessment = PostSyncOrchestrator(ROOT / "atlas-data" / "private").run("strava")
+    return {"received": len(activities), "detailed": min(detail_limit, len(raw)),
+            "total": len(merged), "physiology_updated": assessment["physiology"].get("updated", False),
+            "program_proposal_available": assessment["program_proposal_available"]}
 
 
 def health_connect_bridge():
@@ -2544,6 +2558,16 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
                         ),
                     },
                 )
+            return
+
+        if parsed.path == "/api/atlas/sync-insights":
+            private_dir = ROOT / "atlas-data" / "private"
+            self.send_json(200, {
+                "ok": True,
+                "recovery": _read_private_json(private_dir / "atlas-recovery-index.json", {}),
+                "physiology": _read_private_json(private_dir / "physiology-longitudinal.json", {}),
+                "daily_assessment": _read_private_json(private_dir / "daily-sync-assessment.json", {}),
+            })
             return
 
         if parsed.path == "/api/atlas-coach/workout-decisions":
