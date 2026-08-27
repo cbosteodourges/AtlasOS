@@ -2272,8 +2272,18 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       plannedMainBlock?.repetitions ||
       1
     );
+    const expectedReportWorkTypes = {
+      threshold_sv2: new Set(["z3", "sv2"]),
+      vma_short: new Set(["sv2", "vma"]),
+      vma_long: new Set(["sv2", "vma"]),
+      mixed_threshold_vo2: new Set(["z3", "sv2", "vma"]),
+      triangular_vo2: new Set(["z3", "sv2", "vma"]),
+      long_run: new Set(["z3", "sv2"])
+    }[String(workout.workout_type || "")];
     const matchingWorkBlocks = detailedBlocks.filter(
-      block => block.block_type === dominantType
+      block => expectedReportWorkTypes
+        ? expectedReportWorkTypes.has(block.block_type)
+        : block.block_type === dominantType
     );
     const rawWorkBlocks = matchingWorkBlocks.length
       ? matchingWorkBlocks
@@ -2492,10 +2502,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           </span>
           <span>${reportNumber(block.average_power_watts, 0)} W</span>
           <span>${reportNumber(block.average_cadence_spm, 0)} ppm</span>
-          <span>
-            ${recovery
-              ? `${reportBlockTime(recovery.duration_seconds)} · ${reportNumber(recovery.distance_meters, 0)} m`
-              : "—"}
+          <span class="interval-recovery-detail">
+            ${recovery ? `
+              <b>${reportBlockTime(recovery.duration_seconds)} · ${reportNumber(recovery.distance_meters, 0)} m</b>
+              <small>${reportPace(3600 / Number(recovery.average_speed_kmh))} · ${reportNumber(recovery.average_speed_kmh, 2)} km/h</small>
+              <small>FC ${reportNumber(recovery.average_heart_rate_bpm, 0)} bpm · ${reportNumber(recovery.average_power_watts, 0)} W</small>
+            ` : "—"}
           </span>
         </div>
       `;
@@ -2602,10 +2614,10 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         </section>
 
         ${isIntervalSession ? `
-          <details class="interval-details-section compact-interval-details">
+          <details class="interval-details-section compact-interval-details" open>
             <summary>
               <span class="report-kicker">TABLEAU RÉCAPITULATIF</span>
-              <strong>Voir le détail des ${workBlocks.length} blocs</strong>
+              <strong>Détail des ${workBlocks.length} blocs de travail et récupérations</strong>
             </summary>
             <div class="interval-detail-table">
               <div class="interval-detail-row interval-detail-header">
