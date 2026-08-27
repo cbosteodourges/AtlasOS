@@ -52,7 +52,7 @@
       ${primaryItem({ href: "./atlas-hub.html#injuries", tab: "injuries", icon: "♡", label: "Santé", active: isHub, extra: 'data-health-root="true"' })}
       ${healthSubnav}
       ${primaryItem({ href: "./atlas-hub.html#timeline", tab: "timeline", icon: "↝", label: "Historique", extra: 'data-history-root="true"' })}
-      ${primaryItem({ href: "./atlas-cockpit.html#nutrition-hydratation", icon: "◒", label: "Nutrition & Hydratation", extra: 'data-nutrition-root hidden' })}
+      ${primaryItem({ href: "./atlas-cockpit.html#nutrition-hydratation", icon: "◒", label: "Nutrition & Hydratation", extra: 'data-nutrition-root' })}
     </nav>
 
     <button class="atlas-talk-button" type="button" data-atlas-talk>
