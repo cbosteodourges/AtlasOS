@@ -32,8 +32,11 @@ class ContinuousPhysiologyEstimator:
             samples = getattr(activity, "samples", []) or []
             sample_speeds = [_number(getattr(sample, "speed_mps", None)) for sample in samples]
             sample_speeds = [value * 3.6 for value in sample_speeds if value and 4 <= value * 3.6 <= 30]
-            if len(sample_speeds) >= 60:
-                window = max(30, min(300, len(sample_speeds) // 4))
+            # Une pointe de quelques secondes ne vaut pas une VMA. Il faut au
+            # minimum trois minutes de vitesse soutenue ; au-delà, Atlas vise
+            # une fenêtre de quatre à six minutes selon la séance disponible.
+            if len(sample_speeds) >= 180:
+                window = max(180, min(360, len(sample_speeds) // 4))
                 sustained = max(median(sample_speeds[index:index + window]) for index in range(0, len(sample_speeds) - window + 1, max(1, window // 5)))
                 speeds.append(sustained)
             average = _number(getattr(activity, "average_speed_mps", None))

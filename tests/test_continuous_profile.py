@@ -8,7 +8,7 @@ from src.physiology.continuous_profile import ContinuousPhysiologyEstimator
 class ContinuousProfileTests(unittest.TestCase):
     def activity(self, speed=4.0, heart_rate=158):
         samples = [ActivitySample(timestamp=str(i), speed_mps=speed, heart_rate_bpm=heart_rate)
-                   for i in range(120)]
+                   for i in range(240)]
         return NormalizedActivity(provider="strava", external_id="1", activity_type="run",
             start_time=datetime.now(timezone.utc).isoformat(), duration_seconds=1800,
             average_speed_mps=speed * .85, average_heart_rate_bpm=heart_rate, samples=samples)
