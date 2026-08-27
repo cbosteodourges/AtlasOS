@@ -232,5 +232,55 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
         self.assertEqual(result.execution.completed_repetition_count, 3)
 
 
+    def test_easy_running_after_threshold_does_not_lower_target_score(self) -> None:
+        planned = AdaptiveWorkout(
+            workout_id="threshold-with-family-cooldown",
+            workout_date=date(2026, 8, 27),
+            workout_type=WorkoutType.THRESHOLD_SV2,
+            title="SV2 contrôlé · 3 à 4 × 1000 m",
+            objective="Travail contrôlé au seuil",
+            blocks=[TrainingBlock(
+                name="3 × 1000 m",
+                block_type=BlockType.WORK,
+                repetitions=3,
+                distance_meters=1000,
+                recovery_minutes=1.75,
+                target=IntensityTarget(
+                    zone=4,
+                    speed_min_kmh=12.4,
+                    speed_max_kmh=13.1,
+                ),
+            )],
+            planned_duration_minutes=50,
+        )
+        activity = LongitudinalActivity(
+            atlas_id="garmin-threshold-family-cooldown",
+            start_time=datetime(2026, 8, 27, 20, tzinfo=timezone.utc),
+            activity_type="running",
+            distance_km=9,
+            duration_minutes=58,
+            average_speed_kmh=9.3,
+        )
+        analysis = DetailedSessionAnalysis(
+            activity_id=activity.atlas_id,
+            blocks=[
+                SessionBlock(1, "z3", 0, 280, 280, 1000, average_speed_kmh=12.86),
+                SessionBlock(2, "recovery", 280, 385, 105, 180),
+                SessionBlock(3, "sv2", 385, 665, 280, 1000, average_speed_kmh=12.86),
+                SessionBlock(4, "recovery", 665, 770, 105, 180),
+                SessionBlock(5, "z3", 770, 1050, 280, 1000, average_speed_kmh=12.86),
+                SessionBlock(6, "z2", 1050, 2130, 1080, 3000, average_speed_kmh=10),
+            ],
+            dominant_work_type="sv2",
+            session_type="threshold",
+            recovery_duration_seconds=210,
+        )
+
+        result = AtlasWorkoutExecutionMatcher().match(planned, activity, analysis)
+
+        self.assertEqual(result.target_compliance_score, 100)
+        self.assertEqual(result.execution.completed_repetition_count, 3)
+
+
 if __name__ == "__main__":
     unittest.main()
