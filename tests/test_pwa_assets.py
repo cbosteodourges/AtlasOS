@@ -64,7 +64,7 @@ class PwaAssetsTests(unittest.TestCase):
         hub = (APP_ROOT / "atlas-hub.html").read_text(encoding="utf-8")
 
         self.assertIn('app.querySelector(":scope > .sidebar")?.remove()', navigation)
-        self.assertIn("atlas-global-nav.js?v=13", hub)
+        self.assertIn("atlas-global-nav.js?v=14", hub)
         self.assertIn(
             'document.body.classList.toggle("has-atlas-context-nav", !isHub)',
             navigation,

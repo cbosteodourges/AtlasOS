@@ -91,6 +91,9 @@
     if (nutritionModule) nutritionModule.hidden = false;
     if (nutritionSetting) nutritionSetting.hidden = false;
     if (nutritionNav) nutritionNav.hidden = false;
+    if (location.hash === "#nutrition-hydratation" && nutritionModule) {
+      requestAnimationFrame(() => nutritionModule.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
     const today = payload.today || {};
     const targets = payload.targets || {};
     setText("[data-hydration-value]", Math.round(today.hydration_ml || 0));

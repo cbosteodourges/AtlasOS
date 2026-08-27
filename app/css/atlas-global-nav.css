@@ -253,7 +253,7 @@ body.has-atlas-global-nav > .atlas-global-nav {
   grid-template-columns: 46px 1fr;
   align-items: center;
   min-height: 62px;
-  margin: 2px 0 14px;
+  margin: auto 0 14px;
   padding: 7px 6px;
   overflow: hidden;
   color: #fff;
@@ -845,6 +845,7 @@ body.has-atlas-global-nav > .atlas-global-nav {
 .atlas-global-nav .atlas-brand,
 .atlas-global-nav .atlas-profile {
   text-decoration: none;
+  margin-top: 0;
 }
 .atlas-global-nav .atlas-talk-copy,
 .atlas-global-nav .atlas-profile-copy {
