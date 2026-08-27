@@ -5935,6 +5935,16 @@ body[data-coach-section]
   color: #829eae;
 }
 
+.interval-recovery-detail {
+  display: grid;
+  gap: 3px;
+}
+
+.interval-recovery-detail b {
+  color: #e8f7ff;
+  font-size: .84rem;
+}
+
 .interval-detail-header {
   color: #a8c2d1;
   font-size: .72rem;
