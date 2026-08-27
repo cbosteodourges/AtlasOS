@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
-    private val permissions = setOf(
+    private val dataPermissions = setOf(
         HealthPermission.getReadPermission(ExerciseSessionRecord::class),
         HealthPermission.getReadPermission(SleepSessionRecord::class),
         HealthPermission.getReadPermission(HeartRateRecord::class),
@@ -36,12 +36,26 @@ class MainActivity : ComponentActivity() {
         HealthPermission.getReadPermission(BloodPressureRecord::class),
         HealthPermission.getReadPermission(HydrationRecord::class),
         HealthPermission.getReadPermission(NutritionRecord::class),
+    )
+    private val permissions = dataPermissions + setOf(
         HealthPermission.PERMISSION_READ_HEALTH_DATA_HISTORY,
         HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND,
     )
     private val requestPermissions = registerForActivityResult(
         PermissionController.createRequestPermissionResultContract()
-    ) { granted -> status.text = if (granted.containsAll(permissions)) "Autorisations accordées" else "Autorisations incomplètes" }
+    ) {
+        lifecycleScope.launch {
+            val granted = HealthConnectClient.getOrCreate(this@MainActivity)
+                .permissionController.getGrantedPermissions()
+            val missingData = dataPermissions - granted
+            val missingExtra = permissions - dataPermissions - granted
+            status.text = when {
+                missingData.isNotEmpty() -> "Autorisations de données manquantes : ${missingData.size}"
+                missingExtra.isNotEmpty() -> "Données autorisées · accès supplémentaire à compléter"
+                else -> "Autorisations accordées"
+            }
+        }
+    }
     private lateinit var server: EditText
     private lateinit var code: EditText
     private lateinit var status: TextView
@@ -73,7 +87,10 @@ class MainActivity : ComponentActivity() {
 
     private fun sync() = lifecycleScope.launch {
         status.text = "Synchronisation…"
-        status.text = try { HealthSync(this@MainActivity).run(); "Synchronisation terminée" } catch (error: Exception) { error.message ?: "Échec" }
+        status.text = try {
+            val count = HealthSync(this@MainActivity).run()
+            "Synchronisation terminée : $count éléments"
+        } catch (error: Exception) { error.message ?: "Échec" }
     }
 
     private fun scheduleBackgroundSync() {
