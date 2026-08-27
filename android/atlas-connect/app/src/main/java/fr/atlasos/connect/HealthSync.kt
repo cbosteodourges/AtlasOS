@@ -27,7 +27,13 @@ class HealthSync(private val context: Context) {
         val client = HealthConnectClient.getOrCreate(context)
         val prefs = context.getSharedPreferences("atlas", Context.MODE_PRIVATE)
         val last = prefs.getLong("last_sync", 0L)
-        val start = if (last > 0) Instant.ofEpochMilli(last).minus(1, ChronoUnit.DAYS) else Instant.now().minus(10, ChronoUnit.YEARS)
+        // Instant supports fixed-duration units only. YEARS is calendar based and
+        // throws UnsupportedTemporalTypeException on the first historical sync.
+        val start = if (last > 0) {
+            Instant.ofEpochMilli(last).minus(1, ChronoUnit.DAYS)
+        } else {
+            Instant.now().minus(3652, ChronoUnit.DAYS)
+        }
         val range = TimeRangeFilter.between(start, Instant.now())
         val exercises = client.records<ExerciseSessionRecord>(range)
         val heartRates = client.records<HeartRateRecord>(range)
