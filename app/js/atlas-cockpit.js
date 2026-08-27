@@ -85,10 +85,12 @@
 
   const nutritionModule = document.querySelector("[data-nutrition-module]");
   const nutritionSetting = document.querySelector("[data-nutrition-setting]");
+  const nutritionNav = document.querySelector("[data-nutrition-nav]");
   const renderNutrition = payload => {
     if (!payload?.access?.enabled) return;
     if (nutritionModule) nutritionModule.hidden = false;
     if (nutritionSetting) nutritionSetting.hidden = false;
+    if (nutritionNav) nutritionNav.hidden = false;
     const today = payload.today || {};
     const targets = payload.targets || {};
     setText("[data-hydration-value]", Math.round(today.hydration_ml || 0));
