@@ -1,0 +1,21 @@
+name: Atlas Connect Android
+on:
+  workflow_dispatch:
+  push:
+    branches: [performance-sync-1.0]
+    paths: ['android/atlas-connect/**', '.github/workflows/atlas-connect-android.yml']
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: gradle/actions/setup-gradle@v4
+        with: {gradle-version: '8.10.2'}
+      - run: gradle :app:assembleDebug
+        working-directory: android/atlas-connect
+      - uses: actions/upload-artifact@v4
+        with:
+          name: atlas-connect-debug
+          path: android/atlas-connect/app/build/outputs/apk/debug/app-debug.apk

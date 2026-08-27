@@ -1,6 +1,7 @@
 """Tests automatisés du connecteur Strava ATLAS OS."""
 
 import unittest
+from unittest.mock import patch
 
 from src.connectors import (
     NormalizedActivity,
@@ -73,6 +74,15 @@ class StravaConnectorTests(unittest.TestCase):
         )
 
         self.assertEqual(epoch, 0)
+
+    def test_fetch_paginates_until_short_page(self) -> None:
+        connector = StravaConnector("test-token")
+        connector.connect()
+        first = [{"id": index} for index in range(100)]
+        with patch.object(connector, "_get_json", side_effect=[first, [{"id": 100}]]) as get_json:
+            activities = list(connector.fetch_activities())
+        self.assertEqual(len(activities), 101)
+        self.assertIn("page=2", get_json.call_args_list[1].args[0])
 
 
 if __name__ == "__main__":

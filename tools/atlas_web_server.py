@@ -21,6 +21,7 @@ if str(ROOT) not in sys.path:
 
 from src.atlas_brain import AtlasBrain
 from src.connectors.garmin_wellness import GarminWellnessConnector
+from src.connectors import ActivityStore, HealthConnectBridge, StravaConnector, StravaOAuthService
 from src.patient.patient import Patient
 from src.twin.digital_twin import DigitalTwin
 from src.training.daily_preparation_service import (
@@ -82,6 +83,28 @@ USER_PROFILE_PATH = (
 USER_OBJECTIVES_PATH = (
     ROOT / "atlas-data" / "private" / "atlas-objectives.json"
 )
+ACTIVITIES_PATH = ROOT / "atlas-data" / "private" / "activities-unified.json"
+
+
+def strava_service():
+    return StravaOAuthService(ROOT / "atlas-data" / "private")
+
+
+def synchronize_strava(full_history=False):
+    service = strava_service()
+    connector = StravaConnector(service.access_token())
+    connector.connect()
+    since = None
+    if not full_history:
+        existing = ActivityStore(ACTIVITIES_PATH).load()
+        since = max((item.start_time for item in existing), default=None)
+    activities = [connector.normalize(item) for item in connector.fetch_activities(since=since)]
+    merged = ActivityStore(ACTIVITIES_PATH).ingest(activities)
+    return {"received": len(activities), "total": len(merged)}
+
+
+def health_connect_bridge():
+    return HealthConnectBridge(ROOT / "atlas-data" / "private")
 
 
 def _read_private_json(path, default):
@@ -2407,6 +2430,31 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
 
         query = parse_qs(parsed.query)
 
+        if parsed.path == "/api/atlas/strava/status":
+            self.send_json(200, {"ok": True, **strava_service().status()})
+            return
+        if parsed.path == "/api/atlas/health-connect/pairing-code":
+            self.send_json(200, {"ok": True, "code": health_connect_bridge().create_pairing_code(),
+                                 "expires_in_seconds": 600})
+            return
+        if parsed.path == "/api/atlas/strava/connect":
+            try:
+                self.send_response(302)
+                self.send_header("Location", strava_service().authorization_url())
+                self.end_headers()
+            except ValueError as error:
+                self.send_json(400, {"ok": False, "error": str(error)})
+            return
+        if parsed.path == "/api/atlas/strava/callback":
+            try:
+                code = str((query.get("code") or [""])[0])
+                state = str((query.get("state") or [""])[0])
+                strava_service().exchange_code(code, state)
+                self.send_json(200, {"ok": True, "message": "Compte Strava connecté à Atlas."})
+            except ValueError as error:
+                self.send_json(400, {"ok": False, "error": str(error)})
+            return
+
         if parsed.path == "/api/atlas-coach/program":
             try:
                 self.send_json(200, load_authorized_training_program())
@@ -2653,6 +2701,9 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             "/api/atlas/conversation",
             "/api/atlas-user/profile",
             "/api/atlas-user/objectives",
+            "/api/atlas/strava/sync",
+            "/api/atlas/health-connect/pair",
+            "/api/atlas/health-connect/ingest",
         }
 
         if self.path not in allowed_routes:
@@ -2668,6 +2719,23 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             )
             raw_body = self.rfile.read(content_length)
             payload = json.loads(raw_body.decode("utf-8"))
+
+            if self.path == "/api/atlas/health-connect/pair":
+                token = health_connect_bridge().pair(str(payload.get("code", "")), payload.get("device", {}))
+                self.send_json(200, {"ok": True, "token": token})
+                return
+            if self.path == "/api/atlas/health-connect/ingest":
+                authorization = self.headers.get("Authorization", "")
+                if not authorization.startswith("Bearer "):
+                    raise PermissionError("Jeton Santé Connect absent.")
+                result = health_connect_bridge().ingest(authorization[7:], payload)
+                self.send_json(200, {"ok": True, **result})
+                return
+
+            if self.path == "/api/atlas/strava/sync":
+                result = synchronize_strava(bool(payload.get("full_history")))
+                self.send_json(200, {"ok": True, **result})
+                return
 
             if self.path == "/api/atlas-user/profile":
                 profile = save_user_profile(payload.get("profile", payload))
@@ -2756,7 +2824,7 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
                 },
             )
 
-        except ValueError as error:
+        except (ValueError, PermissionError) as error:
             self.send_json(
                 400,
                 {"ok": False, "error": str(error)},

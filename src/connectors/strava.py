@@ -42,45 +42,33 @@ class StravaConnector(ActivityConnector):
                 "Le connecteur Strava n'est pas connecté."
             )
 
-        parameters: Dict[str, Any] = {
-            "page": 1,
-            "per_page": 100,
-        }
+        activities = []
+        page = 1
+        while True:
+            parameters: Dict[str, Any] = {"page": page, "per_page": 100}
+            if since:
+                parameters["after"] = self._to_epoch(since)
+            payload = self._get_json(
+                f"{self.api_base_url}/athlete/activities?{urlencode(parameters)}"
+            )
+            if not isinstance(payload, list):
+                raise ValueError("La réponse Strava ne contient pas une liste d'activités.")
+            activities.extend(
+                RawActivity(provider=self.provider, external_id=str(item["id"]), payload=item)
+                for item in payload
+            )
+            if len(payload) < 100:
+                break
+            page += 1
+        return activities
 
-        if since:
-            parameters["after"] = self._to_epoch(since)
-
-        url = (
-            f"{self.api_base_url}/athlete/activities?"
-            f"{urlencode(parameters)}"
-        )
-
-        request = Request(
-            url,
-            headers={
-                "Authorization": f"Bearer {self.access_token}",
-                "Accept": "application/json",
-            },
-        )
-
+    def _get_json(self, url: str) -> Any:
+        request = Request(url, headers={
+            "Authorization": f"Bearer {self.access_token}",
+            "Accept": "application/json",
+        })
         with urlopen(request, timeout=30) as response:
-            payload = json.loads(
-                response.read().decode("utf-8")
-            )
-
-        if not isinstance(payload, list):
-            raise ValueError(
-                "La réponse Strava ne contient pas une liste d'activités."
-            )
-
-        return [
-            RawActivity(
-                provider=self.provider,
-                external_id=str(activity["id"]),
-                payload=activity,
-            )
-            for activity in payload
-        ]
+            return json.loads(response.read().decode("utf-8"))
 
     def normalize(
         self,

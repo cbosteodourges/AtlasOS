@@ -57,6 +57,9 @@ class NormalizedActivity:
     source_device: Optional[str] = None
     samples: List[ActivitySample] = field(default_factory=list)
     raw_metadata: Dict[str, Any] = field(default_factory=dict)
+    source_ids: Dict[str, str] = field(default_factory=dict)
+    field_provenance: Dict[str, str] = field(default_factory=dict)
+    canonical_id: Optional[str] = None
     imported_at: str = field(
         default_factory=lambda: datetime.now().astimezone().isoformat()
     )
