@@ -24,55 +24,33 @@
   const regionLabels = { foot: "Pied", ankle: "Cheville", leg: "Jambe", knee: "Genou", thigh: "Cuisse", hip: "Hanche / aine", glute: "Région fessière", back: "Dos / bassin" };
   const anatomyPlans = {
     foot: {
-      views: { plantar: "Plantaire", dorsal: "Dorsale" },
-      outline: "M92 32 C126 22 165 34 183 62 C198 86 192 120 177 149 L152 207 C142 232 118 249 91 244 C63 239 48 216 52 187 L63 119 C66 92 58 66 69 46 C74 38 82 34 92 32 Z",
-      landmarks: ["M83 42 C98 75 99 132 86 216", "M122 38 C128 83 137 140 130 222", "M67 151 C98 144 140 147 177 156"],
-      structures: [
-        ["plantar", "bone", "M94 55L91 95 88 139M112 50L111 94 108 139M130 48L130 92 127 139M148 53L147 94 145 139M164 62L160 100 158 142"],
-        ["plantar", "tendon", "M104 225C94 195 88 160 91 119M129 224C136 186 137 151 129 113"],
-        ["dorsal", "bone", "M93 57L93 96 91 146M112 50L112 98 110 148M131 49L132 96 130 147M149 54L150 99 147 148M164 64L162 104 158 149"],
-        ["dorsal", "tendon", "M93 200L104 79M111 204L119 74M130 202L136 78M149 197L151 88"]
-      ],
+      views: {
+        dorsal: { label: "Face et dessus du pied", asset: "./assets/anatomy/servier/foot-ankle-anterior.png", width: 213, height: 573, layer: "Repères de surface" },
+        lateral: { label: "Profil · os et ligaments", asset: "./assets/anatomy/servier/foot-ankle-lateral-deep.png", width: 632, height: 486, layer: "Structures profondes" }
+      },
       zones: [
-        ["Voûte plantaire", "plantar", 101, 157, 25], ["Talon", "plantar", 103, 217, 22],
-        ["Têtes des métatarsiens", "plantar", 119, 92, 28], ["Orteils", "plantar", 130, 49, 27],
-        ["Tendons extenseurs", "dorsal", 114, 135, 26], ["Têtes des métatarsiens", "dorsal", 126, 88, 27], ["Orteils", "dorsal", 132, 48, 27], ["Talon", "dorsal", 91, 219, 20]
+        { label: "Tendons extenseurs", view: "dorsal", type: "Tendons", path: "M54 236 C74 218 136 218 158 238 L151 337 C132 355 80 356 59 335 Z" },
+        { label: "Têtes des métatarsiens", view: "dorsal", type: "Avant-pied", path: "M31 369 C60 349 157 349 184 381 L179 429 C143 448 62 445 31 418 Z" },
+        { label: "Orteils", view: "dorsal", type: "Avant-pied", path: "M18 428 C55 414 174 424 197 469 L184 548 C139 572 43 559 17 510 Z" },
+        { label: "Talon", view: "lateral", type: "Os et tissus", path: "M23 295 C58 244 143 244 183 285 L177 401 C132 454 45 429 17 374 Z" },
+        { label: "Voûte plantaire", view: "lateral", type: "Arche médiale", path: "M154 331 C242 292 370 299 454 338 L431 392 C346 369 261 373 181 414 Z" },
+        { label: "Têtes des métatarsiens", view: "lateral", type: "Avant-pied", path: "M420 318 C462 311 511 322 540 347 L528 389 C488 387 449 377 414 359 Z" },
+        { label: "Orteils", view: "lateral", type: "Avant-pied", path: "M525 333 C566 335 608 348 625 371 L614 408 C573 411 543 396 516 379 Z" }
       ]
     },
     ankle: {
-      views: { lateral: "Latérale", medial: "Médiale", posterior: "Postérieure" },
-      outline: "M82 25 L153 25 L148 116 C151 137 175 151 180 179 C186 207 164 231 130 232 L68 232 C48 231 43 214 58 204 L90 181 C99 170 94 145 87 126 Z",
-      landmarks: ["M115 28 L112 178", "M73 185 C103 181 133 181 171 193", "M95 127 C115 112 143 115 156 135"],
-      structures: [
-        ["lateral", "bone", "M103 30L105 132 96 167M137 29L132 126 143 159M97 168L132 174 158 199"],
-        ["lateral", "ligament", "M137 126L158 150M137 127L151 177M139 132L118 164"],
-        ["medial", "bone", "M104 30L105 132 96 168M137 29L132 126M96 168L129 175 158 198"],
-        ["medial", "ligament", "M104 129L83 161M104 129L101 180M105 130L128 171"],
-        ["posterior", "tendon", "M111 30C108 76 107 118 104 185"],
-        ["posterior", "bone", "M86 31L91 151M141 30L136 151M91 168L137 168"]
-      ],
+      views: {
+        anterior: { label: "Repérage de surface", asset: "./assets/anatomy/servier/foot-ankle-anterior.png", width: 213, height: 573, layer: "Vue antérieure" },
+        lateral: { label: "Profil · os et ligaments", asset: "./assets/anatomy/servier/foot-ankle-lateral-deep.png", width: 632, height: 486, layer: "Structures profondes" }
+      },
       zones: [
-        ["Ligaments externes", "lateral", 145, 151, 27], ["Articulation", "lateral", 118, 169, 24], ["Arrière du talon", "lateral", 77, 204, 22],
-        ["Ligaments internes", "medial", 95, 151, 27], ["Articulation", "medial", 119, 172, 24], ["Arrière du talon", "medial", 75, 204, 22],
-        ["Tendon d’Achille", "posterior", 113, 105, 24], ["Arrière du talon", "posterior", 104, 197, 23], ["Articulation", "posterior", 126, 165, 23]
-      ]
-    },
-    leg: {
-      views: { anterior: "Antérieure", posterior: "Postérieure", medial: "Médiale", lateral: "Latérale" },
-      outline: "M74 24 C91 15 147 15 166 25 L157 105 C153 135 151 170 148 222 L91 222 C87 170 85 136 80 105 Z",
-      landmarks: ["M119 28 L114 214", "M91 43 C110 67 113 139 103 206", "M145 42 C130 83 132 150 139 210"],
-      structures: [
-        ["anterior", "bone", "M113 29L109 207M141 29L137 203"],
-        ["anterior", "muscle", "M92 39C102 62 104 119 99 184M132 40C124 75 123 139 129 194"],
-        ["posterior", "muscle", "M92 43C84 84 94 139 112 166M147 43C154 88 143 139 121 167M112 166L111 213"],
-        ["medial", "bone", "M113 27L109 210"],
-        ["lateral", "bone", "M137 29L137 208"],
-        ["lateral", "muscle", "M143 44C155 91 151 151 140 195"]
-      ],
-      zones: [
-        ["Jambier antérieur", "anterior", 104, 91, 27], ["Tendons releveurs des orteils", "anterior", 112, 187, 24],
-        ["Mollet", "posterior", 121, 92, 38], ["Bord interne du tibia", "medial", 101, 128, 29],
-        ["Face externe de la jambe", "lateral", 145, 116, 32], ["Mollet", "lateral", 115, 78, 31]
+        { label: "Ligaments externes", view: "anterior", type: "Ligaments", path: "M47 183 C61 167 86 163 102 181 L97 236 C76 248 52 235 43 216 Z" },
+        { label: "Ligaments internes", view: "anterior", type: "Ligaments", path: "M111 176 C130 161 160 168 173 188 L169 229 C149 244 122 238 109 217 Z" },
+        { label: "Articulation", view: "anterior", type: "Articulation", path: "M45 207 C71 187 142 185 174 207 L169 254 C136 272 75 272 45 249 Z" },
+        { label: "Ligaments externes", view: "lateral", type: "Ligaments", path: "M198 170 C235 147 303 158 337 196 L327 263 C279 286 222 265 194 226 Z" },
+        { label: "Articulation", view: "lateral", type: "Articulation", path: "M162 145 C215 116 320 126 365 178 L352 269 C300 311 209 298 160 242 Z" },
+        { label: "Tendon d’Achille", view: "lateral", type: "Tendon", path: "M73 92 C102 77 137 85 153 111 L147 306 C127 333 92 329 74 304 Z" },
+        { label: "Arrière du talon", view: "lateral", type: "Insertion", path: "M19 290 C50 255 119 252 160 288 L158 384 C119 427 50 413 19 374 Z" }
       ]
     }
   };
@@ -80,23 +58,25 @@
   let selectedRegion = "";
   let selectedSide = "";
 
-  function anatomySvg(plan, view) {
-    const zones = plan.zones.filter((zone) => zone[1] === view);
-    return `<svg class="anatomy-svg" viewBox="0 0 240 270" role="img" aria-label="Planche anatomique, vue ${escapeHtml(plan.views[view])}">
-      <defs><linearGradient id="tissueGradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#123f52"/><stop offset="1" stop-color="#071c2b"/></linearGradient></defs>
-      <rect class="anatomy-plate-background" x="1" y="1" width="238" height="268" rx="18"/>
-      <path class="anatomy-outline" d="${plan.outline}"/>
-      ${plan.landmarks.map((path) => `<path class="anatomy-landmark" d="${path}"/>`).join("")}
-      ${(plan.structures || []).filter(item => item[0] === view).map(([, type, path]) => `<path class="anatomy-structure anatomy-${type}" d="${path}"/>`).join("")}
-      ${zones.map(([label, , x, y, radius], index) => `<g class="anatomy-zone" data-anatomy-zone="${escapeHtml(label)}" tabindex="0" role="button" aria-label="Sélectionner ${escapeHtml(label)}"><ellipse cx="${x}" cy="${y}" rx="${radius}" ry="${Math.max(12, Math.round(radius * .58))}"/><text x="${x}" y="${y + 4}">${index + 1}</text></g>`).join("")}
-    </svg><ol class="anatomy-legend">${zones.map(([label], index) => `<li><button type="button" data-anatomy-zone="${escapeHtml(label)}"><span>${index + 1}</span>${escapeHtml(label)}</button></li>`).join("")}</ol>`;
+  function anatomyPlate(plan, view) {
+    const plate = plan.views[view];
+    const zones = plan.zones.filter((zone) => zone.view === view);
+    return `<figure class="medical-plate">
+      <div class="medical-plate-visual" style="--plate-ratio:${plate.width}/${plate.height}">
+        <img src="${plate.asset}" width="${plate.width}" height="${plate.height}" alt="Planche anatomique ${escapeHtml(plate.label)}" loading="lazy">
+        <svg class="anatomy-overlay" viewBox="0 0 ${plate.width} ${plate.height}" aria-label="Zones anatomiques sélectionnables">
+          ${zones.map((zone) => `<path class="anatomy-zone" data-anatomy-zone="${escapeHtml(zone.label)}" tabindex="0" role="button" aria-label="Sélectionner ${escapeHtml(zone.label)}" d="${zone.path}"/>`).join("")}
+        </svg>
+      </div>
+      <figcaption>${escapeHtml(plate.layer)} · Illustration adaptée de <a href="https://smart.servier.com/" target="_blank" rel="noopener">Servier Medical Art</a>, CC BY 4.0.</figcaption>
+    </figure><ol class="anatomy-legend">${zones.map((zone) => `<li><button type="button" data-anatomy-zone="${escapeHtml(zone.label)}"><span aria-hidden="true"></span><div><strong>${escapeHtml(zone.label)}</strong><small>${escapeHtml(zone.type)}</small></div></button></li>`).join("")}</ol>`;
   }
 
   function syncAnatomySelection(zone) {
     const visible = $$('[data-anatomy-zone]');
     if (anatomyPlans[selectedRegion] && !visible.some((item) => item.dataset.anatomyZone === zone)) {
-      const match = anatomyPlans[selectedRegion].zones.find((item) => item[0] === zone);
-      if (match) { renderAnatomy(selectedRegion, match[1]); return; }
+      const match = anatomyPlans[selectedRegion].zones.find((item) => item.label === zone);
+      if (match) { renderAnatomy(selectedRegion, match.view); return; }
     }
     visible.forEach((item) => item.classList.toggle("active", item.dataset.anatomyZone === zone));
   }
@@ -120,13 +100,13 @@
     if (!plan) {
       views.innerHTML = "";
       board.innerHTML = '<div class="anatomy-coming"><span>◎</span><strong>Planche régionale en préparation</strong><p>La sélection détaillée reste disponible ci-dessous pendant la validation anatomique de cette région.</p></div>';
-      $("[data-anatomy-help]").textContent = "Prototype interactif actuellement disponible pour le pied, la cheville et la jambe.";
+      $("[data-anatomy-help]").textContent = "Aucune planche approximative n’est affichée : cette région sera ouverte après validation anatomique de ses illustrations et de ses zones.";
       return;
     }
     const view = requestedView && plan.views[requestedView] ? requestedView : Object.keys(plan.views)[0];
-    views.innerHTML = Object.entries(plan.views).map(([key, label]) => `<button type="button" data-anatomy-view="${key}" class="${key === view ? "active" : ""}">${label}</button>`).join("");
-    board.innerHTML = anatomySvg(plan, view);
-    $("[data-anatomy-help]").textContent = "Touchez un repère numéroté ou son intitulé. Les deux sélections restent synchronisées.";
+    views.innerHTML = Object.entries(plan.views).map(([key, value]) => `<button type="button" data-anatomy-view="${key}" class="${key === view ? "active" : ""}">${escapeHtml(value.label)}</button>`).join("");
+    board.innerHTML = anatomyPlate(plan, view);
+    $("[data-anatomy-help]").textContent = "Sélectionnez directement le contour de la structure ou son nom. Les zones colorées n’apparaissent qu’au survol ou après sélection.";
     $$('[data-anatomy-view]').forEach((button) => button.addEventListener("click", () => renderAnatomy(region, button.dataset.anatomyView)));
     bindAnatomyZones();
     const checked = $('[name="zone"]:checked', $("[data-pain-form]"));

@@ -22,7 +22,7 @@ class AtlasHealthUiTests(unittest.TestCase):
             self.assertIn(label, self.navigation)
 
     def test_health_views_do_not_inherit_the_hub_fixed_grid(self):
-        self.assertIn("atlas-health.css?v=8", self.page)
+        self.assertIn("atlas-health.css?v=9", self.page)
         self.assertIn(".atlas-health-main{display:block;min-height:100vh}", self.styles)
         self.assertIn(".atlas-health-main>.view{padding:0;overflow:visible}", self.styles)
         self.assertIn(
@@ -52,20 +52,31 @@ class AtlasHealthUiTests(unittest.TestCase):
         self.assertIn("[data-anatomy-toggle]", self.styles)
         self.assertIn("display: none !important", self.styles)
 
-    def test_regional_anatomy_prototype_is_interactive_and_synchronised(self):
+    def test_regional_anatomy_is_professional_interactive_and_synchronised(self):
         self.assertIn('data-regional-anatomy', self.page)
         self.assertIn('data-anatomy-board', self.page)
         self.assertIn('clinical-region-map', self.page)
         self.assertNotIn('avatar-regions', self.page)
-        self.assertIn('anatomy-structure', self.script)
+        self.assertIn('medical-plate', self.script)
+        self.assertIn('anatomy-overlay', self.script)
         self.assertIn('const anatomyPlans = {', self.script)
-        for region in ("foot", "ankle", "leg"):
+        for region in ("foot", "ankle"):
             self.assertIn(f"    {region}: {{", self.script)
-        for view in ("Plantaire", "Dorsale", "Latérale", "Médiale", "Postérieure", "Antérieure"):
+        for view in ("Face et dessus du pied", "Profil · os et ligaments", "Repérage de surface"):
             self.assertIn(view, self.script)
         self.assertIn("selectAnatomyZone", self.script)
         self.assertIn("syncAnatomySelection", self.script)
-        self.assertIn(".anatomy-svg", self.styles)
+        self.assertIn(".medical-plate-visual", self.styles)
+        self.assertIn("Servier Medical Art", self.script)
+        self.assertNotIn("repère numéroté", self.script)
+
+    def test_servier_assets_and_attribution_are_bundled(self):
+        asset_root = APP_ROOT / "assets" / "anatomy" / "servier"
+        for filename in ("foot-ankle-anterior.png", "foot-ankle-lateral-deep.png"):
+            self.assertTrue((asset_root / filename).is_file())
+        attribution = (asset_root / "ATTRIBUTION.md").read_text(encoding="utf-8")
+        self.assertIn("CC BY 4.0", attribution)
+        self.assertIn("https://smart.servier.com/", attribution)
 
     def test_prevention_uses_personal_history_not_a_diagnostic(self):
         self.assertIn("votre propre historique", self.page)

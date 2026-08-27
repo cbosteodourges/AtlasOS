@@ -32,6 +32,8 @@ class PwaAssetsTests(unittest.TestCase):
             "manifest.webmanifest",
             "assets/atlas-logo-full.jpg",
             "assets/atlas-os-icon-avatar-master.png",
+            "assets/anatomy/servier/foot-ankle-anterior.png",
+            "assets/anatomy/servier/foot-ankle-lateral-deep.png",
             "css/atlas-responsive.css",
             "js/atlas-pwa.js",
         ):
@@ -74,10 +76,10 @@ class PwaAssetsTests(unittest.TestCase):
     def test_styles_and_scripts_are_network_first(self):
         worker = (APP_ROOT / "service-worker.js").read_text(encoding="utf-8")
         pwa = (APP_ROOT / "js" / "atlas-pwa.js").read_text(encoding="utf-8")
-        self.assertIn('CACHE_NAME = "atlas-shell-v3"', worker)
+        self.assertIn('CACHE_NAME = "atlas-shell-v4"', worker)
         self.assertIn('["style", "script"]', worker)
         self.assertIn('fetch(event.request, { cache: "no-store" })', worker)
-        self.assertIn('service-worker.js?v=3', pwa)
+        self.assertIn('service-worker.js?v=4', pwa)
 
     def test_mobile_global_navigation_keeps_four_labeled_destinations(self):
         navigation_css = (APP_ROOT / "css" / "atlas-global-nav.css").read_text(
