@@ -207,6 +207,32 @@ class AutomaticWorkoutConfirmationTests(unittest.TestCase):
             self.assertEqual(workouts[0].workout_type.value, "threshold_sv2")
             self.assertEqual(workouts[0].blocks[0].block_type.value, "work")
 
+    def test_stretching_optional_workout_is_loaded_as_mobility(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "optional.json"
+            source.write_text(json.dumps([{
+                "workout_id": "2026-08-27-optional-stretching",
+                "workout_date": "2026-08-27",
+                "workout_type": "stretching",
+                "title": "Étirements",
+                "objective": "Récupération",
+                "priority": "optional",
+                "sport": "mobility",
+                "blocks": [{
+                    "name": "Étirements doux",
+                    "block_type": "stretching",
+                    "duration_minutes": 15,
+                }],
+            }]), encoding="utf-8")
+
+            workouts = load_optional_workouts(
+                source,
+                TrainingProgramLoader(),
+            )
+
+            self.assertEqual(workouts[0].workout_type.value, "mobility")
+            self.assertEqual(workouts[0].blocks[0].block_type.value, "mobility")
+
     def test_detected_sv2_restores_exact_optional_workout_id(self):
         longitudinal = types.SimpleNamespace(
             activity_type="running",
