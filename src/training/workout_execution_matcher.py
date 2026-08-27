@@ -79,10 +79,14 @@ class AtlasWorkoutExecutionMatcher:
             activity.distance_km,
             planned_workout.planned_distance_km,
         )
+        expected_types = self._expected_execution_types(
+            planned_workout
+        )
         target_score = self._target_compliance(
             planned_workout.blocks,
             activity,
             analysis,
+            expected_types=expected_types,
         )
         planned_recovery_minutes = sum(
             (block.recovery_minutes or 0.0)
@@ -151,9 +155,6 @@ class AtlasWorkoutExecutionMatcher:
         planned_repetitions = sum(
             block.repetitions
             for block in repetition_blocks
-        )
-        expected_types = self._expected_execution_types(
-            planned_workout
         )
         executed_active_blocks = [
             block
@@ -272,9 +273,13 @@ class AtlasWorkoutExecutionMatcher:
             WorkoutType.RECOVERY_RUN.value: {"z1"},
             WorkoutType.ENDURANCE_Z2.value: {"z2"},
             WorkoutType.TEMPO_Z3.value: {"z3"},
-            WorkoutType.THRESHOLD_SV2.value: {"sv2"},
-            WorkoutType.VMA_SHORT.value: {"vma"},
-            WorkoutType.VMA_LONG.value: {"vma"},
+            # Une fraction contrôlée peut être classée dans la zone
+            # immédiatement inférieure lorsque l'allure est correcte mais
+            # que la FC monte progressivement. Le footing facile ajouté
+            # avant/après la série ne doit en revanche pas dégrader la note.
+            WorkoutType.THRESHOLD_SV2.value: {"z3", "sv2"},
+            WorkoutType.VMA_SHORT.value: {"sv2", "vma"},
+            WorkoutType.VMA_LONG.value: {"sv2", "vma"},
             WorkoutType.HILL_SPRINTS.value: {
                 "acceleration",
                 "sprint",
@@ -300,6 +305,8 @@ class AtlasWorkoutExecutionMatcher:
         planned_blocks: list[TrainingBlock],
         activity: LongitudinalActivity,
         analysis: DetailedSessionAnalysis,
+        *,
+        expected_types: set[str] | None = None,
     ) -> int:
         planned_active = [
             block
@@ -329,6 +336,10 @@ class AtlasWorkoutExecutionMatcher:
             for block in analysis.blocks
             if block.block_type
             not in {"recovery", "warm_up", "cool_down"}
+            and (
+                expected_types is None
+                or block.block_type in expected_types
+            )
         ]
         if not actual_blocks:
             return 50
