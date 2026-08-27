@@ -89,6 +89,9 @@ class TrainingHistoryFusionResult:
     acute_load_7d: float
     chronic_load_28d_weekly: float
     acute_chronic_load_ratio: Optional[float]
+    historical_load_context: dict[str, Any] = field(
+        default_factory=dict
+    )
 
     activities: list[FusedActivityResponse] = field(
         default_factory=list
@@ -113,6 +116,9 @@ class TrainingHistoryFusionResult:
             ),
             "acute_chronic_load_ratio": (
                 self.acute_chronic_load_ratio
+            ),
+            "historical_load_context": dict(
+                self.historical_load_context
             ),
             "activities": [
                 item.to_dict()
@@ -222,6 +228,12 @@ class TrainingHistoryFusionAnalyzer:
             if chronic_weekly > 0
             else None
         )
+        historical_context = self._historical_load_context(
+            fused,
+            analysis_date=analysis_date,
+            acute_load=acute_load,
+            recent_reference=chronic_weekly,
+        )
 
         activity_days = {
             item.activity_date
@@ -242,6 +254,9 @@ class TrainingHistoryFusionAnalyzer:
             chronic_weekly,
             load_ratio,
         )
+        historical_explanation = historical_context.get("explanation")
+        if historical_explanation:
+            explanations.append(str(historical_explanation))
         warnings = self._warnings(
             fused,
             coverage,
@@ -256,11 +271,114 @@ class TrainingHistoryFusionAnalyzer:
             acute_load_7d=acute_load,
             chronic_load_28d_weekly=chronic_weekly,
             acute_chronic_load_ratio=load_ratio,
+            historical_load_context=historical_context,
             activities=fused,
             sports=sports,
             explanations=explanations,
             warnings=warnings,
         )
+
+    @classmethod
+    def _historical_load_context(
+        cls,
+        activities: list[FusedActivityResponse],
+        *,
+        analysis_date: date,
+        acute_load: float,
+        recent_reference: float,
+    ) -> dict[str, Any]:
+        """Compare la semaine actuelle aux blocs de 7 jours antérieurs.
+
+        La référence 28 jours peut être artificiellement abaissée par des
+        vacances ou une phase de récupération. Cette seconde lecture replace
+        donc la charge dans l'historique personnel complet.
+        """
+        if not activities:
+            return {"status": "insufficient_history", "week_count": 0}
+
+        earliest = min(item.activity_date for item in activities)
+        loads: list[float] = []
+        offset = 7
+        while analysis_date - timedelta(days=offset) >= earliest:
+            end = analysis_date - timedelta(days=offset)
+            start = end - timedelta(days=6)
+            load = round(sum(
+                item.session_load_units
+                for item in activities
+                if start <= item.activity_date <= end
+            ), 1)
+            if load > 0:
+                loads.append(load)
+            offset += 7
+
+        if len(loads) < 4:
+            return {
+                "status": "insufficient_history",
+                "week_count": len(loads),
+                "explanation": (
+                    "Historique hebdomadaire encore insuffisant pour "
+                    "relativiser la référence récente sur 28 jours."
+                ),
+            }
+
+        ordered = sorted(loads)
+        p75 = cls._percentile(ordered, 0.75)
+        peak = ordered[-1]
+        comparable = [
+            value for value in ordered
+            if acute_load * 0.75 <= value <= acute_load * 1.25
+        ]
+        percentile = round(
+            sum(value <= acute_load for value in ordered)
+            / len(ordered) * 100
+        )
+        depressed_recent_reference = (
+            p75 > 0 and recent_reference < p75 * 0.80
+        )
+
+        if acute_load > peak * 1.10:
+            status = "above_personal_history"
+            explanation = (
+                "La charge actuelle dépasse nettement toutes les semaines "
+                "historiques disponibles ; la récupération à 24–48 h doit "
+                "être vérifiée avant une nouvelle intensité."
+            )
+        elif depressed_recent_reference and comparable:
+            status = "return_to_preparation_load"
+            explanation = (
+                "Le ratio 7/28 jours est élevé surtout parce que les quatre "
+                "semaines récentes étaient allégées. La charge actuelle est "
+                f"comparable à {len(comparable)} semaine(s) de préparation "
+                "antérieure(s) et doit être interprétée avec la récupération "
+                "réelle à 48 h."
+            )
+        else:
+            status = "within_personal_history"
+            explanation = (
+                "La charge actuelle reste dans l'enveloppe déjà observée "
+                "dans l'historique personnel."
+            )
+
+        return {
+            "status": status,
+            "week_count": len(ordered),
+            "weekly_load_p75": round(p75, 1),
+            "peak_weekly_load": round(peak, 1),
+            "current_load_percentile": percentile,
+            "comparable_week_count": len(comparable),
+            "recent_reference_depressed": depressed_recent_reference,
+            "explanation": explanation,
+        }
+
+    @staticmethod
+    def _percentile(values: list[float], fraction: float) -> float:
+        if not values:
+            return 0.0
+        position = (len(values) - 1) * fraction
+        lower = int(position)
+        upper = min(lower + 1, len(values) - 1)
+        weight = position - lower
+        return values[lower] * (1 - weight) + values[upper] * weight
 
     def _fuse_activity(
         self,
