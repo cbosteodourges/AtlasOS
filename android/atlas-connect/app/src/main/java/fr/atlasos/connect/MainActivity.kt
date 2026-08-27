@@ -34,6 +34,8 @@ class MainActivity : ComponentActivity() {
         HealthPermission.getReadPermission(RespiratoryRateRecord::class),
         HealthPermission.getReadPermission(BodyTemperatureRecord::class),
         HealthPermission.getReadPermission(BloodPressureRecord::class),
+        HealthPermission.getReadPermission(HydrationRecord::class),
+        HealthPermission.getReadPermission(NutritionRecord::class),
         HealthPermission.PERMISSION_READ_HEALTH_DATA_HISTORY,
         HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND,
     )

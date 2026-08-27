@@ -78,6 +78,20 @@ class HealthSync(private val context: Context) {
             .put("type", "blood_pressure").put("start_time", it.time)
             .put("systolic_mmhg", it.systolic.inMillimetersOfMercury)
             .put("diastolic_mmhg", it.diastolic.inMillimetersOfMercury)) }
+        client.records<HydrationRecord>(range).forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
+            .put("type", "hydration").put("start_time", it.startTime).put("end_time", it.endTime)
+            .put("volume_ml", it.volume.inLiters * 1000).put("source_device", it.metadata.dataOrigin.packageName)) }
+        client.records<NutritionRecord>(range).forEach { nutrition -> wellness.put(JSONObject()
+            .put("source_id", nutrition.metadata.id).put("type", "nutrition")
+            .put("start_time", nutrition.startTime).put("end_time", nutrition.endTime)
+            .putNullable("energy_kcal", nutrition.energy?.inKilocalories)
+            .putNullable("protein_g", nutrition.protein?.inGrams)
+            .putNullable("carbohydrate_g", nutrition.totalCarbohydrate?.inGrams)
+            .putNullable("fat_g", nutrition.totalFat?.inGrams)
+            .putNullable("fiber_g", nutrition.dietaryFiber?.inGrams)
+            .putNullable("sodium_mg", nutrition.sodium?.inGrams?.times(1000))
+            .put("meal_type", nutrition.mealType).put("name", nutrition.name)
+            .put("source_device", nutrition.metadata.dataOrigin.packageName)) }
         client.records<StepsRecord>(range).forEach { wellness.put(interval(it.metadata.id, "steps", it.startTime, it.endTime, it.count)) }
         client.records<FloorsClimbedRecord>(range).forEach { wellness.put(interval(it.metadata.id, "floors", it.startTime, it.endTime, it.floors)) }
         heartRates.forEach { record -> wellness.put(JSONObject().put("source_id", record.metadata.id).put("type", "heart_rate_series")

@@ -21,10 +21,12 @@ class PostSyncOrchestratorTests(unittest.TestCase):
             result = PostSyncOrchestrator(root).run("test")
             self.assertTrue(result["requires_user_validation"])
             self.assertTrue((root / "daily-sync-assessment.json").is_file())
+            self.assertTrue((root / "nutrition-hydration-summary.json").is_file())
             self.assertTrue((root / "training-program-sync-proposal.json").is_file())
             self.assertEqual(json.loads((root / "training-program.json").read_text()), program)
             proposal = json.loads((root / "training-program-sync-proposal.json").read_text())
             self.assertTrue(proposal["active_program_unchanged"])
+            self.assertIn("nutrition_hydration_context", proposal)
 
 
 if __name__ == "__main__":

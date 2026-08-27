@@ -11,6 +11,7 @@ from typing import Any
 from src.connectors.activity_ingestion import ActivityStore
 from src.physiology.atlas_recovery_index import AtlasRecoveryIndex
 from src.physiology.continuous_profile import ContinuousPhysiologyEstimator
+from src.physiology.nutrition_hydration import NutritionHydrationAnalyzer
 
 
 PHYSIOLOGY_KEYS = {"vo2_max", "vma_kmh", "vma_training_reference_kmh",
@@ -30,6 +31,7 @@ class PostSyncOrchestrator:
     def run(self, source: str) -> dict[str, Any]:
         activities = ActivityStore(self.private_dir / "activities-unified.json").load()
         wellness = self._read("health-connect-wellness.json", [])
+        manual_nutrition = self._read("nutrition-hydration-manual.json", [])
         recovery = AtlasRecoveryIndex().build(wellness, activities)
         self._write("atlas-recovery-index.json", recovery)
 
@@ -45,14 +47,25 @@ class PostSyncOrchestrator:
         self._write("physiology-longitudinal.json", longitudinal)
 
         latest = recovery.get("latest") or {}
+        weights = sorted((item for item in wellness if item.get("type") == "weight"),
+                         key=lambda item: str(item.get("start_time") or ""))
+        weight = weights[-1].get("value") if weights else None
+        exercise_minutes = sum(item.duration_seconds for item in activities
+                               if item.start_time[:10] == date.today().isoformat()) / 60
+        nutrition = NutritionHydrationAnalyzer().analyze(
+            [*wellness, *manual_nutrition], weight_kg=weight,
+            exercise_minutes_today=exercise_minutes,
+        )
+        self._write("nutrition-hydration-summary.json", nutrition)
         score = latest.get("atlas_recovery_index")
         action = self._action(score)
-        proposal = self._program_proposal(profile, action, score, estimate)
+        proposal = self._program_proposal(profile, action, score, estimate, nutrition)
         assessment = {
             "source": source,
             "synchronized_at": datetime.now(timezone.utc).isoformat(),
             "recovery": latest,
             "physiology": estimate,
+            "nutrition_hydration": nutrition,
             "program_action": action,
             "program_proposal_available": proposal is not None,
             "requires_user_validation": True,
@@ -75,7 +88,7 @@ class PostSyncOrchestrator:
                 "reason": "Récupération faible : endurance facile proposée à la place de l'intensité."}
 
     def _program_proposal(self, profile: dict[str, Any], action: dict[str, Any], score: Any,
-                          estimate: dict[str, Any]) -> dict[str, Any] | None:
+                          estimate: dict[str, Any], nutrition: dict[str, Any]) -> dict[str, Any] | None:
         program = self._read("training-program.json", None)
         if not isinstance(program, dict):
             return None
@@ -89,6 +102,7 @@ class PostSyncOrchestrator:
             "recovery_index": score,
             "daily_action": action,
             "physiology_update": estimate,
+            "nutrition_hydration_context": nutrition,
             "candidate_program": candidate,
         }
 

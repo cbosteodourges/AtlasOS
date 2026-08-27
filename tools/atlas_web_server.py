@@ -84,6 +84,7 @@ USER_OBJECTIVES_PATH = (
     ROOT / "atlas-data" / "private" / "atlas-objectives.json"
 )
 ACTIVITIES_PATH = ROOT / "atlas-data" / "private" / "activities-unified.json"
+NUTRITION_PATH = ROOT / "atlas-data" / "private" / "nutrition-hydration-manual.json"
 
 
 def strava_service():
@@ -181,6 +182,71 @@ def save_user_profile(profile, path=None):
     cleaned["updatedAt"] = datetime.now().astimezone().isoformat()
     _write_private_json(path or USER_PROFILE_PATH, cleaned)
     return cleaned
+
+
+def nutrition_feature_access():
+    """Pilote fondateur actif ; futurs utilisateurs sur activation explicite."""
+    entitlement = load_subscription_entitlement()
+    profile = load_user_profile()
+    enabled = entitlement["tier"] == "founder_admin" or bool(
+        (profile.get("features") or {}).get("nutrition_hydration")
+    )
+    return {
+        "enabled": enabled,
+        "pilot": entitlement["tier"] == "founder_admin",
+        "optional_for_new_users": True,
+        "commercial_status": "premium_candidate",
+    }
+
+
+def load_nutrition_hydration():
+    from src.physiology.nutrition_hydration import NutritionHydrationAnalyzer
+
+    private_dir = ROOT / "atlas-data" / "private"
+    wellness = _read_private_json(private_dir / "health-connect-wellness.json", [])
+    manual = _read_private_json(NUTRITION_PATH, [])
+    records = [*wellness, *manual]
+    weights = [item for item in wellness if isinstance(item, dict) and item.get("type") == "weight"]
+    weights.sort(key=lambda item: str(item.get("start_time") or ""))
+    weight = number(weights[-1].get("value"), 0) if weights else 0
+    activities = ActivityStore(ACTIVITIES_PATH).load()
+    today = date.today().isoformat()
+    exercise_minutes = sum(item.duration_seconds for item in activities if item.start_time[:10] == today) / 60
+    return {
+        "access": nutrition_feature_access(),
+        **NutritionHydrationAnalyzer().analyze(records, weight_kg=weight or None,
+                                                exercise_minutes_today=exercise_minutes),
+    }
+
+
+def record_nutrition_hydration(payload):
+    access = nutrition_feature_access()
+    if not access["enabled"]:
+        raise PermissionError("Module Nutrition & Hydratation non activé pour ce profil.")
+    kind = str(payload.get("type") or "").strip().lower()
+    if kind not in {"hydration", "nutrition"}:
+        raise ValueError("Type nutrition ou hydration obligatoire.")
+    limits = {"volume_ml": 5000, "energy_kcal": 5000, "protein_g": 500,
+              "carbohydrate_g": 1000, "fat_g": 500, "fiber_g": 150, "sodium_mg": 20000}
+    record = {"source_id": f"atlas-manual-{int(datetime.now().timestamp() * 1000)}",
+              "source": "atlas_manual", "type": kind,
+              "start_time": datetime.now().astimezone().isoformat(),
+              "name": str(payload.get("name") or "Saisie Atlas")[:100]}
+    for key, maximum in limits.items():
+        if payload.get(key) in (None, ""):
+            continue
+        value = number(payload.get(key), -1)
+        if value < 0 or value > maximum:
+            raise ValueError(f"Valeur {key} invalide.")
+        record[key] = value
+    if kind == "hydration" and record.get("volume_ml", 0) <= 0:
+        raise ValueError("Le volume bu doit être supérieur à zéro.")
+    if kind == "nutrition" and not any(key in record for key in limits if key != "volume_ml"):
+        raise ValueError("Renseignez au moins un apport nutritionnel.")
+    saved = _read_private_json(NUTRITION_PATH, [])
+    saved.append(record)
+    _write_private_json(NUTRITION_PATH, saved[-5000:])
+    return {"record": record, "summary": load_nutrition_hydration()}
 
 
 def _objective_from_program():
@@ -2570,6 +2636,10 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             })
             return
 
+        if parsed.path == "/api/atlas/nutrition-hydration":
+            self.send_json(200, {"ok": True, **load_nutrition_hydration()})
+            return
+
         if parsed.path == "/api/atlas-coach/workout-decisions":
             try:
                 self.send_json(
@@ -2728,6 +2798,7 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             "/api/atlas/strava/sync",
             "/api/atlas/health-connect/pair",
             "/api/atlas/health-connect/ingest",
+            "/api/atlas/nutrition-hydration",
         }
 
         if self.path not in allowed_routes:
@@ -2754,6 +2825,10 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
                     raise PermissionError("Jeton Santé Connect absent.")
                 result = health_connect_bridge().ingest(authorization[7:], payload)
                 self.send_json(200, {"ok": True, **result})
+                return
+
+            if self.path == "/api/atlas/nutrition-hydration":
+                self.send_json(200, {"ok": True, **record_nutrition_hydration(payload)})
                 return
 
             if self.path == "/api/atlas/strava/sync":

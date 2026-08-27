@@ -1,0 +1,35 @@
+import unittest
+from datetime import date
+
+from src.physiology.nutrition_hydration import NutritionHydrationAnalyzer
+
+
+class NutritionHydrationAnalyzerTests(unittest.TestCase):
+    def test_empty_day_is_unknown_not_a_deficit(self):
+        result = NutritionHydrationAnalyzer().analyze([], weight_kg=80, today=date(2026, 8, 27))
+        self.assertEqual(result["today"]["record_count"], 0)
+        self.assertIn("ne conclut pas à un déficit", result["recommendations"][0])
+        self.assertEqual(result["confidence"], 0)
+
+    def test_aggregates_health_connect_and_manual_records(self):
+        records = [
+            {"type": "hydration", "start_time": "2026-08-27T08:00:00+02:00",
+             "volume_ml": 500, "source_device": "health.app"},
+            {"type": "hydration", "start_time": "2026-08-27T10:00:00+02:00",
+             "volume_ml": 250, "source": "atlas_manual"},
+            {"type": "nutrition", "start_time": "2026-08-27T12:00:00+02:00",
+             "energy_kcal": 650, "protein_g": 35, "carbohydrate_g": 80,
+             "fat_g": 20, "source": "atlas_manual"},
+        ]
+        result = NutritionHydrationAnalyzer().analyze(
+            records, weight_kg=80, exercise_minutes_today=60, today=date(2026, 8, 27)
+        )
+        self.assertEqual(result["today"]["hydration_ml"], 750)
+        self.assertEqual(result["today"]["protein_g"], 35)
+        self.assertEqual(result["targets"]["hydration_ml"], 3300)
+        self.assertEqual(result["targets"]["protein_g"], 128)
+        self.assertEqual(result["confidence"], 60)
+
+
+if __name__ == "__main__":
+    unittest.main()
