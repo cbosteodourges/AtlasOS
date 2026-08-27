@@ -24,6 +24,8 @@ class ContinuousPhysiologyEstimator:
 
     def estimate(self, activities: Iterable[Any], current: dict[str, Any] | None = None) -> dict[str, Any]:
         current = current or {}
+        declared_maximum_hr = _number(current.get("maximum_heart_rate_bpm"))
+        usable_hr_ceiling = declared_maximum_hr or 220
         runs = [item for item in activities if str(getattr(item, "activity_type", "")).lower() in {"run", "running", "trail_running", "56"}]
         speeds = []
         threshold_speeds = []
@@ -45,7 +47,7 @@ class ContinuousPhysiologyEstimator:
             # Une allure moyenne d'endurance ne constitue pas une observation
             # de seuil. Atlas ne la retient que si la FC confirme un effort
             # soutenu, et ignore les FC > 170 tant qu'elles ne sont pas validées.
-            if average and duration >= 900 and heart_rate and 145 <= heart_rate <= 170:
+            if average and duration >= 900 and heart_rate and 145 <= heart_rate <= usable_hr_ceiling:
                 threshold_speeds.append(average * 3.6)
                 threshold_hr.append(heart_rate)
         evidence = len(runs) + len(speeds) * 2
@@ -70,7 +72,7 @@ class ContinuousPhysiologyEstimator:
         sv1 = round(_bounded(_number(sv1_current.get("speed_kmh")), observed_sv1, .15), 2)
         sv2 = round(_bounded(_number(sv2_current.get("speed_kmh")), observed_sv2, .15), 2)
         sv2_hr = round(_bounded(_number(sv2_current.get("heart_rate_bpm")), median(threshold_hr), 2)) if threshold_hr else sv2_current.get("heart_rate_bpm")
-        maximum_hr = _number(current.get("maximum_heart_rate_bpm"))
+        maximum_hr = declared_maximum_hr
         sv1_hr = sv1_current.get("heart_rate_bpm")
         if sv1_hr is None and maximum_hr:
             sv1_hr = round(maximum_hr * .81)
@@ -80,5 +82,5 @@ class ContinuousPhysiologyEstimator:
                 "sv1": {"speed_kmh": sv1, "heart_rate_bpm": sv1_hr, "status": "longitudinal_estimate"},
                 "sv2": {"speed_kmh": sv2, "heart_rate_bpm": sv2_hr, "status": "longitudinal_estimate"},
                 "observed": {"vma_kmh": round(observed_vma, 2), "sv2_speed_kmh": round(observed_sv2, 2)},
-                "maximum_heart_rate_bpm": min(maximum_hr or 170, 170),
-                "warning": "Estimation d’entraînement, non mesure médicale. Les valeurs de FC supérieures à 170 bpm sont conservées dans les données brutes mais exclues de ce recalibrage."}
+                "maximum_heart_rate_bpm": maximum_hr,
+                "warning": "Estimation d’entraînement, non mesure médicale. Les valeurs supérieures à la FC maximale déclarée sont conservées dans les données brutes mais exclues du recalibrage."}

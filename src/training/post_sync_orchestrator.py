@@ -13,14 +13,8 @@ from src.physiology.atlas_recovery_index import AtlasRecoveryIndex
 from src.physiology.continuous_profile import ContinuousPhysiologyEstimator
 
 
-DEFAULT_PHYSIOLOGY = {
-    "vo2_max": 51.0,
-    "vma_kmh": 14.0,
-    "vma_training_reference_kmh": 14.0,
-    "maximum_heart_rate_bpm": 170,
-    "sv1": {"speed_kmh": 10.6, "heart_rate_bpm": 138, "status": "personal_reference"},
-    "sv2": {"speed_kmh": 13.03, "heart_rate_bpm": 160, "status": "personal_reference"},
-}
+PHYSIOLOGY_KEYS = {"vo2_max", "vma_kmh", "vma_training_reference_kmh",
+                   "maximum_heart_rate_bpm", "sv1", "sv2"}
 
 
 class PostSyncOrchestrator:
@@ -42,7 +36,7 @@ class PostSyncOrchestrator:
         previous = self._current_physiology()
         estimate = ContinuousPhysiologyEstimator().estimate(activities, previous)
         profile = {**previous, **({key: value for key, value in estimate.items()
-                                  if key in DEFAULT_PHYSIOLOGY} if estimate.get("updated") else {})}
+                                  if key in PHYSIOLOGY_KEYS} if estimate.get("updated") else {})}
         longitudinal = self._read("physiology-longitudinal.json", {"current": previous, "history": []})
         history = list(longitudinal.get("history", []))
         history.append({"day": date.today().isoformat(), "source": source, **estimate})
@@ -101,10 +95,10 @@ class PostSyncOrchestrator:
     def _current_physiology(self) -> dict[str, Any]:
         saved = self._read("physiology-longitudinal.json", {}).get("current")
         if isinstance(saved, dict) and saved:
-            return {**DEFAULT_PHYSIOLOGY, **saved}
+            return saved
         program = self._read("training-program.json", {})
         snapshot = program.get("athlete_snapshot") if isinstance(program, dict) else None
-        return {**DEFAULT_PHYSIOLOGY, **(snapshot if isinstance(snapshot, dict) else {})}
+        return snapshot if isinstance(snapshot, dict) else {}
 
     def _read(self, name: str, default: Any) -> Any:
         path = self.private_dir / name
