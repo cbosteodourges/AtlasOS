@@ -19,8 +19,12 @@ class StravaOAuthService:
         self.private_dir = Path(private_dir)
         self.client_id = (client_id or os.environ.get("ATLAS_STRAVA_CLIENT_ID", "")).strip()
         self.client_secret = (client_secret or os.environ.get("ATLAS_STRAVA_CLIENT_SECRET", "")).strip()
+        atlas_port = os.environ.get("ATLAS_PORT", "8010").strip() or "8010"
+        default_redirect_uri = (
+            f"http://localhost:{atlas_port}/api/atlas/strava/callback"
+        )
         self.redirect_uri = (redirect_uri or os.environ.get(
-            "ATLAS_STRAVA_REDIRECT_URI", "http://localhost:8010/api/atlas/strava/callback"
+            "ATLAS_STRAVA_REDIRECT_URI", default_redirect_uri
         )).strip()
         self.token_path = self.private_dir / "strava-oauth.json"
         self.state_path = self.private_dir / "strava-oauth-state.json"

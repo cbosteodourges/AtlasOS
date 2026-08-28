@@ -12,6 +12,19 @@ class StravaOAuthTests(unittest.TestCase):
         return StravaOAuthService(directory, client_id="123", client_secret="secret",
             redirect_uri="http://localhost/callback")
 
+    def test_default_redirect_uri_uses_atlas_server_port(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.dict("os.environ", {
+                "ATLAS_PORT": "8011",
+                "ATLAS_STRAVA_CLIENT_ID": "123",
+                "ATLAS_STRAVA_CLIENT_SECRET": "secret",
+            }, clear=True):
+                service = StravaOAuthService(directory)
+        self.assertEqual(
+            service.redirect_uri,
+            "http://localhost:8011/api/atlas/strava/callback",
+        )
+
     def test_authorization_url_records_temporary_state(self):
         with tempfile.TemporaryDirectory() as directory:
             service = self.service(directory)
