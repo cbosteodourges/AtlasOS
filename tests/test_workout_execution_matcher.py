@@ -7,6 +7,7 @@ from src.performance import (
     DetailedSessionAnalysis,
     LongitudinalActivity,
     SessionBlock,
+    WorkoutExecutionSummary,
 )
 from src.training import (
     AdaptiveWorkout,
@@ -231,7 +232,6 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
         self.assertEqual(result.execution.planned_repetition_count, 3)
         self.assertEqual(result.execution.completed_repetition_count, 3)
 
-
     def test_easy_running_after_threshold_does_not_lower_target_score(self) -> None:
         planned = AdaptiveWorkout(
             workout_id="threshold-with-family-cooldown",
@@ -280,6 +280,76 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
 
         self.assertEqual(result.target_compliance_score, 100)
         self.assertEqual(result.execution.completed_repetition_count, 3)
+
+    def test_uses_structured_recovery_for_optional_repetition(self) -> None:
+        planned = AdaptiveWorkout(
+            workout_id="threshold-optional-fourth",
+            workout_date=date(2026, 8, 27),
+            workout_type=WorkoutType.THRESHOLD_SV2,
+            title="SV2 contrôlé · 3 à 4 × 1000 m",
+            objective="Travail contrôlé au seuil",
+            blocks=[TrainingBlock(
+                name="3 à 4 × 1000 m",
+                block_type=BlockType.WORK,
+                repetitions=3,
+                distance_meters=1000,
+                recovery_minutes=1.75,
+                target=IntensityTarget(
+                    zone=4,
+                    speed_min_kmh=12.4,
+                    speed_max_kmh=13.1,
+                ),
+            )],
+            planned_duration_minutes=50,
+        )
+        activity = LongitudinalActivity(
+            atlas_id="garmin-threshold-optional-fourth",
+            start_time=datetime(2026, 8, 27, 20, tzinfo=timezone.utc),
+            activity_type="running",
+            distance_km=8,
+            duration_minutes=52,
+            average_speed_kmh=9.2,
+            workout_steps=[{
+                "message_index": 0,
+                "duration_type": "distance",
+                "duration_distance": 1000,
+                "intensity": "active",
+            }],
+        )
+        analysis = DetailedSessionAnalysis(
+            activity_id=activity.atlas_id,
+            blocks=[
+                SessionBlock(1, "sv2", 0, 280, 280, 1000, average_speed_kmh=12.86),
+                SessionBlock(2, "recovery", 280, 385, 105, 220),
+                SessionBlock(3, "sv2", 385, 665, 280, 1000, average_speed_kmh=12.86),
+                SessionBlock(4, "recovery", 665, 770, 105, 220),
+                SessionBlock(5, "sv2", 770, 1050, 280, 1000, average_speed_kmh=12.86),
+                SessionBlock(6, "recovery", 1050, 1155, 105, 220),
+                SessionBlock(7, "sv2", 1155, 1435, 280, 1000, average_speed_kmh=12.86),
+                SessionBlock(8, "recovery", 1435, 1554, 119, 250),
+            ],
+            dominant_work_type="sv2",
+            session_type="threshold",
+            recovery_duration_seconds=434,
+            workout_execution=WorkoutExecutionSummary(
+                planned_repetition_count=4,
+                completed_repetition_count=4,
+                recovery_compliance_score=100,
+            ),
+        )
+
+        result = AtlasWorkoutExecutionMatcher().match(
+            planned, activity, analysis
+        )
+
+        self.assertEqual(
+            result.execution.recovery_compliance_score,
+            100,
+        )
+        self.assertGreaterEqual(
+            result.execution.execution_score,
+            90,
+        )
 
 
 if __name__ == "__main__":
