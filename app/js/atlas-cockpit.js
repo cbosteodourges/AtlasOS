@@ -21,6 +21,21 @@
     }
   };
 
+  const localDayKey = date => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayKey = localDayKey(new Date());
+  const todayLabel = new Date().toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long"
+  });
+  setText("[data-current-date]", todayLabel.toUpperCase());
+
   const formatDuration = minutes => {
     if (minutes === null || minutes === undefined || minutes === "") return null;
     if (!Number.isFinite(Number(minutes))) return null;
@@ -64,9 +79,11 @@
   const renderSyncInsights = payload => {
     const latest = payload?.recovery?.latest;
     if (latest) {
-      setText("[data-atlas-index]", latest.atlas_recovery_index);
-      setText("[data-recovery-label]", recoveryLabel(latest.atlas_recovery_index));
-      setText("[data-recovery-detail]", `${latest.atlas_recovery_index}/100 · confiance ${latest.confidence}/100`);
+      if (latest.day === todayKey) {
+        setText("[data-atlas-index]", latest.atlas_recovery_index);
+        setText("[data-recovery-label]", recoveryLabel(latest.atlas_recovery_index));
+        setText("[data-recovery-detail]", `${latest.atlas_recovery_index}/100 · confiance ${latest.confidence}/100`);
+      }
       setText("[data-index-summary]", latest.explanation);
       renderIndexComponents(latest.components);
     }
@@ -136,13 +153,32 @@
     const latest = payload.latest;
     if (!latest) return;
 
+    const isCurrentDay = latest.day === todayKey;
+    const latestDay = new Date(`${latest.day}T12:00:00`);
+    const latestDayLabel = latestDay.toLocaleDateString("fr-FR");
+
     setText("[data-atlas-index]", latest.atlas_index ?? "—");
-    setText("[data-recovery-label]", recoveryLabel(latest.atlas_index));
+    setText(
+      "[data-recovery-label]",
+      isCurrentDay ? recoveryLabel(latest.atlas_index) : "Dernier indice connu"
+    );
     setText(
       "[data-recovery-detail]",
-      latest.sleep_recovery_score != null
-        ? `Sommeil récupérateur ${latest.sleep_recovery_score}/100`
-        : "Indice Atlas du jour"
+      isCurrentDay
+        ? (latest.sleep_recovery_score != null
+          ? `Sommeil récupérateur ${latest.sleep_recovery_score}/100`
+          : "Indice Atlas du jour")
+        : `${latest.atlas_index ?? "—"}/100 · données du ${latestDayLabel}`
+    );
+    setText(
+      "[data-readiness-title]",
+      isCurrentDay ? "Vous êtes prêt à vous entraîner" : "Données nocturnes indisponibles"
+    );
+    setText(
+      "[data-readiness-summary]",
+      isCurrentDay
+        ? "Récupération élevée, sommeil satisfaisant et charge bien maîtrisée."
+        : `Montre non portée ou aucune nouvelle mesure reçue. Dernier bilan complet : ${latestDayLabel}.`
     );
 
     const duration = formatDuration(latest.sleep_duration_minutes);
@@ -153,7 +189,7 @@
     setText(
       "[data-sleep-detail]",
       latest.sleep_quality_score != null
-        ? `Qualité ${latest.sleep_quality_score} %`
+        ? `${isCurrentDay ? "Qualité" : "Dernière qualité mesurée"} ${latest.sleep_quality_score} %`
         : "Donnée Garmin la plus récente"
     );
 
@@ -404,7 +440,6 @@
 
     const sync = document.querySelector(".sync-state");
     if (sync) {
-      const latestDay = new Date(`${latest.day}T12:00:00`);
       const ageDays = Math.floor((Date.now() - latestDay.getTime()) / 86400000);
       const unavailable = payload.latest_unavailable;
       if (unavailable?.day) {
@@ -415,10 +450,10 @@
         sync.classList.add("is-stale");
       } else {
         sync.lastChild.textContent =
-          ageDays <= 1
+          isCurrentDay
             ? ` Données du ${latestDay.toLocaleDateString("fr-FR")}`
             : ` Dernières données : ${latestDay.toLocaleDateString("fr-FR")}`;
-        sync.classList.toggle("is-stale", ageDays > 1);
+        sync.classList.toggle("is-stale", !isCurrentDay || ageDays > 1);
       }
     }
   };
