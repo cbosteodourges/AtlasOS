@@ -626,52 +626,8 @@ class DetailedSessionAnalyzer:
                 "Origine non explicitement fournie par Garmin."
             ]
 
-        ordered_steps = sorted(
-            activity.workout_steps,
-            key=lambda step: int(
-                step.get("message_index", 0)
-            ),
-        )
-
-        def expand_steps(
-            start: int,
-            end: int,
-        ) -> List[dict]:
-            expanded = []
-
-            for position in range(start, end):
-                step = ordered_steps[position]
-                duration_type = str(
-                    step.get("duration_type", "")
-                )
-
-                if duration_type.startswith(
-                    "repeat_until"
-                ):
-                    repeat_count = max(
-                        1,
-                        int(step.get("repeat_steps", 1)),
-                    )
-                    repeat_start = max(
-                        start,
-                        int(step.get("duration_step", 0)),
-                    )
-                    segment = expand_steps(
-                        repeat_start,
-                        position,
-                    )
-
-                    for _ in range(repeat_count - 1):
-                        expanded.extend(segment)
-                    continue
-
-                expanded.append(step)
-
-            return expanded
-
-        expanded_steps = expand_steps(
-            0,
-            len(ordered_steps),
+        expanded_steps = cls._expanded_workout_steps(
+            activity.workout_steps
         )
         tolerance = 5
         block_cursor = 0
@@ -1060,43 +1016,126 @@ class DetailedSessionAnalyzer:
         cls,
         activity: LongitudinalActivity,
     ) -> List[dict]:
-        """Neutralise les tours distance dans une séance structurée.
+        """Aligne les fragments Garmin sur les étapes structurées.
 
         Garmin peut fermer un tour kilométrique au milieu d'une étape
-        chronométrée. Ce tour et la fin de l'étape sont alors séquentiels :
-        Atlas les fusionne jusqu'au prochain marqueur workout_step, manuel
-        ou de fin de séance. Sur une sortie libre, les tours restent intacts.
+        chronométrée. Inversement, un tour de travail peut se terminer juste
+        avant la récupération. Atlas regroupe donc les fragments jusqu'à la
+        durée ou la distance prévue de l'étape, plutôt que de supposer que le
+        déclencheur suivant appartient encore au même bloc.
         """
         laps = list(activity.laps or [])
         if not laps or not activity.workout_steps:
             return laps
 
-        boundaries = {
-            "manual",
-            "time",
-            "workout_step",
-            "session_end",
-        }
+        steps = cls._expanded_workout_steps(
+            activity.workout_steps
+        )
+        if not steps:
+            return laps
+
         groups: List[List[dict]] = []
-        pending: List[dict] = []
+        lap_cursor = 0
 
-        for lap in laps:
-            pending.append(lap)
-            trigger = str(
-                lap.get("lap_trigger", "")
-            ).strip().lower()
-            if trigger in boundaries:
-                groups.append(pending)
-                pending = []
+        for step_index, step in enumerate(steps):
+            group: List[dict] = []
+            duration_total = 0.0
+            distance_total = 0.0
+            duration_target = cls._number(
+                step.get("duration_time")
+            )
+            distance_target = cls._number(
+                step.get("duration_distance")
+            )
 
-        if pending:
-            groups.append(pending)
+            while lap_cursor < len(laps):
+                lap = laps[lap_cursor]
+                group.append(lap)
+                lap_cursor += 1
+                duration_total += cls._number(
+                    lap.get(
+                        "total_timer_time",
+                        lap.get("total_elapsed_time"),
+                    )
+                ) or 0.0
+                distance_total += cls._number(
+                    lap.get("total_distance")
+                ) or 0.0
+
+                if duration_target is not None:
+                    if duration_total >= duration_target - 5:
+                        break
+                elif distance_target is not None:
+                    if distance_total >= distance_target * 0.90:
+                        break
+                else:
+                    trigger = str(
+                        lap.get("lap_trigger", "")
+                    ).strip().lower()
+                    if trigger in {
+                        "manual",
+                        "time",
+                        "workout_step",
+                        "session_end",
+                    }:
+                        break
+
+            if group:
+                groups.append(group)
+
+            if lap_cursor >= len(laps):
+                break
+
+        if lap_cursor < len(laps):
+            groups.extend(
+                [[lap] for lap in laps[lap_cursor:]]
+            )
 
         return [
             cls._merge_structured_laps(group)
             for group in groups
             if group
         ]
+
+    @classmethod
+    def _expanded_workout_steps(
+        cls,
+        workout_steps: List[dict],
+    ) -> List[dict]:
+        """Déplie les répétitions FIT dans leur ordre d'exécution."""
+        ordered_steps = sorted(
+            workout_steps,
+            key=lambda step: int(
+                step.get("message_index", 0)
+            ),
+        )
+
+        def expand(start: int, end: int) -> List[dict]:
+            expanded: List[dict] = []
+
+            for position in range(start, end):
+                step = ordered_steps[position]
+                duration_type = str(
+                    step.get("duration_type", "")
+                )
+                if duration_type.startswith("repeat_until"):
+                    repeat_count = max(
+                        1,
+                        int(step.get("repeat_steps", 1)),
+                    )
+                    repeat_start = max(
+                        start,
+                        int(step.get("duration_step", 0)),
+                    )
+                    segment = expand(repeat_start, position)
+                    for _ in range(repeat_count - 1):
+                        expanded.extend(segment)
+                    continue
+                expanded.append(step)
+
+            return expanded
+
+        return expand(0, len(ordered_steps))
 
     @classmethod
     def _merge_structured_laps(
