@@ -904,6 +904,124 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
             )
         )
 
+    def test_keeps_distance_repetitions_separate_from_recoveries(
+        self,
+    ) -> None:
+        workout_steps = [
+            {
+                "message_index": 0,
+                "duration_type": "time",
+                "duration_time": 900,
+                "intensity": "warmup",
+            },
+            {
+                "message_index": 1,
+                "duration_type": "distance",
+                "duration_distance": 1000,
+                "target_type": "speed",
+                "custom_target_speed_low": 3.4,
+                "custom_target_speed_high": 3.8,
+                "intensity": "active",
+            },
+            {
+                "message_index": 2,
+                "duration_type": "time",
+                "duration_time": 105,
+                "intensity": "recovery",
+            },
+            {
+                "message_index": 3,
+                "duration_type": "repeat_until_steps_cmplt",
+                "duration_step": 1,
+                "repeat_steps": 4,
+            },
+            {
+                "message_index": 4,
+                "duration_type": "time",
+                "duration_time": 450,
+                "intensity": "cooldown",
+            },
+        ]
+        laps = [
+            {
+                "lap_trigger": "distance",
+                "total_timer_time": 450,
+                "total_distance": 1000,
+            },
+            {
+                "lap_trigger": "workout_step",
+                "total_timer_time": 450,
+                "total_distance": 997,
+            },
+        ]
+        for _ in range(4):
+            laps.extend([
+                {
+                    "lap_trigger": "distance",
+                    "total_timer_time": 55,
+                    "total_distance": 200,
+                },
+                {
+                    "lap_trigger": "workout_step",
+                    "total_timer_time": 225,
+                    "total_distance": 800,
+                },
+                {
+                    "lap_trigger": "workout_step",
+                    "total_timer_time": 105,
+                    "total_distance": 200,
+                },
+            ])
+        laps.append({
+            "lap_trigger": "session_end",
+            "total_timer_time": 450,
+            "total_distance": 900,
+        })
+        activity = LongitudinalActivity(
+            atlas_id="garmin:four-by-1000",
+            start_time=self.start,
+            activity_type="running",
+            distance_km=7.697,
+            duration_minutes=2890 / 60,
+            samples=[
+                self._sample(0, 2.2, 0, 115),
+                self._sample(2890, 2.2, 7697, 145),
+            ],
+            laps=laps,
+            workout=[{
+                "wkt_name": "4 x 1000 m",
+                "capabilities": "tcx",
+                "9": 1,
+            }],
+            workout_steps=workout_steps,
+            data_quality_score=95,
+        )
+
+        analysis_laps = self.analyzer._analysis_laps(activity)
+        self.assertEqual(len(analysis_laps), 10)
+        self.assertEqual(
+            [round(lap["total_distance"]) for lap in analysis_laps[1:9:2]],
+            [1000, 1000, 1000, 1000],
+        )
+        self.assertEqual(
+            [round(lap["total_timer_time"]) for lap in analysis_laps[2:9:2]],
+            [105, 105, 105, 105],
+        )
+
+        result = self.analyzer.analyze(activity, self.profile)
+        self.assertEqual(
+            result.workout_execution.completed_repetition_count,
+            4,
+        )
+        self.assertGreaterEqual(
+            result.workout_execution.recovery_compliance_score,
+            95,
+        )
+        self.assertGreaterEqual(
+            result.workout_execution.execution_score,
+            90,
+        )
+
     def test_detects_work_duration_inside_composite_manual_lap(
         self,
     ) -> None:
