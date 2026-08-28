@@ -189,7 +189,9 @@
     setText(
       "[data-sleep-detail]",
       latest.sleep_quality_score != null
-        ? `${isCurrentDay ? "Qualité" : "Dernière qualité mesurée"} ${latest.sleep_quality_score} %`
+        ? (isCurrentDay
+          ? `Qualité ${latest.sleep_quality_score} %`
+          : `Dernière qualité mesurée ${latest.sleep_quality_score} % · ${latestDayLabel}`)
         : "Donnée Garmin la plus récente"
     );
 
@@ -202,7 +204,9 @@
     setText(
       "[data-hrv-detail]",
       latest.hrv_weekly_average_ms != null
-        ? `Moyenne 7 j : ${Math.round(latest.hrv_weekly_average_ms)} ms`
+        ? (isCurrentDay
+          ? `Moyenne 7 j : ${Math.round(latest.hrv_weekly_average_ms)} ms`
+          : `Mesure du ${latestDayLabel} · moyenne 7 j : ${Math.round(latest.hrv_weekly_average_ms)} ms`)
         : (latest.hrv_status || "Référence en construction")
     );
 
@@ -210,7 +214,7 @@
     setText(
       "[data-load-detail]",
       latest.training_load != null
-        ? `Charge Garmin : ${Math.round(latest.training_load)}`
+        ? `Charge Garmin : ${Math.round(latest.training_load)}${isCurrentDay ? "" : ` · ${latestDayLabel}`}`
         : "Aucune activité chargée ce jour"
     );
 
@@ -228,7 +232,8 @@
           day: "numeric",
           month: "long"
         });
-        setText("[data-next-session-date]", `PROCHAINE SÉANCE · ${label.toUpperCase()}`);
+        const sessionPrefix = workout.date === todayKey ? "SÉANCE DU JOUR" : "PROCHAINE SÉANCE";
+        setText("[data-next-session-date]", `${sessionPrefix} · ${label.toUpperCase()}`);
         setText("[data-next-session-title]", workout.title);
         const duration = workout.duration_minutes
           ? `${Math.round(workout.duration_minutes)} min`
