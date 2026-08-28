@@ -95,10 +95,23 @@ class AtlasWorkoutExecutionMatcher:
         )
         recovery_score = None
         if planned_recovery_minutes > 0:
-            recovery_score = self._ratio_score(
-                analysis.recovery_duration_seconds / 60.0,
-                planned_recovery_minutes,
+            structured_recovery_score = (
+                analysis.workout_execution.recovery_compliance_score
+                if activity.workout_steps
+                and analysis.workout_execution.planned_repetition_count > 0
+                else None
             )
+            if structured_recovery_score is not None:
+                # Le FIT connaît les limites exactes de chaque récupération,
+                # y compris après une répétition facultative. Sa comparaison
+                # étape par étape est plus juste qu'un ratio avec le volume
+                # minimal prévu dans le calendrier Atlas.
+                recovery_score = structured_recovery_score
+            else:
+                recovery_score = self._ratio_score(
+                    analysis.recovery_duration_seconds / 60.0,
+                    planned_recovery_minutes,
+                )
 
         matching_scores = [
             (date_score, 50),
