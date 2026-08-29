@@ -870,19 +870,34 @@ def load_physiology_history():
     except (OSError, json.JSONDecodeError):
         return []
 
-    fields = (
-        "vo2_max", "vma_kmh", "sv1_speed_kmh", "sv2_speed_kmh",
-        "maximum_heart_rate_bpm",
-    )
+    ranges = {
+        "vo2_max": (20, 90),
+        "vma_kmh": (6, 30),
+        "sv1_speed_kmh": (5, 24),
+        "sv2_speed_kmh": (6, 28),
+        "maximum_heart_rate_bpm": (100, 230),
+    }
     by_day = {}
     for raw in payload.get("history", []):
+        # Les anciennes lignes contenaient des sorties intermédiaires de
+        # l'estimateur. Elles ne constituent pas des mesures longitudinales.
+        if raw.get("schema") != "validated_profile_v1":
+            continue
         day = str(raw.get("day") or "")[:10]
         if not day:
             continue
-        current = {key: _wellness_number(raw.get(key)) for key in fields}
+        current = {}
+        for key, (minimum, maximum) in ranges.items():
+            value = _wellness_number(raw.get(key))
+            current[key] = value if value is not None and minimum <= value <= maximum else None
         if not any(value is not None for value in current.values()):
             continue
-        by_day[day] = {"day": day, "source": raw.get("source"), **current}
+        by_day[day] = {
+            "day": day,
+            "source": raw.get("source"),
+            "confidence": _wellness_number(raw.get("estimator_confidence")),
+            **current,
+        }
     return [by_day[day] for day in sorted(by_day)]
 
 
