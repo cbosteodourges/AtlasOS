@@ -374,6 +374,86 @@
           ? `${Math.round(physiology.maximum_heart_rate_bpm)} bpm`
           : "Non disponible"
       );
+      const physiologyHistory = (analysis.physiology_history || []).filter(item => item?.day);
+      const chartRoot = document.querySelector("[data-physiology-chart]");
+      const chartSvg = chartRoot?.querySelector("svg");
+      const chartMessage = document.querySelector("[data-physiology-chart-message]");
+      const chartSummary = document.querySelector("[data-physiology-chart-summary]");
+      let selectedPhysiologyMetric = "vo2_max";
+      let selectedPhysiologyPeriod = 90;
+      const metricMeta = {
+        vo2_max: ["VO₂max", "ml/kg/min"],
+        vma_kmh: ["VMA", "km/h"],
+        sv1_speed_kmh: ["SV1", "km/h"],
+        sv2_speed_kmh: ["SV2", "km/h"],
+        maximum_heart_rate_bpm: ["FC maximale", "bpm"],
+      };
+      const renderPhysiologyChart = () => {
+        if (!chartSvg) return;
+        const now = new Date();
+        const cutoff = selectedPhysiologyPeriod
+          ? new Date(now.getTime() - selectedPhysiologyPeriod * 86400000)
+          : null;
+        const points = physiologyHistory
+          .filter(item => !cutoff || new Date(item.day) >= cutoff)
+          .map(item => ({ day: item.day, value: Number(item[selectedPhysiologyMetric]) }))
+          .filter(item => Number.isFinite(item.value))
+          .sort((a, b) => String(a.day).localeCompare(String(b.day)));
+        chartSvg.replaceChildren();
+        if (points.length < 2) {
+          chartRoot?.classList.add("is-empty");
+          if (chartMessage) chartMessage.textContent = points.length
+            ? "Une référence existe. Une deuxième mesure distincte fera apparaître la courbe."
+            : "Aucune mesure disponible sur cette période.";
+          if (chartSummary) chartSummary.textContent = "Historique physiologique en construction";
+          return;
+        }
+        chartRoot?.classList.remove("is-empty");
+        const values = points.map(point => point.value);
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const spread = Math.max(max - min, Math.abs(max || 1) * 0.04);
+        const coords = points.map((point, index) => {
+          const x = 42 + index * (816 / Math.max(1, points.length - 1));
+          const y = 190 - ((point.value - (min - spread * 0.25)) / (spread * 1.5)) * 145;
+          return { ...point, x, y };
+        });
+        const ns = "http://www.w3.org/2000/svg";
+        [55, 105, 155, 205].forEach(y => {
+          const line = document.createElementNS(ns, "line");
+          line.setAttribute("x1", "42"); line.setAttribute("x2", "858");
+          line.setAttribute("y1", String(y)); line.setAttribute("y2", String(y));
+          line.setAttribute("class", "chart-grid"); chartSvg.appendChild(line);
+        });
+        const area = document.createElementNS(ns, "path");
+        area.setAttribute("d", `M ${coords[0].x} 205 L ${coords.map(p => `${p.x} ${p.y}`).join(" L ")} L ${coords.at(-1).x} 205 Z`);
+        area.setAttribute("class", "chart-area"); chartSvg.appendChild(area);
+        const path = document.createElementNS(ns, "path");
+        path.setAttribute("d", `M ${coords.map(p => `${p.x} ${p.y}`).join(" L ")}`);
+        path.setAttribute("class", "chart-line"); chartSvg.appendChild(path);
+        coords.forEach(point => {
+          const circle = document.createElementNS(ns, "circle");
+          circle.setAttribute("cx", String(point.x)); circle.setAttribute("cy", String(point.y));
+          circle.setAttribute("r", "5"); circle.setAttribute("class", "chart-point");
+          chartSvg.appendChild(circle);
+        });
+        const delta = points.at(-1).value - points[0].value;
+        const [label, unit] = metricMeta[selectedPhysiologyMetric];
+        if (chartSummary) chartSummary.textContent = `${label} : ${points.at(-1).value.toLocaleString("fr-FR")} ${unit} · ${delta >= 0 ? "+" : ""}${delta.toFixed(1).replace(".", ",")} sur la période`;
+        if (chartMessage) chartMessage.textContent = "";
+      };
+      document.querySelectorAll("[data-physiology-metric]").forEach(button => button.addEventListener("click", () => {
+        document.querySelectorAll("[data-physiology-metric]").forEach(item => item.classList.toggle("is-active", item === button));
+        selectedPhysiologyMetric = button.dataset.physiologyMetric;
+        renderPhysiologyChart();
+      }));
+      document.querySelectorAll("[data-physiology-period]").forEach(button => button.addEventListener("click", () => {
+        document.querySelectorAll("[data-physiology-period]").forEach(item => item.classList.toggle("is-active", item === button));
+        selectedPhysiologyPeriod = Number(button.dataset.physiologyPeriod);
+        renderPhysiologyChart();
+      }));
+      renderPhysiologyChart();
+
       const fitCount = analysis.longitudinal_report?.activity_count || 0;
       const runningFitCount =
         analysis.longitudinal_report?.running_activity_count || 0;
@@ -437,6 +517,9 @@
         conclusionsRoot.replaceChildren();
         (longitudinal?.conclusions || []).forEach(conclusion => {
           const article = document.createElement("article");
+          const statement = String(conclusion.conclusion || "").toLowerCase();
+          article.dataset.tone = /retrait|défavor|surveill|variable|risque/.test(statement) ? "vigilance"
+            : /stable|progress|favorable|régulier/.test(statement) ? "positive" : "neutral";
           article.innerHTML = `
             <div><span>${conclusion.topic}</span><b>${conclusion.confidence}/100 de confiance</b></div>
             <strong>${conclusion.conclusion}</strong>
