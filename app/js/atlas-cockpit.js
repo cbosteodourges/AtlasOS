@@ -397,7 +397,7 @@
         const points = physiologyHistory
           .filter(item => !cutoff || new Date(item.day) >= cutoff)
           .map(item => ({ day: item.day, value: Number(item[selectedPhysiologyMetric]) }))
-          .filter(item => Number.isFinite(item.value))
+          .filter(item => Number.isFinite(item.value) && item.value > 0)
           .sort((a, b) => String(a.day).localeCompare(String(b.day)));
         chartSvg.replaceChildren();
         if (points.length < 2) {
@@ -439,7 +439,10 @@
         });
         const delta = points.at(-1).value - points[0].value;
         const [label, unit] = metricMeta[selectedPhysiologyMetric];
-        if (chartSummary) chartSummary.textContent = `${label} : ${points.at(-1).value.toLocaleString("fr-FR")} ${unit} · ${delta >= 0 ? "+" : ""}${delta.toFixed(1).replace(".", ",")} sur la période`;
+        const deltaLabel = Math.abs(delta) < 0.05
+          ? "stable sur la période"
+          : `${delta >= 0 ? "+" : ""}${delta.toFixed(1).replace(".", ",")} sur la période`;
+        if (chartSummary) chartSummary.textContent = `${label} : ${points.at(-1).value.toLocaleString("fr-FR")} ${unit} · ${deltaLabel}`;
         if (chartMessage) chartMessage.textContent = "";
       };
       document.querySelectorAll("[data-physiology-metric]").forEach(button => button.addEventListener("click", () => {
