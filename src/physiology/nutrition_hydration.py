@@ -18,7 +18,11 @@ class NutritionHydrationAnalyzer:
     """Agrège les mesures réelles sans interpréter une absence comme un déficit."""
 
     def analyze(self, records: Iterable[dict[str, Any]], *, weight_kg: float | None = None,
-                exercise_minutes_today: float = 0, today: date | None = None) -> dict[str, Any]:
+                exercise_minutes_today: float = 0, height_cm: float | None = None,
+                age_years: int | None = None, biological_sex: str | None = None,
+                activity_energy_kcal: float = 0, activity_count: int = 0,
+                activity_calorie_count: int = 0,
+                today: date | None = None) -> dict[str, Any]:
         current_day = today or date.today()
         days: dict[str, dict[str, Any]] = defaultdict(lambda: {
             "hydration_ml": 0.0, "energy_kcal": 0.0, "protein_g": 0.0,
@@ -58,6 +62,26 @@ class NutritionHydrationAnalyzer:
                           "sodium_mg": 0, "record_count": 0, "sources": []}
 
         weight = _number(weight_kg)
+        height = _number(height_cm)
+        age = _number(age_years)
+        sex = str(biological_sex or "").strip().lower()
+        basal_energy = None
+        if weight and height and age and sex:
+            sex_adjustment = 5 if sex in {"male", "m", "homme", "masculin"} else -161
+            basal_energy = round(10 * weight + 6.25 * height - 5 * age + sex_adjustment)
+        sport_energy = round(max(0, _number(activity_energy_kcal) or 0))
+        known_total = basal_energy + sport_energy if basal_energy is not None else (
+            sport_energy if activity_calorie_count else None
+        )
+        energy_expenditure = {
+            "basal_kcal": basal_energy,
+            "sport_kcal": sport_energy,
+            "known_total_kcal": known_total,
+            "activity_count": max(0, int(activity_count or 0)),
+            "activity_calorie_count": max(0, int(activity_calorie_count or 0)),
+            "sport_coverage_complete": bool(activity_count) and activity_count == activity_calorie_count,
+            "scope": "Métabolisme basal + activités sportives importées ; activité quotidienne et digestion non incluses.",
+        }
         hydration_target = round(weight * 35 + max(0, exercise_minutes_today) / 60 * 500) if weight else None
         protein_target = round(weight * 1.6) if weight else None
         carbohydrate_target = round(weight * (4 if exercise_minutes_today >= 60 else 3)) if weight else None
@@ -75,6 +99,15 @@ class NutritionHydrationAnalyzer:
             "targets": {"hydration_ml": hydration_target, "protein_g": protein_target,
                         "carbohydrate_g": carbohydrate_target},
             "progress": {"hydration_percent": hydration_progress},
+            "energy_expenditure": energy_expenditure,
+            "education": [
+                {"title": "Récupération", "tone": "positive",
+                 "text": "Après l’effort, glucides, protéines, lipides et hydratation contribuent ensemble à restaurer les réserves et soutenir l’adaptation."},
+                {"title": "Fibres et course", "tone": "watch",
+                 "text": "Les fibres restent utiles au quotidien, mais peuvent être réduites avant une course si vous êtes sensible sur le plan digestif."},
+                {"title": "Magnésium, fer et minéraux", "tone": "neutral",
+                 "text": "Atlas privilégie les sources alimentaires variées. Une supplémentation ou une suspicion de carence doit être individualisée et, pour le fer, guidée par un bilan professionnel."},
+            ],
             "history": history[-90:],
             "recommendations": recommendations,
             "confidence": min(100, today_item["record_count"] * 20),
