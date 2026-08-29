@@ -32,7 +32,12 @@ class PostSyncOrchestrator:
         activities = ActivityStore(self.private_dir / "activities-unified.json").load()
         wellness = self._read("health-connect-wellness.json", [])
         manual_nutrition = self._read("nutrition-hydration-manual.json", [])
-        recovery = AtlasRecoveryIndex().build(wellness, activities)
+        executions = self._read("atlas-coach-executions.json", [])
+        recovery = AtlasRecoveryIndex().build(
+            wellness,
+            activities,
+            outcomes=executions,
+        )
         self._write("atlas-recovery-index.json", recovery)
 
         previous = self._current_physiology()

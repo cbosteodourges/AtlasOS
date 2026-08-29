@@ -38,7 +38,12 @@ def _baseline(values: list[float], fallback: float | None = None) -> float | Non
 class AtlasRecoveryIndex:
     """Construit un score transparent sans fabriquer de VFC absente."""
 
-    def build(self, wellness: Iterable[dict[str, Any]], activities: Iterable[Any]) -> dict[str, Any]:
+    def build(
+        self,
+        wellness: Iterable[dict[str, Any]],
+        activities: Iterable[Any],
+        outcomes: Iterable[dict[str, Any]] = (),
+    ) -> dict[str, Any]:
         records = [item for item in wellness if isinstance(item, dict)]
         sleeps = [item for item in records if item.get("type") == "sleep"]
         resting = [item for item in records if item.get("type") == "resting_heart_rate"]
@@ -48,6 +53,23 @@ class AtlasRecoveryIndex:
         resting_values: list[float] = []
         hrv_values: list[float] = []
         sleep_duration_values: list[float] = []
+        successful_sleep_values: list[float] = []
+        night_hr_values: list[float] = []
+        successful_night_hr_values: list[float] = []
+        outcome_by_day: dict[str, float] = {}
+        for outcome in outcomes:
+            if not isinstance(outcome, dict):
+                continue
+            stamp = _dt(outcome.get("start_time"))
+            match = outcome.get("atlas_workout_match") or {}
+            execution = match.get("execution") or {}
+            execution_score = _number(
+                execution.get("execution_score")
+                or match.get("execution_score")
+            )
+            if stamp and execution_score is not None:
+                outcome_by_day[stamp.date().isoformat()] = execution_score
+
         daily_load: dict[str, float] = defaultdict(float)
         for activity in activities:
             stamp = _dt(getattr(activity, "start_time", None))
@@ -85,7 +107,13 @@ class AtlasRecoveryIndex:
             rest_base = _baseline(resting_values, resting_value)
             hrv_base = _baseline(hrv_values, hrv_value)
             sleep_hours = duration / 3600
-            sleep_target = _baseline(sleep_duration_values, 8.0) or 8.0
+            usual_sleep_target = _baseline(sleep_duration_values, 8.0) or 8.0
+            performance_sleep_target = _baseline(successful_sleep_values)
+            sleep_target = (
+                performance_sleep_target
+                if performance_sleep_target is not None
+                else usual_sleep_target
+            )
             sleep_target = max(7.5, min(9.0, sleep_target))
             components = [{"key": "sleep_duration", "label": "Durée du sommeil",
                            "score": _score_sleep_duration(sleep_hours, sleep_target),
@@ -107,11 +135,27 @@ class AtlasRecoveryIndex:
                 components.append({"key": "resting_hr", "label": "Fréquence cardiaque au repos",
                                    "score": max(0, min(100, 82 - difference * 7)), "weight": 20,
                                    "value": round(resting_value), "baseline": round(rest_base or resting_value, 1), "unit": "bpm"})
-            if sleep_hr:
-                nocturnal = mean(sleep_hr)
-                components.append({"key": "night_hr", "label": "Fréquence cardiaque nocturne",
-                                   "score": max(20, min(100, 105 - nocturnal)), "weight": 15,
-                                   "value": round(nocturnal, 1), "unit": "bpm"})
+            nocturnal = mean(sleep_hr) if sleep_hr else None
+            night_hr_target = None
+            if nocturnal is not None:
+                usual_night_hr = _baseline(night_hr_values, nocturnal) or nocturnal
+                performance_night_hr = _baseline(successful_night_hr_values)
+                night_hr_target = (
+                    performance_night_hr
+                    if performance_night_hr is not None
+                    else usual_night_hr
+                )
+                difference = nocturnal - night_hr_target
+                components.append({
+                    "key": "night_hr",
+                    "label": "Fréquence cardiaque nocturne",
+                    "score": max(20, min(100, 82 - difference * 7)),
+                    "weight": 15,
+                    "value": round(nocturnal, 1),
+                    "personal_target": round(night_hr_target, 1),
+                    "difference_bpm": round(difference, 1),
+                    "unit": "bpm",
+                })
             if hrv_value is not None:
                 ratio = hrv_value / max(hrv_base or hrv_value, 1)
                 components.append({"key": "hrv", "label": "VFC RMSSD mesurée",
@@ -134,11 +178,58 @@ class AtlasRecoveryIndex:
                 + min(20, len(sleep_duration_values))
                 + min(10, len(resting_values)),
             ))
-            by_day[day] = {"day": day, "atlas_recovery_index": score,
-                           "atlas_index": score, "confidence": confidence,
-                           "components": components, "hrv_used": hrv_value is not None,
-                           "explanation": "Score fondé uniquement sur les mesures disponibles ; les poids sont redistribués quand la VFC manque."}
+            sleep_deficit_minutes = max(
+                0, round((sleep_target - sleep_hours) * 60)
+            )
+            if sleep_deficit_minutes >= 15:
+                guidance = (
+                    f"Pour optimiser votre récupération, visez environ "
+                    f"{int(sleep_target)} h "
+                    f"{round((sleep_target % 1) * 60):02d}, soit environ "
+                    f"{sleep_deficit_minutes} min de plus que cette nuit."
+                )
+            elif (
+                nocturnal is not None
+                and night_hr_target is not None
+                and nocturnal <= night_hr_target + 1
+            ):
+                guidance = (
+                    "Durée proche de votre besoin et fréquence cardiaque "
+                    "nocturne favorable par rapport à votre référence."
+                )
+            else:
+                guidance = (
+                    "Durée proche de votre référence personnelle ; "
+                    "confirmez avec votre ressenti et la réponse à la séance."
+                )
+            by_day[day] = {
+                "day": day,
+                "atlas_recovery_index": score,
+                "atlas_index": score,
+                "confidence": confidence,
+                "components": components,
+                "hrv_used": hrv_value is not None,
+                "personal_sleep_target_hours": round(sleep_target, 2),
+                "sleep_deficit_minutes": sleep_deficit_minutes,
+                "personal_night_hr_target_bpm": (
+                    round(night_hr_target, 1)
+                    if night_hr_target is not None else None
+                ),
+                "performance_learning_days": len(successful_sleep_values),
+                "guidance": guidance,
+                "explanation": (
+                    "Score fondé sur les mesures disponibles et vos références "
+                    "personnelles ; les nuits suivies de bonnes séances "
+                    "affinent progressivement les cibles."
+                ),
+            }
             sleep_duration_values.append(sleep_hours)
+            if nocturnal is not None:
+                night_hr_values.append(nocturnal)
+            if outcome_by_day.get(day, 0) >= 80:
+                successful_sleep_values.append(sleep_hours)
+                if nocturnal is not None:
+                    successful_night_hr_values.append(nocturnal)
             if resting_value is not None:
                 resting_values.append(resting_value)
             if hrv_value is not None:

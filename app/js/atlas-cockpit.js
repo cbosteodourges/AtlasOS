@@ -76,13 +76,19 @@
     });
   };
 
+  let currentRecoveryInsight = null;
+
   const renderSyncInsights = payload => {
     const latest = payload?.recovery?.latest;
+    currentRecoveryInsight = latest || currentRecoveryInsight;
     if (latest) {
       if (latest.day === todayKey) {
         setText("[data-atlas-index]", latest.atlas_recovery_index);
         setText("[data-recovery-label]", recoveryLabel(latest.atlas_recovery_index));
         setText("[data-recovery-detail]", `${latest.atlas_recovery_index}/100 · confiance ${latest.confidence}/100`);
+        if (latest.guidance) {
+          setText("[data-readiness-summary]", latest.guidance);
+        }
       }
       setText("[data-index-summary]", latest.explanation);
       renderIndexComponents(latest.components);
@@ -196,7 +202,9 @@
     setText(
       "[data-readiness-summary]",
       partial
-        ? `Santé Connect a transmis ${formatDuration(latest.sleep_duration_minutes)}. VFC et récupération complète restent datées du ${completeDayLabel}.`
+        ? (currentRecoveryInsight?.day === latest.day && currentRecoveryInsight?.guidance
+          ? currentRecoveryInsight.guidance
+          : `Santé Connect a transmis ${formatDuration(latest.sleep_duration_minutes)}. VFC et récupération complète restent datées du ${completeDayLabel}.`)
         : (isCurrentDay
           ? "Récupération élevée, sommeil satisfaisant et charge bien maîtrisée."
           : `Montre non portée ou aucune nouvelle mesure reçue. Dernier bilan complet : ${completeDayLabel}.`)
