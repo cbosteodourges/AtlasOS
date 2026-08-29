@@ -103,7 +103,7 @@ class PostSyncOrchestrator:
 
     @staticmethod
     def _retrospective_physiology(activities: list[Any], profile: dict[str, Any]) -> list[dict[str, Any]]:
-        """Reconstruit une tendance terrain mensuelle, puis l'ancre sur le profil validé."""
+        """Reconstruit une tendance terrain hebdomadaire, puis l'ancre sur le profil validé."""
 
         runs = sorted(
             (
@@ -130,17 +130,17 @@ class PostSyncOrchestrator:
             return []
 
         first_day, last_day = dated[0][0], dated[-1][0]
-        cursor = min(last_day, first_day + timedelta(days=119))
+        cursor = min(last_day, first_day + timedelta(days=41))
         endpoints = []
         while cursor < last_day:
             endpoints.append(cursor)
-            cursor += timedelta(days=30)
+            cursor += timedelta(days=7)
         endpoints.append(last_day)
 
         maximum_hr = profile.get("maximum_heart_rate_bpm")
         result = []
         for endpoint in endpoints:
-            start = endpoint - timedelta(days=119)
+            start = endpoint - timedelta(days=41)
             window = [item for day, item in dated if start <= day <= endpoint]
             estimate = ContinuousPhysiologyEstimator().estimate(
                 window,
@@ -163,7 +163,7 @@ class PostSyncOrchestrator:
                 "day": endpoint.isoformat(),
                 "source": "historical_fit",
                 "schema": "atlas_retrospective_v1",
-                "method": "tendance terrain sur 120 jours, recalée sur la référence actuelle",
+                "method": "tendance terrain hebdomadaire sur 42 jours, recalée sur la référence actuelle",
                 "vo2_max": estimate.get("vo2_max"),
                 "vma_kmh": estimate.get("vma_kmh"),
                 "sv1_speed_kmh": sv1.get("speed_kmh"),
@@ -310,11 +310,13 @@ class PostSyncOrchestrator:
 
     def _current_physiology(self) -> dict[str, Any]:
         saved = self._read("physiology-longitudinal.json", {}).get("current")
-        if isinstance(saved, dict) and saved:
-            return saved
+        saved = saved if isinstance(saved, dict) else {}
         program = self._read("training-program.json", {})
         snapshot = program.get("athlete_snapshot") if isinstance(program, dict) else None
-        return snapshot if isinstance(snapshot, dict) else {}
+        snapshot = snapshot if isinstance(snapshot, dict) else {}
+        # La référence active affichée dans Atlas Coach reste l'ancre officielle.
+        # Les estimations continues complètent les champs absents sans l'écraser.
+        return {**saved, **snapshot}
 
     def _read(self, name: str, default: Any) -> Any:
         path = self.private_dir / name
