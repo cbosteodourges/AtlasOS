@@ -22,9 +22,13 @@
     <uses-permission android:name="android.permission.health.READ_HYDRATION" />
     <uses-permission android:name="android.permission.health.READ_NUTRITION" />
     <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_HISTORY" />
-    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
     <queries><package android:name="com.google.android.apps.healthdata" /></queries>
-    <application android:theme="@style/AppTheme" android:label="Atlas Connect" android:usesCleartextTraffic="true">
+    <application
+        android:theme="@style/AppTheme"
+        android:label="Atlas Connect"
+        android:icon="@drawable/atlas_logo"
+        android:roundIcon="@drawable/atlas_logo"
+        android:usesCleartextTraffic="true">
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
