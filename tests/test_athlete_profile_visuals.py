@@ -30,5 +30,13 @@ def test_only_validated_physiology_is_charted():
     server = (ROOT / "tools" / "atlas_web_server.py").read_text(encoding="utf-8")
     orchestrator = (ROOT / "src" / "training" / "post_sync_orchestrator.py").read_text(encoding="utf-8")
     assert '"schema": "validated_profile_v1"' in orchestrator
-    assert 'raw.get("schema") != "validated_profile_v1"' in server
+    assert '"atlas_retrospective_v1"' in server
     assert '"sv2_speed_kmh": (6, 28)' in server
+
+
+def test_historical_fit_backfill_is_explicit_and_anchored():
+    orchestrator = (ROOT / "src" / "training" / "post_sync_orchestrator.py").read_text(encoding="utf-8")
+    assert "def _retrospective_physiology" in orchestrator
+    assert '"source": "historical_fit"' in orchestrator
+    assert "tendance terrain sur 120 jours" in orchestrator
+    assert "offset = float(target) - float(values[-1])" in orchestrator
