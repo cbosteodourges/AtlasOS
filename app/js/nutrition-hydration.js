@@ -20,6 +20,8 @@
     setText("[data-energy-value]", count ? Math.round(today.energy_kcal || 0) : "—");
     setText("[data-protein-value]", count ? Math.round(today.protein_g || 0) : "—");
     setText("[data-carbs-value]", count ? Math.round(today.carbohydrate_g || 0) : "—");
+    setText("[data-fat-value]", count ? Math.round(today.fat_g || 0) : "—");
+    setText("[data-fiber-value]", count ? Math.round(today.fiber_g || 0) : "—");
     setText("[data-hydration-target]", targets.hydration_ml ? `Repère personnel : ${targets.hydration_ml} ml` : "Ajoutez votre poids pour personnaliser le repère");
     setText("[data-protein-target]", targets.protein_g ? `repère ${targets.protein_g} g` : "repère à personnaliser");
     setText("[data-carbs-target]", targets.carbohydrate_g ? `repère ${targets.carbohydrate_g} g` : "repère à personnaliser");
@@ -34,9 +36,30 @@
     const values = [
       ["[data-energy-progress]", percent(today.energy_kcal, targets.energy_kcal)],
       ["[data-protein-progress]", percent(today.protein_g, targets.protein_g)],
-      ["[data-carbs-progress]", percent(today.carbohydrate_g, targets.carbohydrate_g)]
+      ["[data-carbs-progress]", percent(today.carbohydrate_g, targets.carbohydrate_g)],
+      ["[data-fat-progress]", count ? bounded(today.fat_g) : 0],
+      ["[data-fiber-progress]", count ? bounded((today.fiber_g || 0) / 30 * 100) : 0]
     ];
     values.forEach(([selector, value]) => one(selector)?.style.setProperty("--value", `${value}%`));
+
+    const expenditure = payload.energy_expenditure || {};
+    const kcal = value => value == null ? "—" : `${Math.round(value)} kcal`;
+    setText("[data-basal-energy]", kcal(expenditure.basal_kcal));
+    setText("[data-sport-energy]", kcal(expenditure.sport_kcal));
+    setText("[data-known-energy]", kcal(expenditure.known_total_kcal));
+    setText("[data-expenditure-total]", expenditure.known_total_kcal == null ? "Données à compléter" : `${Math.round(expenditure.known_total_kcal)} kcal connues`);
+    const activityCount = Number(expenditure.activity_count || 0);
+    const calorieCount = Number(expenditure.activity_calorie_count || 0);
+    setText("[data-sport-energy-detail]", activityCount
+      ? `${calorieCount}/${activityCount} activité${activityCount > 1 ? "s" : ""} avec calories`
+      : "aucune activité aujourd’hui");
+    setText("[data-expenditure-note]", expenditure.scope || "Estimation partielle et explicable.");
+    const education = one("[data-nutrition-education]");
+    if (education) {
+      education.innerHTML = (payload.education || []).map(item =>
+        `<article class="${item.tone || "neutral"}"><i></i><h3>${item.title}</h3><p>${item.text}</p></article>`
+      ).join("");
+    }
   };
 
   const load = () => fetch("/api/atlas/nutrition-hydration", { cache: "no-store" })
