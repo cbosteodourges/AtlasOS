@@ -30,6 +30,17 @@ class NutritionHydrationAnalyzerTests(unittest.TestCase):
         self.assertEqual(result["targets"]["protein_g"], 128)
         self.assertEqual(result["confidence"], 60)
 
+    def test_uses_local_day_and_aggregates_micronutrients(self):
+        records = [{
+            "type": "nutrition", "start_time": "2026-08-28T23:30:00Z",
+            "local_day": "2026-08-29", "magnesium_mg": 120,
+            "iron_mg": 4.5, "vitamin_d_mcg": 3,
+        }]
+        result = NutritionHydrationAnalyzer().analyze(records, today=date(2026, 8, 29))
+        self.assertEqual(result["today"]["day"], "2026-08-29")
+        self.assertEqual(result["today"]["magnesium_mg"], 120)
+        self.assertEqual(result["today"]["iron_mg"], 4.5)
+
     def test_expenditure_uses_profile_and_only_imported_sport_calories(self):
         result = NutritionHydrationAnalyzer().analyze(
             [], weight_kg=80, height_cm=180, age_years=40,
