@@ -63,6 +63,8 @@ class HealthSync(private val context: Context) {
         val speeds = client.availableRecords<SpeedRecord>(range, granted, skipped)
         val elevations = client.availableRecords<ElevationGainedRecord>(range, granted, skipped)
         val calories = client.availableRecords<TotalCaloriesBurnedRecord>(range, granted, skipped)
+        val activeCalories = client.availableRecords<ActiveCaloriesBurnedRecord>(range, granted, skipped)
+        val basalRates = client.availableRecords<BasalMetabolicRateRecord>(range, granted, skipped)
         val cadences = client.availableRecords<StepsCadenceRecord>(range, granted, skipped)
         val powers = client.availableRecords<PowerRecord>(range, granted, skipped)
         val activities = JSONArray()
@@ -77,7 +79,11 @@ class HealthSync(private val context: Context) {
             cadence.forEach { samples.put(JSONObject().put("timestamp", it.time).put("cadence_spm", it.rate)) }
             power.forEach { samples.put(JSONObject().put("timestamp", it.time).put("power_watts", it.power.inWatts)) }
             val distance = distances.filter { overlaps(it.startTime, it.endTime, exercise) }.sumOf { it.distance.inMeters }
-            val kcal = calories.filter { overlaps(it.startTime, it.endTime, exercise) }.sumOf { it.energy.inKilocalories }
+            val activeKcal = activeCalories.filter { overlaps(it.startTime, it.endTime, exercise) }
+                .sumOf { it.energy.inKilocalories }
+            val kcal = if (activeKcal > 0) activeKcal else calories
+                .filter { overlaps(it.startTime, it.endTime, exercise) }
+                .sumOf { it.energy.inKilocalories }
             val ascent = elevations.filter { overlaps(it.startTime, it.endTime, exercise) }.sumOf { it.elevation.inMeters }
             activities.put(JSONObject().put("source_id", exercise.metadata.id).put("type", exercise.exerciseType)
                 .put("start_time", exercise.startTime).put("duration_seconds", exercise.endTime.epochSecond - exercise.startTime.epochSecond)
@@ -88,6 +94,16 @@ class HealthSync(private val context: Context) {
                 .put("samples", samples).put("source_device", exercise.metadata.dataOrigin.packageName))
         }
         val wellness = JSONArray()
+        calories.forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
+            .put("type", "total_calories_burned").put("start_time", it.startTime).put("end_time", it.endTime)
+            .put("energy_kcal", it.energy.inKilocalories).put("source_device", it.metadata.dataOrigin.packageName)) }
+        activeCalories.forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
+            .put("type", "active_calories_burned").put("start_time", it.startTime).put("end_time", it.endTime)
+            .put("energy_kcal", it.energy.inKilocalories).put("source_device", it.metadata.dataOrigin.packageName)) }
+        basalRates.forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
+            .put("type", "basal_metabolic_rate").put("start_time", it.time)
+            .put("basal_kcal_per_day", it.basalMetabolicRate.inWatts * 86400.0 / 4184.0)
+            .put("source_device", it.metadata.dataOrigin.packageName)) }
         client.availableRecords<SleepSessionRecord>(range, granted, skipped).forEach { sleep ->
             val stages = JSONArray()
             sleep.stages.forEach { stages.put(JSONObject().put("stage", it.stage).put("start_time", it.startTime).put("end_time", it.endTime)) }
