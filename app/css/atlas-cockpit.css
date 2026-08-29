@@ -172,6 +172,78 @@ h1 { margin: 8px 0 5px; font-size: clamp(1.9rem, 3vw, 3rem); }
 .fuel-entry input { width:100%; padding:9px; color:var(--text); border:1px solid var(--line); border-radius:9px; background:rgba(1,9,18,.85); }
 .fuel-entry form > button { align-self:end; min-height:39px; }
 .fuel-entry form > small { grid-column:1/-1; color:var(--muted); }
+
+/* Lecture immédiate de l'indice : position mesurée + zones d'aide à la décision. */
+.readiness-card > div:last-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.recovery-gauge {
+  --recovery-position: 50%;
+  margin-top: 18px;
+  max-width: 720px;
+}
+
+.recovery-gauge-track {
+  position: relative;
+  height: 14px;
+  border: 1px solid rgba(223, 241, 255, 0.2);
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    #ef5264 0%,
+    #ef5264 40%,
+    #ff922f 40%,
+    #ff922f 55%,
+    #f6d54a 55%,
+    #f6d54a 70%,
+    #45dfa6 70%,
+    #45dfa6 100%
+  );
+  box-shadow: inset 0 1px 4px rgba(2, 12, 24, 0.5), 0 0 18px rgba(53, 210, 255, 0.08);
+}
+
+.recovery-gauge-marker {
+  position: absolute;
+  left: clamp(1%, var(--recovery-position), 99%);
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  border: 4px solid #f4fbff;
+  border-radius: 50%;
+  background: #082035;
+  box-shadow: 0 0 0 2px rgba(10, 27, 43, 0.8), 0 0 14px rgba(70, 223, 255, 0.75);
+  transform: translate(-50%, -50%);
+  transition: left 450ms ease;
+}
+
+.recovery-gauge-labels {
+  display: grid;
+  grid-template-columns: 40fr 15fr 15fr 30fr;
+  margin-top: 7px;
+  color: #8ca4b8;
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+
+.recovery-gauge-labels span {
+  padding-inline: 3px;
+  text-align: center;
+}
+
+.recovery-gauge > strong {
+  display: block;
+  margin-top: 8px;
+  color: #dcebf5;
+  font-size: 0.82rem;
+}
+
+.recovery-gauge[data-zone="red"] > strong { color: #ff8290; }
+.recovery-gauge[data-zone="orange"] > strong { color: #ffb266; }
+.recovery-gauge[data-zone="yellow"] > strong { color: #f6dc72; }
+.recovery-gauge[data-zone="green"] > strong { color: #65e7b8; }
+
 @media(max-width:900px){.fuel-dashboard{grid-template-columns:1fr}.fuel-entry form{grid-template-columns:1fr 1fr}.fuel-entry form>button{grid-column:1/-1}.fuel-macros{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:520px){.fuel-card{padding:18px}.fuel-card>header{display:block}.fuel-source{display:inline-block;margin-top:10px}.fuel-macros{grid-template-columns:1fr}.fuel-entry form{grid-template-columns:1fr}.quick-water button{flex:1}}
 

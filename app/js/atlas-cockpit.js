@@ -78,6 +78,33 @@
 
   let currentRecoveryInsight = null;
 
+
+  const updateRecoveryGauge = (value, interpretation = null) => {
+    const gauge = document.querySelector("[data-recovery-gauge]");
+    const zoneLabel = document.querySelector("[data-recovery-zone]");
+    const score = Number(value);
+    if (!gauge || !Number.isFinite(score)) return;
+
+    const bounded = Math.max(0, Math.min(100, score));
+    const zone = bounded < 40
+      ? { key: "red", label: "Vigilance" }
+      : bounded < 55
+        ? { key: "orange", label: "Récupération fragile" }
+        : bounded < 70
+          ? { key: "yellow", label: "À surveiller" }
+          : { key: "green", label: "Zone favorable" };
+
+    gauge.style.setProperty("--recovery-position", `${bounded}%`);
+    gauge.dataset.zone = zone.key;
+    gauge.setAttribute("aria-valuenow", String(Math.round(bounded)));
+    const nuance = interpretation?.display_label;
+    if (zoneLabel) {
+      zoneLabel.textContent = nuance
+        ? `${zone.label} · ${nuance}`
+        : zone.label;
+    }
+  };
+
   const renderSyncInsights = payload => {
     const latest = payload?.recovery?.latest;
     currentRecoveryInsight = latest || currentRecoveryInsight;
@@ -90,6 +117,7 @@
             || recoveryLabel(latest.atlas_recovery_index)
         );
         setText("[data-recovery-detail]", `${latest.atlas_recovery_index}/100 · confiance ${latest.confidence}/100`);
+        updateRecoveryGauge(latest.atlas_recovery_index, latest.interpretation);
         if (latest.guidance) {
           setText("[data-readiness-summary]", latest.guidance);
         }
@@ -196,6 +224,7 @@
             : "Indice Atlas du jour")
           : `${indexSource.atlas_index ?? "—"}/100 · données du ${indexDayLabel}`
       );
+      updateRecoveryGauge(indexSource.atlas_index);
     }
     setText(
       "[data-readiness-title]",
