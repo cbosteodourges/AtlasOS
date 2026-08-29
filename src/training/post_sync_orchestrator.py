@@ -46,8 +46,12 @@ class PostSyncOrchestrator:
                                   if key in PHYSIOLOGY_KEYS} if estimate.get("updated") else {})}
         longitudinal = self._read("physiology-longitudinal.json", {"current": previous, "history": []})
         history = list(longitudinal.get("history", []))
-        history.append({"day": date.today().isoformat(), "source": source, **estimate})
-        longitudinal = {"current": profile, "latest_estimate": estimate, "history": history[-365:],
+        today = date.today().isoformat()
+        snapshot = {"day": today, "source": source, **profile, **estimate}
+        history = [item for item in history if str(item.get("day") or "")[:10] != today]
+        history.append(snapshot)
+        history.sort(key=lambda item: str(item.get("day") or ""))
+        longitudinal = {"current": profile, "latest_estimate": estimate, "history": history[-5000:],
                         "updated_at": datetime.now(timezone.utc).isoformat()}
         self._write("physiology-longitudinal.json", longitudinal)
 
