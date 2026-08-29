@@ -76,19 +76,46 @@ function Start-AtlasPythonProcess {
 
 $env:ATLAS_PORT = [string]$atlasPort
 
-$serverRunning = Get-NetTCPConnection `
+# Un clic sur le raccourci Atlas doit charger le code présent sur disque.
+# Si un ancien serveur Atlas occupe déjà le port, on le remplace proprement.
+$serverConnections = Get-NetTCPConnection `
     -LocalPort $atlasPort `
     -State Listen `
     -ErrorAction SilentlyContinue
 
-if (-not $serverRunning) {
-    Start-AtlasPythonProcess `
-        -Script ".\tools\atlas_web_server.py" `
-        -OutputLog "atlas-launch-output.log" `
-        -ErrorLog "atlas-launch-error.log"
+foreach ($connection in $serverConnections) {
+    $process = Get-CimInstance Win32_Process `
+        -Filter "ProcessId = $($connection.OwningProcess)" `
+        -ErrorAction SilentlyContinue
 
-    Start-Sleep -Seconds 2
+    if (
+        $process -and
+        $process.Name -match "^python(?:\.exe)?$" -and
+        $process.CommandLine -match "atlas_web_server\.py"
+    ) {
+        Stop-Process -Id $process.ProcessId -Force
+        Start-Sleep -Milliseconds 400
+    }
 }
+
+$remainingListener = Get-NetTCPConnection `
+    -LocalPort $atlasPort `
+    -State Listen `
+    -ErrorAction SilentlyContinue
+
+if ($remainingListener) {
+    throw (
+        "Le port $atlasPort est utilisé par un autre programme. " +
+        "Fermez ce programme puis relancez Atlas."
+    )
+}
+
+Start-AtlasPythonProcess `
+    -Script ".\tools\atlas_web_server.py" `
+    -OutputLog "atlas-launch-output.log" `
+    -ErrorLog "atlas-launch-error.log"
+
+Start-Sleep -Seconds 2
 
 if (-not (Test-AtlasProcess "watch_atlas_coach_fit.py")) {
     Start-AtlasPythonProcess `
