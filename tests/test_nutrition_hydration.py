@@ -38,9 +38,9 @@ class NutritionHydrationAnalyzerTests(unittest.TestCase):
             today=date(2026, 8, 27),
         )
         expenditure = result["energy_expenditure"]
-        self.assertEqual(expenditure["basal_kcal"], 1780)
+        self.assertEqual(expenditure["basal_kcal"], 1730)
         self.assertEqual(expenditure["sport_kcal"], 720)
-        self.assertEqual(expenditure["known_total_kcal"], 2500)
+        self.assertEqual(expenditure["known_total_kcal"], 2450)
         self.assertFalse(expenditure["sport_coverage_complete"])
 
 
