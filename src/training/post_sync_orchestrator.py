@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 import json
 from pathlib import Path
 from typing import Any
@@ -30,7 +30,7 @@ class PostSyncOrchestrator:
 
     def run(self, source: str) -> dict[str, Any]:
         activities = ActivityStore(self.private_dir / "activities-unified.json").load()
-        wellness = self._read("health-connect-wellness.json", [])
+        wellness = self._merged_wellness()
         manual_nutrition = self._read("nutrition-hydration-manual.json", [])
         executions = self._read("atlas-coach-executions.json", [])
         recovery = AtlasRecoveryIndex().build(
@@ -110,6 +110,80 @@ class PostSyncOrchestrator:
             "nutrition_hydration_context": nutrition,
             "candidate_program": candidate,
         }
+
+    def _merged_wellness(self) -> list[dict[str, Any]]:
+        """Complète Santé Connect avec les journées Garmin absentes."""
+        wellness = self._read("health-connect-wellness.json", [])
+        merged = [
+            dict(item) for item in wellness
+            if isinstance(item, dict)
+        ]
+        sleep_days = {
+            stamp.date().isoformat()
+            for item in merged if item.get("type") == "sleep"
+            for stamp in [self._timestamp(item.get("end_time"))]
+            if stamp is not None
+        }
+        metric_keys = {
+            (
+                str(item.get("type") or ""),
+                stamp.date().isoformat(),
+            )
+            for item in merged
+            for stamp in [self._timestamp(item.get("start_time"))]
+            if stamp is not None
+        }
+        cache = self._read("garmin-wellness-snapshot-cache.json", {})
+        for archive in (cache.get("archives") or {}).values():
+            snapshot = (
+                archive.get("snapshot")
+                if isinstance(archive, dict) else None
+            )
+            if not isinstance(snapshot, dict):
+                continue
+            day = str(snapshot.get("day") or "")[:10]
+            if not day:
+                continue
+            end = datetime.fromisoformat(
+                f"{day}T06:00:00+00:00"
+            )
+            duration_minutes = snapshot.get("sleep_duration_minutes")
+            if day not in sleep_days and duration_minutes:
+                start = end - timedelta(minutes=float(duration_minutes))
+                merged.append({
+                    "type": "sleep",
+                    "source_id": f"garmin-wellness-sleep-{day}",
+                    "start_time": start.isoformat(),
+                    "end_time": end.isoformat(),
+                    "stages": [],
+                    "source": "garmin_wellness",
+                })
+                sleep_days.add(day)
+            for kind, field in (
+                ("resting_heart_rate", "resting_heart_rate_bpm"),
+                ("hrv_rmssd", "hrv_last_night_ms"),
+            ):
+                value = snapshot.get(field)
+                if value is None or (kind, day) in metric_keys:
+                    continue
+                merged.append({
+                    "type": kind,
+                    "source_id": f"garmin-wellness-{kind}-{day}",
+                    "start_time": end.isoformat(),
+                    "value": value,
+                    "source": "garmin_wellness",
+                })
+                metric_keys.add((kind, day))
+        return merged
+
+    @staticmethod
+    def _timestamp(value: Any) -> datetime | None:
+        try:
+            return datetime.fromisoformat(
+                str(value).replace("Z", "+00:00")
+            )
+        except (TypeError, ValueError):
+            return None
 
     def _current_physiology(self) -> dict[str, Any]:
         saved = self._read("physiology-longitudinal.json", {}).get("current")
