@@ -859,6 +859,33 @@ def load_physiological_reference():
         "sv2_status": sv2.get("status"),
     }
 
+
+def load_physiology_history():
+    """Normalise la mémoire physiologique quotidienne pour les courbes du profil."""
+
+    path = ROOT / "atlas-data" / "private" / "physiology-longitudinal.json"
+    try:
+        with path.open("r", encoding="utf-8") as source:
+            payload = json.load(source)
+    except (OSError, json.JSONDecodeError):
+        return []
+
+    fields = (
+        "vo2_max", "vma_kmh", "sv1_speed_kmh", "sv2_speed_kmh",
+        "maximum_heart_rate_bpm",
+    )
+    by_day = {}
+    for raw in payload.get("history", []):
+        day = str(raw.get("day") or "")[:10]
+        if not day:
+            continue
+        current = {key: _wellness_number(raw.get(key)) for key in fields}
+        if not any(value is not None for value in current.values()):
+            continue
+        by_day[day] = {"day": day, "source": raw.get("source"), **current}
+    return [by_day[day] for day in sorted(by_day)]
+
+
 def load_workout_contexts():
     """Charge l’historique des contextes déclarés."""
 
@@ -1833,6 +1860,7 @@ def _athlete_analysis(history):
         "performance_comparison": _performance_comparison(history),
         "longitudinal_report": longitudinal_report,
         "physiology": physiology,
+        "physiology_history": load_physiology_history(),
         "benchmarks": {
             "hrv_28d": hrv_mean,
             "sleep_score_28d": sleep_mean,
