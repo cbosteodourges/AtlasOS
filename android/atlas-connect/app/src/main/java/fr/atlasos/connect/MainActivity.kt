@@ -22,7 +22,7 @@ class MainActivity : ComponentActivity() {
     private val navy = Color.rgb(2, 13, 24)
     private val card = Color.rgb(7, 29, 45)
     private val cyan = Color.rgb(49, 214, 255)
-    private val text = Color.rgb(235, 246, 255)
+    private val foreground = Color.rgb(235, 246, 255)
     private val muted = Color.rgb(143, 168, 187)
 
     private val dataPermissions = setOf(
@@ -90,7 +90,7 @@ class MainActivity : ComponentActivity() {
         page.addView(TextView(this).apply {
             this.text = "ATLAS CONNECT"
             textSize = 26f
-            setTextColor(text)
+            setTextColor(foreground)
             gravity = Gravity.CENTER
             setTypeface(typeface, Typeface.BOLD)
             letterSpacing = 0.08f
@@ -199,7 +199,7 @@ class MainActivity : ComponentActivity() {
     private fun field(placeholder: String) = EditText(this).apply {
         hint = placeholder
         setHintTextColor(Color.rgb(100, 128, 148))
-        setTextColor(text)
+        setTextColor(foreground)
         textSize = 14f
         setSingleLine(true)
         setPadding(dp(14), 0, dp(14), 0)
@@ -209,7 +209,7 @@ class MainActivity : ComponentActivity() {
     private fun actionButton(label: String, primary: Boolean, action: () -> Unit) = Button(this).apply {
         text = label
         textSize = if (primary) 16f else 14f
-        setTextColor(if (primary) navy else text)
+        setTextColor(if (primary) navy else foreground)
         setTypeface(typeface, Typeface.BOLD)
         isAllCaps = false
         background = rounded(
