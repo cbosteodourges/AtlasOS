@@ -701,3 +701,35 @@ body[data-avatar="female"] .twin-panel img {
 .chart-date{fill:#88a6ba;font-size:12px;font-weight:700}
 
 .chart-point.is-validated{fill:#f4f8ff;stroke:#45e4a1;stroke-width:5;filter:drop-shadow(0 0 8px rgba(69,228,161,.8))}
+
+
+/* PROFIL ATHLÈTE — lecture synthétique des appuis, alertes et leviers */
+.analysis-columns.insight-lanes{gap:16px;margin-top:20px}
+.insight-lanes>article{position:relative;display:grid!important;grid-template-columns:230px minmax(0,1fr)!important;grid-template-rows:auto 1fr;column-gap:26px;row-gap:4px;align-items:start;min-height:0!important;padding:24px 26px!important;overflow:hidden}
+.insight-lanes>article>.eyebrow{grid-column:1;grid-row:1}
+.insight-lanes>article>h3{grid-column:1;grid-row:2;margin:5px 0 30px!important;font-size:1.35rem;line-height:1.2}
+.insight-lanes>article::after{content:attr(data-item-count) " repères";position:absolute;left:26px;bottom:24px;padding:5px 9px;border:1px solid currentColor;border-radius:999px;color:#7697aa;font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.9}
+.insight-lanes>article>ul,.insight-lanes>article>ol{grid-column:2;grid-row:1 / span 2;display:grid!important;grid-template-columns:repeat(auto-fit,minmax(235px,1fr))!important;align-items:stretch;gap:12px!important;width:100%;min-width:0;margin:0!important}
+.insight-lanes li{display:flex;align-items:flex-start;min-height:92px;padding:17px 16px 15px 43px!important;border-color:rgba(48,118,151,.44)!important;background:linear-gradient(145deg,rgba(10,34,51,.96),rgba(5,21,35,.92))!important;font-size:.94rem;line-height:1.48;box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}
+.insight-lanes li::before{left:17px!important;top:23px!important;width:10px!important;height:10px!important}
+.insight-lanes .analysis-strengths{background:linear-gradient(105deg,rgba(20,78,65,.18),rgba(3,17,29,.86) 33%)}
+.insight-lanes .analysis-vigilance{background:linear-gradient(105deg,rgba(111,82,22,.16),rgba(3,17,29,.86) 33%)}
+.insight-lanes .analysis-priorities{background:linear-gradient(105deg,rgba(68,58,138,.17),rgba(3,17,29,.86) 33%)}
+.insight-lanes .analysis-priorities ol{counter-reset:atlas-priority}
+.insight-lanes .analysis-priorities li{counter-increment:atlas-priority;padding-left:54px!important}
+.insight-lanes .analysis-priorities li::before{content:counter(atlas-priority)!important;display:grid;place-items:center;left:15px!important;top:16px!important;width:27px!important;height:27px!important;border:1px solid #8a82ff;border-radius:50%;background:rgba(92,78,190,.22)!important;color:#dedbff;font-size:.72rem;font-weight:900;box-shadow:0 0 13px rgba(129,122,255,.25)!important}
+.longitudinal-evidence{padding:26px!important;background:linear-gradient(145deg,rgba(16,25,52,.76),rgba(3,16,29,.9))!important}
+.longitudinal-evidence>[data-longitudinal-conclusions]{position:relative;gap:9px!important}
+.longitudinal-evidence [data-longitudinal-conclusions]>article{--evidence:#39d5ff;position:relative;grid-template-columns:155px minmax(250px,.9fr) minmax(280px,1.1fr)!important;min-height:82px!important;padding:15px 22px 18px 32px!important;overflow:hidden;border-color:rgba(45,103,136,.42)!important;background:rgba(3,17,30,.74)!important}
+.longitudinal-evidence [data-longitudinal-conclusions]>article[data-tone="positive"]{--evidence:#45e4a1}
+.longitudinal-evidence [data-longitudinal-conclusions]>article[data-tone="vigilance"]{--evidence:#f3c94d}
+.longitudinal-evidence [data-longitudinal-conclusions]>article::after{content:"";position:absolute;left:0;bottom:0;width:var(--confidence);height:3px;background:linear-gradient(90deg,var(--evidence),transparent);opacity:.8}
+.longitudinal-evidence [data-longitudinal-conclusions]>article>strong{margin:0!important;font-size:.96rem;line-height:1.4}
+.longitudinal-evidence [data-longitudinal-conclusions]>article>small{max-width:none!important}
+.performance-context{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(8,38,55,.92),rgba(4,18,32,.95))!important}
+.performance-context-grid>article:first-child{border-color:rgba(69,228,161,.48)!important;background:linear-gradient(145deg,rgba(27,86,70,.22),rgba(4,18,31,.85))!important}
+.performance-context-grid>article:last-child{border-color:rgba(243,201,77,.4)!important;background:linear-gradient(145deg,rgba(98,69,19,.18),rgba(4,18,31,.85))!important}
+.performance-context-grid dl{display:grid;grid-template-columns:1fr auto;gap:8px 18px}
+.performance-context-grid dt,.performance-context-grid dd{padding-bottom:7px;border-bottom:1px solid rgba(91,139,163,.18)}
+@media(max-width:1050px){.insight-lanes>article{grid-template-columns:1fr!important}.insight-lanes>article>.eyebrow,.insight-lanes>article>h3,.insight-lanes>article>ul,.insight-lanes>article>ol{grid-column:1;grid-row:auto}.insight-lanes>article>h3{margin-bottom:8px!important}.insight-lanes>article::after{display:none}.longitudinal-evidence [data-longitudinal-conclusions]>article{grid-template-columns:1fr!important}}
+@media(max-width:650px){.insight-lanes>article>ul,.insight-lanes>article>ol{grid-template-columns:1fr!important}.insight-lanes>article{padding:18px!important}}
