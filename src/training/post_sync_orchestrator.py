@@ -67,7 +67,11 @@ class PostSyncOrchestrator:
             "source": source,
             "schema": "validated_profile_v1",
             "vo2_max": profile.get("vo2_max"),
-            "vma_kmh": profile.get("vma_kmh") or profile.get("vma_training_reference_kmh"),
+            "vma_kmh": (
+                profile.get("vma_estimated_from_vo2_kmh")
+                or profile.get("vma_kmh")
+                or profile.get("vma_training_reference_kmh")
+            ),
             "sv1_speed_kmh": sv1.get("speed_kmh"),
             "sv2_speed_kmh": sv2.get("speed_kmh"),
             "maximum_heart_rate_bpm": profile.get("maximum_heart_rate_bpm"),
@@ -187,7 +191,11 @@ class PostSyncOrchestrator:
         sv2_profile = profile.get("sv2") or {}
         targets = {
             "vo2_max": profile.get("vo2_max"),
-            "vma_kmh": profile.get("vma_kmh") or profile.get("vma_training_reference_kmh"),
+            "vma_kmh": (
+                profile.get("vma_estimated_from_vo2_kmh")
+                or profile.get("vma_kmh")
+                or profile.get("vma_training_reference_kmh")
+            ),
             "sv1_speed_kmh": sv1_profile.get("speed_kmh"),
             "sv2_speed_kmh": sv2_profile.get("speed_kmh"),
             "maximum_heart_rate_bpm": maximum_hr,
