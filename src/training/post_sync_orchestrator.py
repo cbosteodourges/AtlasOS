@@ -150,6 +150,15 @@ class PostSyncOrchestrator:
                 continue
             sv1 = estimate.get("sv1") or {}
             sv2 = estimate.get("sv2") or {}
+            observed_maximum_hr = max(
+                (
+                    float(getattr(item, "maximum_heart_rate_bpm"))
+                    for item in window
+                    if getattr(item, "maximum_heart_rate_bpm", None) is not None
+                    and 100 <= float(getattr(item, "maximum_heart_rate_bpm")) <= 230
+                ),
+                default=maximum_hr,
+            )
             result.append({
                 "day": endpoint.isoformat(),
                 "source": "historical_fit",
@@ -159,7 +168,7 @@ class PostSyncOrchestrator:
                 "vma_kmh": estimate.get("vma_kmh"),
                 "sv1_speed_kmh": sv1.get("speed_kmh"),
                 "sv2_speed_kmh": sv2.get("speed_kmh"),
-                "maximum_heart_rate_bpm": maximum_hr,
+                "maximum_heart_rate_bpm": observed_maximum_hr,
                 "estimator_confidence": estimate.get("confidence"),
                 "evidence_sessions": estimate.get("evidence_sessions"),
             })
@@ -171,12 +180,14 @@ class PostSyncOrchestrator:
             "vma_kmh": profile.get("vma_kmh") or profile.get("vma_training_reference_kmh"),
             "sv1_speed_kmh": sv1_profile.get("speed_kmh"),
             "sv2_speed_kmh": sv2_profile.get("speed_kmh"),
+            "maximum_heart_rate_bpm": maximum_hr,
         }
         bounds = {
             "vo2_max": (20, 90, 1),
             "vma_kmh": (6, 30, 2),
             "sv1_speed_kmh": (5, 24, 2),
             "sv2_speed_kmh": (6, 28, 2),
+            "maximum_heart_rate_bpm": (100, 230, 0),
         }
         for field, target in targets.items():
             values = [item.get(field) for item in result if item.get(field) is not None]
