@@ -36,6 +36,7 @@ class HealthConnectBridge:
         self.pairing_path = self.private_dir / "health-connect-pairing.json"
         self.devices_path = self.private_dir / "health-connect-devices.json"
         self.wellness_path = self.private_dir / "health-connect-wellness.json"
+        self.inventory_path = self.private_dir / "health-connect-inventory.json"
         self.activities_path = self.private_dir / "activities-unified.json"
 
     def create_pairing_code(self) -> str:
@@ -72,12 +73,23 @@ class HealthConnectBridge:
         wellness.extend(item for item in payload.get("wellness", []) if isinstance(item, dict))
         unique = {str(item.get("source_id") or f"{item.get('type')}:{item.get('start_time')}"): item for item in wellness}
         self._write(self.wellness_path, list(unique.values()))
+        inventory = {
+            "received_at": int(time.time()),
+            "sync_schema_version": payload.get("sync_schema_version"),
+            "backfill_performed": bool(payload.get("backfill_performed", False)),
+            "record_types": [item for item in payload.get("record_inventory", []) if isinstance(item, dict)],
+            "skipped_record_types": [item for item in payload.get("skipped_record_types", []) if isinstance(item, dict)],
+        }
+        self._write(self.inventory_path, inventory)
         device["last_sync_at"] = int(time.time())
+        device["last_sync_schema_version"] = payload.get("sync_schema_version")
         self._write(self.devices_path, devices)
         from src.training.post_sync_orchestrator import PostSyncOrchestrator
         assessment = PostSyncOrchestrator(self.private_dir).run("health_connect")
         return {"activities_received": len(normalized), "activities_total": total,
                 "wellness_received": len(payload.get("wellness", [])), "wellness_total": len(unique),
+                "record_types_available": sum(1 for item in inventory["record_types"] if int(item.get("count", 0) or 0) > 0),
+                "record_types_skipped": len(inventory["skipped_record_types"]),
                 "recovery_index": (assessment.get("recovery") or {}).get("atlas_recovery_index"),
                 "program_proposal_available": assessment.get("program_proposal_available", False)}
 
@@ -99,7 +111,10 @@ class HealthConnectBridge:
             average_speed_mps=item.get("average_speed_mps"),
             elevation_gain_m=item.get("elevation_gain_m"), source_device=item.get("source_device"),
             samples=samples,
-            raw_metadata={"health_connect": True, "health_connect_exercise_type": raw_type})
+            raw_metadata={"health_connect": True, "health_connect_exercise_type": raw_type,
+                          "health_connect_local_day": item.get("local_day"),
+                          "lap_count": item.get("lap_count", 0),
+                          "segment_count": item.get("segment_count", 0)})
 
     def _normalize_stored_activity_types(self) -> None:
         store = ActivityStore(self.activities_path)
