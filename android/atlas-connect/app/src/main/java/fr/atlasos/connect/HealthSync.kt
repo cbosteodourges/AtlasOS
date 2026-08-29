@@ -9,9 +9,13 @@ import androidx.health.connect.client.permission.HealthPermission
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.Instant
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
 class HealthSync(private val context: Context) {
+    companion object {
+        private const val SYNC_SCHEMA_VERSION = 2
+    }
     private suspend inline fun <reified T : Record> HealthConnectClient.records(range: TimeRangeFilter): List<T> {
         val result = mutableListOf<T>()
         var token: String? = null
@@ -49,9 +53,11 @@ class HealthSync(private val context: Context) {
         val skipped = JSONArray()
         val prefs = context.getSharedPreferences("atlas", Context.MODE_PRIVATE)
         val last = prefs.getLong("last_sync", 0L)
-        // Instant supports fixed-duration units only. YEARS is calendar based and
-        // throws UnsupportedTemporalTypeException on the first historical sync.
-        val start = if (last > 0) {
+        val previousSchema = prefs.getInt("sync_schema_version", 0)
+        val backfillPerformed = previousSchema < SYNC_SCHEMA_VERSION
+        // Chaque nouvelle version du schéma relit dix ans d'historique afin que
+        // les types ajoutés ne restent pas vides derrière l'ancien filigrane.
+        val start = if (last > 0 && !backfillPerformed) {
             Instant.ofEpochMilli(last).minus(1, ChronoUnit.DAYS)
         } else {
             Instant.now().minus(3652, ChronoUnit.DAYS)
@@ -67,6 +73,24 @@ class HealthSync(private val context: Context) {
         val basalRates = client.availableRecords<BasalMetabolicRateRecord>(range, granted, skipped)
         val cadences = client.availableRecords<StepsCadenceRecord>(range, granted, skipped)
         val powers = client.availableRecords<PowerRecord>(range, granted, skipped)
+        val vo2MaxRecords = client.availableRecords<Vo2MaxRecord>(range, granted, skipped)
+        val heightRecords = client.availableRecords<HeightRecord>(range, granted, skipped)
+        val leanBodyMassRecords = client.availableRecords<LeanBodyMassRecord>(range, granted, skipped)
+        val bodyWaterMassRecords = client.availableRecords<BodyWaterMassRecord>(range, granted, skipped)
+        val boneMassRecords = client.availableRecords<BoneMassRecord>(range, granted, skipped)
+        val sleepRecords = client.availableRecords<SleepSessionRecord>(range, granted, skipped)
+        val restingHeartRates = client.availableRecords<RestingHeartRateRecord>(range, granted, skipped)
+        val hrvRecords = client.availableRecords<HeartRateVariabilityRmssdRecord>(range, granted, skipped)
+        val weightRecords = client.availableRecords<WeightRecord>(range, granted, skipped)
+        val bodyFatRecords = client.availableRecords<BodyFatRecord>(range, granted, skipped)
+        val oxygenRecords = client.availableRecords<OxygenSaturationRecord>(range, granted, skipped)
+        val respiratoryRecords = client.availableRecords<RespiratoryRateRecord>(range, granted, skipped)
+        val temperatureRecords = client.availableRecords<BodyTemperatureRecord>(range, granted, skipped)
+        val pressureRecords = client.availableRecords<BloodPressureRecord>(range, granted, skipped)
+        val hydrationRecords = client.availableRecords<HydrationRecord>(range, granted, skipped)
+        val nutritionRecords = client.availableRecords<NutritionRecord>(range, granted, skipped)
+        val stepRecords = client.availableRecords<StepsRecord>(range, granted, skipped)
+        val floorRecords = client.availableRecords<FloorsClimbedRecord>(range, granted, skipped)
         val activities = JSONArray()
         exercises.forEach { exercise ->
             val hr = heartRates.flatMap { it.samples }.filter { it.time in exercise.startTime..exercise.endTime }
@@ -86,7 +110,9 @@ class HealthSync(private val context: Context) {
                 .sumOf { it.energy.inKilocalories }
             val ascent = elevations.filter { overlaps(it.startTime, it.endTime, exercise) }.sumOf { it.elevation.inMeters }
             activities.put(JSONObject().put("source_id", exercise.metadata.id).put("type", exercise.exerciseType)
-                .put("start_time", exercise.startTime).put("duration_seconds", exercise.endTime.epochSecond - exercise.startTime.epochSecond)
+                .put("start_time", exercise.startTime).put("local_day", localDay(exercise.startTime))
+                .put("duration_seconds", exercise.endTime.epochSecond - exercise.startTime.epochSecond)
+                .put("lap_count", exercise.laps.size).put("segment_count", exercise.segments.size)
                 .put("distance_meters", distance).put("calories_kcal", kcal).put("elevation_gain_m", ascent)
                 .putNullable("average_heart_rate_bpm", hr.map { it.beatsPerMinute.toDouble() }.averageOrNull())
                 .putNullable("maximum_heart_rate_bpm", hr.maxOfOrNull { it.beatsPerMinute })
@@ -104,28 +130,36 @@ class HealthSync(private val context: Context) {
             .put("type", "basal_metabolic_rate").put("start_time", it.time)
             .put("basal_kcal_per_day", it.basalMetabolicRate.inWatts * 86400.0 / 4184.0)
             .put("source_device", it.metadata.dataOrigin.packageName)) }
-        client.availableRecords<SleepSessionRecord>(range, granted, skipped).forEach { sleep ->
+        sleepRecords.forEach { sleep ->
             val stages = JSONArray()
             sleep.stages.forEach { stages.put(JSONObject().put("stage", it.stage).put("start_time", it.startTime).put("end_time", it.endTime)) }
             wellness.put(JSONObject().put("source_id", sleep.metadata.id).put("type", "sleep")
                 .put("start_time", sleep.startTime).put("end_time", sleep.endTime)
                 .put("duration_seconds", sleep.endTime.epochSecond - sleep.startTime.epochSecond).put("stages", stages))
         }
-        client.availableRecords<RestingHeartRateRecord>(range, granted, skipped).forEach { wellness.put(instant(it.metadata.id, "resting_heart_rate", it.time, it.beatsPerMinute)) }
-        client.availableRecords<HeartRateVariabilityRmssdRecord>(range, granted, skipped).forEach { wellness.put(instant(it.metadata.id, "hrv_rmssd", it.time, it.heartRateVariabilityMillis)) }
-        client.availableRecords<WeightRecord>(range, granted, skipped).forEach { wellness.put(instant(it.metadata.id, "weight", it.time, it.weight.inKilograms)) }
-        client.availableRecords<BodyFatRecord>(range, granted, skipped).forEach { wellness.put(instant(it.metadata.id, "body_fat", it.time, it.percentage.value)) }
-        client.availableRecords<OxygenSaturationRecord>(range, granted, skipped).forEach { wellness.put(instant(it.metadata.id, "oxygen_saturation", it.time, it.percentage.value)) }
-        client.availableRecords<RespiratoryRateRecord>(range, granted, skipped).forEach { wellness.put(instant(it.metadata.id, "respiratory_rate", it.time, it.rate)) }
-        client.availableRecords<BodyTemperatureRecord>(range, granted, skipped).forEach { wellness.put(instant(it.metadata.id, "body_temperature", it.time, it.temperature.inCelsius)) }
-        client.availableRecords<BloodPressureRecord>(range, granted, skipped).forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
+        restingHeartRates.forEach { wellness.put(instant(it.metadata.id, "resting_heart_rate", it.time, it.beatsPerMinute)) }
+        hrvRecords.forEach { wellness.put(instant(it.metadata.id, "hrv_rmssd", it.time, it.heartRateVariabilityMillis)) }
+        weightRecords.forEach { wellness.put(instant(it.metadata.id, "weight", it.time, it.weight.inKilograms)) }
+        bodyFatRecords.forEach { wellness.put(instant(it.metadata.id, "body_fat", it.time, it.percentage.value, it.metadata.dataOrigin.packageName)) }
+        heightRecords.forEach { wellness.put(instant(it.metadata.id, "height", it.time, it.height.inMeters, it.metadata.dataOrigin.packageName)) }
+        leanBodyMassRecords.forEach { wellness.put(instant(it.metadata.id, "lean_body_mass", it.time, it.mass.inKilograms, it.metadata.dataOrigin.packageName)) }
+        bodyWaterMassRecords.forEach { wellness.put(instant(it.metadata.id, "body_water_mass", it.time, it.mass.inKilograms, it.metadata.dataOrigin.packageName)) }
+        boneMassRecords.forEach { wellness.put(instant(it.metadata.id, "bone_mass", it.time, it.mass.inKilograms, it.metadata.dataOrigin.packageName)) }
+        vo2MaxRecords.forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
+            .put("type", "vo2_max").put("start_time", it.time).put("local_day", localDay(it.time))
+            .put("value", it.vo2MillilitersPerMinuteKilogram).put("measurement_method", it.measurementMethod)
+            .put("source_device", it.metadata.dataOrigin.packageName)) }
+        oxygenRecords.forEach { wellness.put(instant(it.metadata.id, "oxygen_saturation", it.time, it.percentage.value)) }
+        respiratoryRecords.forEach { wellness.put(instant(it.metadata.id, "respiratory_rate", it.time, it.rate)) }
+        temperatureRecords.forEach { wellness.put(instant(it.metadata.id, "body_temperature", it.time, it.temperature.inCelsius)) }
+        pressureRecords.forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
             .put("type", "blood_pressure").put("start_time", it.time)
             .put("systolic_mmhg", it.systolic.inMillimetersOfMercury)
             .put("diastolic_mmhg", it.diastolic.inMillimetersOfMercury)) }
-        client.availableRecords<HydrationRecord>(range, granted, skipped).forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
+        hydrationRecords.forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
             .put("type", "hydration").put("start_time", it.startTime).put("end_time", it.endTime)
             .put("volume_ml", it.volume.inLiters * 1000).put("source_device", it.metadata.dataOrigin.packageName)) }
-        client.availableRecords<NutritionRecord>(range, granted, skipped).forEach { nutrition -> wellness.put(JSONObject()
+        nutritionRecords.forEach { nutrition -> wellness.put(JSONObject()
             .put("source_id", nutrition.metadata.id).put("type", "nutrition")
             .put("start_time", nutrition.startTime).put("end_time", nutrition.endTime)
             .putNullable("energy_kcal", nutrition.energy?.inKilocalories)
@@ -134,22 +168,66 @@ class HealthSync(private val context: Context) {
             .putNullable("fat_g", nutrition.totalFat?.inGrams)
             .putNullable("fiber_g", nutrition.dietaryFiber?.inGrams)
             .putNullable("sodium_mg", nutrition.sodium?.inGrams?.times(1000))
+            .putNullable("sugar_g", nutrition.sugar?.inGrams)
+            .putNullable("calcium_mg", nutrition.calcium?.inGrams?.times(1000))
+            .putNullable("iron_mg", nutrition.iron?.inGrams?.times(1000))
+            .putNullable("magnesium_mg", nutrition.magnesium?.inGrams?.times(1000))
+            .putNullable("potassium_mg", nutrition.potassium?.inGrams?.times(1000))
+            .putNullable("zinc_mg", nutrition.zinc?.inGrams?.times(1000))
+            .putNullable("vitamin_c_mg", nutrition.vitaminC?.inGrams?.times(1000))
+            .putNullable("vitamin_d_mcg", nutrition.vitaminD?.inGrams?.times(1000000))
+            .putNullable("vitamin_b12_mcg", nutrition.vitaminB12?.inGrams?.times(1000000))
+            .putNullable("caffeine_mg", nutrition.caffeine?.inGrams?.times(1000))
+            .put("local_day", localDay(nutrition.startTime))
             .put("meal_type", nutrition.mealType).put("name", nutrition.name)
             .put("source_device", nutrition.metadata.dataOrigin.packageName)) }
-        client.availableRecords<StepsRecord>(range, granted, skipped).forEach { wellness.put(interval(it.metadata.id, "steps", it.startTime, it.endTime, it.count)) }
-        client.availableRecords<FloorsClimbedRecord>(range, granted, skipped).forEach { wellness.put(interval(it.metadata.id, "floors", it.startTime, it.endTime, it.floors)) }
+        stepRecords.forEach { wellness.put(interval(it.metadata.id, "steps", it.startTime, it.endTime, it.count)) }
+        floorRecords.forEach { wellness.put(interval(it.metadata.id, "floors", it.startTime, it.endTime, it.floors)) }
         heartRates.forEach { record -> wellness.put(JSONObject().put("source_id", record.metadata.id).put("type", "heart_rate_series")
             .put("start_time", record.startTime).put("end_time", record.endTime)
             .put("samples", JSONArray(record.samples.map { JSONObject().put("timestamp", it.time).put("value", it.beatsPerMinute) }))) }
+        val inventory = JSONArray(listOf(
+            inventoryEntry("ExerciseSessionRecord", exercises),
+            inventoryEntry("SleepSessionRecord", sleepRecords),
+            inventoryEntry("HeartRateRecord", heartRates),
+            inventoryEntry("RestingHeartRateRecord", restingHeartRates),
+            inventoryEntry("HeartRateVariabilityRmssdRecord", hrvRecords),
+            inventoryEntry("Vo2MaxRecord", vo2MaxRecords),
+            inventoryEntry("WeightRecord", weightRecords),
+            inventoryEntry("BodyFatRecord", bodyFatRecords),
+            inventoryEntry("HeightRecord", heightRecords),
+            inventoryEntry("LeanBodyMassRecord", leanBodyMassRecords),
+            inventoryEntry("BodyWaterMassRecord", bodyWaterMassRecords),
+            inventoryEntry("BoneMassRecord", boneMassRecords),
+            inventoryEntry("TotalCaloriesBurnedRecord", calories),
+            inventoryEntry("ActiveCaloriesBurnedRecord", activeCalories),
+            inventoryEntry("BasalMetabolicRateRecord", basalRates),
+            inventoryEntry("HydrationRecord", hydrationRecords),
+            inventoryEntry("NutritionRecord", nutritionRecords),
+            inventoryEntry("StepsRecord", stepRecords),
+            inventoryEntry("FloorsClimbedRecord", floorRecords)
+        ))
         AtlasTransport.ingest(prefs.getString("server", "")!!, prefs.getString("token", "")!!,
-            JSONObject().put("activities", activities).put("wellness", wellness).put("skipped_record_types", skipped))
-        prefs.edit().putLong("last_sync", System.currentTimeMillis()).apply()
+            JSONObject().put("activities", activities).put("wellness", wellness)
+                .put("record_inventory", inventory).put("skipped_record_types", skipped)
+                .put("sync_schema_version", SYNC_SCHEMA_VERSION).put("backfill_performed", backfillPerformed))
+        prefs.edit().putLong("last_sync", System.currentTimeMillis())
+            .putInt("sync_schema_version", SYNC_SCHEMA_VERSION).apply()
         return activities.length() + wellness.length()
     }
 
     private fun overlaps(start: Instant, end: Instant, exercise: ExerciseSessionRecord) = start < exercise.endTime && end > exercise.startTime
     private fun List<Double>.averageOrNull(): Double? = if (isEmpty()) null else average()
     private fun JSONObject.putNullable(key: String, value: Number?): JSONObject = if (value == null) this else put(key, value)
-    private fun instant(id: String, type: String, time: Instant, value: Number) = JSONObject().put("source_id", id).put("type", type).put("start_time", time).put("value", value)
-    private fun interval(id: String, type: String, start: Instant, end: Instant, value: Number) = JSONObject().put("source_id", id).put("type", type).put("start_time", start).put("end_time", end).put("value", value)
+    private fun localDay(time: Instant): String = time.atZone(ZoneId.systemDefault()).toLocalDate().toString()
+    private fun inventoryEntry(type: String, records: List<out Record>): JSONObject {
+        val sources = records.map { it.metadata.dataOrigin.packageName }.filter { it.isNotBlank() }.distinct().sorted()
+        return JSONObject().put("record_type", type).put("count", records.size).put("sources", JSONArray(sources))
+    }
+    private fun instant(id: String, type: String, time: Instant, value: Number, source: String? = null) =
+        JSONObject().put("source_id", id).put("type", type).put("start_time", time)
+            .put("local_day", localDay(time)).put("value", value).apply { if (!source.isNullOrBlank()) put("source_device", source) }
+    private fun interval(id: String, type: String, start: Instant, end: Instant, value: Number) =
+        JSONObject().put("source_id", id).put("type", type).put("start_time", start).put("end_time", end)
+            .put("local_day", localDay(start)).put("value", value)
 }
