@@ -47,3 +47,10 @@ def test_historical_curve_uses_weekly_points_and_active_reference():
     assert "cursor += timedelta(days=7)" in orchestrator
     assert "start = endpoint - timedelta(days=41)" in orchestrator
     assert "return {**saved, **snapshot}" in orchestrator
+
+
+def test_estimate_never_silently_replaces_active_reference():
+    orchestrator = (ROOT / "src" / "training" / "post_sync_orchestrator.py").read_text(encoding="utf-8")
+    assert "profile = previous" in orchestrator
+    assert "_program_proposal(proposed_profile" in orchestrator
+    assert '"maximum_heart_rate_bpm": maximum_hr' in orchestrator
