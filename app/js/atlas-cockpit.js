@@ -440,7 +440,8 @@
         coords.forEach(point => {
           const circle = document.createElementNS(ns, "circle");
           circle.setAttribute("cx", String(point.x)); circle.setAttribute("cy", String(point.y));
-          circle.setAttribute("r", "5"); circle.setAttribute("class", "chart-point");
+          circle.setAttribute("r", point.kind === "validated" ? "7" : "5");
+          circle.setAttribute("class", `chart-point${point.kind === "validated" ? " is-validated" : ""}`);
           const title = document.createElementNS(ns, "title");
           const [label, unit] = metricMeta[selectedPhysiologyMetric];
           title.textContent = `${new Date(point.day).toLocaleDateString("fr-FR")} · ${label} ${point.value.toLocaleString("fr-FR")} ${unit}`;
