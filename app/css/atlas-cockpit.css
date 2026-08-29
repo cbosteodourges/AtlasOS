@@ -699,3 +699,5 @@ body[data-avatar="female"] .twin-panel img {
 @media(max-width:700px){.physiology-reference-grid.physiology-rings{grid-template-columns:repeat(2,1fr);gap:12px}.physiology-rings .physiology-ring{width:124px;height:124px;min-height:124px}.physiology-evolution{margin:8px 12px 18px;padding:16px}}
 
 .chart-date{fill:#88a6ba;font-size:12px;font-weight:700}
+
+.chart-point.is-validated{fill:#f4f8ff;stroke:#45e4a1;stroke-width:5;filter:drop-shadow(0 0 8px rgba(69,228,161,.8))}
