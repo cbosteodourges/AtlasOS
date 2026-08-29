@@ -42,8 +42,17 @@ class PostSyncOrchestrator:
 
         previous = self._current_physiology()
         estimate = ContinuousPhysiologyEstimator().estimate(activities, previous)
-        profile = {**previous, **({key: value for key, value in estimate.items()
-                                  if key in PHYSIOLOGY_KEYS} if estimate.get("updated") else {})}
+        proposed_profile = {
+            **previous,
+            **(
+                {key: value for key, value in estimate.items() if key in PHYSIOLOGY_KEYS}
+                if estimate.get("updated")
+                else {}
+            ),
+        }
+        # Le profil affiché et historisé reste la référence active. Une estimation
+        # n'entre dans le profil qu'après validation explicite de la proposition.
+        profile = previous
         longitudinal = self._read("physiology-longitudinal.json", {"current": previous, "history": []})
         history = [
             item for item in longitudinal.get("history", [])
@@ -85,7 +94,7 @@ class PostSyncOrchestrator:
         self._write("nutrition-hydration-summary.json", nutrition)
         score = latest.get("atlas_recovery_index")
         action = self._action(score)
-        proposal = self._program_proposal(profile, action, score, estimate, nutrition)
+        proposal = self._program_proposal(proposed_profile, action, score, estimate, nutrition)
         assessment = {
             "source": source,
             "synchronized_at": datetime.now(timezone.utc).isoformat(),
@@ -168,7 +177,8 @@ class PostSyncOrchestrator:
                 "vma_kmh": estimate.get("vma_kmh"),
                 "sv1_speed_kmh": sv1.get("speed_kmh"),
                 "sv2_speed_kmh": sv2.get("speed_kmh"),
-                "maximum_heart_rate_bpm": observed_maximum_hr,
+                "maximum_heart_rate_bpm": maximum_hr,
+                "observed_maximum_heart_rate_bpm": observed_maximum_hr,
                 "estimator_confidence": estimate.get("confidence"),
                 "evidence_sessions": estimate.get("evidence_sessions"),
             })
