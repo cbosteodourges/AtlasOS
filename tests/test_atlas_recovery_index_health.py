@@ -21,6 +21,34 @@ class AtlasRecoveryIndexHealthTests(unittest.TestCase):
         self.assertFalse(result["latest"]["hrv_used"])
         self.assertNotIn("hrv", {item["key"] for item in result["latest"]["components"]})
 
+    def test_compares_sleep_duration_with_personal_history(self):
+        end = datetime(2026, 8, 29, 6, tzinfo=timezone.utc)
+        wellness = []
+        for offset in range(5, 0, -1):
+            previous_end = end - timedelta(days=offset)
+            wellness.append({
+                "type": "sleep",
+                "start_time": (previous_end - timedelta(hours=8)).isoformat(),
+                "end_time": previous_end.isoformat(),
+                "stages": [],
+            })
+        wellness.append({
+            "type": "sleep",
+            "start_time": (end - timedelta(hours=7, minutes=28)).isoformat(),
+            "end_time": end.isoformat(),
+            "stages": [],
+        })
+
+        latest = AtlasRecoveryIndex().build(wellness, [])["latest"]
+        duration = next(
+            item for item in latest["components"]
+            if item["key"] == "sleep_duration"
+        )
+        self.assertEqual(duration["personal_target_hours"], 8.0)
+        self.assertEqual(duration["difference_minutes"], -32)
+        self.assertLess(duration["score"], 90)
+        self.assertLess(latest["confidence"], 100)
+
     def test_uses_real_rmssd_and_recent_load_when_available(self):
         end = datetime(2026, 8, 27, 6, tzinfo=timezone.utc)
         wellness = [{"type": "sleep", "start_time": (end - timedelta(hours=8)).isoformat(),

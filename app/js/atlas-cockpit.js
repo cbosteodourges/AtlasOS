@@ -168,21 +168,25 @@
       `${indexSource.day}T12:00:00`
     ).toLocaleDateString("fr-FR");
 
-    setText("[data-atlas-index]", indexSource.atlas_index ?? "—");
-    setText(
-      "[data-recovery-label]",
-      latest.atlas_index != null && isCurrentDay
-        ? recoveryLabel(latest.atlas_index)
-        : "Dernier indice connu"
-    );
-    setText(
-      "[data-recovery-detail]",
-      latest.atlas_index != null && isCurrentDay
-        ? (latest.sleep_recovery_score != null
-          ? `Sommeil récupérateur ${latest.sleep_recovery_score}/100`
-          : "Indice Atlas du jour")
-        : `${indexSource.atlas_index ?? "—"}/100 · données du ${indexDayLabel}`
-    );
+    // Quand Santé Connect a produit un indice du jour, ne jamais le
+    // remplacer ensuite par l'ancien score Garmin arrivé plus lentement.
+    if (!partial) {
+      setText("[data-atlas-index]", indexSource.atlas_index ?? "—");
+      setText(
+        "[data-recovery-label]",
+        latest.atlas_index != null && isCurrentDay
+          ? recoveryLabel(latest.atlas_index)
+          : "Dernier indice connu"
+      );
+      setText(
+        "[data-recovery-detail]",
+        latest.atlas_index != null && isCurrentDay
+          ? (latest.sleep_recovery_score != null
+            ? `Sommeil récupérateur ${latest.sleep_recovery_score}/100`
+            : "Indice Atlas du jour")
+          : `${indexSource.atlas_index ?? "—"}/100 · données du ${indexDayLabel}`
+      );
+    }
     setText(
       "[data-readiness-title]",
       partial
@@ -458,7 +462,7 @@
       "[data-index-summary]",
       payload.index_explanation?.summary
     );
-    renderIndexComponents(indexSource.atlas_index_components);
+    if (!partial) renderIndexComponents(indexSource.atlas_index_components);
 
     const sync = document.querySelector(".sync-state");
     if (sync) {

@@ -21,12 +21,14 @@ def _number(value: Any) -> float | None:
         return None
 
 
-def _score_sleep_duration(hours: float) -> float:
-    if 7.5 <= hours <= 9:
+def _score_sleep_duration(hours: float, target_hours: float) -> float:
+    """Évalue la nuit par rapport au besoin personnel, pas à un seuil universel."""
+    target = max(7.5, min(9.0, target_hours))
+    if hours < target:
+        return max(0, 100 - (target - hours) * 30)
+    if hours <= target + 1:
         return 100
-    if hours < 7.5:
-        return max(0, 100 - (7.5 - hours) * 22)
-    return max(45, 100 - (hours - 9) * 10)
+    return max(45, 100 - (hours - target - 1) * 10)
 
 
 def _baseline(values: list[float], fallback: float | None = None) -> float | None:
@@ -45,6 +47,7 @@ class AtlasRecoveryIndex:
         by_day: dict[str, dict[str, Any]] = {}
         resting_values: list[float] = []
         hrv_values: list[float] = []
+        sleep_duration_values: list[float] = []
         daily_load: dict[str, float] = defaultdict(float)
         for activity in activities:
             stamp = _dt(getattr(activity, "start_time", None))
@@ -81,9 +84,14 @@ class AtlasRecoveryIndex:
             hrv_value = mean(hrv_today) if hrv_today else None
             rest_base = _baseline(resting_values, resting_value)
             hrv_base = _baseline(hrv_values, hrv_value)
+            sleep_hours = duration / 3600
+            sleep_target = _baseline(sleep_duration_values, 8.0) or 8.0
+            sleep_target = max(7.5, min(9.0, sleep_target))
             components = [{"key": "sleep_duration", "label": "Durée du sommeil",
-                           "score": _score_sleep_duration(duration / 3600), "weight": 35,
-                           "value": round(duration / 3600, 2), "unit": "h"}]
+                           "score": _score_sleep_duration(sleep_hours, sleep_target),
+                           "weight": 35, "value": round(sleep_hours, 2), "unit": "h",
+                           "personal_target_hours": round(sleep_target, 2),
+                           "difference_minutes": round((sleep_hours - sleep_target) * 60)}]
             known = sum(stages.values())
             if known:
                 deep = stages.get("5", 0) / duration
@@ -120,11 +128,17 @@ class AtlasRecoveryIndex:
                                    "acute_chronic_ratio": round(ratio, 2)})
             total_weight = sum(item["weight"] for item in components)
             score = round(sum(item["score"] * item["weight"] for item in components) / total_weight)
-            confidence = round(min(100, 30 + len(components) * 15 + min(25, len(resting_values) * 2)))
+            confidence = round(min(
+                95 if hrv_value is not None else 90,
+                25 + len(components) * 12
+                + min(20, len(sleep_duration_values))
+                + min(10, len(resting_values)),
+            ))
             by_day[day] = {"day": day, "atlas_recovery_index": score,
                            "atlas_index": score, "confidence": confidence,
                            "components": components, "hrv_used": hrv_value is not None,
                            "explanation": "Score fondé uniquement sur les mesures disponibles ; les poids sont redistribués quand la VFC manque."}
+            sleep_duration_values.append(sleep_hours)
             if resting_value is not None:
                 resting_values.append(resting_value)
             if hrv_value is not None:
