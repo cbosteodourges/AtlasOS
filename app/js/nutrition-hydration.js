@@ -45,14 +45,14 @@
     const expenditure = payload.energy_expenditure || {};
     const kcal = value => value == null ? "—" : `${Math.round(value)} kcal`;
     setText("[data-basal-energy]", kcal(expenditure.basal_kcal));
-    setText("[data-sport-energy]", kcal(expenditure.sport_kcal));
+    setText("[data-active-energy]", kcal(expenditure.active_kcal ?? expenditure.sport_kcal));
     setText("[data-known-energy]", kcal(expenditure.known_total_kcal));
     setText("[data-expenditure-total]", expenditure.known_total_kcal == null ? "Données à compléter" : `${Math.round(expenditure.known_total_kcal)} kcal connues`);
     const activityCount = Number(expenditure.activity_count || 0);
     const calorieCount = Number(expenditure.activity_calorie_count || 0);
     setText("[data-sport-energy-detail]", activityCount
-      ? `${calorieCount}/${activityCount} activité${activityCount > 1 ? "s" : ""} avec calories`
-      : "aucune activité aujourd’hui");
+      ? `dont sport importé : ${kcal(expenditure.sport_kcal)} · ${calorieCount}/${activityCount} activité${activityCount > 1 ? "s" : ""}`
+      : (expenditure.active_kcal != null ? "activité quotidienne transmise par Santé Connect" : "aucune activité aujourd’hui"));
     setText("[data-expenditure-note]", expenditure.scope || "Estimation partielle et explicable.");
     const education = one("[data-nutrition-education]");
     if (education) {
