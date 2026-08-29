@@ -208,14 +208,30 @@ def load_nutrition_hydration():
     records = [*wellness, *manual]
     weights = [item for item in wellness if isinstance(item, dict) and item.get("type") == "weight"]
     weights.sort(key=lambda item: str(item.get("start_time") or ""))
-    weight = number(weights[-1].get("value"), 0) if weights else 0
+    profile = load_user_profile()
+    identity = profile.get("identity") or profile
+    weight = number(weights[-1].get("value"), 0) if weights else number(identity.get("weightKg"), 0)
     activities = ActivityStore(ACTIVITIES_PATH).load()
     today = date.today().isoformat()
-    exercise_minutes = sum(item.duration_seconds for item in activities if item.start_time[:10] == today) / 60
+    today_activities = [item for item in activities if item.start_time[:10] == today]
+    exercise_minutes = sum(item.duration_seconds for item in today_activities) / 60
+    activities_with_calories = [
+        item for item in today_activities if number(item.calories_kcal, 0) > 0
+    ]
+    activity_energy = sum(number(item.calories_kcal, 0) for item in activities_with_calories)
     return {
         "access": nutrition_feature_access(),
-        **NutritionHydrationAnalyzer().analyze(records, weight_kg=weight or None,
-                                                exercise_minutes_today=exercise_minutes),
+        **NutritionHydrationAnalyzer().analyze(
+            records,
+            weight_kg=weight or None,
+            exercise_minutes_today=exercise_minutes,
+            height_cm=number(identity.get("heightCm"), 0) or None,
+            age_years=calculate_age(identity.get("birthDate")) or None,
+            biological_sex=identity.get("biologicalSex") or identity.get("gender"),
+            activity_energy_kcal=activity_energy,
+            activity_count=len(today_activities),
+            activity_calorie_count=len(activities_with_calories),
+        ),
     }
 
 
