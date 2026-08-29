@@ -12,6 +12,12 @@ env/
 # VS Code
 .vscode/
 
+# Android Studio / Gradle local
+**/.gradle/
+**/.idea/
+**/build/
+**/local.properties
+
 # Données Atlas
 atlas-data/private/
 atlas-data/imports/
