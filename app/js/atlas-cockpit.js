@@ -441,7 +441,20 @@
           const circle = document.createElementNS(ns, "circle");
           circle.setAttribute("cx", String(point.x)); circle.setAttribute("cy", String(point.y));
           circle.setAttribute("r", "5"); circle.setAttribute("class", "chart-point");
+          const title = document.createElementNS(ns, "title");
+          const [label, unit] = metricMeta[selectedPhysiologyMetric];
+          title.textContent = `${new Date(point.day).toLocaleDateString("fr-FR")} · ${label} ${point.value.toLocaleString("fr-FR")} ${unit}`;
+          circle.appendChild(title);
           chartSvg.appendChild(circle);
+        });
+        [coords[0], coords.at(-1)].forEach((point, index) => {
+          const label = document.createElementNS(ns, "text");
+          label.setAttribute("x", String(point.x));
+          label.setAttribute("y", "222");
+          label.setAttribute("text-anchor", index ? "end" : "start");
+          label.setAttribute("class", "chart-date");
+          label.textContent = new Date(point.day).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "2-digit" });
+          chartSvg.appendChild(label);
         });
         const delta = points.at(-1).value - points[0].value;
         const [label, unit] = metricMeta[selectedPhysiologyMetric];
@@ -452,7 +465,7 @@
         const chartNote = document.querySelector("[data-physiology-chart-note]");
         const estimatedCount = points.filter(point => point.kind === "atlas_estimate").length;
         if (chartNote) chartNote.textContent = estimatedCount
-          ? `${estimatedCount} point${estimatedCount > 1 ? "s" : ""} rétrospectif${estimatedCount > 1 ? "s" : ""} Atlas, calculé${estimatedCount > 1 ? "s" : ""} depuis les séances FIT et recalé${estimatedCount > 1 ? "s" : ""} sur votre référence actuelle.`
+          ? `${estimatedCount} point${estimatedCount > 1 ? "s" : ""} hebdomadaire${estimatedCount > 1 ? "s" : ""} rétrospectif${estimatedCount > 1 ? "s" : ""} Atlas, calculé${estimatedCount > 1 ? "s" : ""} depuis les séances FIT et recalé${estimatedCount > 1 ? "s" : ""} sur votre référence actuelle.`
           : "Courbe fondée sur les références physiologiques validées.";
         if (chartMessage) chartMessage.textContent = "";
       };
