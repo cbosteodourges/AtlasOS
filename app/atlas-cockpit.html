@@ -179,15 +179,39 @@
             <h3 id="physiologyReferenceTitle">Votre potentiel et vos seuils</h3>
             <small data-fit-archive-count>Recherche des séances FIT archivées…</small>
           </header>
-          <div class="physiology-reference-grid">
-            <article><span>VO₂max</span><strong data-physiology-vo2>—</strong><small>Capacité aérobie</small></article>
-            <article><span>VMA estimée</span><strong data-physiology-vma>—</strong><small data-physiology-vma-reference></small></article>
-            <article><span>SV1</span><strong data-physiology-sv1>—</strong><small data-physiology-sv1-hr></small></article>
-            <article><span>SV2</span><strong data-physiology-sv2>—</strong><small data-physiology-sv2-hr></small></article>
-            <article><span>FC maximale</span><strong data-physiology-hrmax>—</strong><small>Référence personnelle</small></article>
+          <div class="physiology-reference-grid physiology-rings" data-physiology-rings>
+            <article class="physiology-ring ring-vo2"><span>VO₂MAX</span><strong data-physiology-vo2>—</strong><small>Capacité aérobie</small></article>
+            <article class="physiology-ring ring-vma"><span>VMA ESTIMÉE</span><strong data-physiology-vma>—</strong><small data-physiology-vma-reference></small></article>
+            <article class="physiology-ring ring-sv1"><span>SV1</span><strong data-physiology-sv1>—</strong><small data-physiology-sv1-hr></small></article>
+            <article class="physiology-ring ring-sv2"><span>SV2</span><strong data-physiology-sv2>—</strong><small data-physiology-sv2-hr></small></article>
+            <article class="physiology-ring ring-hrmax"><span>FC MAXIMALE</span><strong data-physiology-hrmax>—</strong><small>Référence personnelle</small></article>
           </div>
+          <section class="physiology-evolution" aria-labelledby="physiologyEvolutionTitle">
+            <header>
+              <div><span class="eyebrow">ÉVOLUTION PERSONNELLE</span><h4 id="physiologyEvolutionTitle">Vos seuils au fil de l’entraînement</h4></div>
+              <div class="physiology-metric-tabs" role="tablist" aria-label="Paramètre physiologique">
+                <button type="button" data-physiology-metric="vo2_max" class="is-active">VO₂max</button>
+                <button type="button" data-physiology-metric="vma_kmh">VMA</button>
+                <button type="button" data-physiology-metric="sv1_speed_kmh">SV1</button>
+                <button type="button" data-physiology-metric="sv2_speed_kmh">SV2</button>
+                <button type="button" data-physiology-metric="maximum_heart_rate_bpm">FC max</button>
+              </div>
+            </header>
+            <div class="physiology-period-tabs" aria-label="Période affichée">
+              <button type="button" data-physiology-period="7">7 j</button><button type="button" data-physiology-period="30">1 mois</button>
+              <button type="button" data-physiology-period="90" class="is-active">3 mois</button><button type="button" data-physiology-period="180">6 mois</button>
+              <button type="button" data-physiology-period="365">1 an</button><button type="button" data-physiology-period="730">2 ans</button>
+              <button type="button" data-physiology-period="1095">3 ans</button><button type="button" data-physiology-period="1825">5 ans</button>
+              <button type="button" data-physiology-period="3650">10 ans</button><button type="button" data-physiology-period="0">Tout</button>
+            </div>
+            <div class="physiology-chart" data-physiology-chart role="img" aria-label="Évolution physiologique">
+              <svg viewBox="0 0 900 230" preserveAspectRatio="none" aria-hidden="true"></svg>
+              <p data-physiology-chart-message>Historique physiologique en construction.</p>
+            </div>
+            <footer><strong data-physiology-chart-summary>Première référence enregistrée</strong><small data-physiology-chart-note>Atlas n’affiche une tendance qu’avec au moins deux mesures distinctes.</small></footer>
+          </section>
         </section>
-        <div class="analysis-columns">
+        <div class="analysis-columns insight-lanes">
           <article class="analysis-strengths"><span class="eyebrow">FORCES OBSERVÉES</span><h3>Ce qui fonctionne</h3><ul data-analysis-strengths></ul></article>
           <article class="analysis-vigilance"><span class="eyebrow">POINTS DE VIGILANCE</span><h3>Ce qui limite l’analyse</h3><ul data-analysis-vigilance></ul></article>
           <article class="analysis-priorities"><span class="eyebrow">AXES DE TRAVAIL</span><h3>Priorités proposées</h3><ol data-analysis-priorities></ol></article>
@@ -233,7 +257,7 @@
     <label><input type="checkbox" value="physiology" checked> VO₂max, VMA et seuils</label>
   </section>
   <script src="./js/atlas-conversation.js?v=9"></script>
-  <script src="./js/atlas-cockpit.js?v=23"></script>
+  <script src="./js/atlas-cockpit.js?v=24"></script>
   <script src="./js/atlas-pwa.js?v=3"></script>
 </body>
 </html>
