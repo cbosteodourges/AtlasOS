@@ -44,9 +44,9 @@
   };
 
   const recoveryLabel = score => {
-    if (score >= 85) return "Excellente";
-    if (score >= 70) return "Bonne";
-    if (score >= 55) return "Modérée";
+    if (score >= 85) return "Très favorable";
+    if (score >= 70) return "Favorable";
+    if (score >= 55) return "Intermédiaire";
     if (score >= 40) return "Faible";
     return "Récupération nécessaire";
   };

@@ -27,10 +27,31 @@ def _score_sleep_duration(hours: float, target_hours: float) -> float:
     """Évalue la nuit par rapport au besoin personnel, pas à un seuil universel."""
     target = max(7.5, min(9.0, target_hours))
     if hours < target:
-        return max(0, 100 - (target - hours) * 30)
+        # Une heure manquante est un déficit significatif, surtout lorsqu'Atlas
+        # ne dispose pas encore des marqueurs physiologiques de la même nuit.
+        return max(0, 100 - (target - hours) * 45)
     if hours <= target + 1:
         return 100
     return max(45, 100 - (hours - target - 1) * 10)
+
+
+def _calibrate_partial_score(
+    raw_score: float,
+    duration_score: float,
+    sleep_deficit_minutes: int,
+    *,
+    hrv_available: bool,
+    nocturnal_hr_available: bool,
+) -> int:
+    """Empêche des données partielles favorables de produire un faux excellent."""
+    calibrated = float(raw_score)
+    if not hrv_available:
+        calibrated = min(calibrated, 84)
+        if sleep_deficit_minutes >= 30:
+            calibrated = min(calibrated, duration_score + 5)
+    if not hrv_available and not nocturnal_hr_available:
+        calibrated = min(calibrated, 75)
+    return round(max(0, min(100, calibrated)))
 
 
 def _baseline(values: list[float], fallback: float | None = None) -> float | None:
@@ -173,16 +194,30 @@ class AtlasRecoveryIndex:
                                    "score": load_score, "weight": 15,
                                    "acute_chronic_ratio": round(ratio, 2)})
             total_weight = sum(item["weight"] for item in components)
-            score = round(sum(item["score"] * item["weight"] for item in components) / total_weight)
+            raw_score = round(
+                sum(item["score"] * item["weight"] for item in components)
+                / total_weight
+            )
+            sleep_deficit_minutes = max(
+                0, round((sleep_target - sleep_hours) * 60)
+            )
+            duration_score = next(
+                item["score"] for item in components
+                if item["key"] == "sleep_duration"
+            )
+            score = _calibrate_partial_score(
+                raw_score,
+                duration_score,
+                sleep_deficit_minutes,
+                hrv_available=hrv_value is not None,
+                nocturnal_hr_available=nocturnal is not None,
+            )
             confidence = round(min(
-                95 if hrv_value is not None else 90,
+                95 if hrv_value is not None else 75,
                 25 + len(components) * 12
                 + min(20, len(sleep_duration_values))
                 + min(10, len(resting_values)),
             ))
-            sleep_deficit_minutes = max(
-                0, round((sleep_target - sleep_hours) * 60)
-            )
             if sleep_deficit_minutes >= 15:
                 guidance = (
                     f"Pour optimiser votre récupération, visez environ "
@@ -267,6 +302,7 @@ class AtlasRecoveryIndex:
                 "day": day,
                 "atlas_recovery_index": score,
                 "atlas_index": score,
+                "raw_score_before_partial_calibration": raw_score,
                 "confidence": confidence,
                 "components": components,
                 "hrv_used": hrv_value is not None,
