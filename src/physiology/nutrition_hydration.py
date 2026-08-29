@@ -30,12 +30,16 @@ class NutritionHydrationAnalyzer:
         days: dict[str, dict[str, Any]] = defaultdict(lambda: {
             "hydration_ml": 0.0, "energy_kcal": 0.0, "protein_g": 0.0,
             "carbohydrate_g": 0.0, "fat_g": 0.0, "fiber_g": 0.0,
-            "sodium_mg": 0.0, "record_count": 0, "sources": set(),
+            "sodium_mg": 0.0, "sugar_g": 0.0, "calcium_mg": 0.0,
+            "iron_mg": 0.0, "magnesium_mg": 0.0, "potassium_mg": 0.0,
+            "zinc_mg": 0.0, "vitamin_c_mg": 0.0, "vitamin_d_mcg": 0.0,
+            "vitamin_b12_mcg": 0.0, "caffeine_mg": 0.0,
+            "record_count": 0, "sources": set(),
         })
         for record in records:
             if not isinstance(record, dict) or record.get("type") not in {"hydration", "nutrition"}:
                 continue
-            stamp = str(record.get("start_time") or record.get("time") or "")[:10]
+            stamp = str(record.get("local_day") or record.get("start_time") or record.get("time") or "")[:10]
             try:
                 date.fromisoformat(stamp)
             except ValueError:
@@ -46,7 +50,12 @@ class NutritionHydrationAnalyzer:
             day["hydration_ml"] += _number(record.get("volume_ml")) or 0
             for target, source in (("energy_kcal", "energy_kcal"), ("protein_g", "protein_g"),
                                    ("carbohydrate_g", "carbohydrate_g"), ("fat_g", "fat_g"),
-                                   ("fiber_g", "fiber_g"), ("sodium_mg", "sodium_mg")):
+                                   ("fiber_g", "fiber_g"), ("sodium_mg", "sodium_mg"),
+                                   ("sugar_g", "sugar_g"), ("calcium_mg", "calcium_mg"),
+                                   ("iron_mg", "iron_mg"), ("magnesium_mg", "magnesium_mg"),
+                                   ("potassium_mg", "potassium_mg"), ("zinc_mg", "zinc_mg"),
+                                   ("vitamin_c_mg", "vitamin_c_mg"), ("vitamin_d_mcg", "vitamin_d_mcg"),
+                                   ("vitamin_b12_mcg", "vitamin_b12_mcg"), ("caffeine_mg", "caffeine_mg")):
                 day[target] += _number(record.get(source)) or 0
 
         history = []
@@ -62,7 +71,10 @@ class NutritionHydrationAnalyzer:
         if today_item is None:
             today_item = {"day": current_day.isoformat(), "hydration_ml": 0, "energy_kcal": 0,
                           "protein_g": 0, "carbohydrate_g": 0, "fat_g": 0, "fiber_g": 0,
-                          "sodium_mg": 0, "record_count": 0, "sources": []}
+                          "sodium_mg": 0, "sugar_g": 0, "calcium_mg": 0, "iron_mg": 0,
+                          "magnesium_mg": 0, "potassium_mg": 0, "zinc_mg": 0,
+                          "vitamin_c_mg": 0, "vitamin_d_mcg": 0, "vitamin_b12_mcg": 0,
+                          "caffeine_mg": 0, "record_count": 0, "sources": []}
 
         weight = _number(weight_kg)
         height = _number(height_cm)
