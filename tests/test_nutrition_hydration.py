@@ -30,6 +30,19 @@ class NutritionHydrationAnalyzerTests(unittest.TestCase):
         self.assertEqual(result["targets"]["protein_g"], 128)
         self.assertEqual(result["confidence"], 60)
 
+    def test_expenditure_uses_profile_and_only_imported_sport_calories(self):
+        result = NutritionHydrationAnalyzer().analyze(
+            [], weight_kg=80, height_cm=180, age_years=40,
+            biological_sex="male", activity_energy_kcal=720,
+            activity_count=2, activity_calorie_count=1,
+            today=date(2026, 8, 27),
+        )
+        expenditure = result["energy_expenditure"]
+        self.assertEqual(expenditure["basal_kcal"], 1780)
+        self.assertEqual(expenditure["sport_kcal"], 720)
+        self.assertEqual(expenditure["known_total_kcal"], 2500)
+        self.assertFalse(expenditure["sport_coverage_complete"])
+
 
 if __name__ == "__main__":
     unittest.main()
