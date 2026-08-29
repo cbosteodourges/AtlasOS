@@ -96,6 +96,8 @@
 
     gauge.style.setProperty("--recovery-position", `${bounded}%`);
     gauge.dataset.zone = zone.key;
+    gauge.dataset.ready = "true";
+    gauge.setAttribute("aria-busy", "false");
     gauge.setAttribute("aria-valuenow", String(Math.round(bounded)));
     const nuance = interpretation?.display_label;
     if (zoneLabel) {

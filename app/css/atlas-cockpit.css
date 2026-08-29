@@ -206,6 +206,7 @@ h1 { margin: 8px 0 5px; font-size: clamp(1.9rem, 3vw, 3rem); }
 
 .recovery-gauge-marker {
   position: absolute;
+  opacity: 0;
   left: clamp(1%, var(--recovery-position), 99%);
   top: 50%;
   width: 24px;
@@ -215,7 +216,11 @@ h1 { margin: 8px 0 5px; font-size: clamp(1.9rem, 3vw, 3rem); }
   background: #082035;
   box-shadow: 0 0 0 2px rgba(10, 27, 43, 0.8), 0 0 14px rgba(70, 223, 255, 0.75);
   transform: translate(-50%, -50%);
-  transition: left 450ms ease;
+  transition: left 450ms ease, opacity 180ms ease;
+}
+
+.recovery-gauge[data-ready="true"] .recovery-gauge-marker {
+  opacity: 1;
 }
 
 .recovery-gauge-labels {
