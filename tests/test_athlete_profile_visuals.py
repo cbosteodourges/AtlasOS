@@ -24,3 +24,11 @@ def test_profile_chart_requires_two_real_measurements():
     script = (ROOT / "app" / "js" / "atlas-cockpit.js").read_text(encoding="utf-8")
     assert "points.length < 2" in script
     assert "Une deuxième mesure distincte" in script
+
+
+def test_only_validated_physiology_is_charted():
+    server = (ROOT / "tools" / "atlas_web_server.py").read_text(encoding="utf-8")
+    orchestrator = (ROOT / "src" / "training" / "post_sync_orchestrator.py").read_text(encoding="utf-8")
+    assert '"schema": "validated_profile_v1"' in orchestrator
+    assert 'raw.get("schema") != "validated_profile_v1"' in server
+    assert '"sv2_speed_kmh": (6, 28)' in server
