@@ -38,5 +38,12 @@ def test_historical_fit_backfill_is_explicit_and_anchored():
     orchestrator = (ROOT / "src" / "training" / "post_sync_orchestrator.py").read_text(encoding="utf-8")
     assert "def _retrospective_physiology" in orchestrator
     assert '"source": "historical_fit"' in orchestrator
-    assert "tendance terrain sur 120 jours" in orchestrator
+    assert "tendance terrain hebdomadaire sur 42 jours" in orchestrator
     assert "offset = float(target) - float(values[-1])" in orchestrator
+
+
+def test_historical_curve_uses_weekly_points_and_active_reference():
+    orchestrator = (ROOT / "src" / "training" / "post_sync_orchestrator.py").read_text(encoding="utf-8")
+    assert "cursor += timedelta(days=7)" in orchestrator
+    assert "start = endpoint - timedelta(days=41)" in orchestrator
+    assert "return {**saved, **snapshot}" in orchestrator
