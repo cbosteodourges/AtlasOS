@@ -7511,3 +7511,115 @@ button.history-session-card:focus-visible {
     align-items: flex-start;
   }
 }
+
+
+/* Session detail: one visual order and one personal-zone language */
+#atlasSessionDialog .atlas-workout-timeline {
+  margin: 28px 0 6px;
+  padding: 18px 20px 14px;
+  border: 1px solid rgba(53, 204, 255, .16);
+  border-radius: 16px;
+  background: rgba(4, 18, 32, .72);
+}
+#atlasSessionDialog .atlas-workout-timeline header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 15px;
+}
+#atlasSessionDialog .atlas-workout-timeline header strong {
+  color: #f5fbff;
+  font-size: 1rem;
+}
+#atlasSessionDialog .atlas-workout-timeline header small,
+#atlasSessionDialog .workout-timeline-caption {
+  color: #86a7ba;
+  font-size: .76rem;
+}
+#atlasSessionDialog .workout-timeline-bars {
+  align-items: end;
+  min-height: 92px;
+  gap: 5px;
+}
+#atlasSessionDialog .workout-timeline-bars i {
+  position: relative;
+  min-width: 13px;
+  border-radius: 9px 9px 3px 3px;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--segment-color) 20%, transparent);
+}
+#atlasSessionDialog .workout-timeline-bars i::after {
+  content: attr(data-step);
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
+  translate: -50% 0;
+  color: rgba(2, 13, 24, .78);
+  font-size: .64rem;
+  font-weight: 900;
+}
+#atlasSessionDialog .workout-timeline-caption {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 7px;
+}
+#atlasSessionDialog .session-step-list {
+  counter-reset: atlas-session-step;
+}
+#atlasSessionDialog .session-step,
+#atlasSessionDialog .garmin-repeat-group {
+  counter-increment: atlas-session-step;
+}
+#atlasSessionDialog .session-step::after,
+#atlasSessionDialog .garmin-repeat-group::after {
+  content: counter(atlas-session-step);
+  position: absolute;
+  top: 13px;
+  left: 12px;
+  color: var(--step-accent, var(--repeat-accent, #35ccff));
+  font-size: .68rem;
+  font-weight: 900;
+}
+#atlasSessionDialog .session-step {
+  padding-left: 42px;
+}
+#atlasSessionDialog .garmin-repeat-group {
+  position: relative;
+  padding: 17px 12px 12px 42px;
+  border: 1px solid color-mix(in srgb, var(--repeat-accent) 45%, transparent);
+  border-left: 5px solid var(--repeat-accent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--repeat-accent) 7%, rgba(4, 17, 29, .92));
+}
+#atlasSessionDialog .garmin-repeat-group > h4 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 3px 12px;
+}
+#atlasSessionDialog .garmin-repeat-group > h4 span {
+  color: #f5fbff;
+  font-size: 1rem;
+}
+#atlasSessionDialog .garmin-repeat-group > h4 small {
+  color: var(--repeat-accent);
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+#atlasSessionDialog .garmin-repeat-group .session-step {
+  counter-increment: none;
+}
+#atlasSessionDialog .garmin-repeat-group .session-step::after {
+  display: none;
+}
+@media (max-width: 620px) {
+  #atlasSessionDialog .atlas-workout-timeline header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+  #atlasSessionDialog .workout-timeline-bars {
+    min-height: 72px;
+  }
+}
