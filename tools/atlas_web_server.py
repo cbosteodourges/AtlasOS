@@ -219,6 +219,21 @@ def load_nutrition_hydration():
         item for item in today_activities if number(item.calories_kcal, 0) > 0
     ]
     activity_energy = sum(number(item.calories_kcal, 0) for item in activities_with_calories)
+
+    def daily_energy(record_type, value_key):
+        by_source = defaultdict(float)
+        for item in wellness:
+            if not isinstance(item, dict) or item.get("type") != record_type:
+                continue
+            if str(item.get("start_time") or "")[:10] != today:
+                continue
+            source = str(item.get("source_device") or item.get("source") or "unknown")
+            by_source[source] += max(0, number(item.get(value_key), 0))
+        return max(by_source.values(), default=0) or None
+
+    measured_total = daily_energy("total_calories_burned", "energy_kcal")
+    measured_active = daily_energy("active_calories_burned", "energy_kcal")
+    measured_basal = daily_energy("basal_metabolic_rate", "basal_kcal_per_day")
     return {
         "access": nutrition_feature_access(),
         **NutritionHydrationAnalyzer().analyze(
@@ -231,6 +246,9 @@ def load_nutrition_hydration():
             activity_energy_kcal=activity_energy,
             activity_count=len(today_activities),
             activity_calorie_count=len(activities_with_calories),
+            measured_total_energy_kcal=measured_total,
+            measured_active_energy_kcal=measured_active,
+            measured_basal_energy_kcal=measured_basal,
         ),
     }
 
