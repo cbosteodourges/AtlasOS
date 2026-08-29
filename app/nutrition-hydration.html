@@ -7,7 +7,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Atlas OS — Nutrition & Hydratation</title>
   <link rel="stylesheet" href="./css/atlas-global-nav.css?v=17">
-  <link rel="stylesheet" href="./css/nutrition-hydration.css?v=2">
+  <link rel="stylesheet" href="./css/nutrition-hydration.css?v=3">
   <link rel="stylesheet" href="./css/atlas-responsive.css?v=2">
 </head>
 <body>
@@ -46,7 +46,29 @@
         <article class="macro-card energy"><span>Énergie</span><strong data-energy-value>—</strong><small>kcal enregistrées</small><i data-energy-progress></i></article>
         <article class="macro-card protein"><span>Protéines</span><strong data-protein-value>—</strong><small data-protein-target>repère à personnaliser</small><i data-protein-progress></i></article>
         <article class="macro-card carbs"><span>Glucides</span><strong data-carbs-value>—</strong><small data-carbs-target>repère à personnaliser</small><i data-carbs-progress></i></article>
+        <article class="macro-card fat"><span>Lipides</span><strong data-fat-value>—</strong><small>g enregistrés</small><i data-fat-progress></i></article>
+        <article class="macro-card fiber"><span>Fibres</span><strong data-fiber-value>—</strong><small>g enregistrés</small><i data-fiber-progress></i></article>
       </div>
+    </section>
+
+    <section class="expenditure-card" aria-labelledby="expenditureTitle">
+      <header>
+        <div><span class="eyebrow">DÉPENSE ÉNERGÉTIQUE DU JOUR</span><h2 id="expenditureTitle">Comprendre ce que votre corps utilise</h2></div>
+        <strong data-expenditure-total>— kcal connues</strong>
+      </header>
+      <div class="energy-flow">
+        <article><span>Métabolisme basal</span><strong data-basal-energy>—</strong><small>kcal estimées sur 24 h</small><i class="basal"></i></article>
+        <b>+</b>
+        <article><span>Activité sportive</span><strong data-sport-energy>—</strong><small data-sport-energy-detail>aucune activité aujourd’hui</small><i class="sport"></i></article>
+        <b>=</b>
+        <article class="total"><span>Total actuellement connu</span><strong data-known-energy>—</strong><small>hors activité quotidienne et digestion</small></article>
+      </div>
+      <p data-expenditure-note>Atlas charge les calories réellement transmises par vos activités.</p>
+    </section>
+
+    <section class="education-card">
+      <header><span class="eyebrow">RÉCUPÉRATION &amp; MICRONUTRITION</span><h2>Des repères utiles, sans diagnostic</h2></header>
+      <div class="education-grid" data-nutrition-education></div>
     </section>
 
     <section class="nutrition-lower">
@@ -66,6 +88,8 @@
           <label><span>Protéines (g)</span><input name="protein_g" type="number" min="0" max="500" step="0.1" inputmode="decimal"></label>
           <label><span>Glucides (g)</span><input name="carbohydrate_g" type="number" min="0" max="1000" step="0.1" inputmode="decimal"></label>
           <label><span>Lipides (g)</span><input name="fat_g" type="number" min="0" max="500" step="0.1" inputmode="decimal"></label>
+          <label><span>Fibres (g)</span><input name="fiber_g" type="number" min="0" max="150" step="0.1" inputmode="decimal"></label>
+          <label><span>Sodium (mg)</span><input name="sodium_mg" type="number" min="0" max="20000" step="1" inputmode="decimal"></label>
           <button type="submit">Enregistrer dans Atlas</button>
           <small data-nutrition-status role="status"></small>
         </form>
@@ -73,7 +97,7 @@
     </section>
   </main>
   <script src="./js/atlas-global-nav.js?v=18"></script>
-  <script src="./js/nutrition-hydration.js?v=1"></script>
+  <script src="./js/nutrition-hydration.js?v=2"></script>
   <script src="./js/atlas-pwa.js?v=3"></script>
 </body>
 </html>
