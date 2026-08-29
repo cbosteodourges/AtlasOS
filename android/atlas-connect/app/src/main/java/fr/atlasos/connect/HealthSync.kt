@@ -122,12 +122,14 @@ class HealthSync(private val context: Context) {
         val wellness = JSONArray()
         calories.forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
             .put("type", "total_calories_burned").put("start_time", it.startTime).put("end_time", it.endTime)
+            .put("local_day", localDay(it.startTime))
             .put("energy_kcal", it.energy.inKilocalories).put("source_device", it.metadata.dataOrigin.packageName)) }
         activeCalories.forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
             .put("type", "active_calories_burned").put("start_time", it.startTime).put("end_time", it.endTime)
+            .put("local_day", localDay(it.startTime))
             .put("energy_kcal", it.energy.inKilocalories).put("source_device", it.metadata.dataOrigin.packageName)) }
         basalRates.forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
-            .put("type", "basal_metabolic_rate").put("start_time", it.time)
+            .put("type", "basal_metabolic_rate").put("start_time", it.time).put("local_day", localDay(it.time))
             .put("basal_kcal_per_day", it.basalMetabolicRate.inWatts * 86400.0 / 4184.0)
             .put("source_device", it.metadata.dataOrigin.packageName)) }
         sleepRecords.forEach { sleep ->
@@ -135,6 +137,8 @@ class HealthSync(private val context: Context) {
             sleep.stages.forEach { stages.put(JSONObject().put("stage", it.stage).put("start_time", it.startTime).put("end_time", it.endTime)) }
             wellness.put(JSONObject().put("source_id", sleep.metadata.id).put("type", "sleep")
                 .put("start_time", sleep.startTime).put("end_time", sleep.endTime)
+                .put("local_day", localDay(sleep.endTime.minus(1, ChronoUnit.SECONDS)))
+                .put("source_device", sleep.metadata.dataOrigin.packageName)
                 .put("duration_seconds", sleep.endTime.epochSecond - sleep.startTime.epochSecond).put("stages", stages))
         }
         restingHeartRates.forEach { wellness.put(instant(it.metadata.id, "resting_heart_rate", it.time, it.beatsPerMinute)) }
@@ -153,12 +157,13 @@ class HealthSync(private val context: Context) {
         respiratoryRecords.forEach { wellness.put(instant(it.metadata.id, "respiratory_rate", it.time, it.rate)) }
         temperatureRecords.forEach { wellness.put(instant(it.metadata.id, "body_temperature", it.time, it.temperature.inCelsius)) }
         pressureRecords.forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
-            .put("type", "blood_pressure").put("start_time", it.time)
+            .put("type", "blood_pressure").put("start_time", it.time).put("local_day", localDay(it.time))
+            .put("source_device", it.metadata.dataOrigin.packageName)
             .put("systolic_mmhg", it.systolic.inMillimetersOfMercury)
             .put("diastolic_mmhg", it.diastolic.inMillimetersOfMercury)) }
         hydrationRecords.forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
             .put("type", "hydration").put("start_time", it.startTime).put("end_time", it.endTime)
-            .put("volume_ml", it.volume.inLiters * 1000).put("source_device", it.metadata.dataOrigin.packageName)) }
+            .put("local_day", localDay(it.startTime)).put("volume_ml", it.volume.inLiters * 1000).put("source_device", it.metadata.dataOrigin.packageName)) }
         nutritionRecords.forEach { nutrition -> wellness.put(JSONObject()
             .put("source_id", nutrition.metadata.id).put("type", "nutrition")
             .put("start_time", nutrition.startTime).put("end_time", nutrition.endTime)
@@ -185,6 +190,7 @@ class HealthSync(private val context: Context) {
         floorRecords.forEach { wellness.put(interval(it.metadata.id, "floors", it.startTime, it.endTime, it.floors)) }
         heartRates.forEach { record -> wellness.put(JSONObject().put("source_id", record.metadata.id).put("type", "heart_rate_series")
             .put("start_time", record.startTime).put("end_time", record.endTime)
+            .put("local_day", localDay(record.startTime)).put("source_device", record.metadata.dataOrigin.packageName)
             .put("samples", JSONArray(record.samples.map { JSONObject().put("timestamp", it.time).put("value", it.beatsPerMinute) }))) }
         val inventory = JSONArray(listOf(
             inventoryEntry("ExerciseSessionRecord", exercises),
