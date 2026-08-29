@@ -54,3 +54,8 @@ def test_estimate_never_silently_replaces_active_reference():
     assert "profile = previous" in orchestrator
     assert "_program_proposal(proposed_profile" in orchestrator
     assert '"maximum_heart_rate_bpm": maximum_hr' in orchestrator
+
+
+def test_vma_curve_uses_same_reference_as_visible_bubble():
+    orchestrator = (ROOT / "src" / "training" / "post_sync_orchestrator.py").read_text(encoding="utf-8")
+    assert orchestrator.count('profile.get("vma_estimated_from_vo2_kmh")') >= 2
