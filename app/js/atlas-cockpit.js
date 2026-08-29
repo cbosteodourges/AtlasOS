@@ -529,8 +529,12 @@
         const list = document.querySelector(selector);
         if (!list) return;
         list.replaceChildren();
-        (values || []).forEach(value => {
+        const entries = values || [];
+        const section = list.closest("article");
+        if (section) section.dataset.itemCount = String(entries.length);
+        entries.forEach((value, index) => {
           const item = document.createElement("li");
+          item.style.setProperty("--item-index", String(index + 1));
           item.textContent = value;
           list.appendChild(item);
         });
@@ -548,6 +552,7 @@
           const statement = String(conclusion.conclusion || "").toLowerCase();
           article.dataset.tone = /retrait|défavor|surveill|variable|risque/.test(statement) ? "vigilance"
             : /stable|progress|favorable|régulier/.test(statement) ? "positive" : "neutral";
+          article.style.setProperty("--confidence", `${Math.max(0, Math.min(100, Number(conclusion.confidence) || 0))}%`);
           article.innerHTML = `
             <div><span>${conclusion.topic}</span><b>${conclusion.confidence}/100 de confiance</b></div>
             <strong>${conclusion.conclusion}</strong>
