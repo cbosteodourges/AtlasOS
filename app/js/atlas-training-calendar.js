@@ -3124,7 +3124,11 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           </article>
         </div>
         <div class="daily-preparation-reasons">
-          <strong>Pourquoi Atlas modifie la séance</strong>
+          <strong>${
+            decision.action === "maintain"
+              ? "Pourquoi Atlas maintient la séance"
+              : "Pourquoi Atlas adapte la séance"
+          }</strong>
           <p>${(decision.reasons || []).map(
             reason => escapeHtml(humanizeDecisionReason(reason))
           ).join(" ")}</p>
