@@ -64,7 +64,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(48, 64, 48, 48) }
         layout.addView(TextView(this).apply { text = "Atlas Connect"; textSize = 28f })
-        server = EditText(this).apply { hint = "Adresse Atlas, ex. http://192.168.0.37:8010" }
+        server = EditText(this).apply { hint = "Adresse Atlas, ex. http://192.168.0.37:8011" }
         code = EditText(this).apply { hint = "Code à 6 chiffres"; inputType = 2 }
         status = TextView(this).apply { text = "Non associé"; setPadding(0, 24, 0, 24) }
         val permissionsButton = Button(this).apply { text = "Autoriser Santé Connect"; setOnClickListener { requestPermissions.launch(permissions) } }
@@ -74,7 +74,10 @@ class MainActivity : ComponentActivity() {
         setContentView(layout)
         val prefs = getSharedPreferences("atlas", MODE_PRIVATE)
         server.setText(prefs.getString("server", ""))
-        if (prefs.contains("token")) status.text = "Téléphone associé"
+        if (prefs.contains("token")) {
+            status.text = "Téléphone associé · synchronisation automatique active"
+            scheduleBackgroundSync()
+        }
     }
 
     private fun pair() = lifecycleScope.launch {
@@ -94,7 +97,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun scheduleBackgroundSync() {
-        val request = PeriodicWorkRequestBuilder<AtlasSyncWorker>(6, TimeUnit.HOURS).setConstraints(
+        val request = PeriodicWorkRequestBuilder<AtlasSyncWorker>(15, TimeUnit.MINUTES).setConstraints(
             Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()).build()
         WorkManager.getInstance(this).enqueueUniquePeriodicWork("atlas-health-sync", ExistingPeriodicWorkPolicy.UPDATE, request)
     }
