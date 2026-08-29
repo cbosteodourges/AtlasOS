@@ -78,7 +78,6 @@
 
   let currentRecoveryInsight = null;
 
-
   const updateRecoveryGauge = (value, interpretation = null) => {
     const gauge = document.querySelector("[data-recovery-gauge]");
     const zoneLabel = document.querySelector("[data-recovery-zone]");
@@ -139,55 +138,6 @@
       setText("[data-physiology-hrmax]", physiology.maximum_heart_rate_bpm != null ? `${physiology.maximum_heart_rate_bpm} bpm` : "—");
     }
   };
-
-  const nutritionModule = document.querySelector("[data-nutrition-module]");
-  const nutritionSetting = document.querySelector("[data-nutrition-setting]");
-  const nutritionNav = document.querySelector("[data-nutrition-nav]");
-  const renderNutrition = payload => {
-    if (!payload?.access?.enabled) return;
-    if (nutritionModule) nutritionModule.hidden = false;
-    if (nutritionSetting) nutritionSetting.hidden = false;
-    if (nutritionNav) nutritionNav.hidden = false;
-    if (location.hash === "#nutrition-hydratation" && nutritionModule) {
-      requestAnimationFrame(() => nutritionModule.scrollIntoView({ behavior: "smooth", block: "start" }));
-    }
-    const today = payload.today || {};
-    const targets = payload.targets || {};
-    setText("[data-hydration-value]", Math.round(today.hydration_ml || 0));
-    setText("[data-energy-value]", today.record_count ? Math.round(today.energy_kcal || 0) : "—");
-    setText("[data-protein-value]", today.record_count ? Math.round(today.protein_g || 0) : "—");
-    setText("[data-carbs-value]", today.record_count ? Math.round(today.carbohydrate_g || 0) : "—");
-    setText("[data-hydration-target]", targets.hydration_ml ? `Repère : ${targets.hydration_ml} ml` : "Ajoutez votre poids pour personnaliser le repère");
-    setText("[data-protein-target]", targets.protein_g ? `repère ${targets.protein_g} g` : "repère à personnaliser");
-    setText("[data-carbs-target]", targets.carbohydrate_g ? `repère ${targets.carbohydrate_g} g` : "repère à personnaliser");
-    setText("[data-fuel-source]", today.sources?.length ? today.sources.join(" + ") : "Atlas + Santé Connect");
-    setText("[data-fuel-guidance]", payload.recommendations?.[0] || "Apports enregistrés, analyse en cours.");
-    const bar = document.querySelector("[data-hydration-progress]");
-    if (bar) bar.style.width = `${Math.max(0, Math.min(100, payload.progress?.hydration_percent || 0))}%`;
-    if (!localStorage.getItem("atlasNutritionPilotAdded")) {
-      let selected;
-      try { selected = JSON.parse(localStorage.getItem("atlasCockpitVisibleMetrics") || "null"); } catch (_error) { selected = null; }
-      if (Array.isArray(selected) && !selected.includes("nutrition")) {
-        selected.push("nutrition");
-        localStorage.setItem("atlasCockpitVisibleMetrics", JSON.stringify(selected));
-      }
-      localStorage.setItem("atlasNutritionPilotAdded", "1");
-    }
-    applyDashboard();
-  };
-
-  const loadNutrition = () => fetch("/api/atlas/nutrition-hydration", { cache: "no-store" })
-    .then(response => response.ok ? response.json() : null).then(renderNutrition)
-    .catch(error => console.warn("Atlas nutrition :", error));
-
-  const saveNutrition = body => fetch("/api/atlas/nutrition-hydration", {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
-  }).then(async response => {
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || "Enregistrement impossible");
-    renderNutrition(payload.summary);
-    return payload;
-  });
 
   const updateCockpit = payload => {
     const latest = payload.latest;
@@ -702,23 +652,6 @@
   }));
   document.querySelector("[data-dashboard-settings]")?.addEventListener("click", () => { if (dashboardPanel) dashboardPanel.hidden = false; });
   document.querySelector("[data-dashboard-close]")?.addEventListener("click", () => { if (dashboardPanel) dashboardPanel.hidden = true; });
-
-  document.querySelectorAll("[data-water]").forEach(button => button.addEventListener("click", async () => {
-    button.disabled = true;
-    try { await saveNutrition({ type: "hydration", volume_ml: Number(button.dataset.water), name: "Eau" }); }
-    catch (error) { setText("[data-nutrition-status]", error.message); }
-    finally { button.disabled = false; }
-  }));
-  document.querySelector("[data-nutrition-form]")?.addEventListener("submit", async event => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const values = Object.fromEntries(new FormData(form).entries());
-    Object.keys(values).forEach(key => { if (values[key] === "") delete values[key]; });
-    setText("[data-nutrition-status]", "Enregistrement…");
-    try { await saveNutrition({ type: "nutrition", ...values }); form.reset(); setText("[data-nutrition-status]", "Apport enregistré."); }
-    catch (error) { setText("[data-nutrition-status]", error.message); }
-  });
-  loadNutrition();
 
   const popover = document.querySelector("[data-index-popover]");
   document.querySelector("[data-index-info]")?.addEventListener("click", () => {
