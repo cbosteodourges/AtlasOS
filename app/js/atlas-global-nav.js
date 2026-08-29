@@ -4,6 +4,7 @@
   const page = location.pathname.split("/").pop() || "";
   const isHub = page === "atlas-hub.html";
   const isCoach = page === "performance-running.html";
+  const isNutrition = page === "nutrition-hydration.html";
 
   const primaryItem = ({ href, tab, icon, label, active = false, extra = "" }) => {
     const className = `atlas-nav-item ${active ? "active" : ""}`;
@@ -51,7 +52,7 @@
       ${coachSubnav}
       ${primaryItem({ href: "./atlas-hub.html#injuries", tab: "injuries", icon: "♡", label: "Santé", active: isHub, extra: 'data-health-root="true"' })}
       ${healthSubnav}
-      ${primaryItem({ href: "./atlas-cockpit.html#nutrition-hydratation", icon: "◒", label: "Nutrition & Hydratation", extra: 'data-nutrition-root' })}
+      ${primaryItem({ href: "./nutrition-hydration.html", icon: "◒", label: "Nutrition & Hydratation", active: isNutrition, extra: 'data-nutrition-root' })}
     </nav>
 
     ${isCoach ? "" : `<button class="atlas-talk-button" type="button" data-atlas-talk>
