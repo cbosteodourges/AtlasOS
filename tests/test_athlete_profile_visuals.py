@@ -59,3 +59,15 @@ def test_estimate_never_silently_replaces_active_reference():
 def test_vma_curve_uses_same_reference_as_visible_bubble():
     orchestrator = (ROOT / "src" / "training" / "post_sync_orchestrator.py").read_text(encoding="utf-8")
     assert orchestrator.count('profile.get("vma_estimated_from_vo2_kmh")') >= 2
+
+
+def test_insight_sections_use_compact_visual_grid():
+    html = (ROOT / "app" / "atlas-cockpit.html").read_text(encoding="utf-8")
+    css = (ROOT / "app" / "css" / "atlas-cockpit.css").read_text(encoding="utf-8")
+    script = (ROOT / "app" / "js" / "atlas-cockpit.js").read_text(encoding="utf-8")
+    assert "Vos appuis actuels" in html
+    assert "Ce qui mérite votre attention" in html
+    assert "Vos prochains leviers" in html
+    assert "grid-column:2;grid-row:1 / span 2" in css
+    assert "section.dataset.itemCount" in script
+    assert 'article.style.setProperty("--confidence"' in script
