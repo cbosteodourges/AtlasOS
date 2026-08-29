@@ -3,8 +3,8 @@ param([switch]$BackgroundOnly)
 $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$atlasPort = 8010
-$atlasUrl = "http://127.0.0.1:$atlasPort/app/atlas-opening.html"
+$atlasPort = 8011
+$atlasUrl = "http://127.0.0.1:$atlasPort/app/atlas-cockpit.html"
 $lanAddress = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
     Where-Object {
         $_.IPAddress -notlike "127.*" -and
@@ -16,7 +16,7 @@ $lanAddress = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue
     } |
     Select-Object -First 1 -ExpandProperty IPAddress
 $smartphoneUrl = if ($lanAddress) {
-    "http://${lanAddress}:$atlasPort/app/atlas-opening.html"
+    "http://${lanAddress}:$atlasPort/app/atlas-cockpit.html"
 } else {
     $null
 }
