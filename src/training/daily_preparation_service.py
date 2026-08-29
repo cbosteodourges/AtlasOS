@@ -85,6 +85,12 @@ class DailyPreparationService:
             / "private"
             / "atlas-coach-readiness-selections.json"
         )
+        self.recovery_index_path = (
+            self.root
+            / "atlas-data"
+            / "private"
+            / "atlas-recovery-index.json"
+        )
 
     def prepare(
         self,
@@ -206,10 +212,55 @@ class DailyPreparationService:
         if actual_sleep_hours is not None:
             physiology_input.sleep_hours = actual_sleep_hours
 
-        result = AdaptiveTrainingLoop().prepare_session(
+        adaptive_loop = AdaptiveTrainingLoop()
+        result = adaptive_loop.prepare_session(
             physiology_input,
             workout,
         )
+
+        official_recovery = self._official_recovery_index(
+            workout.workout_date.isoformat()
+        )
+        if official_recovery is not None:
+            official_score = official_recovery["score"]
+            result.atlas_index.score = official_score
+            result.atlas_index.recovery_score = official_score
+            result.atlas_index.training_readiness_score = official_score
+            result.atlas_index.data_confidence_score = official_recovery[
+                "confidence"
+            ]
+            result.atlas_index.status = (
+                "RECUPERATION"
+                if official_score < 35
+                else "ADAPTER"
+                if official_score < 55
+                else "DISPONIBLE"
+                if official_score < 75
+                else "OPTIMAL"
+            )
+            result.atlas_index.explanations = [
+                explanation
+                for explanation in result.atlas_index.explanations
+                if not explanation.startswith("Indice ATLAS ")
+            ]
+            result.atlas_index.explanations.extend([
+                (
+                    "Référence quotidienne officielle Atlas : "
+                    f"{official_score}/100."
+                ),
+                (
+                    "La préparation de séance utilise le même indice "
+                    "que le cockpit du jour."
+                ),
+            ])
+            result.decision = adaptive_loop.decision_engine.decide(
+                result.atlas_index,
+                workout,
+            )
+            result.adaptation = adaptive_loop.adaptation_engine.adapt(
+                workout,
+                result.decision,
+            )
 
         return {
             "generated_at": datetime.now().astimezone().isoformat(
@@ -298,6 +349,35 @@ class DailyPreparationService:
         temporary.replace(self.checkpoints_path)
         return preparation
 
+    def _official_recovery_index(
+        self,
+        workout_day: str,
+    ) -> dict[str, int] | None:
+        payload = _read_json(self.recovery_index_path, {})
+        latest = payload.get("latest") if isinstance(payload, dict) else None
+        if not isinstance(latest, dict):
+            return None
+        if str(latest.get("day") or "") != str(workout_day):
+            return None
+
+        score = latest.get("atlas_recovery_index")
+        if score in (None, ""):
+            return None
+
+        confidence = latest.get("confidence")
+        return {
+            "score": max(0, min(100, round(float(score)))),
+            "confidence": max(
+                0,
+                min(
+                    100,
+                    round(float(confidence))
+                    if confidence not in (None, "")
+                    else 50,
+                ),
+            ),
+        }
+
     def latest(
         self,
         workout_id: str,
@@ -312,7 +392,37 @@ class DailyPreparationService:
             if isinstance(item, dict)
             and item.get("workout_id") == workout_id
         ]
-        return matches[-1] if matches else None
+        latest = matches[-1] if matches else None
+        if latest is None:
+            return None
+
+        workouts = TrainingProgramLoader().load(self.program_path)
+        workout = next(
+            (item for item in workouts if item.workout_id == workout_id),
+            None,
+        )
+        official = (
+            self._official_recovery_index(
+                workout.workout_date.isoformat()
+            )
+            if workout is not None
+            else None
+        )
+        recorded_score = (latest.get("atlas_index") or {}).get("score")
+        if (
+            official is not None
+            and recorded_score != official["score"]
+        ):
+            checkpoint = dict(latest.get("submitted_state") or {})
+            checkpoint.setdefault(
+                "checkpoint_type",
+                latest.get("checkpoint_type") or "morning",
+            )
+            refreshed = self.prepare(workout_id, checkpoint)
+            refreshed["refreshed_from_official_index"] = True
+            return refreshed
+
+        return latest
 
     def record_selection(
         self,
