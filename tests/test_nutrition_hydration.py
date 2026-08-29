@@ -35,12 +35,17 @@ class NutritionHydrationAnalyzerTests(unittest.TestCase):
             [], weight_kg=80, height_cm=180, age_years=40,
             biological_sex="male", activity_energy_kcal=720,
             activity_count=2, activity_calorie_count=1,
+            measured_total_energy_kcal=2700,
+            measured_active_energy_kcal=950,
+            measured_basal_energy_kcal=1750,
             today=date(2026, 8, 27),
         )
         expenditure = result["energy_expenditure"]
-        self.assertEqual(expenditure["basal_kcal"], 1730)
+        self.assertEqual(expenditure["basal_kcal"], 1750)
+        self.assertEqual(expenditure["active_kcal"], 950)
         self.assertEqual(expenditure["sport_kcal"], 720)
-        self.assertEqual(expenditure["known_total_kcal"], 2450)
+        self.assertEqual(expenditure["known_total_kcal"], 2700)
+        self.assertEqual(expenditure["total_source"], "health_connect")
         self.assertFalse(expenditure["sport_coverage_complete"])
 
 
