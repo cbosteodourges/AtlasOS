@@ -6,6 +6,8 @@ from datetime import datetime, timedelta, timezone
 from statistics import mean
 from typing import Any, Iterable
 
+from src.physiology.personal_indicator import PersonalIndicatorInterpreter
+
 
 def _dt(value: Any) -> datetime | None:
     try:
@@ -202,6 +204,65 @@ class AtlasRecoveryIndex:
                     "Durée proche de votre référence personnelle ; "
                     "confirmez avec votre ressenti et la réponse à la séance."
                 )
+            missing_data = []
+            if hrv_value is None:
+                missing_data.append("VFC nocturne")
+            if nocturnal is None:
+                missing_data.append("fréquence cardiaque nocturne")
+            data_complete = not missing_data
+            night_reference = (
+                f" et FC nocturne cible {night_hr_target:.1f} bpm"
+                if night_hr_target is not None else ""
+            )
+            if sleep_deficit_minutes:
+                evolution = (
+                    f"Sommeil inférieur de {sleep_deficit_minutes} min "
+                    f"à la cible personnelle"
+                )
+            else:
+                evolution = "Sommeil conforme à la cible personnelle"
+            if (
+                nocturnal is not None
+                and night_hr_target is not None
+            ):
+                difference = nocturnal - night_hr_target
+                evolution += (
+                    f" ; FC nocturne {abs(difference):.1f} bpm "
+                    f"{'au-dessus' if difference > 0 else 'sous'} la référence"
+                )
+            consequence = (
+                "Conditions compatibles avec une bonne réponse à la séance, "
+                "à confirmer par le ressenti."
+                if score >= 70 else
+                "Récupération susceptible de limiter la qualité de la séance."
+            )
+            interpretation = PersonalIndicatorInterpreter.interpret(
+                indicator="recovery",
+                current={
+                    "atlas_index": score,
+                    "sleep_hours": round(sleep_hours, 2),
+                    "night_hr_bpm": (
+                        round(nocturnal, 1)
+                        if nocturnal is not None else None
+                    ),
+                },
+                personal_reference=(
+                    f"Sommeil cible {sleep_target:.2f} h"
+                    f"{night_reference}"
+                ),
+                optimal_zone=(
+                    "Zone apprise à partir des nuits suivies des meilleures séances."
+                    if len(successful_sleep_values) >= 3 else
+                    "Zone personnelle en construction à partir de l'historique."
+                ),
+                evolution=evolution,
+                probable_consequence=consequence,
+                recommendation=guidance,
+                favorability_score=score,
+                confidence=confidence,
+                data_complete=data_complete,
+                missing_data=missing_data,
+            )
             by_day[day] = {
                 "day": day,
                 "atlas_recovery_index": score,
@@ -217,6 +278,7 @@ class AtlasRecoveryIndex:
                 ),
                 "performance_learning_days": len(successful_sleep_values),
                 "guidance": guidance,
+                "interpretation": interpretation,
                 "explanation": (
                     "Score fondé sur les mesures disponibles et vos références "
                     "personnelles ; les nuits suivies de bonnes séances "

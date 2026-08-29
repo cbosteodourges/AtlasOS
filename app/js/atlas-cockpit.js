@@ -84,7 +84,11 @@
     if (latest) {
       if (latest.day === todayKey) {
         setText("[data-atlas-index]", latest.atlas_recovery_index);
-        setText("[data-recovery-label]", recoveryLabel(latest.atlas_recovery_index));
+        setText(
+          "[data-recovery-label]",
+          latest.interpretation?.display_label
+            || recoveryLabel(latest.atlas_recovery_index)
+        );
         setText("[data-recovery-detail]", `${latest.atlas_recovery_index}/100 · confiance ${latest.confidence}/100`);
         if (latest.guidance) {
           setText("[data-readiness-summary]", latest.guidance);
