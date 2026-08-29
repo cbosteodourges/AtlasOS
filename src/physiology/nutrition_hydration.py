@@ -22,6 +22,9 @@ class NutritionHydrationAnalyzer:
                 age_years: int | None = None, biological_sex: str | None = None,
                 activity_energy_kcal: float = 0, activity_count: int = 0,
                 activity_calorie_count: int = 0,
+                measured_total_energy_kcal: float | None = None,
+                measured_active_energy_kcal: float | None = None,
+                measured_basal_energy_kcal: float | None = None,
                 today: date | None = None) -> dict[str, Any]:
         current_day = today or date.today()
         days: dict[str, dict[str, Any]] = defaultdict(lambda: {
@@ -69,18 +72,35 @@ class NutritionHydrationAnalyzer:
         if weight and height and age and sex:
             sex_adjustment = 5 if sex in {"male", "m", "homme", "masculin"} else -161
             basal_energy = round(10 * weight + 6.25 * height - 5 * age + sex_adjustment)
+        estimated_basal = basal_energy
+        measured_basal = _number(measured_basal_energy_kcal)
+        basal_energy = round(max(0, measured_basal)) if measured_basal is not None else estimated_basal
         sport_energy = round(max(0, _number(activity_energy_kcal) or 0))
-        known_total = basal_energy + sport_energy if basal_energy is not None else (
+        measured_active = _number(measured_active_energy_kcal)
+        active_energy = round(max(0, measured_active)) if measured_active is not None else None
+        measured_total = _number(measured_total_energy_kcal)
+        known_total = round(max(0, measured_total)) if measured_total is not None else (
+            basal_energy + active_energy if basal_energy is not None and active_energy is not None else
+            basal_energy + sport_energy if basal_energy is not None else
             sport_energy if activity_calorie_count else None
         )
         energy_expenditure = {
             "basal_kcal": basal_energy,
+            "basal_source": "health_connect" if measured_basal is not None else "profile_estimate",
+            "active_kcal": active_energy,
             "sport_kcal": sport_energy,
             "known_total_kcal": known_total,
+            "total_source": "health_connect" if measured_total is not None else "atlas_partial",
             "activity_count": max(0, int(activity_count or 0)),
             "activity_calorie_count": max(0, int(activity_calorie_count or 0)),
             "sport_coverage_complete": bool(activity_count) and activity_count == activity_calorie_count,
-            "scope": "Métabolisme basal + activités sportives importées ; activité quotidienne et digestion non incluses.",
+            "scope": (
+                "Dépense totale transmise par Santé Connect."
+                if measured_total is not None else
+                "Métabolisme basal + calories actives transmises."
+                if active_energy is not None else
+                "Métabolisme basal + activités sportives importées ; activité quotidienne et digestion non incluses."
+            ),
         }
         hydration_target = round(weight * 35 + max(0, exercise_minutes_today) / 60 * 500) if weight else None
         protein_target = round(weight * 1.6) if weight else None
