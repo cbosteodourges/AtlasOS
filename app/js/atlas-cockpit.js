@@ -396,7 +396,13 @@
           : null;
         const points = physiologyHistory
           .filter(item => !cutoff || new Date(item.day) >= cutoff)
-          .map(item => ({ day: item.day, value: Number(item[selectedPhysiologyMetric]) }))
+          .map(item => ({
+            day: item.day,
+            value: Number(item[selectedPhysiologyMetric]),
+            kind: item.kind,
+            method: item.method,
+            confidence: item.confidence,
+          }))
           .filter(item => Number.isFinite(item.value) && item.value > 0)
           .sort((a, b) => String(a.day).localeCompare(String(b.day)));
         chartSvg.replaceChildren();
@@ -443,6 +449,11 @@
           ? "stable sur la période"
           : `${delta >= 0 ? "+" : ""}${delta.toFixed(1).replace(".", ",")} sur la période`;
         if (chartSummary) chartSummary.textContent = `${label} : ${points.at(-1).value.toLocaleString("fr-FR")} ${unit} · ${deltaLabel}`;
+        const chartNote = document.querySelector("[data-physiology-chart-note]");
+        const estimatedCount = points.filter(point => point.kind === "atlas_estimate").length;
+        if (chartNote) chartNote.textContent = estimatedCount
+          ? `${estimatedCount} point${estimatedCount > 1 ? "s" : ""} rétrospectif${estimatedCount > 1 ? "s" : ""} Atlas, calculé${estimatedCount > 1 ? "s" : ""} depuis les séances FIT et recalé${estimatedCount > 1 ? "s" : ""} sur votre référence actuelle.`
+          : "Courbe fondée sur les références physiologiques validées.";
         if (chartMessage) chartMessage.textContent = "";
       };
       document.querySelectorAll("[data-physiology-metric]").forEach(button => button.addEventListener("click", () => {
