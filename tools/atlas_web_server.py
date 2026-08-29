@@ -881,7 +881,8 @@ def load_physiology_history():
     for raw in payload.get("history", []):
         # Les anciennes lignes contenaient des sorties intermédiaires de
         # l'estimateur. Elles ne constituent pas des mesures longitudinales.
-        if raw.get("schema") != "validated_profile_v1":
+        schema = raw.get("schema")
+        if schema not in {"validated_profile_v1", "atlas_retrospective_v1"}:
             continue
         day = str(raw.get("day") or "")[:10]
         if not day:
@@ -895,7 +896,10 @@ def load_physiology_history():
         by_day[day] = {
             "day": day,
             "source": raw.get("source"),
+            "kind": "validated" if schema == "validated_profile_v1" else "atlas_estimate",
+            "method": raw.get("method"),
             "confidence": _wellness_number(raw.get("estimator_confidence")),
+            "evidence_sessions": raw.get("evidence_sessions"),
             **current,
         }
     return [by_day[day] for day in sorted(by_day)]
