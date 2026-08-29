@@ -47,7 +47,20 @@ class PostSyncOrchestrator:
         longitudinal = self._read("physiology-longitudinal.json", {"current": previous, "history": []})
         history = list(longitudinal.get("history", []))
         today = date.today().isoformat()
-        snapshot = {"day": today, "source": source, **profile, **estimate}
+        sv1 = profile.get("sv1") or {}
+        sv2 = profile.get("sv2") or {}
+        snapshot = {
+            "day": today,
+            "source": source,
+            "schema": "validated_profile_v1",
+            "vo2_max": profile.get("vo2_max"),
+            "vma_kmh": profile.get("vma_kmh") or profile.get("vma_training_reference_kmh"),
+            "sv1_speed_kmh": sv1.get("speed_kmh"),
+            "sv2_speed_kmh": sv2.get("speed_kmh"),
+            "maximum_heart_rate_bpm": profile.get("maximum_heart_rate_bpm"),
+            "estimator_updated": bool(estimate.get("updated")),
+            "estimator_confidence": estimate.get("confidence"),
+        }
         history = [item for item in history if str(item.get("day") or "")[:10] != today]
         history.append(snapshot)
         history.sort(key=lambda item: str(item.get("day") or ""))
