@@ -1715,16 +1715,24 @@ const target = compactTarget(workout, zone);
 
     return `
       <section class="atlas-workout-timeline" aria-label="${escapeHtml(label)}">
+        <header>
+          <strong>Déroulé de la séance</strong>
+          <small>La largeur représente la durée · la couleur représente votre zone</small>
+        </header>
         <div class="workout-timeline-bars">
-          ${segments.map(segment => `
+          ${segments.map((segment, index) => `
             <i
               class="timeline-zone-${segment.zone}"
               style="--segment-weight:${Math.max(segment.duration, .5)};--segment-color:${DISPLAY_ZONE_COLORS[segment.zone]}"
               tabindex="0"
+              data-step="${index + 1}"
               data-label="${escapeHtml(segment.label)} · ${readableWorkTime(segment.duration)} · Z${segment.zone}"
-              aria-label="${escapeHtml(segment.label)} · ${readableWorkTime(segment.duration)} · Zone ${segment.zone}"
+              aria-label="Étape ${index + 1} · ${escapeHtml(segment.label)} · ${readableWorkTime(segment.duration)} · Zone ${segment.zone}"
             ></i>
           `).join("")}
+        </div>
+        <div class="workout-timeline-caption" aria-hidden="true">
+          <span>Départ</span><span>Fin de séance</span>
         </div>
       </section>
     `;
@@ -1856,7 +1864,23 @@ const target = compactTarget(workout, zone);
       Number(block.repetitions) > 1 &&
       ["work", "interval"].includes(canonicalBlockType(block))
     ));
-    const simpleBlocks = blocks.filter(block => block !== repeatedBlock);
+    const orderedStepsHtml = blocks.map(block => {
+      if (block !== repeatedBlock) return compactStep(block);
+
+      const recoveryMinutes = Number(block.recovery_minutes) ||
+        (Number(block.recovery_seconds) || 0) / 60;
+
+      return `
+        <section class="garmin-repeat-group" style="--repeat-accent:${accentFor(block)}">
+          <h4><span>${escapeHtml(block.repetitions)} répétitions</span><small>Bloc alterné</small></h4>
+          ${compactStep(block)}
+          ${recoveryMinutes > 0 ? compactStep(
+            { block_type: "recovery", duration_minutes: recoveryMinutes },
+            { title: "Récupération entre les répétitions", duration: recoveryMinutes, target: "Z1 · récupération active" }
+          ) : ""}
+        </section>
+      `;
+    }).join("");
     const avatarIsFemale = (
       localStorage.getItem("atlasPreselectedAvatar") || "male"
     ) === "female";
@@ -1910,28 +1934,7 @@ const target = compactTarget(workout, zone);
         <section class="session-steps garmin-steps">
           <h3>Étapes</h3>
           <div class="session-step-list">
-            ${simpleBlocks
-              .filter(block => canonicalBlockType(block) === "warm_up")
-              .map(block => compactStep(block))
-              .join("")}
-
-            ${repeatedBlock ? `
-              <section class="garmin-repeat-group">
-                <h4>${escapeHtml(repeatedBlock.repetitions)} fois</h4>
-                ${compactStep(repeatedBlock)}
-                ${compactStep(
-                  { block_type: "recovery", duration_minutes: repeatedBlock.recovery_minutes },
-                  { title: "Récupération", duration: repeatedBlock.recovery_minutes, target: "Z1 · récupération active" }
-                )}
-              </section>
-            ` : ""}
-
-            ${simpleBlocks
-              .filter(block => canonicalBlockType(block) !== "warm_up")
-              .map(block => compactStep(block))
-              .join("")}
-
-            ${!repeatedBlock && !simpleBlocks.length ? blocks.map(block => compactStep(block)).join("") : ""}
+            ${orderedStepsHtml}
           </div>
         </section>
 
