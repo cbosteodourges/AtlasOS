@@ -1,10 +1,11 @@
 "use strict";
 
-const CACHE_NAME = "atlas-shell-v6";
+const CACHE_NAME = "atlas-shell-v7";
 const APP_SHELL = [
   "./atlas-cockpit.html",
   "./performance-running.html",
   "./atlas-hub.html",
+  "./nutrition-hydration.html",
   "./atlas-metric-history.html",
   "./offline.html",
   "./manifest.webmanifest",
@@ -13,7 +14,9 @@ const APP_SHELL = [
   "./assets/anatomy/servier/foot-ankle-anterior.png",
   "./assets/anatomy/servier/foot-ankle-lateral-deep.png",
   "./css/atlas-responsive.css",
-  "./js/atlas-pwa.js"
+  "./css/nutrition-hydration.css",
+  "./js/atlas-pwa.js",
+  "./js/nutrition-hydration.js"
 ];
 
 self.addEventListener("install", event => {
