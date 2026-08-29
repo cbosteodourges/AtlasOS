@@ -153,32 +153,49 @@
     const latest = payload.latest;
     if (!latest) return;
 
+    const latestComplete = payload.latest_complete || latest;
     const isCurrentDay = latest.day === todayKey;
     const latestDay = new Date(`${latest.day}T12:00:00`);
     const latestDayLabel = latestDay.toLocaleDateString("fr-FR");
+    const completeDay = new Date(`${latestComplete.day}T12:00:00`);
+    const completeDayLabel = completeDay.toLocaleDateString("fr-FR");
+    const partial = Boolean(
+      payload.latest_unavailable?.partial &&
+      latest.sleep_duration_source === "health_connect"
+    );
+    const indexSource = latest.atlas_index != null ? latest : latestComplete;
+    const indexDayLabel = new Date(
+      `${indexSource.day}T12:00:00`
+    ).toLocaleDateString("fr-FR");
 
-    setText("[data-atlas-index]", latest.atlas_index ?? "—");
+    setText("[data-atlas-index]", indexSource.atlas_index ?? "—");
     setText(
       "[data-recovery-label]",
-      isCurrentDay ? recoveryLabel(latest.atlas_index) : "Dernier indice connu"
+      latest.atlas_index != null && isCurrentDay
+        ? recoveryLabel(latest.atlas_index)
+        : "Dernier indice connu"
     );
     setText(
       "[data-recovery-detail]",
-      isCurrentDay
+      latest.atlas_index != null && isCurrentDay
         ? (latest.sleep_recovery_score != null
           ? `Sommeil récupérateur ${latest.sleep_recovery_score}/100`
           : "Indice Atlas du jour")
-        : `${latest.atlas_index ?? "—"}/100 · données du ${latestDayLabel}`
+        : `${indexSource.atlas_index ?? "—"}/100 · données du ${indexDayLabel}`
     );
     setText(
       "[data-readiness-title]",
-      isCurrentDay ? "Vous êtes prêt à vous entraîner" : "Données nocturnes indisponibles"
+      partial
+        ? "Sommeil reçu · bilan physiologique partiel"
+        : (isCurrentDay ? "Vous êtes prêt à vous entraîner" : "Données nocturnes indisponibles")
     );
     setText(
       "[data-readiness-summary]",
-      isCurrentDay
-        ? "Récupération élevée, sommeil satisfaisant et charge bien maîtrisée."
-        : `Montre non portée ou aucune nouvelle mesure reçue. Dernier bilan complet : ${latestDayLabel}.`
+      partial
+        ? `Santé Connect a transmis ${formatDuration(latest.sleep_duration_minutes)}. VFC et récupération complète restent datées du ${completeDayLabel}.`
+        : (isCurrentDay
+          ? "Récupération élevée, sommeil satisfaisant et charge bien maîtrisée."
+          : `Montre non portée ou aucune nouvelle mesure reçue. Dernier bilan complet : ${completeDayLabel}.`)
     );
 
     const duration = formatDuration(latest.sleep_duration_minutes);
@@ -188,26 +205,26 @@
     );
     setText(
       "[data-sleep-detail]",
-      latest.sleep_quality_score != null
-        ? (isCurrentDay
-          ? `Qualité ${latest.sleep_quality_score} %`
-          : `Dernière qualité mesurée ${latest.sleep_quality_score} % · ${latestDayLabel}`)
-        : "Donnée Garmin la plus récente"
+      latest.sleep_duration_source === "health_connect"
+        ? `Sommeil synchronisé par Santé Connect · ${latestDayLabel}`
+        : (latest.sleep_quality_score != null
+          ? (isCurrentDay
+            ? `Qualité ${latest.sleep_quality_score} %`
+            : `Dernière qualité mesurée ${latest.sleep_quality_score} % · ${latestDayLabel}`)
+          : "Donnée Garmin la plus récente")
     );
 
     setText(
       "[data-hrv-value]",
-      latest.hrv_last_night_ms != null
-        ? `${Math.round(latest.hrv_last_night_ms)} ms`
+      latestComplete.hrv_last_night_ms != null
+        ? `${Math.round(latestComplete.hrv_last_night_ms)} ms`
         : "—"
     );
     setText(
       "[data-hrv-detail]",
-      latest.hrv_weekly_average_ms != null
-        ? (isCurrentDay
-          ? `Moyenne 7 j : ${Math.round(latest.hrv_weekly_average_ms)} ms`
-          : `Mesure du ${latestDayLabel} · moyenne 7 j : ${Math.round(latest.hrv_weekly_average_ms)} ms`)
-        : (latest.hrv_status || "Référence en construction")
+      latestComplete.hrv_weekly_average_ms != null
+        ? `Mesure du ${completeDayLabel} · moyenne 7 j : ${Math.round(latestComplete.hrv_weekly_average_ms)} ms`
+        : (latestComplete.hrv_status || "Référence en construction")
     );
 
     setText("[data-load-value]", loadLabel(latest.training_load));
@@ -441,17 +458,21 @@
       "[data-index-summary]",
       payload.index_explanation?.summary
     );
-    renderIndexComponents(latest.atlas_index_components);
+    renderIndexComponents(indexSource.atlas_index_components);
 
     const sync = document.querySelector(".sync-state");
     if (sync) {
       const ageDays = Math.floor((Date.now() - latestDay.getTime()) / 86400000);
       const unavailable = payload.latest_unavailable;
-      if (unavailable?.day) {
+      if (unavailable?.partial) {
+        sync.lastChild.textContent =
+          ` Sommeil reçu le ${latestDay.toLocaleDateString("fr-FR")} · bilan physiologique partiel`;
+        sync.classList.add("is-stale");
+      } else if (unavailable?.day) {
         const missingDay = new Date(`${unavailable.day}T12:00:00`);
         sync.lastChild.textContent =
           ` Nuit du ${missingDay.toLocaleDateString("fr-FR")} non mesurée · ` +
-          `dernières données fiables : ${latestDay.toLocaleDateString("fr-FR")}`;
+          `dernières données fiables : ${completeDayLabel}`;
         sync.classList.add("is-stale");
       } else {
         sync.lastChild.textContent =

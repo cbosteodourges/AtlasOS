@@ -1192,6 +1192,13 @@ WELLNESS_CACHE_PATH = (
     ROOT / "atlas-data" / "private"
     / "garmin-wellness-snapshot-cache.json"
 )
+HEALTH_CONNECT_WELLNESS_PATH = (
+    ROOT / "atlas-data" / "private" / "health-connect-wellness.json"
+)
+_HEALTH_CONNECT_SLEEP_CACHE = {
+    "signature": None,
+    "by_day": {},
+}
 
 
 def _wellness_number(value):
@@ -1199,6 +1206,48 @@ def _wellness_number(value):
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def _health_connect_sleep_by_day():
+    """Lit les nuits Santé Connect et conserve la plus longue par date de fin."""
+    if not HEALTH_CONNECT_WELLNESS_PATH.is_file():
+        return {}
+
+    stat = HEALTH_CONNECT_WELLNESS_PATH.stat()
+    signature = (stat.st_mtime_ns, stat.st_size)
+    if _HEALTH_CONNECT_SLEEP_CACHE["signature"] == signature:
+        return dict(_HEALTH_CONNECT_SLEEP_CACHE["by_day"])
+
+    records = _read_private_json(HEALTH_CONNECT_WELLNESS_PATH, [])
+    by_day = {}
+    for item in records if isinstance(records, list) else []:
+        if not isinstance(item, dict) or item.get("type") != "sleep":
+            continue
+        end_time = str(item.get("end_time") or "")
+        duration_seconds = _wellness_number(item.get("duration_seconds"))
+        if not end_time or duration_seconds is None:
+            continue
+        duration_minutes = round(duration_seconds / 60)
+        if duration_minutes <= 0 or duration_minutes > 1440:
+            continue
+        try:
+            end_at = datetime.fromisoformat(end_time.replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        day = end_at.date().isoformat()
+        previous = by_day.get(day)
+        if previous is None or duration_minutes > previous["sleep_duration_minutes"]:
+            by_day[day] = {
+                "day": day,
+                "sleep_duration_minutes": duration_minutes,
+                "sleep_start_time": item.get("start_time"),
+                "sleep_end_time": item.get("end_time"),
+                "sleep_source_id": item.get("source_id"),
+            }
+
+    _HEALTH_CONNECT_SLEEP_CACHE["signature"] = signature
+    _HEALTH_CONNECT_SLEEP_CACHE["by_day"] = by_day
+    return dict(by_day)
 
 
 def _sleep_duration_minutes(snapshot):
@@ -2104,6 +2153,40 @@ def load_wellness_history(refresh_latest=True):
         }
         history.append(item)
 
+    # Santé Connect peut recevoir le sommeil plusieurs jours avant la prochaine
+    # archive Garmin Wellness. Il devient alors l'observation la plus fraîche,
+    # sans fabriquer de score, de VFC ou de qualité absents de sa source.
+    history_by_day = {item["day"]: item for item in history}
+    for day, sleep in _health_connect_sleep_by_day().items():
+        item = history_by_day.get(day)
+        if item is None:
+            item = {
+                "day": day,
+                "source": "health_connect",
+                "atlas_index": None,
+                "atlas_index_components": [],
+                "sleep_score": None,
+                "sleep_quality_score": None,
+                "sleep_recovery_score": None,
+                "hrv_last_night_ms": None,
+                "hrv_weekly_average_ms": None,
+                "hrv_baseline_lower_ms": None,
+                "hrv_baseline_upper_ms": None,
+                "hrv_status": None,
+                "resting_heart_rate_bpm": None,
+                "sleep_average_stress": None,
+                "training_load": training_loads.get(day),
+                "training_load_7d": None,
+                "training_load_baseline": None,
+                "data_quality_score": None,
+            }
+            history.append(item)
+            history_by_day[day] = item
+        item.update(sleep)
+        item["sleep_duration_source"] = "health_connect"
+
+    history.sort(key=lambda item: item["day"])
+
     for index, item in enumerate(history):
         item["atlas_index_baseline"] = _personal_baseline(
             history, index, "atlas_index"
@@ -2127,20 +2210,36 @@ def load_wellness_history(refresh_latest=True):
             if lower is not None and upper is not None else
             _personal_baseline(history, index, "hrv_last_night_ms")
         )
-    actionable_history = [
-        item for item, snapshot in zip(history, snapshots)
+    actionable_days = {
+        snapshot.day.isoformat()
+        for snapshot in snapshots
         if _has_actionable_wellness(snapshot)
+    }
+    actionable_history = [
+        item for item in history if item.get("day") in actionable_days
     ]
     latest_observation = history[-1] if history else None
-    latest = actionable_history[-1] if actionable_history else None
+    latest_complete = actionable_history[-1] if actionable_history else None
+    latest = latest_observation or latest_complete
     latest_unavailable = (
         {
             "day": latest_observation.get("day"),
-            "reason": "Données physiologiques absentes ou incomplètes",
+            "reason": (
+                "Sommeil reçu par Santé Connect ; autres mesures "
+                "physiologiques encore indisponibles"
+                if latest_observation.get("sleep_duration_source") == "health_connect"
+                else "Données physiologiques absentes ou incomplètes"
+            ),
             "data_quality_score": latest_observation.get("data_quality_score"),
+            "partial": bool(
+                latest_observation.get("sleep_duration_source") == "health_connect"
+            ),
         }
         if latest_observation
-        and (not latest or latest_observation.get("day") != latest.get("day"))
+        and (
+            not latest_complete
+            or latest_observation.get("day") != latest_complete.get("day")
+        )
         else None
     )
     complete_history = _complete_wellness_calendar(
@@ -2153,6 +2252,7 @@ def load_wellness_history(refresh_latest=True):
         "calendar_day_count": len(complete_history),
         "source_status": source_status,
         "latest": latest,
+        "latest_complete": latest_complete,
         "latest_observation": latest_observation,
         "latest_unavailable": latest_unavailable,
         "history": complete_history,
