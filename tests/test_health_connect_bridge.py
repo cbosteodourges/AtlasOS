@@ -20,6 +20,24 @@ class HealthConnectBridgeTests(unittest.TestCase):
             self.assertEqual(result["activities_total"], 1)
             self.assertEqual(result["wellness_total"], 1)
 
+    def test_ingest_persists_record_inventory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bridge = HealthConnectBridge(directory)
+            token = bridge.pair(bridge.create_pairing_code(), {"model": "test"})
+            result = bridge.ingest(token, {
+                "sync_schema_version": 2,
+                "backfill_performed": True,
+                "record_inventory": [{
+                    "record_type": "Vo2MaxRecord", "count": 4,
+                    "sources": ["com.garmin.android.apps.connectmobile"],
+                }],
+                "skipped_record_types": [],
+            })
+            self.assertEqual(result["record_types_available"], 1)
+            inventory = bridge._read(bridge.inventory_path, {})
+            self.assertTrue(inventory["backfill_performed"])
+            self.assertEqual(inventory["record_types"][0]["count"], 4)
+
     def test_unknown_token_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             with self.assertRaises(PermissionError):
