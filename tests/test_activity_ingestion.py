@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.connectors import ActivityStore, NormalizedActivity, merge_activities
+from src.connectors import (\n    ActivitySample,\n    ActivityStore,\n    NormalizedActivity,\n    merge_activities,\n)
 
 
 def activity(provider="strava", external_id="1", samples=None, metadata=None):
@@ -44,14 +44,47 @@ class ActivityIngestionTests(unittest.TestCase):
                 "exercise-1",
             )
 
-    def test_detailed_fit_has_priority(self):
-        fit = activity("garmin", "fit-1", metadata={"source_file": "a.fit", "laps": [{"x": 1}]})
+    def test_health_connect_is_primary_and_fit_enriches_samples(self):
+        health = activity(
+            "health_connect",
+            "exercise-1",
+            samples=[
+                ActivitySample(
+                    timestamp="2026-08-25T18:00:12Z",
+                    heart_rate_bpm=130,
+                ),
+            ],
+        )
+        health.average_heart_rate_bpm = 130
+        fit = activity(
+            "garmin",
+            "fit-1",
+            samples=[
+                ActivitySample(
+                    timestamp=(
+                        f"2026-08-25T18:00:{second:02d}Z"
+                    ),
+                    speed_mps=3.0,
+                )
+                for second in range(10, 20)
+            ],
+            metadata={
+                "source_file": "a.fit",
+                "laps": [{"x": 1}],
+            },
+        )
         fit.average_heart_rate_bpm = 151
-        strava = activity()
-        strava.average_heart_rate_bpm = 149
-        merged = merge_activities(strava, fit)
-        self.assertEqual(merged.provider, "garmin")
-        self.assertEqual(merged.average_heart_rate_bpm, 151)
+
+        merged = merge_activities(fit, health)
+
+        self.assertEqual(merged.provider, "health_connect")
+        self.assertEqual(merged.average_heart_rate_bpm, 130)
+        self.assertEqual(len(merged.samples), 10)
+        self.assertEqual(
+            merged.field_provenance["samples"],
+            "garmin_fit",
+        )
+        self.assertEqual(merged.raw_metadata["laps"], [{"x": 1}])
 
     def test_reimport_is_idempotent(self):
         with tempfile.TemporaryDirectory() as directory:
