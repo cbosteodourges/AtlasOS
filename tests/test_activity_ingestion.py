@@ -91,6 +91,44 @@ class ActivityIngestionTests(unittest.TestCase):
         )
         self.assertEqual(merged.raw_metadata["laps"], [{"x": 1}])
 
+
+    def test_strava_enriches_health_connect_without_replacing_totals(self):
+        health = activity(
+            "health_connect",
+            "exercise-1",
+            samples=[
+                ActivitySample(
+                    timestamp="2026-08-25T18:00:12Z",
+                    heart_rate_bpm=130,
+                ),
+            ],
+        )
+        health.distance_meters = 10540
+        strava = activity(
+            "strava",
+            "strava-1",
+            samples=[
+                ActivitySample(
+                    timestamp=f"2026-08-25T18:00:{second:02d}Z",
+                    speed_mps=3.0,
+                )
+                for second in range(10, 20)
+            ],
+        )
+        strava.distance_meters = 10548
+        strava.elevation_gain_m = 132
+
+        merged = merge_activities(strava, health)
+
+        self.assertEqual(merged.provider, "health_connect")
+        self.assertEqual(merged.distance_meters, 10540)
+        self.assertEqual(merged.elevation_gain_m, 132)
+        self.assertEqual(len(merged.samples), 10)
+        self.assertEqual(
+            merged.field_provenance["samples"],
+            "strava",
+        )
+
     def test_reimport_is_idempotent(self):
         with tempfile.TemporaryDirectory() as directory:
             store = ActivityStore(Path(directory) / "activities.json")
