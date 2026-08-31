@@ -32,6 +32,7 @@ class PostSyncOrchestrator:
         activities = ActivityStore(self.private_dir / "activities-unified.json").load()
         wellness = self._merged_wellness()
         manual_nutrition = self._read("nutrition-hydration-manual.json", [])
+        analyzed_activities = self._refresh_activity_executions(activities)
         executions = self._read("atlas-coach-executions.json", [])
         recovery = AtlasRecoveryIndex().build(
             wellness,
@@ -107,12 +108,99 @@ class PostSyncOrchestrator:
             "nutrition_hydration": nutrition,
             "program_action": action,
             "program_proposal_available": proposal is not None,
+            "health_connect_activities_analyzed": analyzed_activities,
             "requires_user_validation": True,
         }
         self._write("daily-sync-assessment.json", assessment)
         if proposal is not None:
             self._write("training-program-sync-proposal.json", proposal)
         return assessment
+
+    def _refresh_activity_executions(self, activities: list[Any]) -> int:
+        """Analyse les activités Health Connect sans exiger de fichier FIT."""
+
+        program_path = self.private_dir / "training-program.json"
+        if not program_path.is_file():
+            return 0
+
+        # Le moteur utilisé par l'import FIT accepte déjà toute activité
+        # normalisée. Health Connect passe donc exactement par les mêmes
+        # analyses et le même rapprochement avec le programme.
+        from scripts.sync_atlas_coach_pilot import (
+            build_record,
+            confirm_matched_workouts,
+            load_analysis_profile,
+            load_optional_workouts,
+        )
+        from src.training import TrainingProgramLoader
+
+        loader = TrainingProgramLoader()
+        workouts = loader.load(program_path)
+        optional_path = (
+            self.private_dir / "atlas-coach-optional-workouts.json"
+        )
+        if optional_path.is_file():
+            workouts.extend(
+                load_optional_workouts(optional_path, loader)
+            )
+        profile = load_analysis_profile(program_path)
+        history = self._read("atlas-coach-executions.json", [])
+        history = history if isinstance(history, list) else []
+        by_activity = {
+            str(item.get("activity_id") or ""): item
+            for item in history
+            if isinstance(item, dict)
+        }
+        refreshed = []
+
+        for activity in activities:
+            source_ids = getattr(activity, "source_ids", {}) or {}
+            provider = str(getattr(activity, "provider", "") or "")
+            if (
+                "health_connect" not in source_ids
+                and provider != "health_connect"
+            ):
+                continue
+            activity_id = str(getattr(activity, "atlas_id", "") or "")
+            previous = by_activity.get(activity_id)
+            if (
+                isinstance(previous, dict)
+                and previous.get("atlas_workout_match") is not None
+            ):
+                continue
+            try:
+                record = build_record(
+                    activity,
+                    workouts,
+                    loader,
+                    profile,
+                )
+            except (TypeError, ValueError, KeyError):
+                # Une activité ancienne incomplète ne doit jamais bloquer la
+                # synchronisation des données récentes et du wellness.
+                continue
+            by_activity[activity_id] = record
+            refreshed.append(record)
+
+        if not refreshed:
+            return 0
+
+        updated = [
+            item
+            for item in history
+            if str(item.get("activity_id") or "") not in {
+                str(record.get("activity_id") or "")
+                for record in refreshed
+            }
+        ]
+        updated.extend(refreshed)
+        updated.sort(key=lambda item: str(item.get("start_time") or ""))
+        self._write("atlas-coach-executions.json", updated)
+        confirm_matched_workouts(
+            refreshed,
+            self.private_dir / "atlas-coach-workout-decisions.json",
+        )
+        return len(refreshed)
 
     @staticmethod
     def _retrospective_physiology(activities: list[Any], profile: dict[str, Any]) -> list[dict[str, Any]]:
