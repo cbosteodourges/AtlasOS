@@ -118,3 +118,20 @@ Atlas Coach affiche les observations utilisées, la raison, les séances concern
 - durée maximale d’une adaptation provisoire ;
 - données pouvant être partagées avec un professionnel ;
 - validation ergonomique sur smartphone et sur le modèle homme/femme.
+
+## Priorité des sources
+
+Le parcours quotidien de référence est sans fichier à manipuler :
+
+1. Garmin Connect publie les mesures autorisées dans Health Connect.
+2. Atlas Connect transmet en un clic les activités et le wellness.
+3. Health Connect reste la source principale des totaux et des mesures quotidiennes.
+4. Un fichier FIT éventuellement disponible enrichit les échantillons, les tours, le GPS, le dénivelé, la cadence, la puissance et les dynamiques de course sans remplacer les totaux Health Connect.
+5. Le cache Garmin wellness complète uniquement une journée ou une métrique absente de Health Connect.
+
+Terminologie d'interface :
+
+- **Données d’activité** : séances réalisées, durée, distance, vitesse, fréquence cardiaque et intervalles.
+- **Données santé et récupération** : sommeil, HRV, fréquence cardiaque au repos et autres mesures wellness.
+- **FIT Garmin** : enrichissement avancé facultatif, jamais requis pour obtenir un compte-rendu Atlas.
+
