@@ -79,7 +79,7 @@ class StravaConnector(ActivityConnector):
         identifier = activity.external_id
         detail = self._get_json(f"{self.api_base_url}/activities/{identifier}")
         laps = self._get_json(f"{self.api_base_url}/activities/{identifier}/laps")
-        keys = "time,distance,latlng,altitude,velocity_smooth,heartrate,cadence,watts,temp,grade_smooth"
+        keys = "time,distance,latlng,altitude,velocity_smooth,heartrate,cadence,watts,temp,moving,grade_smooth"
         streams = self._get_json(
             f"{self.api_base_url}/activities/{identifier}/streams?keys={keys}&key_by_type=true"
         )
@@ -117,6 +117,8 @@ class StravaConnector(ActivityConnector):
                 cadence_spm=at("cadence"), power_watts=at("watts"),
                 altitude_m=at("altitude"), distance_meters=at("distance"),
                 temperature_c=at("temp"),
+                grade_percent=at("grade_smooth"),
+                moving=at("moving"),
                 latitude=coordinate[0] if coordinate else None,
                 longitude=coordinate[1] if coordinate else None,
             ))
@@ -165,11 +167,23 @@ class StravaConnector(ActivityConnector):
             samples=activity.samples,
             raw_metadata={
                 "name": payload.get("name"),
+                "description": payload.get("description"),
                 "sport_type": payload.get("sport_type"),
+                "type": payload.get("type"),
                 "elapsed_time": payload.get("elapsed_time"),
                 "commute": payload.get("commute"),
                 "trainer": payload.get("trainer"),
                 "private": payload.get("private"),
+                "workout_type": payload.get("workout_type"),
+                "perceived_exertion": payload.get("perceived_exertion"),
+                "gear_id": payload.get("gear_id"),
+                "map": payload.get("map"),
+                "start_latlng": payload.get("start_latlng"),
+                "end_latlng": payload.get("end_latlng"),
+                "splits_metric": payload.get("splits_metric", []),
+                "splits_standard": payload.get("splits_standard", []),
+                "best_efforts": payload.get("best_efforts", []),
+                "segment_efforts": payload.get("segment_efforts", []),
                 "received_at": activity.received_at,
                 "laps": payload.get("laps", []),
                 "streams_available": sorted((payload.get("streams") or {}).keys()),
@@ -177,6 +191,9 @@ class StravaConnector(ActivityConnector):
                 "average_power": payload.get("average_watts"),
                 "maximum_power": payload.get("max_watts"),
                 "weighted_average_power": payload.get("weighted_average_watts"),
+                "kilojoules": payload.get("kilojoules"),
+                "device_watts": payload.get("device_watts"),
+                "has_heartrate": payload.get("has_heartrate"),
             },
         )
 
