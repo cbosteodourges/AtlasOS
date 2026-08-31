@@ -2,7 +2,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.connectors import (\n    ActivitySample,\n    ActivityStore,\n    NormalizedActivity,\n    merge_activities,\n)
+from src.connectors import (
+    ActivitySample,
+    ActivityStore,
+    NormalizedActivity,
+    merge_activities,
+)
 
 
 def activity(provider="strava", external_id="1", samples=None, metadata=None):
