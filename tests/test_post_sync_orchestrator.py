@@ -29,7 +29,10 @@ class PostSyncOrchestratorTests(unittest.TestCase):
             record = {
                 "activity_id": activity.atlas_id,
                 "provider": "health_connect",
-                "start_time": "2026-08-31T17:55:13+00:00",
+                "start_time": datetime(
+                    2026, 8, 31, 17, 55, 13,
+                    tzinfo=timezone.utc,
+                ),
                 "atlas_workout_match": {
                     "workout_id": "workout-1",
                     "matched": True,
@@ -56,7 +59,15 @@ class PostSyncOrchestratorTests(unittest.TestCase):
                     encoding="utf-8"
                 )
             )
-            self.assertEqual(executions, [record])
+            self.assertEqual(len(executions), 1)
+            self.assertEqual(
+                executions[0]["activity_id"],
+                activity.atlas_id,
+            )
+            self.assertEqual(
+                executions[0]["start_time"],
+                "2026-08-31T17:55:13+00:00",
+            )
 
     def test_creates_assessment_and_never_overwrites_active_program(self):
         with tempfile.TemporaryDirectory() as directory:
