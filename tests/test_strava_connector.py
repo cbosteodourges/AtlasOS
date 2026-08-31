@@ -48,6 +48,9 @@ class StravaConnectorTests(unittest.TestCase):
                 "commute": False,
                 "trainer": False,
                 "private": False,
+                "perceived_exertion": 4,
+                "map": {"summary_polyline": "abc"},
+                "splits_metric": [{"distance": 1000}],
             },
         )
 
@@ -67,6 +70,9 @@ class StravaConnectorTests(unittest.TestCase):
             activity.source_device,
             "Garmin Forerunner 255",
         )
+        self.assertEqual(activity.raw_metadata["perceived_exertion"], 4)
+        self.assertEqual(activity.raw_metadata["map"]["summary_polyline"], "abc")
+        self.assertEqual(len(activity.raw_metadata["splits_metric"]), 1)
 
     def test_iso_date_is_converted_to_epoch(self) -> None:
         epoch = StravaConnector._to_epoch(
@@ -88,11 +94,15 @@ class StravaConnectorTests(unittest.TestCase):
         connector = StravaConnector("test-token")
         raw = RawActivity(provider="strava", external_id="42", payload={"id": 42})
         streams = {"time": {"data": [0, 1]}, "heartrate": {"data": [140, 142]},
-                   "velocity_smooth": {"data": [3.0, 3.2]}}
+                   "velocity_smooth": {"data": [3.0, 3.2]},
+                   "grade_smooth": {"data": [1.2, 1.4]},
+                   "moving": {"data": [True, False]}}
         with patch.object(connector, "_get_json", side_effect=[{"name": "Run"}, [{"id": 1}], streams]):
             enriched = connector.enrich(raw)
         self.assertEqual(enriched.payload["laps"], [{"id": 1}])
         self.assertEqual(enriched.samples[1].heart_rate_bpm, 142)
+        self.assertEqual(enriched.samples[1].grade_percent, 1.4)
+        self.assertFalse(enriched.samples[1].moving)
 
 
 if __name__ == "__main__":
