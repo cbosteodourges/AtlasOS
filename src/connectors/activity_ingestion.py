@@ -22,9 +22,21 @@ def activity_fingerprint(activity: NormalizedActivity) -> str:
 
 
 def _quality(activity: NormalizedActivity) -> tuple[int, int]:
+    """Priorise le parcours sans friction, puis la richesse facultative."""
     is_fit = bool(activity.raw_metadata.get("source_file"))
-    detail = len(activity.samples) + len(activity.raw_metadata.get("laps", [])) * 10
-    return (300 if is_fit else 200 if activity.provider == "strava" else 100, detail)
+    detail = (
+        len(activity.samples)
+        + len(activity.raw_metadata.get("laps", [])) * 10
+    )
+    if activity.provider == "health_connect":
+        priority = 400
+    elif is_fit:
+        priority = 300
+    elif activity.provider == "strava":
+        priority = 200
+    else:
+        priority = 100
+    return priority, detail
 
 
 def merge_activities(current: NormalizedActivity, incoming: NormalizedActivity) -> NormalizedActivity:
@@ -52,8 +64,28 @@ def merge_activities(current: NormalizedActivity, incoming: NormalizedActivity) 
                 provenance[name] = fallback.provider
         elif name not in provenance:
             provenance[name] = winner.provider
+    merged.raw_metadata = {
+        **fallback.raw_metadata,
+        **winner.raw_metadata,
+    }
+
+    # Health Connect reste la référence quotidienne, mais un FIT disponible
+    # peut enrichir l'analyse avec ses points 1 Hz, ses tours, son GPS et ses
+    # dynamiques sans remplacer les totaux issus du téléphone.
+    fallback_is_fit = bool(
+        fallback.raw_metadata.get("source_file")
+    )
+    if (
+        winner.provider == "health_connect"
+        and fallback_is_fit
+        and len(fallback.samples) > len(winner.samples)
+    ):
+        merged.samples = list(fallback.samples)
+        provenance["samples"] = "garmin_fit"
+    else:
+        provenance.setdefault("samples", winner.provider)
+
     merged.field_provenance = provenance
-    merged.raw_metadata = {**fallback.raw_metadata, **winner.raw_metadata}
     return merged
 
 
