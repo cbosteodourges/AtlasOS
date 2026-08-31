@@ -19,6 +19,8 @@ class ActivitySample:
     longitude: Optional[float] = None
     distance_meters: Optional[float] = None
     temperature_c: Optional[float] = None
+    grade_percent: Optional[float] = None
+    moving: Optional[bool] = None
     vertical_oscillation_cm: Optional[float] = None
     vertical_ratio_percent: Optional[float] = None
     ground_contact_time_ms: Optional[float] = None
