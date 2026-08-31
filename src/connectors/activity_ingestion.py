@@ -71,11 +71,53 @@ class ActivityStore:
 
     def ingest(self, activities: Iterable[NormalizedActivity]) -> list[NormalizedActivity]:
         indexed = {}
+        source_index = {}
+
         for activity in [*self.load(), *activities]:
-            key = activity.canonical_id or activity_fingerprint(activity)
+            activity.source_ids = {
+                **activity.source_ids,
+                activity.provider: activity.external_id,
+            }
+            source_keys = {
+                (str(provider), str(external_id))
+                for provider, external_id in activity.source_ids.items()
+                if provider and external_id
+            }
+            existing_key = next(
+                (
+                    source_index[source_key]
+                    for source_key in source_keys
+                    if source_key in source_index
+                ),
+                None,
+            )
+            fingerprint_key = (
+                activity.canonical_id
+                or activity_fingerprint(activity)
+            )
+            key = existing_key or fingerprint_key
+
+            if (
+                existing_key is not None
+                and fingerprint_key != existing_key
+                and fingerprint_key in indexed
+            ):
+                activity = merge_activities(
+                    indexed.pop(fingerprint_key),
+                    activity,
+                )
             activity.canonical_id = key
-            activity.source_ids = {**activity.source_ids, activity.provider: activity.external_id}
-            indexed[key] = merge_activities(indexed[key], activity) if key in indexed else activity
+            indexed[key] = (
+                merge_activities(indexed[key], activity)
+                if key in indexed else activity
+            )
+            indexed[key].canonical_id = key
+            for provider, external_id in indexed[key].source_ids.items():
+                if provider and external_id:
+                    source_index[
+                        (str(provider), str(external_id))
+                    ] = key
+
         result = sorted(indexed.values(), key=lambda item: item.start_time)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         temporary = self.path.with_suffix(self.path.suffix + ".tmp")
