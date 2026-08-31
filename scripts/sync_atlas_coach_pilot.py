@@ -510,7 +510,7 @@ def detected_optional_threshold_workout(
 
 
 def confirm_matched_workouts(records, decisions_path: str | Path):
-    """Valide automatiquement toute séance reliée avec confiance au FIT."""
+    """Valide automatiquement toute séance reliée avec confiance."""
 
     destination = Path(decisions_path)
     history = []
@@ -541,9 +541,9 @@ def confirm_matched_workouts(records, decisions_path: str | Path):
             "status": "completed",
             "action": "maintain",
             "recalculate_future_program": False,
-            "reason": "Séance confirmée automatiquement par le fichier FIT.",
+            "reason": "Séance confirmée automatiquement par les données synchronisées.",
             "explanations": [
-                "Le Watcher a importé et analysé l'activité.",
+                "Atlas a importé et analysé l'activité.",
                 "La correspondance fiable confirme automatiquement la séance.",
             ],
         })
