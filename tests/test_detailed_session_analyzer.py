@@ -58,6 +58,25 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
             vertical_ratio_percent=8.5,
         )
 
+    def test_merges_health_connect_series_at_same_timestamp(self) -> None:
+        timestamp = self.start.isoformat()
+        samples = [
+            ActivitySample(
+                timestamp=timestamp,
+                heart_rate_bpm=145,
+            ),
+            ActivitySample(
+                timestamp=timestamp,
+                speed_mps=3.3,
+            ),
+        ]
+
+        merged = self.analyzer._ordered_samples(samples)
+
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(merged[0].heart_rate_bpm, 145)
+        self.assertEqual(merged[0].speed_mps, 3.3)
+
     def test_detects_z2_acceleration_and_recovery(
         self,
     ) -> None:
