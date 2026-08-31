@@ -17,11 +17,6 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.connectors import (  # noqa: E402
-    ActivitySyncService,
-    ConnectorRegistry,
-    GarminConnector,
-)
 from src.performance.cardiac_drift_analyzer import (
     CardiacDriftAnalysis,
     CardiacDriftAnalyzer,
@@ -179,6 +174,14 @@ def synchronize_garmin(
     fit_paths: list[Path] | None = None,
 ):
     """Exécute le connecteur Garmin avec une progression visible."""
+    # Le SDK FIT reste facultatif lorsque ce module est réutilisé pour
+    # analyser une activité Health Connect déjà normalisée.
+    from src.connectors import (
+        ActivitySyncService,
+        ConnectorRegistry,
+        GarminConnector,
+    )
+
     def report(path: Path, index: int, total: int) -> None:
         print(f"[{index}/{total}] Analyse Garmin : {path.name}", flush=True)
 
