@@ -2417,6 +2417,23 @@ select option:checked {
 .reschedule-preview h3{margin-top:0}.reschedule-preview ul{display:grid;gap:9px;padding:0;list-style:none}
 .reschedule-preview li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 14px;padding:12px;border-radius:10px;background:rgba(255,255,255,.045)}
 .reschedule-preview li small{grid-column:1/-1;color:#91adbd}.reschedule-preview .error{color:#ff9caa}
+.reschedule-options{display:grid;gap:12px;margin-top:16px}
+.reschedule-option{display:grid;gap:8px;padding:15px;border:1px solid rgba(76,207,255,.24);border-radius:12px;background:rgba(8,28,44,.9)}
+.reschedule-option>span{font-size:.65rem;font-weight:850;letter-spacing:.1em}
+.reschedule-option h4,.reschedule-option p{margin:0}
+.reschedule-option h4{color:#f1fbff;font-size:1rem}
+.reschedule-option p{color:#b9ced9;font-size:.82rem;line-height:1.5}
+.reschedule-option button,.reschedule-actions button,.reschedule-preview>[data-reschedule-close]{min-height:46px;padding:11px 15px;color:#02131c!important;font:inherit;font-weight:850;cursor:pointer;border:1px solid transparent;border-radius:10px;background:#50d9e7!important;opacity:1!important}
+.reschedule-option-keep{border-color:rgba(255,161,72,.48);background:rgba(85,45,13,.25)}
+.reschedule-option-keep>span{color:#ffb66f}.reschedule-option-keep button{color:#fff!important;border-color:#f49a49;background:#9b4d16!important}
+.reschedule-option-replace{border-color:rgba(92,220,157,.5);background:rgba(19,82,58,.28)}
+.reschedule-option-replace>span{color:#6be2ad}.reschedule-option-replace button{background:#61d89f!important}
+.reschedule-option-atlas{border-color:rgba(79,216,232,.5);background:rgba(12,75,94,.28)}
+.reschedule-option-atlas>span{color:#65e6f0}
+.reschedule-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.reschedule-actions [data-reschedule-undo]{color:#fff!important;border-color:#ffad62;background:#8c4617!important}
+.reschedule-actions [data-reschedule-close]{color:#001923!important;background:#62dbe8!important}
+.reschedule-actions button:disabled{cursor:not-allowed;opacity:.5!important}
 @media(max-width:700px){.reschedule-days{grid-template-columns:repeat(2,minmax(0,1fr))}.reschedule-days button{min-height:68px}.reschedule-preview li{grid-template-columns:1fr}.reschedule-preview li small{grid-column:auto}}
 
 @media (max-width: 620px) {
