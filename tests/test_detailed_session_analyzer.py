@@ -480,6 +480,69 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
             ["z2"],
         )
 
+    def test_consolidates_three_sparse_threshold_repetitions(
+        self,
+    ) -> None:
+        def block(
+            index: int,
+            kind: str,
+            start: int,
+            duration: int,
+            speed: float,
+            heart_rate: float,
+        ) -> SessionBlock:
+            return SessionBlock(
+                block_index=index,
+                block_type=kind,
+                start_offset_seconds=start,
+                end_offset_seconds=start + duration,
+                duration_seconds=duration,
+                distance_meters=speed / 3.6 * duration,
+                average_speed_kmh=speed,
+                maximum_speed_kmh=speed,
+                average_heart_rate_bpm=heart_rate,
+                maximum_heart_rate_bpm=heart_rate,
+                confidence_score=65,
+            )
+
+        raw = [
+            block(1, "z2", 0, 1920, 10.0, 122),
+            block(2, "z3", 1920, 30, 11.2, 138),
+            block(3, "sv2", 1950, 450, 12.0, 147),
+            block(4, "recovery", 2400, 120, 7.1, 132),
+            block(5, "acceleration", 2520, 15, 10.6, 125),
+            block(6, "z3", 2535, 15, 11.4, 134),
+            block(7, "sv2", 2550, 450, 12.0, 147),
+            block(8, "recovery", 3000, 120, 6.2, 130),
+            block(9, "acceleration", 3120, 15, 11.0, 124),
+            block(10, "z3", 3135, 30, 11.4, 138),
+            block(11, "sv2", 3165, 435, 12.0, 150),
+        ]
+
+        consolidated = (
+            self.analyzer._consolidate_threshold_repetitions(raw)
+        )
+
+        self.assertEqual(
+            [item.block_type for item in consolidated],
+            [
+                "warm_up",
+                "sv2",
+                "recovery",
+                "sv2",
+                "recovery",
+                "sv2",
+            ],
+        )
+        self.assertEqual(
+            [
+                round(item.duration_seconds)
+                for item in consolidated
+                if item.block_type == "sv2"
+            ],
+            [480, 480, 480],
+        )
+
     def test_uses_manual_laps_as_primary_structure(
         self,
     ) -> None:
