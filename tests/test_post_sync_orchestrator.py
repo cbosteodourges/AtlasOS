@@ -1,6 +1,8 @@
 import json
 import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -8,6 +10,54 @@ from src.training.post_sync_orchestrator import PostSyncOrchestrator
 
 
 class PostSyncOrchestratorTests(unittest.TestCase):
+    def test_health_connect_activity_creates_detailed_execution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            program = {
+                "athlete_snapshot": {"vma_kmh": 14},
+                "weeks": [],
+            }
+            (root / "training-program.json").write_text(
+                json.dumps(program),
+                encoding="utf-8",
+            )
+            activity = SimpleNamespace(
+                atlas_id="health_connect:exercise-1",
+                provider="health_connect",
+                source_ids={"health_connect": "exercise-1"},
+            )
+            record = {
+                "activity_id": activity.atlas_id,
+                "provider": "health_connect",
+                "start_time": "2026-08-31T17:55:13+00:00",
+                "atlas_workout_match": {
+                    "workout_id": "workout-1",
+                    "matched": True,
+                },
+            }
+
+            with (
+                patch(
+                    "scripts.sync_atlas_coach_pilot.build_record",
+                    return_value=record,
+                ),
+                patch(
+                    "scripts.sync_atlas_coach_pilot.confirm_matched_workouts",
+                    return_value=1,
+                ),
+            ):
+                count = PostSyncOrchestrator(
+                    root
+                )._refresh_activity_executions([activity])
+
+            self.assertEqual(count, 1)
+            executions = json.loads(
+                (root / "atlas-coach-executions.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(executions, [record])
+
     def test_creates_assessment_and_never_overwrites_active_program(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
