@@ -98,7 +98,20 @@ def synchronize_strava(full_history=False):
     since = None
     if not full_history:
         existing = ActivityStore(ACTIVITIES_PATH).load()
-        since = max((item.start_time for item in existing), default=None)
+        latest = max(
+            (item.start_time for item in existing),
+            default=None,
+        )
+        if latest:
+            # Recouvre les derniers jours : Health Connect peut avoir créé
+            # l'activité avant que Strava ne soit interrogé. La fusion
+            # idempotente évite ensuite tout doublon.
+            since = (
+                datetime.fromisoformat(
+                    latest.replace("Z", "+00:00")
+                )
+                - timedelta(days=7)
+            ).isoformat()
     raw = list(connector.fetch_activities(since=since))
     detail_limit = 25 if full_history else len(raw)
     enriched = []
