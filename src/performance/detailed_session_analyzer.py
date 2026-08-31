@@ -2440,8 +2440,34 @@ class DetailedSessionAnalyzer:
     def _ordered_samples(
         samples: List[ActivitySample],
     ) -> List[ActivitySample]:
+        """Fusionne les mesures séparées partageant le même horodatage.
+
+        Health Connect transmet notamment la fréquence cardiaque et la
+        vitesse dans deux séries distinctes. Sans fusion, la série triée
+        alterne une vitesse réelle et une vitesse absente interprétée comme
+        zéro, ce qui transforme artificiellement toute la séance en
+        accélérations.
+        """
+        merged = {}
+        field_names = [
+            name
+            for name in ActivitySample.__dataclass_fields__
+            if name != "timestamp"
+        ]
+
+        for sample in samples:
+            timestamp = sample.timestamp
+            target = merged.setdefault(
+                timestamp,
+                ActivitySample(timestamp=timestamp),
+            )
+            for field_name in field_names:
+                value = getattr(sample, field_name)
+                if value is not None:
+                    setattr(target, field_name, value)
+
         return sorted(
-            samples,
+            merged.values(),
             key=lambda sample: DetailedSessionAnalyzer._date(
                 sample.timestamp
             ),
