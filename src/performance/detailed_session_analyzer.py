@@ -77,6 +77,10 @@ class DetailedSessionAnalyzer:
                 intervals
             )
         blocks = self._mark_session_boundaries(blocks)
+        if not analysis_laps:
+            blocks = self._consolidate_threshold_repetitions(
+                blocks
+            )
 
         work_blocks = [
             block
@@ -1640,6 +1644,239 @@ class DetailedSessionAnalyzer:
                 "Bloc facile terminal suivant un travail d'intensité."
             )
         return blocks
+
+    @classmethod
+    def _consolidate_threshold_repetitions(
+        cls,
+        blocks: List[SessionBlock],
+    ) -> List[SessionBlock]:
+        """Regroupe les fragments autour du seuil en répétitions lisibles.
+
+        Une mesure toutes les quinze secondes peut faire osciller un même
+        effort entre Z3, SV2 et une brève accélération. Deux récupérations
+        franches délimitent néanmoins sans ambiguïté trois répétitions.
+        """
+        recovery_indices = [
+            index
+            for index, block in enumerate(blocks)
+            if (
+                block.block_type == "recovery"
+                and 60 <= block.duration_seconds <= 240
+            )
+        ]
+        if len(recovery_indices) < 2:
+            return blocks
+
+        work_types = {"z3", "sv2", "acceleration"}
+        regions = []
+
+        first_recovery = recovery_indices[0]
+        first_start = first_recovery
+        while (
+            first_start > 0
+            and blocks[first_start - 1].block_type in work_types
+        ):
+            first_start -= 1
+        regions.append((first_start, first_recovery))
+
+        for left, right in zip(
+            recovery_indices,
+            recovery_indices[1:],
+        ):
+            regions.append((left + 1, right))
+
+        last_recovery = recovery_indices[-1]
+        last_end = last_recovery + 1
+        while (
+            last_end < len(blocks)
+            and blocks[last_end].block_type in work_types
+        ):
+            last_end += 1
+        regions.append((last_recovery + 1, last_end))
+
+        if len(regions) < 3:
+            return blocks
+
+        for start, end in regions:
+            region = blocks[start:end]
+            duration = sum(
+                block.duration_seconds
+                for block in region
+            )
+            if (
+                not region
+                or not any(
+                    block.block_type == "sv2"
+                    for block in region
+                )
+                or not all(
+                    block.block_type in work_types
+                    for block in region
+                )
+                or not 300 <= duration <= 720
+            ):
+                return blocks
+
+        result = []
+        prefix_end = regions[0][0]
+        if prefix_end > 0:
+            result.append(
+                cls._merge_session_blocks(
+                    blocks[:prefix_end],
+                    "warm_up",
+                    "Échauffement et endurance précédant les répétitions.",
+                )
+            )
+
+        for region_index, (start, end) in enumerate(regions):
+            result.append(
+                cls._merge_session_blocks(
+                    blocks[start:end],
+                    "sv2",
+                    (
+                        "Répétition sous SV2 reconstruite depuis "
+                        "la vitesse et la fréquence cardiaque."
+                    ),
+                )
+            )
+            if region_index < len(recovery_indices):
+                recovery_start = recovery_indices[region_index]
+                next_start = (
+                    regions[region_index + 1][0]
+                    if region_index + 1 < len(regions)
+                    else recovery_start + 1
+                )
+                recovery_group = blocks[
+                    recovery_start:next_start
+                ]
+                recovery_group = [
+                    block
+                    for block in recovery_group
+                    if block.block_type == "recovery"
+                ]
+                if recovery_group:
+                    result.append(
+                        cls._merge_session_blocks(
+                            recovery_group,
+                            "recovery",
+                            "Récupération entre deux répétitions.",
+                        )
+                    )
+
+        suffix_start = regions[-1][1]
+        if suffix_start < len(blocks):
+            result.append(
+                cls._merge_session_blocks(
+                    blocks[suffix_start:],
+                    "cool_down",
+                    "Retour au calme après les répétitions.",
+                )
+            )
+
+        for index, block in enumerate(result, start=1):
+            block.block_index = index
+        return result
+
+    @staticmethod
+    def _merge_session_blocks(
+        blocks: List[SessionBlock],
+        block_type: str,
+        reason: str,
+    ) -> SessionBlock:
+        duration = sum(
+            block.duration_seconds
+            for block in blocks
+        )
+        distance = sum(
+            block.distance_meters
+            for block in blocks
+        )
+
+        def weighted(field_name: str) -> Optional[float]:
+            available = [
+                block
+                for block in blocks
+                if getattr(block, field_name) is not None
+            ]
+            weight = sum(
+                max(block.duration_seconds, 1)
+                for block in available
+            )
+            if not available or weight <= 0:
+                return None
+            return sum(
+                float(getattr(block, field_name))
+                * max(block.duration_seconds, 1)
+                for block in available
+            ) / weight
+
+        def maximum(field_name: str) -> Optional[float]:
+            values = [
+                float(getattr(block, field_name))
+                for block in blocks
+                if getattr(block, field_name) is not None
+            ]
+            return max(values) if values else None
+
+        reasons = [
+            item
+            for block in blocks
+            for item in block.detection_reasons
+        ]
+        reasons.append(reason)
+
+        return SessionBlock(
+            block_index=blocks[0].block_index,
+            block_type=block_type,
+            start_offset_seconds=blocks[0].start_offset_seconds,
+            end_offset_seconds=blocks[-1].end_offset_seconds,
+            duration_seconds=duration,
+            distance_meters=distance,
+            average_speed_kmh=weighted("average_speed_kmh"),
+            maximum_speed_kmh=maximum("maximum_speed_kmh"),
+            average_heart_rate_bpm=weighted(
+                "average_heart_rate_bpm"
+            ),
+            maximum_heart_rate_bpm=maximum(
+                "maximum_heart_rate_bpm"
+            ),
+            average_power_watts=weighted(
+                "average_power_watts"
+            ),
+            average_cadence_spm=weighted(
+                "average_cadence_spm"
+            ),
+            average_stride_length_m=weighted(
+                "average_stride_length_m"
+            ),
+            average_vertical_ratio_percent=weighted(
+                "average_vertical_ratio_percent"
+            ),
+            average_vertical_oscillation_cm=weighted(
+                "average_vertical_oscillation_cm"
+            ),
+            average_ground_contact_time_ms=weighted(
+                "average_ground_contact_time_ms"
+            ),
+            physiological_load_score=min(
+                100,
+                sum(
+                    block.physiological_load_score
+                    for block in blocks
+                ),
+            ),
+            biomechanical_load_score=min(
+                100,
+                sum(
+                    block.biomechanical_load_score
+                    for block in blocks
+                ),
+            ),
+            confidence_score=round(
+                weighted("confidence_score") or 0
+            ),
+            detection_reasons=list(dict.fromkeys(reasons)),
+        )
 
     @classmethod
     def _merge_short_groups(
