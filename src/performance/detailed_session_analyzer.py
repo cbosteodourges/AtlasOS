@@ -2229,7 +2229,20 @@ class DetailedSessionAnalyzer:
         types = {block.block_type for block in work_blocks}
         if not work_blocks or dominant_work_type == "unknown":
             return "unknown"
-        if types & {"sprint", "acceleration", "vma"}:
+        if types & {"sprint", "vma"}:
+            return "vma"
+        acceleration_duration = sum(
+            block.duration_seconds
+            for block in work_blocks
+            if block.block_type == "acceleration"
+        )
+        if (
+            dominant_work_type in {
+                "acceleration",
+                "sprint_acceleration",
+            }
+            or acceleration_duration >= 60
+        ):
             return "vma"
         if "sv2" in types:
             return "threshold"
