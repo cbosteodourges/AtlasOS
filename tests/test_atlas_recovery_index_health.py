@@ -123,5 +123,109 @@ class AtlasRecoveryIndexHealthTests(unittest.TestCase):
         self.assertIn("training_load", keys)
 
 
+
+    def test_excludes_awake_stages_from_sleep_duration(self):
+        end = datetime(2026, 8, 30, 6, tzinfo=timezone.utc)
+        start = end - timedelta(hours=8, minutes=30)
+        cursor = start
+        stages = []
+
+        for stage, minutes in (
+            ("1", 59),
+            ("5", 94),
+            ("4", 311),
+            ("6", 46),
+        ):
+            stage_end = cursor + timedelta(minutes=minutes)
+            stages.append({
+                "stage": stage,
+                "start_time": cursor.isoformat(),
+                "end_time": stage_end.isoformat(),
+            })
+            cursor = stage_end
+
+        wellness = [{
+            "type": "sleep",
+            "start_time": start.isoformat(),
+            "end_time": end.isoformat(),
+            "stages": stages,
+        }]
+
+        latest = AtlasRecoveryIndex().build(wellness, [])["latest"]
+        duration = next(
+            item for item in latest["components"]
+            if item["key"] == "sleep_duration"
+        )
+        architecture = next(
+            item for item in latest["components"]
+            if item["key"] == "sleep_stages"
+        )
+
+        self.assertEqual(duration["value"], 7.52)
+        self.assertEqual(duration["difference_minutes"], -29)
+        self.assertEqual(architecture["deep_percent"], 21)
+        self.assertEqual(architecture["rem_percent"], 10)
+        self.assertEqual(architecture["awake_percent"], 12)
+
+    def test_nap_does_not_replace_main_sleep(self):
+        night_end = datetime(2026, 8, 30, 6, 40, tzinfo=timezone.utc)
+        night_start = night_end - timedelta(hours=8, minutes=30)
+
+        awake_end = night_start + timedelta(minutes=59)
+        light_end = awake_end + timedelta(minutes=311)
+        deep_end = light_end + timedelta(minutes=94)
+
+        main_sleep = {
+            "type": "sleep",
+            "start_time": night_start.isoformat(),
+            "end_time": night_end.isoformat(),
+            "duration_seconds": 27060,
+            "stages": [
+                {
+                    "stage": "1",
+                    "start_time": night_start.isoformat(),
+                    "end_time": awake_end.isoformat(),
+                },
+                {
+                    "stage": "4",
+                    "start_time": awake_end.isoformat(),
+                    "end_time": light_end.isoformat(),
+                },
+                {
+                    "stage": "5",
+                    "start_time": light_end.isoformat(),
+                    "end_time": deep_end.isoformat(),
+                },
+                {
+                    "stage": "6",
+                    "start_time": deep_end.isoformat(),
+                    "end_time": night_end.isoformat(),
+                },
+            ],
+        }
+
+        nap_end = datetime(2026, 8, 30, 15, 0, tzinfo=timezone.utc)
+        nap = {
+            "type": "sleep",
+            "start_time": (nap_end - timedelta(minutes=29)).isoformat(),
+            "end_time": nap_end.isoformat(),
+            "duration_seconds": 1740,
+            "stages": [],
+        }
+
+        latest = AtlasRecoveryIndex().build(
+            [main_sleep, nap],
+            [],
+        )["latest"]
+
+        duration = next(
+            item for item in latest["components"]
+            if item["key"] == "sleep_duration"
+        )
+
+        self.assertEqual(latest["day"], "2026-08-30")
+        self.assertEqual(duration["value"], 7.52)
+        self.assertEqual(duration["difference_minutes"], -29)
+
 if __name__ == "__main__":
     unittest.main()

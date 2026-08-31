@@ -14,7 +14,7 @@ import java.time.temporal.ChronoUnit
 
 class HealthSync(private val context: Context) {
     companion object {
-        private const val SYNC_SCHEMA_VERSION = 2
+        private const val SYNC_SCHEMA_VERSION = 4
     }
     private suspend inline fun <reified T : Record> HealthConnectClient.records(range: TimeRangeFilter): List<T> {
         val result = mutableListOf<T>()
@@ -46,9 +46,10 @@ class HealthSync(private val context: Context) {
         }
     }
 
-    suspend fun run(): Int {
+    suspend fun run(onProgress: (Int, String) -> Unit = { _, _ -> }): Int {
         require(HealthConnectClient.getSdkStatus(context) == HealthConnectClient.SDK_AVAILABLE) { "Santé Connect indisponible" }
         val client = HealthConnectClient.getOrCreate(context)
+        onProgress(5, "Lecture des données Health Connect")
         val granted = client.permissionController.getGrantedPermissions()
         val skipped = JSONArray()
         val prefs = context.getSharedPreferences("atlas", Context.MODE_PRIVATE)
@@ -60,9 +61,10 @@ class HealthSync(private val context: Context) {
         val start = if (last > 0 && !backfillPerformed) {
             Instant.ofEpochMilli(last).minus(1, ChronoUnit.DAYS)
         } else {
-            Instant.now().minus(3652, ChronoUnit.DAYS)
+            Instant.now().minus(30, ChronoUnit.DAYS)
         }
-        val range = TimeRangeFilter.between(start, Instant.now())
+        val end = Instant.now()
+        val range = TimeRangeFilter.between(start, end)
         val exercises = client.availableRecords<ExerciseSessionRecord>(range, granted, skipped)
         val heartRates = client.availableRecords<HeartRateRecord>(range, granted, skipped)
         val distances = client.availableRecords<DistanceRecord>(range, granted, skipped)
@@ -91,12 +93,31 @@ class HealthSync(private val context: Context) {
         val nutritionRecords = client.availableRecords<NutritionRecord>(range, granted, skipped)
         val stepRecords = client.availableRecords<StepsRecord>(range, granted, skipped)
         val floorRecords = client.availableRecords<FloorsClimbedRecord>(range, granted, skipped)
+
+        val heartRateSamples = heartRates.asSequence()
+            .flatMap { it.samples.asSequence() }
+            .filter { !it.time.isBefore(start) && it.time.isBefore(end) }
+            .toList()
+        val speedSamples = speeds.asSequence()
+            .flatMap { it.samples.asSequence() }
+            .filter { !it.time.isBefore(start) && it.time.isBefore(end) }
+            .toList()
+        val cadenceSamples = cadences.asSequence()
+            .flatMap { it.samples.asSequence() }
+            .filter { !it.time.isBefore(start) && it.time.isBefore(end) }
+            .toList()
+        val powerSamples = powers.asSequence()
+            .flatMap { it.samples.asSequence() }
+            .filter { !it.time.isBefore(start) && it.time.isBefore(end) }
+            .toList()
+
+        onProgress(35, "Préparation des activités")
         val activities = JSONArray()
         exercises.forEach { exercise ->
-            val hr = heartRates.flatMap { it.samples }.filter { it.time in exercise.startTime..exercise.endTime }
-            val speed = speeds.flatMap { it.samples }.filter { it.time in exercise.startTime..exercise.endTime }
-            val cadence = cadences.flatMap { it.samples }.filter { it.time in exercise.startTime..exercise.endTime }
-            val power = powers.flatMap { it.samples }.filter { it.time in exercise.startTime..exercise.endTime }
+            val hr = heartRateSamples.filter { it.time in exercise.startTime..exercise.endTime }
+            val speed = speedSamples.filter { it.time in exercise.startTime..exercise.endTime }
+            val cadence = cadenceSamples.filter { it.time in exercise.startTime..exercise.endTime }
+            val power = powerSamples.filter { it.time in exercise.startTime..exercise.endTime }
             val samples = JSONArray()
             hr.forEach { samples.put(JSONObject().put("timestamp", it.time).put("heart_rate_bpm", it.beatsPerMinute)) }
             speed.forEach { samples.put(JSONObject().put("timestamp", it.time).put("speed_mps", it.speed.inMetersPerSecond)) }
@@ -134,12 +155,38 @@ class HealthSync(private val context: Context) {
             .put("source_device", it.metadata.dataOrigin.packageName)) }
         sleepRecords.forEach { sleep ->
             val stages = JSONArray()
-            sleep.stages.forEach { stages.put(JSONObject().put("stage", it.stage).put("start_time", it.startTime).put("end_time", it.endTime)) }
-            wellness.put(JSONObject().put("source_id", sleep.metadata.id).put("type", "sleep")
-                .put("start_time", sleep.startTime).put("end_time", sleep.endTime)
+            sleep.stages.forEach {
+                stages.put(JSONObject()
+                    .put("stage", it.stage)
+                    .put("start_time", it.startTime)
+                    .put("end_time", it.endTime))
+            }
+
+            val sessionSeconds =
+                sleep.endTime.epochSecond - sleep.startTime.epochSecond
+            val awakeSeconds = sleep.stages
+                .filter { it.stage in setOf(1, 3, 7) }
+                .sumOf { it.endTime.epochSecond - it.startTime.epochSecond }
+            val explicitSleepSeconds = sleep.stages
+                .filter { it.stage in setOf(2, 4, 5, 6) }
+                .sumOf { it.endTime.epochSecond - it.startTime.epochSecond }
+            val actualSleepSeconds = if (explicitSleepSeconds > 0) {
+                explicitSleepSeconds
+            } else {
+                maxOf(0L, sessionSeconds - awakeSeconds)
+            }
+
+            wellness.put(JSONObject()
+                .put("source_id", sleep.metadata.id)
+                .put("type", "sleep")
+                .put("start_time", sleep.startTime)
+                .put("end_time", sleep.endTime)
                 .put("local_day", localDay(sleep.endTime.minus(1, ChronoUnit.SECONDS)))
                 .put("source_device", sleep.metadata.dataOrigin.packageName)
-                .put("duration_seconds", sleep.endTime.epochSecond - sleep.startTime.epochSecond).put("stages", stages))
+                .put("session_duration_seconds", sessionSeconds)
+                .put("awake_duration_seconds", awakeSeconds)
+                .put("duration_seconds", actualSleepSeconds)
+                .put("stages", stages))
         }
         restingHeartRates.forEach { wellness.put(instant(it.metadata.id, "resting_heart_rate", it.time, it.beatsPerMinute)) }
         hrvRecords.forEach { wellness.put(instant(it.metadata.id, "hrv_rmssd", it.time, it.heartRateVariabilityMillis)) }
@@ -188,10 +235,33 @@ class HealthSync(private val context: Context) {
             .put("source_device", nutrition.metadata.dataOrigin.packageName)) }
         stepRecords.forEach { wellness.put(interval(it.metadata.id, "steps", it.startTime, it.endTime, it.count)) }
         floorRecords.forEach { wellness.put(interval(it.metadata.id, "floors", it.startTime, it.endTime, it.floors)) }
-        heartRates.forEach { record -> wellness.put(JSONObject().put("source_id", record.metadata.id).put("type", "heart_rate_series")
-            .put("start_time", record.startTime).put("end_time", record.endTime)
-            .put("local_day", localDay(record.startTime)).put("source_device", record.metadata.dataOrigin.packageName)
-            .put("samples", JSONArray(record.samples.map { JSONObject().put("timestamp", it.time).put("value", it.beatsPerMinute) }))) }
+        heartRates.groupBy { it.metadata.dataOrigin.packageName }
+            .forEach { (source, records) ->
+                val samples = records.asSequence()
+                    .flatMap { it.samples.asSequence() }
+                    .filter { !it.time.isBefore(start) && it.time.isBefore(end) }
+                    .distinctBy { it.time to it.beatsPerMinute }
+                    .sortedBy { it.time }
+                    .toList()
+
+                samples.chunked(5000).forEachIndexed { index, chunk ->
+                    if (chunk.isNotEmpty()) {
+                        wellness.put(JSONObject()
+                            .put("source_id", "heart-rate:${source.hashCode()}:${start.epochSecond}:$index")
+                            .put("type", "heart_rate_series")
+                            .put("start_time", chunk.first().time)
+                            .put("end_time", chunk.last().time)
+                            .put("local_day", localDay(chunk.first().time))
+                            .put("source_device", source)
+                            .put("samples", JSONArray(chunk.map {
+                                JSONObject()
+                                    .put("timestamp", it.time)
+                                    .put("value", it.beatsPerMinute)
+                            })))
+                    }
+                }
+            }
+
         val inventory = JSONArray(listOf(
             inventoryEntry("ExerciseSessionRecord", exercises),
             inventoryEntry("SleepSessionRecord", sleepRecords),
@@ -213,12 +283,68 @@ class HealthSync(private val context: Context) {
             inventoryEntry("StepsRecord", stepRecords),
             inventoryEntry("FloorsClimbedRecord", floorRecords)
         ))
-        AtlasTransport.ingest(prefs.getString("server", "")!!, prefs.getString("token", "")!!,
-            JSONObject().put("activities", activities).put("wellness", wellness)
-                .put("record_inventory", inventory).put("skipped_record_types", skipped)
-                .put("sync_schema_version", SYNC_SCHEMA_VERSION).put("backfill_performed", backfillPerformed))
+        val server = prefs.getString("server", "")!!
+        val token = prefs.getString("token", "")!!
+        onProgress(55, "Préparation des lots")
+        val maximumBatchCharacters = 1_500_000
+        val batches = mutableListOf<Pair<JSONArray, JSONArray>>()
+        var activityOffset = 0
+        var wellnessOffset = 0
+
+        while (activityOffset < activities.length() || wellnessOffset < wellness.length()) {
+            val activityBatch = JSONArray()
+            val wellnessBatch = JSONArray()
+            var estimatedCharacters = 0
+
+            while (activityOffset < activities.length()) {
+                val item = activities.getJSONObject(activityOffset)
+                val itemCharacters = item.toString().length
+                if (estimatedCharacters > 0 &&
+                    estimatedCharacters + itemCharacters > maximumBatchCharacters
+                ) break
+                activityBatch.put(item)
+                activityOffset += 1
+                estimatedCharacters += itemCharacters
+            }
+
+            while (wellnessOffset < wellness.length()) {
+                val item = wellness.getJSONObject(wellnessOffset)
+                val itemCharacters = item.toString().length
+                if (estimatedCharacters > 0 &&
+                    estimatedCharacters + itemCharacters > maximumBatchCharacters
+                ) break
+                wellnessBatch.put(item)
+                wellnessOffset += 1
+                estimatedCharacters += itemCharacters
+            }
+
+            batches.add(activityBatch to wellnessBatch)
+        }
+
+        onProgress(55, "Transmission de ${batches.size} lots vers Atlas OS")
+        batches.forEachIndexed { index, (activityBatch, wellnessBatch) ->
+            AtlasTransport.ingest(
+                server,
+                token,
+                JSONObject()
+                    .put("activities", activityBatch)
+                    .put("wellness", wellnessBatch)
+                    .put("record_inventory", inventory)
+                    .put("skipped_record_types", skipped)
+                    .put("sync_schema_version", SYNC_SCHEMA_VERSION)
+                    .put("backfill_performed", backfillPerformed)
+                    .put("sync_complete", index == batches.lastIndex)
+            )
+            val completed = index + 1
+            val percent = 55 + (completed * 40 / batches.size)
+            onProgress(
+                percent.coerceAtMost(95),
+                "Envoi du lot $completed sur ${batches.size}"
+            )
+        }
         prefs.edit().putLong("last_sync", System.currentTimeMillis())
             .putInt("sync_schema_version", SYNC_SCHEMA_VERSION).apply()
+        onProgress(100, "Synchronisation terminée")
         return activities.length() + wellness.length()
     }
 

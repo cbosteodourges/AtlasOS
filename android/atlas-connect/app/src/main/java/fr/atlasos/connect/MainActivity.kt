@@ -16,7 +16,9 @@ import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.*
 import androidx.lifecycle.lifecycleScope
 import androidx.work.WorkManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     private val navy = Color.rgb(2, 13, 24)
@@ -59,6 +61,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var server: EditText
     private lateinit var code: EditText
     private lateinit var status: TextView
+    private lateinit var syncButton: Button
 
     private val requestPermissions = registerForActivityResult(
         PermissionController.createRequestPermissionResultContract()
@@ -132,7 +135,8 @@ class MainActivity : ComponentActivity() {
         syncCard.addView(actionButton("Autoriser Santé Connect", false) {
             requestPermissions.launch(permissions)
         }, match(dp(48)).apply { topMargin = dp(16) })
-        syncCard.addView(actionButton("Synchroniser Atlas", true) { sync() },
+        syncButton = actionButton("Synchroniser Atlas", true) { sync() }
+        syncCard.addView(syncButton,
             match(dp(56)).apply { topMargin = dp(10) })
         page.addView(syncCard, match().apply { topMargin = dp(16) })
 
@@ -174,12 +178,21 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun sync() = lifecycleScope.launch {
-        showStatus("Synchronisation de la santé et des activités…")
+        syncButton.isEnabled = false
+        showStatus("Préparation de la synchronisation · 0 %")
         try {
-            val count = HealthSync(this@MainActivity).run()
-            showStatus("Synchronisation terminée · $count éléments transmis", true)
+            val count = withContext(Dispatchers.Default) {
+                HealthSync(this@MainActivity).run { percent, message ->
+                    runOnUiThread {
+                        showStatus("$message · $percent %")
+                    }
+                }
+            }
+            showStatus("Synchronisation terminée · 100 % · $count éléments transmis", true)
         } catch (error: Exception) {
             showStatus(error.message ?: "Échec de la synchronisation")
+        } finally {
+            syncButton.isEnabled = true
         }
     }
 

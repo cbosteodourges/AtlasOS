@@ -150,7 +150,15 @@ def reschedule_program_request(payload, program_path=None):
         raise ValueError("Séance et nouvelle date obligatoires.")
     with path.open("r", encoding="utf-8") as source:
         program = json.load(source)
-    result = reschedule_workout(program, workout_id, target_date)
+    result = reschedule_workout(
+        program,
+        workout_id,
+        target_date,
+        rebalance=bool(payload.get("rebalance", True)),
+        replace_target_easy=bool(
+            payload.get("replace_target_easy", False)
+        ),
+    )
     applied = bool(payload.get("apply"))
     backup_path = None
     if applied:
@@ -164,8 +172,56 @@ def reschedule_program_request(payload, program_path=None):
         "applied": applied,
         "summary": result["summary"],
         "changes": result["changes"],
+        "target_conflicts": result.get("target_conflicts", []),
+        "removed_workouts": result.get("removed_workouts", []),
         "requires_confirmation": not applied,
         "backup": backup_path.name if backup_path else None,
+    }
+
+
+def undo_reschedule_request(payload, program_path=None):
+    """Restaure une sauvegarde précise créée avant un déplacement."""
+
+    path = Path(program_path) if program_path else PROGRAM_PATH
+    backup_name = Path(
+        str(payload.get("backup") or "").strip()
+    ).name
+
+    if (
+        not backup_name.startswith(
+            "training-program.backup-before-reschedule-"
+        )
+        or not backup_name.endswith(".json")
+    ):
+        raise ValueError("Sauvegarde de déplacement invalide.")
+
+    backup_path = path.parent / backup_name
+    if not backup_path.is_file():
+        raise ValueError("Sauvegarde de déplacement introuvable.")
+
+    with backup_path.open("r", encoding="utf-8") as source:
+        restored_program = json.load(source)
+
+    if not isinstance(restored_program, dict):
+        raise ValueError("Sauvegarde du programme invalide.")
+
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+    undo_backup = path.with_name(
+        f"{path.stem}.backup-before-undo-{stamp}{path.suffix}"
+    )
+
+    if path.is_file():
+        with path.open("r", encoding="utf-8") as source:
+            current_program = json.load(source)
+        _write_private_json(undo_backup, current_program)
+
+    _write_private_json(path, restored_program)
+
+    return {
+        "restored": True,
+        "restored_backup": backup_name,
+        "undo_backup": undo_backup.name,
+        "summary": "La modification du programme a été annulée.",
     }
 
 
@@ -2973,6 +3029,7 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             "/api/atlas-coach/optional-workout",
             "/api/atlas-coach/daily-preparation",
             "/api/atlas-coach/reschedule-workout",
+            "/api/atlas-coach/undo-reschedule",
             "/api/atlas/conversation",
             "/api/atlas-user/profile",
             "/api/atlas-user/objectives",
@@ -3041,6 +3098,11 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
 
             if self.path == "/api/atlas-coach/reschedule-workout":
                 result = reschedule_program_request(payload)
+                self.send_json(200, {"ok": True, **result})
+                return
+
+            if self.path == "/api/atlas-coach/undo-reschedule":
+                result = undo_reschedule_request(payload)
                 self.send_json(200, {"ok": True, **result})
                 return
 

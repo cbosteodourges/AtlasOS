@@ -66,6 +66,7 @@ class HealthConnectBridge:
             str(item.get("token_hash", "")), token_hash)), None)
         if device is None:
             raise PermissionError("Téléphone Santé Connect non associé.")
+        sync_complete = bool(payload.get("sync_complete", True))
         self._normalize_stored_activity_types()
         normalized = [self._activity(item) for item in payload.get("activities", [])]
         total = len(ActivityStore(self.activities_path).ingest(normalized)) if normalized else len(ActivityStore(self.activities_path).load())
@@ -84,8 +85,10 @@ class HealthConnectBridge:
         device["last_sync_at"] = int(time.time())
         device["last_sync_schema_version"] = payload.get("sync_schema_version")
         self._write(self.devices_path, devices)
-        from src.training.post_sync_orchestrator import PostSyncOrchestrator
-        assessment = PostSyncOrchestrator(self.private_dir).run("health_connect")
+        assessment = {}
+        if sync_complete:
+            from src.training.post_sync_orchestrator import PostSyncOrchestrator
+            assessment = PostSyncOrchestrator(self.private_dir).run("health_connect")
         return {"activities_received": len(normalized), "activities_total": total,
                 "wellness_received": len(payload.get("wellness", [])), "wellness_total": len(unique),
                 "record_types_available": sum(1 for item in inventory["record_types"] if int(item.get("count", 0) or 0) > 0),

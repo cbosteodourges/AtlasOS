@@ -7623,3 +7623,104 @@ button.history-session-card:focus-visible {
     min-height: 72px;
   }
 }
+
+/* Fenêtre Ajouter une activité : conserver le mode avancé accessible. */
+#atlasSessionDialog.atlas-session-dialog
+.dialog-content:has(.activity-picker) {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+#atlasSessionDialog.atlas-session-dialog
+.dialog-content:has(.activity-picker)
+.activity-picker {
+  flex: 0 0 auto;
+  min-height: min-content;
+  padding: 10px 18px 34px;
+}
+
+@media (max-width: 760px) {
+  #atlasSessionDialog.atlas-session-dialog
+  .dialog-content:has(.activity-picker)
+  .activity-picker {
+    padding: 8px 10px 28px;
+  }
+}
+/* Fenêtre de déplacement : aperçu et validation toujours accessibles. */
+#atlasSessionDialog.atlas-session-dialog
+.dialog-content:has(.reschedule-panel) {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+#atlasSessionDialog.atlas-session-dialog
+.dialog-content:has(.reschedule-panel)
+.reschedule-panel {
+  flex: 0 0 auto;
+  min-height: min-content;
+  padding: 10px 18px 40px;
+}
+/* Choix utilisateur lors du déplacement d'une séance. */
+#atlasSessionDialog .reschedule-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+#atlasSessionDialog .reschedule-actions button {
+  min-height: 48px;
+  padding: 11px 18px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  border-radius: 12px;
+  transition: transform .16s ease, filter .16s ease;
+}
+
+#atlasSessionDialog
+.reschedule-actions
+[data-reschedule-only] {
+  color: #dffaff !important;
+  border: 1px solid #42d8ef !important;
+  background: #082334 !important;
+}
+
+#atlasSessionDialog
+.reschedule-actions
+[data-reschedule-confirm] {
+  color: #00141d !important;
+  border: 1px solid #55e7ef !important;
+  background: #4dddea !important;
+}
+
+#atlasSessionDialog .reschedule-actions button:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+#atlasSessionDialog .reschedule-actions button:disabled {
+  cursor: wait;
+  opacity: .65;
+  transform: none;
+}
+
+@media (max-width: 700px) {
+  #atlasSessionDialog .reschedule-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
+#atlasSessionDialog
+.reschedule-actions
+[data-reschedule-replace] {
+  color: #07150d !important;
+  border: 1px solid #62e6a4 !important;
+  background: #62d99b !important;
+}

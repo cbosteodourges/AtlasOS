@@ -2982,12 +2982,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const content = dialog.querySelector(".dialog-content");
     const source = parseDate(workout.workout_date);
     const monday = addDays(source, -((source.getDay() + 6) % 7));
-    const days = Array.from({ length: 7 }, (_, index) => {
+    const days = Array.from({ length: 14 }, (_, index) => {
       const value = isoDate(addDays(monday, index));
       return `
         <button type="button" data-reschedule-date="${value}"
           ${value === workout.workout_date ? "disabled" : ""}>
-          <span>${DAY_LABELS[index]}</span>
+          <span>${DAY_LABELS[index % DAY_LABELS.length]}</span>
           <strong>${formatDate(value)}</strong>
           ${value === workout.workout_date ? "<small>Jour actuel</small>" : ""}
         </button>`;
@@ -2998,7 +2998,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         <button type="button" class="reschedule-back" data-reschedule-back>← Retour à la séance</button>
         <span class="session-kicker">ORGANISATION INTELLIGENTE</span>
         <h2>Déplacer « ${escapeHtml(workout.title)} »</h2>
-        <p>Choisissez un jour de la même semaine. Atlas vérifiera les séances difficiles voisines avant tout enregistrement.</p>
+        <p>Choisissez un jour de cette semaine ou de la suivante. Atlas vérifiera les séances difficiles voisines avant tout enregistrement.</p>
         <div class="reschedule-days">${days}</div>
         <div class="reschedule-preview" data-reschedule-preview aria-live="polite">
           <p>Sélectionnez une nouvelle journée pour afficher les conséquences.</p>
@@ -3008,14 +3008,16 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const preview = content.querySelector("[data-reschedule-preview]");
     let selectedDate = null;
 
-    const request = async apply => {
+    const request = async (apply, rebalance = true, replaceTargetEasy = false) => {
       const response = await fetch("/api/atlas-coach/reschedule-workout", {
         method: "POST",
         headers: { "Content-Type": "application/json; charset=utf-8" },
         body: JSON.stringify({
           workout_id: workout.workout_id,
           target_date: selectedDate,
-          apply
+          apply,
+          rebalance,
+          replace_target_easy: replaceTargetEasy
         })
       });
       const payload = await response.json();
@@ -3039,30 +3041,120 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         preview.innerHTML = "<p>Atlas vérifie la cohérence de la semaine…</p>";
         try {
           const result = await request(false);
+          const replaceable = (
+            result.target_conflicts || []
+          ).filter(item => !item.is_hard);
+          const replacementButton = replaceable.length
+            ? `
+              <button type="button" data-reschedule-replace>
+                Déplacer et remplacer
+                ${replaceable.map(item => escapeHtml(item.title)).join(", ")}
+              </button>`
+            : "";
           preview.innerHTML = `
             <h3>${escapeHtml(result.summary)}</h3>
             <ul>${result.changes.map(change => `
               <li><strong>${escapeHtml(change.title)}</strong><span>${formatDate(change.from)} → ${formatDate(change.to)}</span><small>${escapeHtml(change.reason)}</small></li>
             `).join("")}</ul>
             <p>Aucune modification n’est encore enregistrée.</p>
-            <button type="button" data-reschedule-confirm>Valider cette organisation</button>`;
+            <div class="reschedule-actions">
+            <button type="button" data-reschedule-only>
+              Déplacer et conserver les séances déjà prévues
+            </button>
+            ${replacementButton}
+            <button type="button" data-reschedule-confirm>
+              Appliquer les conseils Atlas
+            </button>
+          </div>`;
         } catch (error) {
           preview.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
         }
         return;
       }
+      const undoButton = event.target.closest("[data-reschedule-undo]");
+      if (undoButton) {
+        const backup = undoButton.dataset.backup;
+        if (!backup) return;
+        undoButton.disabled = true;
+        undoButton.textContent = "Restauration en cours…";
+        try {
+          const response = await fetch(
+            "/api/atlas-coach/undo-reschedule",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json; charset=utf-8"
+              },
+              body: JSON.stringify({ backup })
+            }
+          );
+          const payload = await response.json();
+          if (!response.ok || !payload.ok) {
+            throw new Error(
+              payload.error || "Annulation Atlas indisponible."
+            );
+          }
+          await loadProgram();
+          preview.innerHTML = `
+            <h3>Modification annulée</h3>
+            <p>${escapeHtml(payload.summary)}</p>
+            <button type="button" data-reschedule-close>Fermer</button>
+          `;
+        } catch (error) {
+          undoButton.disabled = false;
+          undoButton.textContent = "Annuler cette modification";
+          preview.insertAdjacentHTML(
+            "beforeend",
+            `<p class="error">${escapeHtml(error.message)}</p>`
+          );
+        }
+        return;
+      }
+
+      if (event.target.closest("[data-reschedule-close]")) {
+        dialog.close();
+        return;
+      }
+      const onlyButton = event.target.closest("[data-reschedule-only]");
+      const replaceButton = event.target.closest(
+        "[data-reschedule-replace]"
+      );
       const confirmButton = event.target.closest("[data-reschedule-confirm]");
-      if (!confirmButton || !selectedDate) return;
-      confirmButton.disabled = true;
-      confirmButton.textContent = "Enregistrement…";
+      const actionButton = onlyButton || replaceButton || confirmButton;
+      if (!actionButton || !selectedDate) return;
+      actionButton.disabled = true;
+      actionButton.textContent = "Enregistrement…";
       try {
-        const result = await request(true);
-        preview.innerHTML = `<h3>Organisation enregistrée</h3><p>${escapeHtml(result.summary)}</p><small>Sauvegarde créée : ${escapeHtml(result.backup || "programme protégé")}</small>`;
+        const result = await request(
+          true,
+          Boolean(confirmButton),
+          Boolean(replaceButton)
+        );
         await loadProgram();
-        window.setTimeout(() => dialog.close(), 850);
+        preview.innerHTML = `
+          <h3>Organisation enregistrée</h3>
+          <p>${escapeHtml(result.summary)}</p>
+          <small>
+            Sauvegarde créée :
+            ${escapeHtml(result.backup || "programme protégé")}
+          </small>
+          <div class="reschedule-actions">
+            <button
+              type="button"
+              data-reschedule-undo
+              data-backup="${escapeHtml(result.backup || "")}"
+              ${result.backup ? "" : "disabled"}
+            >
+              Annuler cette modification
+            </button>
+            <button type="button" data-reschedule-close>
+              Fermer
+            </button>
+          </div>
+        `;
       } catch (error) {
-        confirmButton.disabled = false;
-        confirmButton.textContent = "Valider cette organisation";
+        actionButton.disabled = false;
+        actionButton.textContent = "Valider cette organisation";
         preview.insertAdjacentHTML("beforeend", `<p class="error">${escapeHtml(error.message)}</p>`);
       }
     };

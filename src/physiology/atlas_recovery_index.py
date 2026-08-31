@@ -69,6 +69,54 @@ class AtlasRecoveryIndex:
     ) -> dict[str, Any]:
         records = [item for item in wellness if isinstance(item, dict)]
         sleeps = [item for item in records if item.get("type") == "sleep"]
+
+        # Une sieste terminée le même jour ne doit jamais remplacer la nuit
+        # principale dans l'indice de récupération. Atlas conserve, pour
+        # chaque date, le sommeil ayant la plus longue durée réelle.
+        primary_sleep_by_day: dict[str, tuple[float, dict[str, Any]]] = {}
+        for sleep in sleeps:
+            sleep_start = _dt(sleep.get("start_time"))
+            sleep_end = _dt(sleep.get("end_time"))
+            if not sleep_start or not sleep_end or sleep_end <= sleep_start:
+                continue
+
+            stage_totals: dict[str, float] = defaultdict(float)
+            for stage in sleep.get("stages") or []:
+                stage_start = _dt(stage.get("start_time"))
+                stage_end = _dt(stage.get("end_time"))
+                if stage_start and stage_end and stage_end > stage_start:
+                    stage_totals[str(stage.get("stage"))] += (
+                        stage_end - stage_start
+                    ).total_seconds()
+
+            explicit_sleep_seconds = sum(
+                stage_totals.get(code, 0)
+                for code in ("2", "4", "5", "6")
+            )
+            awake_seconds = sum(
+                stage_totals.get(code, 0)
+                for code in ("1", "3", "7")
+            )
+            session_seconds = (sleep_end - sleep_start).total_seconds()
+            transmitted_seconds = _number(sleep.get("duration_seconds"))
+
+            actual_sleep_seconds = (
+                transmitted_seconds
+                if transmitted_seconds is not None and transmitted_seconds > 0
+                else explicit_sleep_seconds
+                if explicit_sleep_seconds > 0
+                else max(0, session_seconds - awake_seconds)
+            )
+
+            day = sleep_end.date().isoformat()
+            current = primary_sleep_by_day.get(day)
+            if current is None or actual_sleep_seconds > current[0]:
+                primary_sleep_by_day[day] = (actual_sleep_seconds, sleep)
+
+        sleeps = [
+            selected[1]
+            for day, selected in sorted(primary_sleep_by_day.items())
+        ]
         resting = [item for item in records if item.get("type") == "resting_heart_rate"]
         hrv = [item for item in records if item.get("type") == "hrv_rmssd"]
         heart_series = [item for item in records if item.get("type") == "heart_rate_series"]
@@ -129,7 +177,22 @@ class AtlasRecoveryIndex:
             hrv_value = mean(hrv_today) if hrv_today else None
             rest_base = _baseline(resting_values, resting_value)
             hrv_base = _baseline(hrv_values, hrv_value)
-            sleep_hours = duration / 3600
+            awake_seconds = sum(
+                stages.get(code, 0)
+                for code in ("1", "3", "7")
+            )
+            explicit_sleep_seconds = sum(
+                stages.get(code, 0)
+                for code in ("2", "4", "5", "6")
+            )
+            sleep_seconds = (
+                explicit_sleep_seconds
+                if explicit_sleep_seconds > 0
+                else max(0, duration - awake_seconds)
+            )
+            if sleep_seconds <= 0:
+                sleep_seconds = duration
+            sleep_hours = sleep_seconds / 3600
             usual_sleep_target = _baseline(sleep_duration_values, 8.0) or 8.0
             performance_sleep_target = _baseline(successful_sleep_values)
             sleep_target = (
@@ -145,8 +208,8 @@ class AtlasRecoveryIndex:
                            "difference_minutes": round((sleep_hours - sleep_target) * 60)}]
             known = sum(stages.values())
             if known:
-                deep = stages.get("5", 0) / duration
-                rem = stages.get("6", 0) / duration
+                deep = stages.get("5", 0) / sleep_seconds
+                rem = stages.get("6", 0) / sleep_seconds
                 awake = (stages.get("1", 0) + stages.get("7", 0)) / duration
                 stage_score = max(0, min(100, 100 - abs(deep - .2) * 170 - abs(rem - .23) * 140 - max(0, awake - .1) * 180))
                 components.append({"key": "sleep_stages", "label": "Architecture du sommeil",

@@ -3,7 +3,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.atlas_web_server import reschedule_program_request
+from tools.atlas_web_server import (
+    reschedule_program_request,
+    undo_reschedule_request,
+)
 
 
 class AtlasWebServerRescheduleTests(unittest.TestCase):
@@ -40,12 +43,42 @@ class AtlasWebServerRescheduleTests(unittest.TestCase):
         )
         self.assertEqual(moved["workout_date"], "2026-08-26")
 
+    def test_applied_reschedule_can_be_undone(self):
+        original = json.loads(
+            self.path.read_text(encoding="utf-8")
+        )
+
+        applied = reschedule_program_request({
+            "workout_id": "vo2",
+            "target_date": "2026-08-26",
+            "apply": True,
+        }, self.path)
+
+        moved = json.loads(
+            self.path.read_text(encoding="utf-8")
+        )
+        self.assertNotEqual(moved, original)
+
+        result = undo_reschedule_request({
+            "backup": applied["backup"],
+        }, self.path)
+
+        restored = json.loads(
+            self.path.read_text(encoding="utf-8")
+        )
+        self.assertTrue(result["restored"])
+        self.assertEqual(restored, original)
+        self.assertTrue(
+            (self.path.parent / result["undo_backup"]).is_file()
+        )
+
     def test_server_and_calendar_expose_reschedule_route(self):
         root = Path(__file__).resolve().parents[1]
         server = (root / "tools" / "atlas_web_server.py").read_text(encoding="utf-8")
         calendar = (root / "app" / "js" / "atlas-training-calendar.js").read_text(encoding="utf-8")
         page = (root / "app" / "performance-running.html").read_text(encoding="utf-8")
         self.assertIn('"/api/atlas-coach/reschedule-workout"', server)
+        self.assertIn('"/api/atlas-coach/undo-reschedule"', server)
         self.assertIn('data-reschedule-workout', calendar)
         self.assertIn('data-reschedule-confirm', calendar)
         self.assertIn('performance-running.css?v=67', page)
