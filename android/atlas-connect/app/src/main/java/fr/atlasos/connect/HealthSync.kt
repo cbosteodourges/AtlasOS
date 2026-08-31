@@ -14,7 +14,7 @@ import java.time.temporal.ChronoUnit
 
 class HealthSync(private val context: Context) {
     companion object {
-        private const val SYNC_SCHEMA_VERSION = 4
+        private const val SYNC_SCHEMA_VERSION = 5
     }
     private suspend inline fun <reified T : Record> HealthConnectClient.records(range: TimeRangeFilter): List<T> {
         val result = mutableListOf<T>()
@@ -123,7 +123,11 @@ class HealthSync(private val context: Context) {
             speed.forEach { samples.put(JSONObject().put("timestamp", it.time).put("speed_mps", it.speed.inMetersPerSecond)) }
             cadence.forEach { samples.put(JSONObject().put("timestamp", it.time).put("cadence_spm", it.rate)) }
             power.forEach { samples.put(JSONObject().put("timestamp", it.time).put("power_watts", it.power.inWatts)) }
-            val distance = distances.filter { overlaps(it.startTime, it.endTime, exercise) }.sumOf { it.distance.inMeters }
+            val distance = activityDistance(
+                exercise,
+                distances,
+                speed,
+            )
             val activeKcal = activeCalories.filter { overlaps(it.startTime, it.endTime, exercise) }
                 .sumOf { it.energy.inKilocalories }
             val kcal = if (activeKcal > 0) activeKcal else calories
@@ -346,6 +350,65 @@ class HealthSync(private val context: Context) {
             .putInt("sync_schema_version", SYNC_SCHEMA_VERSION).apply()
         onProgress(100, "Synchronisation terminée")
         return activities.length() + wellness.length()
+    }
+
+    private fun activityDistance(
+        exercise: ExerciseSessionRecord,
+        distances: List<DistanceRecord>,
+        speedSamples: List<SpeedRecord.Sample>,
+    ): Double {
+        val exerciseSource = exercise.metadata.dataOrigin.packageName
+        val overlapping = distances
+            .filter { overlaps(it.startTime, it.endTime, exercise) }
+            .distinctBy { it.metadata.id }
+        val sameSource = overlapping.filter {
+            it.metadata.dataOrigin.packageName == exerciseSource
+        }
+        val reported = (sameSource.ifEmpty { overlapping })
+            .sumOf { it.distance.inMeters }
+        val reconstructed = distanceFromSpeed(
+            speedSamples,
+            exercise.startTime,
+            exercise.endTime,
+        )
+
+        // Plusieurs applications peuvent republier la même distance dans
+        // Health Connect. Si le cumul s'écarte fortement de la vitesse
+        // horodatée, cette dernière évite le double comptage.
+        return when {
+            reconstructed == null || reconstructed <= 0.0 -> reported
+            reported <= 0.0 -> reconstructed
+            reported / reconstructed in 0.80..1.20 -> reported
+            else -> reconstructed
+        }
+    }
+
+    private fun distanceFromSpeed(
+        samples: List<SpeedRecord.Sample>,
+        start: Instant,
+        end: Instant,
+    ): Double? {
+        val ordered = samples
+            .filter { !it.time.isBefore(start) && !it.time.isAfter(end) }
+            .distinctBy { it.time }
+            .sortedBy { it.time }
+        if (ordered.size < 2) return null
+
+        var meters = 0.0
+        for (index in 0 until ordered.lastIndex) {
+            val current = ordered[index]
+            val next = ordered[index + 1]
+            val seconds = (
+                next.time.toEpochMilli() - current.time.toEpochMilli()
+            ) / 1000.0
+            if (seconds <= 0.0 || seconds > 60.0) continue
+            val averageSpeed = (
+                current.speed.inMetersPerSecond
+                    + next.speed.inMetersPerSecond
+            ) / 2.0
+            meters += averageSpeed.coerceAtLeast(0.0) * seconds
+        }
+        return meters.takeIf { it > 0.0 }
     }
 
     private fun overlaps(start: Instant, end: Instant, exercise: ExerciseSessionRecord) = start < exercise.endTime && end > exercise.startTime
