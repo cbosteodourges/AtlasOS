@@ -28,7 +28,13 @@ def _quality(activity: NormalizedActivity) -> tuple[int, int]:
 
 
 def merge_activities(current: NormalizedActivity, incoming: NormalizedActivity) -> NormalizedActivity:
-    winner, fallback = (incoming, current) if _quality(incoming) > _quality(current) else (current, incoming)
+    # À qualité égale, le réimport le plus récent corrige la version
+    # précédente (distance, calories ou échantillons mis à jour).
+    winner, fallback = (
+        (incoming, current)
+        if _quality(incoming) >= _quality(current)
+        else (current, incoming)
+    )
     merged = NormalizedActivity(**winner.to_dict())
     merged.canonical_id = current.canonical_id or incoming.canonical_id or activity_fingerprint(winner)
     merged.source_ids = {**current.source_ids, current.provider: current.external_id,
