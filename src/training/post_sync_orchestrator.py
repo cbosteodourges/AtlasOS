@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import date, datetime, timedelta, timezone
+from enum import Enum
 import json
 from pathlib import Path
 from typing import Any
@@ -434,5 +435,23 @@ class PostSyncOrchestrator:
         path = self.private_dir / name
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_suffix(path.suffix + ".tmp")
-        temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        temporary.write_text(
+            json.dumps(
+                value,
+                ensure_ascii=False,
+                indent=2,
+                default=self._json_default,
+            ) + "\n",
+            encoding="utf-8",
+        )
         temporary.replace(path)
+
+    @staticmethod
+    def _json_default(value: Any) -> Any:
+        if isinstance(value, (datetime, date)):
+            return value.isoformat()
+        if isinstance(value, Enum):
+            return value.value
+        raise TypeError(
+            f"Type non sérialisable : {type(value).__name__}"
+        )
