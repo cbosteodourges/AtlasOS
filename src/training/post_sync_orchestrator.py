@@ -17,6 +17,7 @@ from src.physiology.nutrition_hydration import NutritionHydrationAnalyzer
 
 PHYSIOLOGY_KEYS = {"vo2_max", "vma_kmh", "vma_training_reference_kmh",
                    "maximum_heart_rate_bpm", "sv1", "sv2"}
+HEALTH_CONNECT_ANALYSIS_VERSION = 2
 
 
 class PostSyncOrchestrator:
@@ -167,6 +168,8 @@ class PostSyncOrchestrator:
             if (
                 isinstance(previous, dict)
                 and previous.get("atlas_workout_match") is not None
+                and previous.get("health_connect_analysis_version")
+                == HEALTH_CONNECT_ANALYSIS_VERSION
             ):
                 continue
             try:
@@ -175,6 +178,9 @@ class PostSyncOrchestrator:
                     workouts,
                     loader,
                     profile,
+                )
+                record["health_connect_analysis_version"] = (
+                    HEALTH_CONNECT_ANALYSIS_VERSION
                 )
             except (TypeError, ValueError, KeyError):
                 # Une activité ancienne incomplète ne doit jamais bloquer la
