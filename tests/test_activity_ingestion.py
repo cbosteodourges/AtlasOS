@@ -20,6 +20,30 @@ class ActivityIngestionTests(unittest.TestCase):
             self.assertEqual(len(result), 1)
             self.assertEqual(result[0].source_ids, {"strava": "1", "garmin": "fit-1"})
 
+    def test_same_source_id_replaces_corrected_distance(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = ActivityStore(Path(directory) / "activities.json")
+            wrong = activity(
+                "health_connect",
+                "exercise-1",
+            )
+            wrong.distance_meters = 15655
+            store.ingest([wrong])
+
+            corrected = activity(
+                "health_connect",
+                "exercise-1",
+            )
+            corrected.distance_meters = 10548
+            result = store.ingest([corrected])
+
+            self.assertEqual(len(result), 1)
+            self.assertEqual(result[0].distance_meters, 10548)
+            self.assertEqual(
+                result[0].source_ids["health_connect"],
+                "exercise-1",
+            )
+
     def test_detailed_fit_has_priority(self):
         fit = activity("garmin", "fit-1", metadata={"source_file": "a.fit", "laps": [{"x": 1}]})
         fit.average_heart_rate_bpm = 151
