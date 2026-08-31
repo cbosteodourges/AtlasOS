@@ -3044,28 +3044,60 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           const replaceable = (
             result.target_conflicts || []
           ).filter(item => !item.is_hard);
-          const replacementButton = replaceable.length
+          const replacementOption = replaceable.length
             ? `
-              <button type="button" data-reschedule-replace>
-                Déplacer et remplacer
-                ${replaceable.map(item => escapeHtml(item.title)).join(", ")}
-              </button>`
+              <article class="reschedule-option reschedule-option-replace">
+                <span>CHOIX ÉQUILIBRÉ</span>
+                <h4>Remplacer la séance facile prévue</h4>
+                <p>
+                  La séance déplacée remplace
+                  ${replaceable.map(item => escapeHtml(item.title)).join(", ")}.
+                  Sa charge métabolique et biomécanique reste supérieure à
+                  une endurance Z2 : Atlas conseille de raccourcir la durée
+                  totale ou le volume sous SV2, puis de réévaluer la
+                  récupération le lendemain.
+                </p>
+                <button type="button" data-reschedule-replace>
+                  Déplacer et remplacer
+                  ${replaceable.map(item => escapeHtml(item.title)).join(", ")}
+                </button>
+              </article>`
             : "";
+          const atlasConsequences = result.changes.slice(1);
+          const atlasAdvice = atlasConsequences.length
+            ? `Atlas décalera ${atlasConsequences.length} séance${atlasConsequences.length > 1 ? "s" : ""} difficile${atlasConsequences.length > 1 ? "s" : ""} suivante${atlasConsequences.length > 1 ? "s" : ""} : ${atlasConsequences.map(change => `${escapeHtml(change.title)} (${formatDate(change.from)} → ${formatDate(change.to)})`).join(" ; ")}.`
+            : "Atlas ne prévoit aucun autre déplacement pour cette organisation.";
           preview.innerHTML = `
             <h3>${escapeHtml(result.summary)}</h3>
             <ul>${result.changes.map(change => `
               <li><strong>${escapeHtml(change.title)}</strong><span>${formatDate(change.from)} → ${formatDate(change.to)}</span><small>${escapeHtml(change.reason)}</small></li>
             `).join("")}</ul>
             <p>Aucune modification n’est encore enregistrée.</p>
-            <div class="reschedule-actions">
-            <button type="button" data-reschedule-only>
-              Déplacer et conserver les séances déjà prévues
-            </button>
-            ${replacementButton}
-            <button type="button" data-reschedule-confirm>
-              Appliquer les conseils Atlas
-            </button>
-          </div>`;
+            <div class="reschedule-options">
+              <article class="reschedule-option reschedule-option-keep">
+                <span>CHARGE ÉLEVÉE</span>
+                <h4>Conserver toutes les séances prévues</h4>
+                <p>
+                  Ce choix ajoute une deuxième séance au même jour et
+                  augmente fortement les charges métabolique, physiologique
+                  et biomécanique. Il sort du programme initial. Si tu le
+                  conserves, réduis nettement la durée ou le volume sous SV2.
+                </p>
+                <button type="button" data-reschedule-only>
+                  Déplacer et conserver les séances déjà prévues
+                </button>
+              </article>
+              ${replacementOption}
+              <article class="reschedule-option reschedule-option-atlas">
+                <span>PRUDENCE ATLAS</span>
+                <h4>Rééquilibrer les séances difficiles</h4>
+                <p>${atlasAdvice}</p>
+                <button type="button" data-reschedule-confirm>
+                  Appliquer les conseils Atlas
+                  (décaler les séances difficiles suivantes)
+                </button>
+              </article>
+            </div>`;
         } catch (error) {
           preview.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
         }
