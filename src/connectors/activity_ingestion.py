@@ -75,13 +75,20 @@ def merge_activities(current: NormalizedActivity, incoming: NormalizedActivity) 
     fallback_is_fit = bool(
         fallback.raw_metadata.get("source_file")
     )
+    enrichment_source = (
+        "garmin_fit"
+        if fallback_is_fit
+        else "strava"
+        if fallback.provider == "strava"
+        else None
+    )
     if (
         winner.provider == "health_connect"
-        and fallback_is_fit
+        and enrichment_source
         and len(fallback.samples) > len(winner.samples)
     ):
         merged.samples = list(fallback.samples)
-        provenance["samples"] = "garmin_fit"
+        provenance["samples"] = enrichment_source
     else:
         provenance.setdefault("samples", winner.provider)
 
