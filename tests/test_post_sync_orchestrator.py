@@ -69,6 +69,54 @@ class PostSyncOrchestratorTests(unittest.TestCase):
                 "2026-08-31T17:55:13+00:00",
             )
 
+    def test_health_connect_wellness_has_priority_over_garmin_cache(
+        self,
+    ):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            health_value = {
+                "type": "resting_heart_rate",
+                "source_id": "health-rhr",
+                "start_time": "2026-08-31T06:00:00+00:00",
+                "value": 42,
+            }
+            (root / "health-connect-wellness.json").write_text(
+                json.dumps([health_value]),
+                encoding="utf-8",
+            )
+            cache = {
+                "archives": {
+                    "2026-08-31": {
+                        "snapshot": {
+                            "day": "2026-08-31",
+                            "resting_heart_rate_bpm": 50,
+                        }
+                    }
+                }
+            }
+            (
+                root / "garmin-wellness-snapshot-cache.json"
+            ).write_text(
+                json.dumps(cache),
+                encoding="utf-8",
+            )
+
+            merged = PostSyncOrchestrator(root)._merged_wellness()
+            resting = [
+                item
+                for item in merged
+                if item.get("type") == "resting_heart_rate"
+                and str(item.get("start_time"))[:10]
+                == "2026-08-31"
+            ]
+
+            self.assertEqual(len(resting), 1)
+            self.assertEqual(resting[0]["value"], 42)
+            self.assertEqual(
+                resting[0]["source_id"],
+                "health-rhr",
+            )
+
     def test_creates_assessment_and_never_overwrites_active_program(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
