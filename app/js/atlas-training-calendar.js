@@ -1795,7 +1795,7 @@ const target = compactTarget(workout, zone);
         zone: atlasDisplayZone(workout, interval),
         duration: durationSeconds / 60,
         label: `Fraction ${index + 1}${Number.isFinite(speed) ? ` · ${reportNumber(speed, 2)} km/h` : ""}`,
-        optional: index >= Number(workout.blocks || []).filter(
+        optional: index >= (workout.blocks || []).filter(
           block => ["work", "interval"].includes(block.block_type)
         ).reduce((total, block) => total + (Number(block.repetitions) || 1), 0)
       });
