@@ -118,6 +118,10 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
             item["start_seconds"] < item["end_seconds"]
             for item in result.execution.interval_details
         ))
+        self.assertTrue(all(
+            item["recovery_distance_meters"] is not None
+            for item in result.execution.interval_details[:-1]
+        ))
         self.assertGreaterEqual(result.target_compliance_score, 75)
         self.assertGreaterEqual(result.execution.recovery_compliance_score, 85)
 
