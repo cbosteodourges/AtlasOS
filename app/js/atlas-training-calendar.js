@@ -2478,7 +2478,14 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           block: item,
           sources: [],
           recovery: Number.isFinite(Number(item.recovery_seconds))
-            ? { duration_seconds: Number(item.recovery_seconds) }
+            ? {
+                duration_seconds: Number(item.recovery_seconds),
+                distance_meters: Number(item.recovery_distance_meters),
+                average_speed_kmh: Number(item.recovery_average_speed_kmh),
+                average_heart_rate_bpm: Number(item.recovery_average_heart_rate_bpm),
+                average_power_watts: Number(item.recovery_average_power_watts),
+                average_cadence_spm: Number(item.recovery_average_cadence_spm)
+              }
             : null
         }))
       : detectedIntervalGroups;
@@ -2928,7 +2935,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           <details class="interval-details-section compact-interval-details" open>
             <summary>
               <span class="report-kicker">TABLEAU RÉCAPITULATIF</span>
-              <strong>Détail des ${workBlocks.length} blocs de travail et récupérations</strong>
+              <strong>Détail des ${workBlocks.length} fractions et de leurs récupérations</strong>
             </summary>
             <div class="interval-detail-table">
               <div class="interval-detail-row interval-detail-header">
