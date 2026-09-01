@@ -1770,6 +1770,56 @@ const target = compactTarget(workout, zone);
     }, []);
   }
 
+  function structuredReportTimelineSegments(
+    workout,
+    fallbackBlocks,
+    dominantType,
+    intervals,
+    activityDurationMinutes
+  ) {
+    if (!intervals.length || !Number.isFinite(Number(intervals[0].start_seconds))) {
+      return reportTimelineSegments(workout, fallbackBlocks, dominantType);
+    }
+
+    const segments = [];
+    const sessionSeconds = Math.max(0, Number(activityDurationMinutes) * 60);
+    const firstStart = Math.max(0, Number(intervals[0].start_seconds));
+    if (firstStart > 0) {
+      segments.push({ zone: 2, duration: firstStart / 60, label: "Échauffement" });
+    }
+
+    intervals.forEach((interval, index) => {
+      const speed = Number(interval.average_speed_kmh);
+      const durationSeconds = Math.max(0, Number(interval.duration_seconds));
+      segments.push({
+        zone: atlasDisplayZone(workout, interval),
+        duration: durationSeconds / 60,
+        label: `Fraction ${index + 1}${Number.isFinite(speed) ? ` · ${reportNumber(speed, 2)} km/h` : ""}`,
+        optional: index >= Number(workout.blocks || []).filter(
+          block => ["work", "interval"].includes(block.block_type)
+        ).reduce((total, block) => total + (Number(block.repetitions) || 1), 0)
+      });
+      const recoverySeconds = Math.max(0, Number(interval.recovery_seconds));
+      if (recoverySeconds > 0) {
+        segments.push({
+          zone: 1,
+          duration: recoverySeconds / 60,
+          label: `Récupération ${index + 1}`
+        });
+      }
+    });
+
+    const last = intervals[intervals.length - 1];
+    const lastEnd = Number.isFinite(Number(last.end_seconds))
+      ? Number(last.end_seconds)
+      : Number(last.start_seconds) + Number(last.duration_seconds);
+    const coolDownSeconds = Math.max(0, sessionSeconds - lastEnd);
+    if (coolDownSeconds > 5) {
+      segments.push({ zone: 1, duration: coolDownSeconds / 60, label: "Retour au calme" });
+    }
+    return segments;
+  }
+
   function timelineHtml(segments, label) {
     if (!segments.length) return "";
 
@@ -2811,7 +2861,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         </section>
 
         ${timelineHtml(
-          reportTimelineSegments(workout, timelineBlocks, dominantType),
+          structuredReportTimelineSegments(
+            workout,
+            timelineBlocks,
+            dominantType,
+            alignedIntervalDetails,
+            actualDuration
+          ),
           "Organisation de la séance réalisée"
         )}
 
