@@ -149,6 +149,18 @@ class TrainingProgramLoader:
             planned_distance_km=value.get(
                 "planned_distance_km"
             ),
+            planned_elevation_gain_m=value.get(
+                "planned_elevation_gain_m"
+            ),
+            planned_elevation_loss_m=value.get(
+                "planned_elevation_loss_m"
+            ),
+            terrain_focus=str(
+                value.get("terrain_focus", "")
+            ),
+            fueling_strategy=str(
+                value.get("fueling_strategy", "")
+            ),
             expected_response=(
                 ExpectedTrainingResponse(
                     physiological_load_0_100=int(
