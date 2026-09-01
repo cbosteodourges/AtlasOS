@@ -1629,10 +1629,19 @@ const target = compactTarget(workout, zone);
       .replace("cooldown", "cool_down");
   }
 
+  function workoutBlockIsOptional(block = {}) {
+    const description = `${block.name || ""} ${block.instructions || ""}`
+      .toLowerCase();
+    return (
+      description.includes("facultatif") ||
+      description.includes("effectuer uniquement")
+    );
+  }
+
   function workoutRepetitionRange(block = {}) {
     const minimum = Math.max(1, Number(block.repetitions) || 1);
     const range = String(block.name || "").match(
-      /(\d+)\s*(?:à|a|-)\s*(\d+)\s*[×x]/i
+      /(\d+)\s*(?:à|a|-)\s*(\d+)(?:\s*[×x]|\s+rép)/i
     );
     const maximum = range
       ? Math.max(minimum, Number(range[2]) || minimum)
@@ -1700,7 +1709,10 @@ const target = compactTarget(workout, zone);
       );
 
       for (let index = 0; index < repetitions.maximum; index += 1) {
-        const optional = index >= repetitions.minimum;
+        const optional = (
+          index >= repetitions.minimum ||
+          workoutBlockIsOptional(block)
+        );
         segments.push({
           zone: atlasDisplayZone(workout, block),
           duration,
@@ -1911,17 +1923,26 @@ const target = compactTarget(workout, zone);
 
     const orderedStepsHtml = blocks.map(block => {
       const repetitions = workoutRepetitionRange(block);
-      const isRepeatedWork = (
-        repetitions.maximum > 1 &&
-        ["work", "interval"].includes(canonicalBlockType(block))
-      );
-      if (!isRepeatedWork) return compactStep(block);
-
       const recoveryMinutes = Number(block.recovery_minutes) ||
         (Number(block.recovery_seconds) || 0) / 60;
-      const repetitionLabel = repetitions.maximum === repetitions.minimum
-        ? `${repetitions.minimum} répétitions`
-        : `${repetitions.minimum} obligatoire + ${repetitions.maximum - repetitions.minimum} facultative`;
+      const isWork = ["work", "interval"].includes(
+        canonicalBlockType(block)
+      );
+      const optionalBlock = workoutBlockIsOptional(block);
+      const needsStructuredGroup = isWork && (
+        repetitions.maximum > 1 ||
+        recoveryMinutes > 0 ||
+        optionalBlock
+      );
+      if (!needsStructuredGroup) return compactStep(block);
+
+      const repetitionLabel = optionalBlock
+        ? "1 fraction facultative"
+        : repetitions.maximum === repetitions.minimum
+          ? repetitions.minimum === 1
+            ? "1 fraction"
+            : `${repetitions.minimum} répétitions`
+          : `${repetitions.minimum} obligatoire + ${repetitions.maximum - repetitions.minimum} facultative`;
 
       return `
         <section class="garmin-repeat-group" style="--repeat-accent:${accentFor(block)}">
