@@ -1629,6 +1629,18 @@ const target = compactTarget(workout, zone);
       .replace("cooldown", "cool_down");
   }
 
+  function workoutRepetitionRange(block = {}) {
+    const minimum = Math.max(1, Number(block.repetitions) || 1);
+    const range = String(block.name || "").match(
+      /(\d+)\s*(?:à|a|-)\s*(\d+)\s*[×x]/i
+    );
+    const maximum = range
+      ? Math.max(minimum, Number(range[2]) || minimum)
+      : minimum;
+
+    return { minimum, maximum };
+  }
+
   function atlasDisplayZone(workout, block = {}) {
     const blockType = canonicalBlockType(block);
     const workoutType = String(workout?.workout_type || "").toLowerCase();
@@ -1673,23 +1685,45 @@ const target = compactTarget(workout, zone);
 
   function workoutTimelineSegments(workout) {
     const segments = [];
+    const blocks = workout.blocks || [];
 
-    (workout.blocks || []).forEach(block => {
-      const repetitions = Math.max(1, Number(block.repetitions) || 1);
+    blocks.forEach((block, blockIndex) => {
+      const repetitions = workoutRepetitionRange(block);
       const duration = Number(block.duration_minutes) ||
         (Number(block.duration_seconds) || 0) / 60 || 1;
+      const recovery = Number(block.recovery_minutes) ||
+        (Number(block.recovery_seconds) || 0) / 60;
+      const laterWorkBlock = blocks.slice(blockIndex + 1).some(
+        candidate => ["work", "interval"].includes(
+          canonicalBlockType(candidate)
+        )
+      );
 
-      for (let index = 0; index < repetitions; index += 1) {
+      for (let index = 0; index < repetitions.maximum; index += 1) {
+        const optional = index >= repetitions.minimum;
         segments.push({
           zone: atlasDisplayZone(workout, block),
           duration,
-          label: block.name || block.block_type || "Étape"
+          label: optional
+            ? `${block.name || "Fraction"} · facultative`
+            : block.name || block.block_type || "Étape",
+          optional
         });
 
-        const recovery = Number(block.recovery_minutes) ||
-          (Number(block.recovery_seconds) || 0) / 60;
-        if (recovery > 0 && index < repetitions - 1) {
-          segments.push({ zone: 1, duration: recovery, label: "Récupération" });
+        if (
+          recovery > 0 &&
+          (
+            index < repetitions.maximum - 1 ||
+            laterWorkBlock
+          )
+        ) {
+          segments.push({
+            zone: 1,
+            duration: recovery,
+            label: optional
+              ? "Récupération si fraction facultative réalisée"
+              : "Récupération avant la fraction suivante"
+          });
         }
       }
     });
@@ -1736,7 +1770,7 @@ const target = compactTarget(workout, zone);
         <div class="workout-timeline-bars">
           ${segments.map((segment, index) => `
             <i
-              class="timeline-zone-${segment.zone}"
+              class="timeline-zone-${segment.zone}${segment.optional ? " timeline-segment-optional" : ""}"
               style="--segment-weight:${Math.max(segment.duration, .5)};--segment-color:${DISPLAY_ZONE_COLORS[segment.zone]}"
               tabindex="0"
               data-step="${index + 1}"
@@ -1870,27 +1904,39 @@ const target = compactTarget(workout, zone);
           </div>
           <span>${escapeHtml(options.target || compactTargetLine(block))}</span>
           ${distance ? `<small>${repetitions > 1 ? `Distance estimée : ${distance.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km par répétition · ${totalDistance.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km au total` : `Distance estimée : ${distance.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km`}</small>` : ""}
+          ${block.instructions ? `<small class="step-instruction">${escapeHtml(block.instructions)}</small>` : ""}
         </article>
       `;
     };
 
-    const repeatedBlock = blocks.find(block => (
-      Number(block.repetitions) > 1 &&
-      ["work", "interval"].includes(canonicalBlockType(block))
-    ));
     const orderedStepsHtml = blocks.map(block => {
-      if (block !== repeatedBlock) return compactStep(block);
+      const repetitions = workoutRepetitionRange(block);
+      const isRepeatedWork = (
+        repetitions.maximum > 1 &&
+        ["work", "interval"].includes(canonicalBlockType(block))
+      );
+      if (!isRepeatedWork) return compactStep(block);
 
       const recoveryMinutes = Number(block.recovery_minutes) ||
         (Number(block.recovery_seconds) || 0) / 60;
+      const repetitionLabel = repetitions.maximum === repetitions.minimum
+        ? `${repetitions.minimum} répétitions`
+        : `${repetitions.minimum} obligatoire + ${repetitions.maximum - repetitions.minimum} facultative`;
 
       return `
         <section class="garmin-repeat-group" style="--repeat-accent:${accentFor(block)}">
-          <h4><span>${escapeHtml(block.repetitions)} répétitions</span><small>Bloc alterné</small></h4>
-          ${compactStep(block)}
+          <h4>
+            <span>${escapeHtml(block.name || "Série")}</span>
+            <small>${escapeHtml(repetitionLabel)}</small>
+          </h4>
+          ${compactStep(block, { title: "Fraction à réaliser" })}
           ${recoveryMinutes > 0 ? compactStep(
             { block_type: "recovery", duration_minutes: recoveryMinutes },
-            { title: "Récupération entre les répétitions", duration: recoveryMinutes, target: "Z1 · récupération active" }
+            {
+              title: "Récupération avant la fraction suivante",
+              duration: recoveryMinutes,
+              target: "Z1 · récupération active"
+            }
           ) : ""}
         </section>
       `;
