@@ -5970,6 +5970,8 @@ body[data-coach-section]
 .interval-recovery-detail {
   display: grid;
   gap: 3px;
+  border-left: 3px solid #38a9ff;
+  background: rgba(56, 169, 255, .07);
 }
 
 .interval-recovery-detail b {
