@@ -102,9 +102,24 @@ class TrainingProgramGenerator:
             raise ValueError(
                 "Le temps cible doit être positif."
             )
+        trail_goal = (
+            goal.discipline in {"trail", "trail_running"}
+            or "trail" in goal.name.casefold()
+        )
+        if trail_goal:
+            raise ValueError(
+                "Le générateur trail dédié n'est pas encore disponible : "
+                "Atlas refuse de produire un programme route générique."
+            )
         if goal.discipline != "running":
             raise ValueError(
                 "Ce générateur prend actuellement en charge la course."
+            )
+        if goal.distance_km > 25:
+            raise ValueError(
+                "Le générateur marathon et longue distance dédié "
+                "n'est pas encore disponible : Atlas refuse de produire "
+                "un programme court générique."
             )
 
         settings = settings or ProgramGenerationSettings()
