@@ -181,6 +181,13 @@ class MainActivity : ComponentActivity() {
         syncButton.isEnabled = false
         showStatus("Préparation de la synchronisation · 0 %")
         try {
+            val visibleServer = server.text.toString().trim().trimEnd('/')
+            require(visibleServer.isNotEmpty()) {
+                "Adresse du serveur Atlas manquante."
+            }
+            getSharedPreferences("atlas", MODE_PRIVATE).edit()
+                .putString("server", visibleServer)
+                .apply()
             val count = withContext(Dispatchers.Default) {
                 HealthSync(this@MainActivity).run { percent, message ->
                     runOnUiThread {
