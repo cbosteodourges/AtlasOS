@@ -2528,14 +2528,20 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const actualComparisonMaximumHeartRate = isIntervalSession
       ? maximumWorkHeartRate
       : Number(activity.maximum_heart_rate_bpm);
-    const analyzedSessionLabel = {
-      threshold_sv2: "Travail structuré sous SV2",
-      vma_short: "Intervalles VO₂max",
-      vma_long: "Intervalles VO₂max",
-      mixed_threshold_vo2: "Séance mixte seuil et VO₂max",
-      triangular_vo2: "Séance VO₂max triangulaire",
-      long_run: "Sortie longue"
-    }[String(workout.workout_type || "")] || ({
+    const isHybridThresholdSession =
+      String(workout.workout_type || "") === "long_run" &&
+      isIntervalSession &&
+      /(?:sous|au)\s+SV2/i.test(String(workout.title || ""));
+    const analyzedSessionLabel = isHybridThresholdSession
+      ? "Travail structuré sous SV2"
+      : ({
+          threshold_sv2: "Travail structuré sous SV2",
+          vma_short: "Intervalles VO₂max",
+          vma_long: "Intervalles VO₂max",
+          mixed_threshold_vo2: "Séance mixte seuil et VO₂max",
+          triangular_vo2: "Séance VO₂max triangulaire",
+          long_run: "Sortie longue"
+        }[String(workout.workout_type || "")] || ({
       vma: "Intervalles VO₂max",
       sv2: "Travail au seuil",
       z3: "Tempo",
@@ -2543,7 +2549,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       z1: "Récupération",
       sprint: "Sprints",
       acceleration: "Accélérations"
-    }[dominantType] || sessionTypeLabel(activity.session_type));
+    }[dominantType] || sessionTypeLabel(activity.session_type)));
     const activityProvider = String(
       report.provider || activity.provider || ""
     ).toLowerCase();
