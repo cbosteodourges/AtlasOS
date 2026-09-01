@@ -32,13 +32,11 @@ class TrainingProgramValidatorTests(unittest.TestCase):
             available_dynamic_metrics={"recovery_status"},
         )
 
-    def test_validates_distance_matrix(self) -> None:
+    def test_validates_supported_road_distance_matrix(self) -> None:
         cases = (
             (5.0, "5 km route"),
             (10.0, "10 km route"),
             (21.1, "Semi-marathon"),
-            (30.0, "Trail 30 km"),
-            (42.195, "Marathon"),
         )
         for distance_km, name in cases:
             with self.subTest(distance_km=distance_km):
@@ -63,6 +61,34 @@ class TrainingProgramValidatorTests(unittest.TestCase):
                     distance_km,
                     places=3,
                 )
+
+    def test_refuses_marathon_until_dedicated_generator_exists(self) -> None:
+        with self.assertRaisesRegex(
+            ValueError,
+            "générateur marathon",
+        ):
+            self._generate(42.195, "Marathon")
+
+    def test_refuses_trail_distances_until_dedicated_generator_exists(
+        self,
+    ) -> None:
+        for distance_km in (20.0, 50.0, 70.0, 100.0):
+            with self.subTest(distance_km=distance_km):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "générateur trail",
+                ):
+                    TrainingProgramGenerator().generate(
+                        profile=build_profile(),
+                        goal=PerformanceGoal(
+                            name=f"Trail {distance_km:g} km",
+                            event_date=self.event_date,
+                            distance_km=distance_km,
+                            discipline="trail_running",
+                        ),
+                        start_date=self.start_date,
+                        settings=build_settings(),
+                    )
 
     def test_accepts_partial_physiological_data(self) -> None:
         program = TrainingProgramGenerator().generate(
