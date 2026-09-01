@@ -285,6 +285,12 @@ class TrainingProgramGenerator:
             race = self._standard_builder.build_race(
                 goal=goal
             )
+            if endurance_spec is not None:
+                race = self._endurance_specializer.specialize_race(
+                    race,
+                    goal=goal,
+                    spec=endurance_spec,
+                )
             workouts.append(race)
             used_dates.add(race.workout_date)
 
@@ -443,6 +449,68 @@ class TrainingProgramGenerator:
                         )
                     workouts.append(long_workout)
                     used_dates.add(long_date)
+
+                    if (
+                        endurance_spec is not None
+                        and endurance_spec.back_to_back
+                        and phase in {
+                            TrainingPhase.DEVELOPMENT,
+                            TrainingPhase.SPECIFIC,
+                        }
+                        and week_number % 2 == 0
+                        and settings.running_sessions_per_week >= 4
+                    ):
+                        first_day = long_date - timedelta(days=1)
+                        if (
+                            first_day in dates
+                            and first_day not in used_dates
+                        ):
+                            first_duration = max(
+                                60,
+                                round(long_duration * 0.45),
+                            )
+                            first_workout = (
+                                self._standard_builder.build_long_run(
+                                    profile=profile,
+                                    workout_date=first_day,
+                                    duration_minutes=first_duration,
+                                )
+                            )
+                            first_workout = (
+                                self._endurance_specializer
+                                .specialize_long_run(
+                                    first_workout,
+                                    goal=goal,
+                                    spec=endurance_spec,
+                                    phase=phase,
+                                )
+                            )
+                            first_workout.title = (
+                                "Week-end enchaîné J1 · "
+                                + endurance_spec.label
+                            )
+                            if (
+                                first_workout
+                                .planned_elevation_gain_m
+                                is not None
+                            ):
+                                first_workout.planned_elevation_gain_m = (
+                                    round(
+                                        first_workout
+                                        .planned_elevation_gain_m
+                                        * 0.55
+                                    )
+                                )
+                                first_workout.planned_elevation_loss_m = (
+                                    first_workout
+                                    .planned_elevation_gain_m
+                                )
+                            long_workout.title = (
+                                "Week-end enchaîné J2 · "
+                                + endurance_spec.label
+                            )
+                            workouts.append(first_workout)
+                            used_dates.add(first_day)
         running_target = self._running_session_target(
             profile,
             settings,
