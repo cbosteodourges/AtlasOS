@@ -14,6 +14,10 @@ from src.research.training_protocol_selector import (
     TrainingProtocolSelector,
 )
 
+from .endurance_event_specializer import (
+    EnduranceEventSpecification,
+    EnduranceEventSpecializer,
+)
 from .historical_workout_progression_selector import (
     HistoricalWorkoutPrescription,
     HistoricalWorkoutProgression,
@@ -56,6 +60,7 @@ class TrainingProgramGenerator:
         research_builder: ResearchWorkoutBuilder | None = None,
         standard_builder: StandardWorkoutBuilder | None = None,
         validator: TrainingProgramValidator | None = None,
+        endurance_specializer: EnduranceEventSpecializer | None = None,
     ) -> None:
         self._phase_planner = (
             phase_planner or ProgramPhasePlanner()
@@ -73,6 +78,9 @@ class TrainingProgramGenerator:
             standard_builder or StandardWorkoutBuilder()
         )
         self._validator = validator or TrainingProgramValidator()
+        self._endurance_specializer = (
+            endurance_specializer or EnduranceEventSpecializer()
+        )
 
     def generate(
         self,
@@ -102,24 +110,13 @@ class TrainingProgramGenerator:
             raise ValueError(
                 "Le temps cible doit être positif."
             )
-        trail_goal = (
-            goal.discipline in {"trail", "trail_running"}
-            or "trail" in goal.name.casefold()
-        )
-        if trail_goal:
+        if goal.discipline not in {
+            "running",
+            "trail",
+            "trail_running",
+        }:
             raise ValueError(
-                "Le générateur trail dédié n'est pas encore disponible : "
-                "Atlas refuse de produire un programme route générique."
-            )
-        if goal.discipline != "running":
-            raise ValueError(
-                "Ce générateur prend actuellement en charge la course."
-            )
-        if goal.distance_km > 25:
-            raise ValueError(
-                "Le générateur marathon et longue distance dédié "
-                "n'est pas encore disponible : Atlas refuse de produire "
-                "un programme court générique."
+                "Ce générateur prend en charge la course et le trail."
             )
 
         settings = settings or ProgramGenerationSettings()
@@ -133,6 +130,11 @@ class TrainingProgramGenerator:
         phase_plan = self._phase_planner.plan(
             start_date=start_date,
             event_date=goal.event_date,
+        )
+        endurance_spec = self._endurance_specializer.validate_goal(
+            goal=goal,
+            profile=profile,
+            preparation_weeks=phase_plan.duration_weeks,
         )
         weeks = []
         warnings = []
@@ -196,6 +198,7 @@ class TrainingProgramGenerator:
                     phase,
                     0,
                 ),
+                endurance_spec=endurance_spec,
             )
             weeks.append(week)
 
@@ -227,7 +230,12 @@ class TrainingProgramGenerator:
             weeks=weeks,
             explanation=(
                 "Programme périodisé à partir du profil longitudinal, "
-                "des tolérances apprises et du registre Atlas Research."
+                "des tolérances apprises et du registre Atlas Research. "
+                + (
+                    "Spécialisation " + endurance_spec.label + "."
+                    if endurance_spec is not None
+                    else ""
+                )
             ),
             warnings=list(dict.fromkeys(warnings)),
         )
@@ -262,6 +270,7 @@ class TrainingProgramGenerator:
             HistoricalWorkoutProgression | None
         ),
         historical_phase_index: int,
+        endurance_spec: EnduranceEventSpecification | None,
     ) -> tuple[AdaptiveTrainingWeek, bool]:
         dates = self._available_dates(
             max(week_start, training_start),
@@ -306,7 +315,8 @@ class TrainingProgramGenerator:
             prescription = None
 
             if (
-                settings.prioritize_metabolic_quality
+                endurance_spec is None
+                and settings.prioritize_metabolic_quality
                 and historical_progression is not None
             ):
                 prescription = self._historical_prescription(
@@ -347,26 +357,37 @@ class TrainingProgramGenerator:
                     used_dates.add(historical_date)
                     used_research = True
             else:
-                selection = self._quality_selection(
-                    profile=profile,
-                    settings=settings,
-                    goal=goal,
-                    phase=phase,
-                    week_number=week_number,
-                    quality_cycle_index=quality_cycle_index,
-                    available_dynamic_metrics=(
-                        available_dynamic_metrics
-                    ),
+                quality_date = self._preferred_date(
+                    dates,
+                    settings.preferred_quality_days,
+                    used_dates,
                 )
-
-                if selection is not None:
-                    quality_date = self._preferred_date(
-                        dates,
-                        settings.preferred_quality_days,
-                        used_dates,
+                if endurance_spec is not None and quality_date is not None:
+                    workouts.append(
+                        self._endurance_specializer.build_specific_quality(
+                            profile=profile,
+                            goal=goal,
+                            spec=endurance_spec,
+                            workout_date=quality_date,
+                            phase=phase,
+                        )
+                    )
+                    used_dates.add(quality_date)
+                    used_research = True
+                else:
+                    selection = self._quality_selection(
+                        profile=profile,
+                        settings=settings,
+                        goal=goal,
+                        phase=phase,
+                        week_number=week_number,
+                        quality_cycle_index=quality_cycle_index,
+                        available_dynamic_metrics=(
+                            available_dynamic_metrics
+                        ),
                     )
 
-                    if quality_date is not None:
+                    if selection is not None and quality_date is not None:
                         workouts.append(
                             self._research_builder.build(
                                 selection=selection,
@@ -389,19 +410,38 @@ class TrainingProgramGenerator:
                 )
 
                 if long_date is not None:
-                    workouts.append(
-                        self._standard_builder.build_long_run(
-                            profile=profile,
-                            workout_date=long_date,
-                            duration_minutes=(
-                                self._long_run_duration(
-                                    phase,
-                                    week_number,
-                                    settings.maximum_weekly_progression_percent,
-                                )
+                    long_duration = (
+                        self._endurance_specializer.long_run_duration(
+                            spec=endurance_spec,
+                            phase=phase,
+                            week_number=week_number,
+                            progression_percent=(
+                                settings.maximum_weekly_progression_percent
                             ),
                         )
+                        if endurance_spec is not None
+                        else self._long_run_duration(
+                            phase,
+                            week_number,
+                            settings.maximum_weekly_progression_percent,
+                        )
                     )
+                    long_workout = self._standard_builder.build_long_run(
+                        profile=profile,
+                        workout_date=long_date,
+                        duration_minutes=long_duration,
+                    )
+                    if endurance_spec is not None:
+                        long_workout = (
+                            self._endurance_specializer
+                            .specialize_long_run(
+                                long_workout,
+                                goal=goal,
+                                spec=endurance_spec,
+                                phase=phase,
+                            )
+                        )
+                    workouts.append(long_workout)
                     used_dates.add(long_date)
         running_target = self._running_session_target(
             profile,
