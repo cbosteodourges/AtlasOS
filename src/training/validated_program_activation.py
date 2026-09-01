@@ -165,7 +165,11 @@ def _vo2_pyramid(day: date, snapshot: dict[str, Any], duration: int) -> dict[str
          _block("2 × 2 min", "work", duration=2, repetitions=2, recovery=1.5, target=target),
          _block("1 à 2 × 1 min 30", "work", duration=1.5, repetitions=1, recovery=1.5,
                 target=target, instructions="La seconde répétition est facultative.")],
-        snapshot, ["Noyau de 11 min 30 ; maximum 13 min."])
+        snapshot, [
+            "Noyau de 11 min 30 ; maximum 13 min.",
+            "Récupération active de 1 min 30 après chaque fraction, y compris entre deux paliers.",
+            "Compléter en endurance très facile pour obtenir une durée totale proche de 50 min.",
+        ])
 
 
 def _threshold_1000(day: date, low: int, high: int,
