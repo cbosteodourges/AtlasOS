@@ -733,3 +733,34 @@ body[data-avatar="female"] .twin-panel img {
 .performance-context-grid dt,.performance-context-grid dd{padding-bottom:7px;border-bottom:1px solid rgba(91,139,163,.18)}
 @media(max-width:1050px){.insight-lanes>article{grid-template-columns:1fr!important}.insight-lanes>article>.eyebrow,.insight-lanes>article>h3,.insight-lanes>article>ul,.insight-lanes>article>ol{grid-column:1;grid-row:auto}.insight-lanes>article>h3{margin-bottom:8px!important}.insight-lanes>article::after{display:none}.longitudinal-evidence [data-longitudinal-conclusions]>article{grid-template-columns:1fr!important}}
 @media(max-width:650px){.insight-lanes>article>ul,.insight-lanes>article>ol{grid-template-columns:1fr!important}.insight-lanes>article{padding:18px!important}}
+
+
+/* Empêche le contenu du cockpit de passer sous le jumeau numérique. */
+.home-grid {
+  align-items: start;
+}
+
+.home-content,
+.readiness-card,
+.metrics,
+.next-session,
+.home-lower-grid {
+  min-width: 0;
+}
+
+.metrics > a,
+.metrics article {
+  min-width: 0;
+}
+
+.twin-panel {
+  width: 100%;
+  min-width: 0;
+  align-self: start;
+}
+
+.next-session h2 {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
