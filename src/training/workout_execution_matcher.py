@@ -509,6 +509,8 @@ class AtlasWorkoutExecutionMatcher:
                     "recovery_distance_meters": group.get("raw_recovery_distance_meters"),
                     "recovery_average_speed_kmh": group.get("raw_recovery_average_speed_kmh"),
                     "recovery_average_heart_rate_bpm": group.get("raw_recovery_average_heart_rate_bpm"),
+                    "recovery_ending_heart_rate_bpm": group.get("raw_recovery_ending_heart_rate_bpm"),
+                    "recovery_heart_rate_drop_bpm": group.get("raw_recovery_heart_rate_drop_bpm"),
                     "recovery_average_power_watts": group.get("raw_recovery_average_power_watts"),
                     "recovery_average_cadence_spm": group.get("raw_recovery_average_cadence_spm"),
                 }.items()
@@ -608,6 +610,9 @@ class AtlasWorkoutExecutionMatcher:
                     sum(heart_rates) / len(heart_rates) if heart_rates else None
                 ),
                 "maximum_heart_rate_bpm": max(heart_rates, default=None),
+                "ending_heart_rate_bpm": (
+                    heart_rates[-1] if heart_rates else None
+                ),
             })
         for left, right in zip(groups, groups[1:]):
             recovery_seconds = max(
@@ -653,6 +658,19 @@ class AtlasWorkoutExecutionMatcher:
             left["raw_recovery_average_heart_rate_bpm"] = (
                 sum(recovery_hearts) / len(recovery_hearts)
                 if recovery_hearts else None
+            )
+            left["raw_recovery_ending_heart_rate_bpm"] = (
+                recovery_hearts[-1] if recovery_hearts else None
+            )
+            left["raw_recovery_heart_rate_drop_bpm"] = (
+                max(
+                    0.0,
+                    float(left["ending_heart_rate_bpm"])
+                    - recovery_hearts[-1],
+                )
+                if recovery_hearts
+                and left.get("ending_heart_rate_bpm") is not None
+                else None
             )
             left["raw_recovery_average_power_watts"] = (
                 sum(recovery_powers) / len(recovery_powers)
