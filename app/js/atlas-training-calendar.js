@@ -2497,9 +2497,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     // quand un tour automatique a fragmenté une étape chronométrée.
     const validatedRepetitions = workBlocks.length;
     const optionalFractionCompleted = validatedRepetitions > plannedRepetitions &&
-      plannedWorkBlocks.some(block => /facultative/i.test(
+      (plannedWorkBlocks.some(block => /facultative/i.test(
         `${block.name || ""} ${block.instructions || ""}`
-      ));
+      )) || /1\s*à\s*2\s*[×x]/i.test(String(workout.title || "")));
     const authorizedRepetitions = optionalFractionCompleted
       ? validatedRepetitions
       : plannedRepetitions;
