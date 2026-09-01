@@ -173,8 +173,23 @@ class TrainingProgramValidator:
                 )
 
             intense_dates: list[date] = []
+            running_dates: set[date] = set()
             for workout in week.workouts:
                 self._validate_workout(program, week, workout, report)
+                if (
+                    workout.sport == "running"
+                    and workout.workout_type != WorkoutType.REST
+                ):
+                    if workout.workout_date in running_dates:
+                        self._issue(
+                            report,
+                            "error",
+                            "TWO_RUNS_SAME_DAY",
+                            "deux séances de course sont prévues le même jour",
+                            week_number=week.week_number,
+                            workout_id=workout.workout_id,
+                        )
+                    running_dates.add(workout.workout_date)
                 if workout.workout_id in identifiers:
                     self._issue(
                         report,
@@ -230,6 +245,29 @@ class TrainingProgramValidator:
                 **context,
             )
 
+        if (
+            workout.planned_duration_minutes is not None
+            and workout.planned_duration_minutes <= 0
+        ):
+            self._issue(
+                report,
+                "error",
+                "PLANNED_DURATION",
+                "la durée annoncée doit être positive",
+                **context,
+            )
+        if (
+            workout.planned_distance_km is not None
+            and workout.planned_distance_km <= 0
+        ):
+            self._issue(
+                report,
+                "error",
+                "PLANNED_DISTANCE",
+                "la distance annoncée doit être positive",
+                **context,
+            )
+
         try:
             workout.validate()
         except (TypeError, ValueError) as error:
@@ -257,6 +295,23 @@ class TrainingProgramValidator:
 
         for block in workout.blocks:
             target = block.target
+            for field_name, label in (
+                ("speed_min_kmh", "vitesse minimale"),
+                ("speed_max_kmh", "vitesse maximale"),
+                ("heart_rate_min_bpm", "fréquence cardiaque minimale"),
+                ("heart_rate_max_bpm", "fréquence cardiaque maximale"),
+                ("power_min_watts", "puissance minimale"),
+                ("power_max_watts", "puissance maximale"),
+            ):
+                value = getattr(target, field_name)
+                if value is not None and value <= 0:
+                    self._issue(
+                        report,
+                        "error",
+                        "TARGET_VALUE",
+                        f"{label} non positive dans « {block.name} »",
+                        **context,
+                    )
             for minimum_name, maximum_name, label in (
                 ("speed_min_kmh", "speed_max_kmh", "vitesse"),
                 ("heart_rate_min_bpm", "heart_rate_max_bpm", "fréquence cardiaque"),
