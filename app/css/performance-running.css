@@ -5812,6 +5812,21 @@ body[data-coach-section]
   box-shadow: 0 0 14px color-mix(in srgb, var(--segment-color) 24%, transparent);
 }
 
+.workout-timeline-bars .timeline-segment-optional {
+  opacity: .55;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--segment-color) 0 8px,
+    color-mix(in srgb, var(--segment-color) 42%, transparent) 8px 14px
+  );
+  outline: 1px dashed color-mix(
+    in srgb,
+    var(--segment-color) 78%,
+    white
+  );
+  outline-offset: -2px;
+}
+
 .workout-timeline-bars .timeline-zone-1 { --timeline-zone: 1; }
 .workout-timeline-bars .timeline-zone-2 { --timeline-zone: 2; }
 .workout-timeline-bars .timeline-zone-3 { --timeline-zone: 3; }
@@ -6280,6 +6295,13 @@ body[data-coach-section]
 .garmin-step-card > small {
   color: #9db0bd;
   font-size: .83rem;
+}
+
+.garmin-step-card .step-instruction {
+  padding-top: 7px;
+  border-top: 1px solid rgba(157, 176, 189, .16);
+  color: #f3cf70;
+  font-weight: 750;
 }
 
 .garmin-repeat-group {
