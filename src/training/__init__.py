@@ -9,6 +9,11 @@ from .adaptive_loop import (
     AdaptiveTrainingLoop,
     DailyAdaptiveTrainingResult,
 )
+from .endurance_event_specializer import (
+    EnduranceEventKind,
+    EnduranceEventSpecification,
+    EnduranceEventSpecializer,
+)
 from .decision_engine import (
     TrainingDecision,
     TrainingDecisionAction,
@@ -88,6 +93,9 @@ __all__ = [
     "AthleteToleranceLearningEngine",
     "BlockType",
     "DailyAdaptiveTrainingResult",
+    "EnduranceEventKind",
+    "EnduranceEventSpecification",
+    "EnduranceEventSpecializer",
     "ExpectedTrainingResponse",
     "IntensityTarget",
     "ProgramGenerationSettings",
