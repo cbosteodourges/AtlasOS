@@ -39,6 +39,22 @@ class StravaOAuthTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 service.exchange_code("code", "wrong")
 
+
+    def test_web_interface_exposes_real_strava_workflow(self):
+        root = Path(__file__).resolve().parents[1]
+        javascript = (
+            root / "app" / "js" / "performance-running.js"
+        ).read_text(encoding="utf-8")
+        server = (
+            root / "tools" / "atlas_web_server.py"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("/api/atlas/strava/status", javascript)
+        self.assertIn("/api/atlas/strava/connect", javascript)
+        self.assertIn("/api/atlas/strava/sync", javascript)
+        self.assertIn("data-strava-sync", javascript)
+        self.assertIn("?strava=connected", server)
+
     def test_expired_token_is_refreshed(self):
         with tempfile.TemporaryDirectory() as directory:
             service = self.service(directory)
