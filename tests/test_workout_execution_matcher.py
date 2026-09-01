@@ -22,6 +22,65 @@ from src.training import (
 class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
     """Valide le pont entre calendrier et activité Garmin."""
 
+    def test_aligns_heterogeneous_vo2_pyramid_and_ignores_false_fragment(self) -> None:
+        target = IntensityTarget(
+            zone=4,
+            speed_min_kmh=13.3,
+            speed_max_kmh=14.0,
+        )
+        planned = AdaptiveWorkout(
+            workout_id="vo2-pyramid",
+            workout_date=date(2026, 9, 1),
+            workout_type=WorkoutType.TRIANGULAR_VO2,
+            title="VO2 pyramidal",
+            objective="Varier le temps de soutien",
+            blocks=[
+                TrainingBlock("2 x 3", BlockType.WORK, 2, 3, recovery_minutes=1.5, target=target),
+                TrainingBlock("2 x 2", BlockType.WORK, 2, 2, recovery_minutes=1.5, target=target),
+                TrainingBlock("1 x 1:30", BlockType.WORK, 1, 1.5, recovery_minutes=1.5, target=target),
+            ],
+            planned_duration_minutes=50,
+        )
+        activity = LongitudinalActivity(
+            atlas_id="health-connect-pyramid",
+            start_time=datetime(2026, 9, 1, 18, tzinfo=timezone.utc),
+            activity_type="running",
+            distance_km=7.5,
+            duration_minutes=40,
+            average_speed_kmh=11.2,
+        )
+        blocks = [
+            SessionBlock(1, "z3", 0, 100, 100, 290, average_speed_kmh=10.43),
+            SessionBlock(2, "recovery", 100, 200, 100, 180),
+            SessionBlock(3, "vma", 200, 380, 180, 681, average_speed_kmh=13.62),
+            SessionBlock(4, "recovery", 380, 460, 80, 178),
+            SessionBlock(5, "vma", 460, 640, 180, 685, average_speed_kmh=13.78),
+            SessionBlock(6, "recovery", 640, 720, 80, 174),
+            SessionBlock(7, "vma", 720, 840, 120, 455, average_speed_kmh=13.65),
+            SessionBlock(8, "recovery", 840, 925, 85, 160),
+            SessionBlock(9, "vma", 925, 1045, 120, 458, average_speed_kmh=13.74),
+            SessionBlock(10, "recovery", 1045, 1128, 83, 155),
+            SessionBlock(11, "vma", 1128, 1218, 90, 344, average_speed_kmh=13.76),
+        ]
+        analysis = DetailedSessionAnalysis(
+            activity_id=activity.atlas_id,
+            blocks=blocks,
+            dominant_work_type="vma",
+            session_type="vma",
+            recovery_duration_seconds=428,
+        )
+
+        result = AtlasWorkoutExecutionMatcher().match(planned, activity, analysis)
+
+        self.assertEqual(result.execution.planned_repetition_count, 5)
+        self.assertEqual(result.execution.completed_repetition_count, 5)
+        self.assertEqual(
+            [round(item["duration_seconds"]) for item in result.execution.interval_details],
+            [180, 180, 120, 120, 90],
+        )
+        self.assertGreaterEqual(result.target_compliance_score, 95)
+        self.assertGreaterEqual(result.execution.recovery_compliance_score, 85)
+
     def test_matches_real_activity_to_planned_workout(
         self,
     ) -> None:
