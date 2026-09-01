@@ -285,6 +285,49 @@ class EnduranceEventSpecializer:
             )
         return workout
 
+    def specialize_race(
+        self,
+        workout: AdaptiveWorkout,
+        *,
+        goal: PerformanceGoal,
+        spec: EnduranceEventSpecification,
+    ) -> AdaptiveWorkout:
+        low, high = spec.fueling_grams_per_hour
+        workout.title = f"{spec.label} · {goal.name}"
+        workout.fueling_strategy = (
+            f"Plan validé à l'entraînement : {low} à {high} g de "
+            "glucides par heure, hydratation et sodium individualisés."
+        )
+        workout.coach_notes.extend([
+            workout.fueling_strategy,
+            "Stratégie de matériel, allure et ravitaillement répétée avant course.",
+        ])
+        if spec.is_trail:
+            workout.sport = "running"
+            workout.terrain_focus = (
+                f"trail {goal.terrain_technicality}"
+            )
+            workout.planned_elevation_gain_m = goal.elevation_gain_m
+            workout.planned_elevation_loss_m = (
+                goal.elevation_loss_m
+                if goal.elevation_loss_m is not None
+                else goal.elevation_gain_m
+            )
+            block = workout.blocks[0]
+            block.instructions = (
+                "Gérer l'effort en temps et non à l'allure moyenne ; "
+                "marcher efficacement dans les fortes pentes, préserver "
+                "les quadriceps en descente et suivre le plan nutritionnel."
+            )
+        else:
+            workout.terrain_focus = "route"
+            workout.blocks[0].instructions = (
+                "Départ contrôlé, allure marathon stable, ravitaillement "
+                "précoce et régulier, ajustement seulement selon les "
+                "signaux physiologiques et les conditions."
+            )
+        return workout
+
     def build_specific_quality(
         self,
         *,
