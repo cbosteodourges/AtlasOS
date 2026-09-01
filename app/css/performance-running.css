@@ -6304,6 +6304,54 @@ body[data-coach-section]
   font-weight: 750;
 }
 
+.pyramid-session-guide {
+  margin-top: 18px;
+  padding: 20px 22px;
+  border: 1px solid rgba(255, 159, 67, .35);
+  border-left: 6px solid #ff9f43;
+  border-radius: 14px;
+  background: rgba(255, 159, 67, .07);
+}
+
+.pyramid-session-guide h3 {
+  margin: 0 0 14px;
+}
+
+.pyramid-session-guide ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 24px;
+}
+
+.pyramid-session-guide li {
+  padding: 9px 12px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .055);
+}
+
+.pyramid-session-guide li strong,
+.pyramid-session-guide li span {
+  display: block;
+}
+
+.pyramid-session-guide li span {
+  margin-top: 3px;
+  color: #a9bdc9;
+  font-size: .84rem;
+}
+
+.pyramid-session-guide li.optional {
+  border: 1px dashed rgba(255, 207, 79, .65);
+  background: rgba(255, 207, 79, .08);
+}
+
+.pyramid-session-guide p {
+  margin: 14px 0 0;
+  color: #cfe0e9;
+  font-size: .87rem;
+}
+
 .garmin-repeat-group {
   display: grid;
   gap: 10px;
