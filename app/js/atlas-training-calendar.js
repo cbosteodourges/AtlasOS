@@ -1698,7 +1698,7 @@ const target = compactTarget(workout, zone);
   }
 
   function reportTimelineSegments(workout, blocks, dominantType) {
-    return (blocks || []).map(block => ({
+    const segments = (blocks || []).map(block => ({
       zone: atlasDisplayZone(workout, {
         ...block,
         block_type: block.block_type === dominantType
@@ -1708,6 +1708,20 @@ const target = compactTarget(workout, zone);
       duration: Math.max((Number(block.duration_seconds) || 0) / 60, .25),
       label: block.block_type || "Bloc réalisé"
     }));
+
+    // Santé Connect peut découper une même phase en plusieurs fragments
+    // contigus. La frise les rassemble pour montrer la structure utile de
+    // la séance plutôt que chaque variation instantanée de zone.
+    return segments.reduce((result, segment) => {
+      const previous = result[result.length - 1];
+      if (previous && previous.zone === segment.zone) {
+        previous.duration += segment.duration;
+        previous.label = "Phase continue";
+      } else {
+        result.push({ ...segment });
+      }
+      return result;
+    }, []);
   }
 
   function timelineHtml(segments, label) {
@@ -2116,7 +2130,11 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
 
     const finishWork = () => {
       if (!currentWork.length) return;
-      groups.push({ block: mergeReportBlocks(currentWork), recovery: null });
+      groups.push({
+        block: mergeReportBlocks(currentWork),
+        sources: [...currentWork],
+        recovery: null
+      });
       currentWork = [];
     };
 
@@ -2346,6 +2364,23 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const workBlocks = intervalGroups.length
       ? intervalGroups.map(group => group.block)
       : rawWorkBlocks;
+    const selectedWorkSources = new Set(
+      intervalGroups.flatMap(group => group.sources || [])
+    );
+    const timelineBlocks = detailedBlocks.map(block => {
+      const duration = Number(block.duration_seconds) || 0;
+      const isRejectedWorkFragment = workTypes.has(block.block_type) &&
+        !selectedWorkSources.has(block);
+      const isShortTransition = (
+        String(workout.workout_type || "") === "threshold_sv2" &&
+        ["acceleration", "vma"].includes(block.block_type) &&
+        duration <= 30
+      );
+      if (isRejectedWorkFragment || isShortTransition) {
+        return { ...block, block_type: "z2" };
+      }
+      return block;
+    });
     // Les blocs reconstruits et affichés dans le tableau constituent la
     // référence visuelle. Le compteur de la source peut rester inférieur
     // quand un tour automatique a fragmenté une étape chronométrée.
@@ -2629,7 +2664,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         </section>
 
         ${timelineHtml(
-          reportTimelineSegments(workout, detailedBlocks, dominantType),
+          reportTimelineSegments(workout, timelineBlocks, dominantType),
           "Organisation de la séance réalisée"
         )}
 
