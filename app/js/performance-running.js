@@ -1448,7 +1448,7 @@
     },
     strava: {
       method: "OAuth 2.0 · Strava API v3",
-      availability: "Application Strava à enregistrer",
+      availability: "API réservée aux abonnés Strava",
       wellness: false
     }
   };
@@ -1476,17 +1476,18 @@
       if (!status.configured) {
         connectionWizard.innerHTML = `
           <div class="sensor-wizard-message">
-            <span>STRAVA · CONFIGURATION REQUISE</span>
-            <h3>Enregistrer Atlas auprès de Strava</h3>
-            <p>La récupération des activités est prête. Il reste à renseigner
-            l’identifiant et le secret de l’application Strava dans la
-            passerelle Atlas.</p>
-            <small>Health Connect continue de fonctionner normalement pendant
-            cette configuration.</small>
+            <span>STRAVA · API PAYANTE</span>
+            <h3>Connexion non recommandée pour votre compte gratuit</h3>
+            <p>Strava réserve actuellement la création d’une application API
+            à ses abonnés. Atlas ne vous demande pas de souscrire un abonnement :
+            Health Connect reste la source gratuite principale pour les
+            activités et la récupération.</p>
+            <small>Le connecteur Strava est conservé en sommeil si les
+            conditions d’accès évoluent ultérieurement.</small>
           </div>
         `;
         syncStatus.textContent =
-          "Strava · identifiants d’application à configurer.";
+          "Strava · API réservée aux abonnés ; utilisez Health Connect.";
         return;
       }
 
