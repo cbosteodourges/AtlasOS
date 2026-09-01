@@ -126,6 +126,28 @@ def parse_arguments() -> argparse.Namespace:
         help="Temps cible en minutes.",
     )
     parser.add_argument(
+        "--discipline",
+        default="running",
+        choices=["running", "trail_running"],
+        help="Course sur route ou trail.",
+    )
+    parser.add_argument(
+        "--elevation-gain-m",
+        type=int,
+        help="Dénivelé positif de la compétition trail.",
+    )
+    parser.add_argument(
+        "--elevation-loss-m",
+        type=int,
+        help="Dénivelé négatif de la compétition trail.",
+    )
+    parser.add_argument(
+        "--terrain-technicality",
+        default="unknown",
+        choices=["unknown", "low", "moderate", "high", "very_high"],
+        help="Technicité du terrain trail.",
+    )
+    parser.add_argument(
         "--start-date",
         default=date.today().isoformat(),
         help="Début du programme au format AAAA-MM-JJ.",
@@ -645,6 +667,10 @@ def main() -> None:
         target_time_minutes=(
             arguments.target_time_minutes
         ),
+        discipline=arguments.discipline,
+        elevation_gain_m=arguments.elevation_gain_m,
+        elevation_loss_m=arguments.elevation_loss_m,
+        terrain_technicality=arguments.terrain_technicality,
     )
     competition_personalization = (
         build_competition_personalization(
