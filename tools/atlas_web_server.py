@@ -625,6 +625,7 @@ def execution_summary(item):
                     "executed_block_count",
                     "planned_repetition_count",
                     "completed_repetition_count",
+                    "interval_details",
                     "observations",
                 ),
             ),
