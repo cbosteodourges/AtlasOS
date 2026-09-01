@@ -142,6 +142,22 @@ class TrainingProgramValidatorTests(unittest.TestCase):
             {issue.code for issue in report.errors},
         )
 
+    def test_rejects_invalid_goal_before_building(self) -> None:
+        with self.assertRaisesRegex(ValueError, "distance.*positive"):
+            self._generate(0.0, "Distance invalide")
+
+        with self.assertRaisesRegex(ValueError, "date de début"):
+            TrainingProgramGenerator().generate(
+                profile=build_profile(),
+                goal=PerformanceGoal(
+                    name="Objectif passé",
+                    event_date=date(2026, 5, 31),
+                    distance_km=10.0,
+                ),
+                start_date=self.start_date,
+                settings=build_settings(),
+            )
+
     def test_raise_for_errors_stops_publication(self) -> None:
         program = deepcopy(self._generate(10.0, "10 km"))
         program.end_date = program.start_date
