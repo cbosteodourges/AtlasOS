@@ -231,6 +231,7 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
 
         self.assertEqual(result.execution.planned_repetition_count, 3)
         self.assertEqual(result.execution.completed_repetition_count, 3)
+        self.assertEqual(result.target_compliance_score, 100)
 
     def test_easy_running_after_threshold_does_not_lower_target_score(self) -> None:
         planned = AdaptiveWorkout(
