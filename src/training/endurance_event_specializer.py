@@ -394,7 +394,7 @@ class EnduranceEventSpecializer:
         )
         return self._workout(
             workout_date=workout_date,
-            workout_type=WorkoutType.RACE_SPECIFIC,
+            workout_type=WorkoutType.TEMPO_Z3,
             title=(
                 f"Allure marathon · {repetitions} × {duration} min"
             ),
