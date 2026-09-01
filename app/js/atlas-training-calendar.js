@@ -1941,6 +1941,22 @@ const target = compactTarget(workout, zone);
         </section>
       `;
     }).join("");
+    const pyramidGuideHtml =
+      String(workout.workout_type || "") === "triangular_vo2"
+        ? `
+          <section class="pyramid-session-guide">
+            <h3>Mode d’emploi de la pyramide</h3>
+            <ol>
+              <li><strong>2 × 3 min</strong><span>1 min 30 s de récupération active après chaque fraction.</span></li>
+              <li><strong>2 × 2 min</strong><span>1 min 30 s de récupération active après chaque fraction.</span></li>
+              <li><strong>1 × 1 min 30 obligatoire</strong><span>Puis 1 min 30 s de récupération active.</span></li>
+              <li class="optional"><strong>1 × 1 min 30 facultative</strong><span>Uniquement si la foulée reste propre et le RPE ne dépasse pas 7/10.</span></li>
+            </ol>
+            <p>Compléter en endurance très facile pour obtenir une durée totale proche de 50 min, puis terminer par le retour au calme.</p>
+          </section>
+        `
+        : "";
+
     const avatarIsFemale = (
       localStorage.getItem("atlasPreselectedAvatar") || "male"
     ) === "female";
@@ -1990,6 +2006,8 @@ const target = compactTarget(workout, zone);
           <h3>Notes</h3>
           <p>${escapeHtml(workout.objective)}</p>
         </section>
+
+        ${pyramidGuideHtml}
 
         <section class="session-steps garmin-steps">
           <h3>Étapes</h3>
