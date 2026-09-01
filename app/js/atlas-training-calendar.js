@@ -2014,6 +2014,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       : "—";
   }
 
+  function reportMeasuredValue(value, digits, unit) {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) && numeric > 0
+      ? `${reportNumber(numeric, digits)} ${unit}`
+      : "—";
+  }
+
   function reportPace(seconds) {
     const numeric = Number(seconds);
     if (!Number.isFinite(numeric) || numeric <= 0) return "—";
@@ -2601,13 +2608,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             ${reportNumber(block.average_heart_rate_bpm, 0)}
             <small>max. ${reportNumber(block.maximum_heart_rate_bpm, 0)}</small>
           </span>
-          <span>${reportNumber(block.average_power_watts, 0)} W</span>
-          <span>${reportNumber(block.average_cadence_spm, 0)} ppm</span>
+          <span>${reportMeasuredValue(block.average_power_watts, 0, "W")}</span>
+          <span>${reportMeasuredValue(block.average_cadence_spm, 0, "ppm")}</span>
           <span class="interval-recovery-detail">
             ${recovery ? `
               <b>${reportBlockTime(recovery.duration_seconds)} · ${reportNumber(recovery.distance_meters, 0)} m</b>
               <small>${reportPace(3600 / Number(recovery.average_speed_kmh))} · ${reportNumber(recovery.average_speed_kmh, 2)} km/h</small>
-              <small>FC ${reportNumber(recovery.average_heart_rate_bpm, 0)} bpm · ${reportNumber(recovery.average_power_watts, 0)} W</small>
+              <small>FC ${reportNumber(recovery.average_heart_rate_bpm, 0)} bpm · ${reportMeasuredValue(recovery.average_power_watts, 0, "W")}</small>
             ` : "—"}
           </span>
         </div>
