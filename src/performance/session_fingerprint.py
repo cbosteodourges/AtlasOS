@@ -5,7 +5,7 @@ Empreinte individualisée des séances d'entraînement.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -142,6 +142,9 @@ class WorkoutExecutionSummary:
     execution_score: int = 0
     countdown_tolerance_seconds: int = 5
     observations: List[str] = field(
+        default_factory=list
+    )
+    interval_details: List[Dict[str, Any]] = field(
         default_factory=list
     )
 
