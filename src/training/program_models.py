@@ -50,6 +50,35 @@ class ProgramGenerationSettings:
     race_week_sharpening_days_before: Optional[int] = None
 
     def validate(self) -> None:
+        valid_days = {
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+        }
+        if self.preferred_long_run_day not in valid_days:
+            raise ValueError(
+                "preferred_long_run_day doit être un jour valide."
+            )
+        if (
+            not self.preferred_quality_days
+            or any(
+                day not in valid_days
+                for day in self.preferred_quality_days
+            )
+        ):
+            raise ValueError(
+                "preferred_quality_days doit contenir des jours valides."
+            )
+        if len(set(self.preferred_quality_days)) != len(
+            self.preferred_quality_days
+        ):
+            raise ValueError(
+                "preferred_quality_days ne peut pas contenir de doublon."
+            )
         if not 2 <= self.running_sessions_per_week <= 7:
             raise ValueError(
                 "running_sessions_per_week doit être "
