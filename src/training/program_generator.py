@@ -25,6 +25,7 @@ from .program_models import (
     TrainingPhase,
 )
 from .program_phase_planner import ProgramPhasePlanner
+from .program_validator import TrainingProgramValidator
 from .research_workout_builder import ResearchWorkoutBuilder
 from .session_models import (
     AdaptiveWorkout,
@@ -54,6 +55,7 @@ class TrainingProgramGenerator:
         protocol_selector: TrainingProtocolSelector | None = None,
         research_builder: ResearchWorkoutBuilder | None = None,
         standard_builder: StandardWorkoutBuilder | None = None,
+        validator: TrainingProgramValidator | None = None,
     ) -> None:
         self._phase_planner = (
             phase_planner or ProgramPhasePlanner()
@@ -70,6 +72,7 @@ class TrainingProgramGenerator:
         self._standard_builder = (
             standard_builder or StandardWorkoutBuilder()
         )
+        self._validator = validator or TrainingProgramValidator()
 
     def generate(
         self,
@@ -179,7 +182,7 @@ class TrainingProgramGenerator:
                             f"Semaine {week_number} : {note}"
                         )
 
-        return AdaptiveTrainingProgram(
+        program = AdaptiveTrainingProgram(
             athlete_id=profile.athlete_id,
             goal=goal,
             created_at=date.today(),
@@ -193,6 +196,19 @@ class TrainingProgramGenerator:
             ),
             warnings=list(dict.fromkeys(warnings)),
         )
+        validation = self._validator.validate(
+            program,
+            profile=profile,
+        )
+        validation.raise_for_errors()
+        program.warnings = list(dict.fromkeys([
+            *program.warnings,
+            *(
+                "Contrôle du programme : " + issue.format()
+                for issue in validation.warnings
+            ),
+        ]))
+        return program
 
     def _build_week(
         self,
