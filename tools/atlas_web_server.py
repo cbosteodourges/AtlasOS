@@ -2780,7 +2780,12 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
                 code = str((query.get("code") or [""])[0])
                 state = str((query.get("state") or [""])[0])
                 strava_service().exchange_code(code, state)
-                self.send_json(200, {"ok": True, "message": "Compte Strava connecté à Atlas."})
+                self.send_response(302)
+                self.send_header(
+                    "Location",
+                    "/app/performance-running.html?strava=connected",
+                )
+                self.end_headers()
             except ValueError as error:
                 self.send_json(400, {"ok": False, "error": str(error)})
             return
