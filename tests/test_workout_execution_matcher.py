@@ -47,7 +47,13 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
             planned_duration_minutes=50,
         )
         start = datetime(2026, 9, 1, 18, tzinfo=timezone.utc)
-        samples = []
+        samples = [
+            ActivitySample(
+                timestamp=start + timedelta(seconds=offset),
+                speed_mps=9.5 / 3.6,
+            )
+            for offset in range(0, 800, 10)
+        ]
         for interval_start, duration, speed in (
             (910, 180, 13.61),
             (1179, 180, 13.72),
@@ -110,6 +116,15 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
         )
         self.assertGreaterEqual(result.target_compliance_score, 75)
         self.assertGreaterEqual(result.execution.recovery_compliance_score, 85)
+
+        for block in planned.blocks:
+            block.target.speed_min_kmh = None
+            block.target.speed_max_kmh = None
+        inferred_groups = AtlasWorkoutExecutionMatcher._raw_speed_interval_groups(
+            AtlasWorkoutExecutionMatcher._planned_intervals(planned),
+            activity,
+        )
+        self.assertEqual(len(inferred_groups), 6)
 
     def test_matches_real_activity_to_planned_workout(
         self,
