@@ -2483,6 +2483,8 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                 distance_meters: Number(item.recovery_distance_meters),
                 average_speed_kmh: Number(item.recovery_average_speed_kmh),
                 average_heart_rate_bpm: Number(item.recovery_average_heart_rate_bpm),
+                ending_heart_rate_bpm: Number(item.recovery_ending_heart_rate_bpm),
+                heart_rate_drop_bpm: Number(item.recovery_heart_rate_drop_bpm),
                 average_power_watts: Number(item.recovery_average_power_watts),
                 average_cadence_spm: Number(item.recovery_average_cadence_spm)
               }
@@ -2768,6 +2770,18 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       : targetScore >= 65
         ? "Les cibles ont été partiellement respectées."
         : "Les cibles prévues ont été peu respectées.";
+    const hasIntervalPower = workBlocks.some(block =>
+      Number.isFinite(Number(block.average_power_watts)) && Number(block.average_power_watts) > 0
+    );
+    const hasIntervalCadence = workBlocks.some(block =>
+      Number.isFinite(Number(block.average_cadence_spm)) && Number(block.average_cadence_spm) > 0
+    );
+    const intervalGrid = [
+      "48px", "90px", "90px", "105px", "115px", "115px",
+      ...(hasIntervalPower ? ["105px"] : []),
+      ...(hasIntervalCadence ? ["95px"] : []),
+      "minmax(210px, 1fr)"
+    ].join(" ");
     const intervalRows = workBlocks.map((block, index) => {
       const speed = Number(block.average_speed_kmh);
       const recovery = intervalGroups[index]?.recovery || null;
@@ -2783,13 +2797,14 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             ${reportNumber(block.average_heart_rate_bpm, 0)}
             <small>max. ${reportNumber(block.maximum_heart_rate_bpm, 0)}</small>
           </span>
-          <span>${reportMeasuredValue(block.average_power_watts, 0, "W")}</span>
-          <span>${reportMeasuredValue(block.average_cadence_spm, 0, "ppm")}</span>
+          ${hasIntervalPower ? `<span>${reportMeasuredValue(block.average_power_watts, 0, "W")}</span>` : ""}
+          ${hasIntervalCadence ? `<span>${reportMeasuredValue(block.average_cadence_spm, 0, "ppm")}</span>` : ""}
           <span class="interval-recovery-detail">
             ${recovery ? `
               <b>${reportBlockTime(recovery.duration_seconds)} · ${reportNumber(recovery.distance_meters, 0)} m</b>
               <small>${reportPace(3600 / Number(recovery.average_speed_kmh))} · ${reportNumber(recovery.average_speed_kmh, 2)} km/h</small>
-              <small>FC ${reportNumber(recovery.average_heart_rate_bpm, 0)} bpm · ${reportMeasuredValue(recovery.average_power_watts, 0, "W")}</small>
+              <small>FC moy. ${reportNumber(recovery.average_heart_rate_bpm, 0)} bpm</small>
+              <small>FC fin ${reportNumber(recovery.ending_heart_rate_bpm, 0)} bpm · baisse ${reportNumber(recovery.heart_rate_drop_bpm, 0)} bpm</small>
             ` : "—"}
           </span>
         </div>
@@ -2937,11 +2952,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
               <span class="report-kicker">TABLEAU RÉCAPITULATIF</span>
               <strong>Détail des ${workBlocks.length} fractions et de leurs récupérations</strong>
             </summary>
-            <div class="interval-detail-table">
+            <div class="interval-detail-table" style="--interval-grid:${intervalGrid}">
               <div class="interval-detail-row interval-detail-header">
                 <span>N°</span><span>Distance</span><span>Temps</span>
                 <span>Allure</span><span>Vitesse</span><span>FC moy.</span>
-                <span>Puissance</span><span>Cadence</span>
+                ${hasIntervalPower ? "<span>Puissance</span>" : ""}
+                ${hasIntervalCadence ? "<span>Cadence</span>" : ""}
                 <span>Récupération</span>
               </div>
               ${intervalRows}
