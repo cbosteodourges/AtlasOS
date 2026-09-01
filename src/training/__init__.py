@@ -27,6 +27,12 @@ from .program_phase_planner import (
     ProgramPhasePlan,
     ProgramPhasePlanner,
 )
+from .program_validator import (
+    ProgramValidationError,
+    ProgramValidationIssue,
+    ProgramValidationReport,
+    TrainingProgramValidator,
+)
 from .program_revision_engine import (
     TrainingProgramChange,
     TrainingProgramRevisionEngine,
@@ -87,6 +93,9 @@ __all__ = [
     "ProgramGenerationSettings",
     "ProgramPhasePlan",
     "ProgramPhasePlanner",
+    "ProgramValidationError",
+    "ProgramValidationIssue",
+    "ProgramValidationReport",
     "ResearchWorkoutBuilder",
     "StandardWorkoutBuilder",
     "ToleranceLearningApplication",
@@ -99,6 +108,7 @@ __all__ = [
     "SessionToleranceEvidence",
     "TrainingPhase",
     "TrainingProgramGenerator",
+    "TrainingProgramValidator",
     "TrainingProgramLoader",
     "TrainingProgramChange",
     "TrainingProgramRevisionEngine",
