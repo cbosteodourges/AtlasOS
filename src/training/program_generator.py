@@ -87,6 +87,26 @@ class TrainingProgramGenerator:
         ) = None,
     ) -> AdaptiveTrainingProgram:
         """Génère le programme complet jusqu’à la compétition."""
+        if start_date > goal.event_date:
+            raise ValueError(
+                "La date de début doit précéder la compétition."
+            )
+        if goal.distance_km <= 0:
+            raise ValueError(
+                "La distance de l'objectif doit être positive."
+            )
+        if (
+            goal.target_time_minutes is not None
+            and goal.target_time_minutes <= 0
+        ):
+            raise ValueError(
+                "Le temps cible doit être positif."
+            )
+        if goal.discipline != "running":
+            raise ValueError(
+                "Ce générateur prend actuellement en charge la course."
+            )
+
         settings = settings or ProgramGenerationSettings()
         settings.validate()
 
