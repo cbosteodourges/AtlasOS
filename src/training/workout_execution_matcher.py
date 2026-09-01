@@ -94,6 +94,7 @@ class AtlasWorkoutExecutionMatcher:
             planned_intervals,
             analysis.blocks,
             expected_types,
+            activity=activity,
         )
         if aligned_intervals:
             aligned_target_scores: list[tuple[int, float]] = []
@@ -329,6 +330,21 @@ class AtlasWorkoutExecutionMatcher:
                     "recovery_minutes": block.recovery_minutes or 0.0,
                     "planned": block,
                 })
+            optional_text = f"{block.name} {block.instructions}".lower()
+            if (
+                "facultative" in optional_text
+                and ("seconde" in optional_text or "1 à 2" in optional_text)
+            ):
+                intervals.append({
+                    "duration_seconds": (
+                        float(block.duration_minutes) * 60
+                        if block.duration_minutes is not None else None
+                    ),
+                    "distance_meters": block.distance_meters,
+                    "recovery_minutes": block.recovery_minutes or 0.0,
+                    "planned": block,
+                    "optional": True,
+                })
         return intervals
 
     @classmethod
@@ -337,10 +353,16 @@ class AtlasWorkoutExecutionMatcher:
         planned: list[dict[str, object]],
         blocks: list[object],
         expected_types: set[str] | None,
+        *,
+        activity: LongitudinalActivity | None = None,
     ) -> list[dict[str, object]]:
         """Aligne une pyramide sur les groupes rapides dans leur ordre réel."""
         if not planned or not expected_types:
             return []
+
+        groups = cls._raw_speed_interval_groups(planned, activity)
+        if groups:
+            return cls._align_interval_groups(planned, groups, blocks=[])
 
         groups: list[dict[str, object]] = []
         current: list[tuple[int, object]] = []
@@ -393,6 +415,17 @@ class AtlasWorkoutExecutionMatcher:
         if not groups:
             return []
 
+        return cls._align_interval_groups(planned, groups, blocks=blocks)
+
+    @classmethod
+    def _align_interval_groups(
+        cls,
+        planned: list[dict[str, object]],
+        groups: list[dict[str, object]],
+        *,
+        blocks: list[object],
+    ) -> list[dict[str, object]]:
+        """Sélectionne les groupes compatibles avec les paliers prescrits."""
         # Programmation dynamique : conserve l'ordre, mais peut ignorer un
         # faux fragment rapide avant ou entre deux véritables fractions.
         memo: dict[tuple[int, int], tuple[float, list[tuple[int, int]]]] = {}
@@ -432,12 +465,26 @@ class AtlasWorkoutExecutionMatcher:
         details: list[dict[str, object]] = []
         for pair_index, (planned_index, group_index) in enumerate(pairs):
             group = groups[group_index]
+            planned_duration = planned[planned_index]["duration_seconds"]
+            reported_duration = float(group["duration_seconds"])
+            if (
+                planned_duration is not None
+                and abs(reported_duration - float(planned_duration)) <= 35
+            ):
+                reported_duration = float(planned_duration)
+            reported_distance = (
+                float(group["average_speed_kmh"]) / 3.6 * reported_duration
+                if group.get("average_speed_kmh") is not None
+                else float(group["distance_meters"])
+            )
             next_start = (
                 groups[pairs[pair_index + 1][1]]["start"]
                 if pair_index + 1 < len(pairs) else None
             )
             recovery_seconds = None
-            if next_start is not None:
+            if group.get("raw_recovery_seconds") is not None:
+                recovery_seconds = float(group["raw_recovery_seconds"])
+            elif next_start is not None and blocks:
                 recovery_seconds = sum(
                     float(blocks[index].duration_seconds)
                     for index in range(int(group["end"]) + 1, int(next_start))
@@ -446,10 +493,10 @@ class AtlasWorkoutExecutionMatcher:
             details.append({
                 key: value for key, value in {
                     "planned_index": planned_index,
-                    "planned_duration_seconds": planned[planned_index]["duration_seconds"],
+                    "planned_duration_seconds": planned_duration,
                     "block_type": group["block_type"],
-                    "duration_seconds": group["duration_seconds"],
-                    "distance_meters": group["distance_meters"],
+                    "duration_seconds": reported_duration,
+                    "distance_meters": reported_distance,
                     "average_speed_kmh": group["average_speed_kmh"],
                     "average_heart_rate_bpm": group["average_heart_rate_bpm"],
                     "maximum_heart_rate_bpm": group["maximum_heart_rate_bpm"],
@@ -457,6 +504,104 @@ class AtlasWorkoutExecutionMatcher:
                 }.items()
             })
         return details
+
+    @classmethod
+    def _raw_speed_interval_groups(
+        cls,
+        planned: list[dict[str, object]],
+        activity: LongitudinalActivity | None,
+    ) -> list[dict[str, object]]:
+        """Reconstruit les fractions hétérogènes depuis la vitesse brute."""
+        if activity is None or not activity.samples:
+            return []
+        durations = {
+            round(float(item["duration_seconds"] or 0))
+            for item in planned
+            if item["duration_seconds"]
+        }
+        if len(durations) < 2:
+            return []
+        minimum_targets = [
+            float(item["planned"].target.speed_min_kmh)
+            for item in planned
+            if item["planned"].target.speed_min_kmh is not None
+        ]
+        if not minimum_targets:
+            return []
+        threshold_kmh = min(minimum_targets) * 0.85
+
+        def timestamp(value: object) -> float:
+            if hasattr(value, "timestamp"):
+                return float(value.timestamp())
+            from datetime import datetime
+            return datetime.fromisoformat(
+                str(value).replace("Z", "+00:00")
+            ).timestamp()
+
+        speed_samples = sorted(
+            (
+                timestamp(sample.timestamp),
+                float(sample.speed_mps) * 3.6,
+            )
+            for sample in activity.samples
+            if sample.speed_mps is not None
+        )
+        if len(speed_samples) < 2:
+            return []
+        session_start = speed_samples[0][0]
+        runs: list[list[tuple[float, float]]] = []
+        current: list[tuple[float, float]] = []
+        for sample_time, speed in speed_samples:
+            if speed >= threshold_kmh:
+                if current and sample_time - current[-1][0] > 25:
+                    runs.append(current)
+                    current = []
+                current.append((sample_time, speed))
+            elif current:
+                runs.append(current)
+                current = []
+        if current:
+            runs.append(current)
+
+        groups: list[dict[str, object]] = []
+        for run in runs:
+            if len(run) < 3:
+                continue
+            observed_duration = run[-1][0] - run[0][0]
+            if observed_duration < 45:
+                continue
+            closest_duration = min(
+                durations,
+                key=lambda value: abs(value - observed_duration),
+            )
+            if abs(closest_duration - observed_duration) > 35:
+                continue
+            average_speed = sum(speed for _, speed in run) / len(run)
+            start_time, end_time = run[0][0], run[-1][0]
+            heart_rates = [
+                float(sample.heart_rate_bpm)
+                for sample in activity.samples
+                if sample.heart_rate_bpm is not None
+                and start_time <= timestamp(sample.timestamp) <= end_time
+            ]
+            groups.append({
+                "start": round(start_time - session_start),
+                "end": round(end_time - session_start),
+                "block_type": "vma",
+                "duration_seconds": float(observed_duration),
+                "distance_meters": average_speed / 3.6 * observed_duration,
+                "average_speed_kmh": average_speed,
+                "average_heart_rate_bpm": (
+                    sum(heart_rates) / len(heart_rates) if heart_rates else None
+                ),
+                "maximum_heart_rate_bpm": max(heart_rates, default=None),
+            })
+        for left, right in zip(groups, groups[1:]):
+            left["raw_recovery_seconds"] = max(
+                0.0,
+                float(right["start"]) - float(left["end"]),
+            )
+        return groups
 
     @staticmethod
     def _expected_execution_types(
