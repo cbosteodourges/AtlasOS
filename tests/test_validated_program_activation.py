@@ -121,6 +121,118 @@ class ValidatedProgramActivationTests(unittest.TestCase):
         self.assertEqual(target["rpe_0_10"], 5.5)
         self.assertEqual(intro["title"], "Sortie longue hybride · 3 × 6 min sous SV2")
 
+    def test_every_structured_title_has_executable_work_blocks(self):
+        weeks = build_validated_weeks(self.snapshot)
+        structured = [
+            workout
+            for week in weeks
+            for workout in week["workouts"]
+            if (
+                "×" in workout["title"]
+                or "lignes droites" in workout["title"]
+            )
+        ]
+        self.assertGreater(len(structured), 0)
+        for workout in structured:
+            with self.subTest(workout=workout["workout_id"]):
+                work = [
+                    block
+                    for block in workout["blocks"]
+                    if block["block_type"] == "work"
+                ]
+                self.assertTrue(work)
+                self.assertTrue(all(
+                    int(block.get("repetitions") or 1) >= 1
+                    for block in work
+                ))
+
+    def test_every_repeated_work_block_defines_recovery(self):
+        weeks = build_validated_weeks(self.snapshot)
+        for week in weeks:
+            for workout in week["workouts"]:
+                for block in workout["blocks"]:
+                    if (
+                        block["block_type"] == "work"
+                        and int(block.get("repetitions") or 1) > 1
+                    ):
+                        with self.subTest(
+                            workout=workout["workout_id"],
+                            block=block["name"],
+                        ):
+                            self.assertGreater(
+                                float(block.get("recovery_minutes") or 0),
+                                0,
+                            )
+
+    def test_pyramid_and_descending_threshold_keep_every_transition(self):
+        weeks = build_validated_weeks(self.snapshot)
+        workouts = [
+            workout
+            for week in weeks
+            for workout in week["workouts"]
+        ]
+        pyramid = next(
+            workout
+            for workout in workouts
+            if workout["workout_type"] == "triangular_vo2"
+        )
+        pyramid_work = [
+            block for block in pyramid["blocks"]
+            if block["block_type"] == "work"
+        ]
+        self.assertEqual(
+            [block["repetitions"] for block in pyramid_work],
+            [2, 2, 1],
+        )
+        self.assertEqual(
+            [block["recovery_minutes"] for block in pyramid_work],
+            [1.5, 1.5, 1.5],
+        )
+        self.assertIn("facultative", pyramid_work[-1]["instructions"])
+
+        descending = next(
+            workout
+            for workout in workouts
+            if "SV2 descendant" in workout["title"]
+        )
+        descending_work = [
+            block for block in descending["blocks"]
+            if block["block_type"] == "work"
+        ]
+        self.assertEqual(
+            [block["distance_meters"] for block in descending_work],
+            [2000, 1600, 1200],
+        )
+        self.assertEqual(
+            [block["recovery_minutes"] for block in descending_work],
+            [2, 1.75, None],
+        )
+        self.assertIn("facultatif", descending_work[-1]["name"])
+
+    def test_consolidation_and_race_strides_are_real_blocks(self):
+        weeks = build_validated_weeks(self.snapshot)
+        structured_easy = [
+            workout
+            for week in weeks
+            for workout in week["workouts"]
+            if (
+                "en côte" in workout["title"]
+                or "relâchées" in workout["title"]
+                or "lignes droites" in workout["title"]
+            )
+        ]
+        self.assertEqual(len(structured_easy), 3)
+        for workout in structured_easy:
+            with self.subTest(workout=workout["workout_id"]):
+                work = next(
+                    block
+                    for block in workout["blocks"]
+                    if block["block_type"] == "work"
+                )
+                self.assertGreater(work["repetitions"], 1)
+                self.assertGreater(work["recovery_minutes"], 0)
+                self.assertEqual(work["target"]["zone"], 5)
+
     def test_rejects_an_unexpected_event_date(self):
         self.active["goal"]["event_date"] = "2026-11-01"
         with self.assertRaises(ValueError):
