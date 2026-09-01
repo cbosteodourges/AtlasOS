@@ -282,6 +282,24 @@ class AtlasWorkoutExecutionMatcher:
             "value",
             planned_workout.workout_type,
         )
+        repeated_work = [
+            block
+            for block in planned_workout.blocks
+            if (
+                block.block_type == BlockType.WORK
+                and int(block.repetitions or 1) > 1
+            )
+        ]
+        if (
+            str(workout_type) == WorkoutType.LONG_RUN.value
+            and repeated_work
+        ):
+            # Une sortie longue hybride reste une sortie longue pour le
+            # calendrier, mais sa cible spécifique est portée par les
+            # fractions répétées. Le footing facile ne doit donc pas être
+            # évalué comme s'il devait atteindre l'allure sous SV2.
+            return {"z3", "sv2"}
+
         mapping = {
             WorkoutType.RECOVERY_RUN.value: {"z1"},
             WorkoutType.ENDURANCE_Z2.value: {"z2"},
@@ -344,6 +362,16 @@ class AtlasWorkoutExecutionMatcher:
                 analysis,
             )
 
+        repeated_planned = [
+            block
+            for block in planned_active
+            if (
+                block.block_type == BlockType.WORK
+                and int(block.repetitions or 1) > 1
+            )
+        ]
+        target_blocks = repeated_planned or planned_active
+
         actual_blocks = [
             block
             for block in analysis.blocks
@@ -366,7 +394,7 @@ class AtlasWorkoutExecutionMatcher:
                     planned,
                     actual,
                 )
-                for planned in planned_active
+                for planned in target_blocks
             )
             duration = max(
                 1.0,
