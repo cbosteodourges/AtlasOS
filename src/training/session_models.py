@@ -204,6 +204,10 @@ class AdaptiveWorkout:
     priority: WorkoutPriority = WorkoutPriority.SUPPORT
     planned_duration_minutes: Optional[int] = None
     planned_distance_km: Optional[float] = None
+    planned_elevation_gain_m: Optional[int] = None
+    planned_elevation_loss_m: Optional[int] = None
+    terrain_focus: str = ""
+    fueling_strategy: str = ""
     expected_response: Optional[
         ExpectedTrainingResponse
     ] = None
@@ -222,6 +226,20 @@ class AdaptiveWorkout:
             raise ValueError("workout_id est obligatoire.")
         if not self.title.strip():
             raise ValueError("title est obligatoire.")
+        if (
+            self.planned_elevation_gain_m is not None
+            and self.planned_elevation_gain_m < 0
+        ):
+            raise ValueError(
+                "planned_elevation_gain_m ne peut pas être négatif."
+            )
+        if (
+            self.planned_elevation_loss_m is not None
+            and self.planned_elevation_loss_m < 0
+        ):
+            raise ValueError(
+                "planned_elevation_loss_m ne peut pas être négatif."
+            )
         if self.maximum_shift_days < 0:
             raise ValueError(
                 "maximum_shift_days ne peut pas être négatif."
