@@ -114,6 +114,10 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
             [round(item["duration_seconds"]) for item in result.execution.interval_details],
             [180, 180, 120, 120, 90, 90],
         )
+        self.assertTrue(all(
+            item["start_seconds"] < item["end_seconds"]
+            for item in result.execution.interval_details
+        ))
         self.assertGreaterEqual(result.target_compliance_score, 75)
         self.assertGreaterEqual(result.execution.recovery_compliance_score, 85)
 
