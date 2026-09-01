@@ -6,6 +6,7 @@ Rapproche une séance planifiée Atlas et une activité réellement exécutée.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+from types import SimpleNamespace
 from typing import Optional
 
 from src.performance import (
@@ -88,10 +89,28 @@ class AtlasWorkoutExecutionMatcher:
             analysis,
             expected_types=expected_types,
         )
+        planned_intervals = self._planned_intervals(planned_workout)
+        aligned_intervals = self._aligned_intervals(
+            planned_intervals,
+            analysis.blocks,
+            expected_types,
+        )
+        if aligned_intervals:
+            aligned_target_scores: list[tuple[int, float]] = []
+            for item in aligned_intervals:
+                planned_item = planned_intervals[int(item["planned_index"])]
+                duration = max(1.0, float(item["duration_seconds"] or 0))
+                score = self._block_target_score(
+                    planned_item["planned"], SimpleNamespace(**item)
+                )
+                aligned_target_scores.append((score, duration))
+            target_score = round(
+                sum(score * duration for score, duration in aligned_target_scores)
+                / sum(duration for _, duration in aligned_target_scores)
+            )
         planned_recovery_minutes = sum(
-            (block.recovery_minutes or 0.0)
-            * max(0, block.repetitions - 1)
-            for block in planned_workout.blocks
+            float(item["recovery_minutes"] or 0.0)
+            for item in planned_intervals[:-1]
         )
         recovery_score = None
         if planned_recovery_minutes > 0:
@@ -108,10 +127,25 @@ class AtlasWorkoutExecutionMatcher:
                 # minimal prévu dans le calendrier Atlas.
                 recovery_score = structured_recovery_score
             else:
-                recovery_score = self._ratio_score(
-                    analysis.recovery_duration_seconds / 60.0,
-                    planned_recovery_minutes,
-                )
+                aligned_recoveries = [
+                    item["recovery_seconds"]
+                    for item in aligned_intervals[:-1]
+                    if item["recovery_seconds"] is not None
+                ]
+                if aligned_recoveries:
+                    recovery_score = round(sum(
+                        self._ratio_score(
+                            actual / 60.0,
+                            float(planned_intervals[index]["recovery_minutes"]),
+                        )
+                        for index, actual in enumerate(aligned_recoveries)
+                        if float(planned_intervals[index]["recovery_minutes"] or 0) > 0
+                    ) / len(aligned_recoveries))
+                else:
+                    recovery_score = self._ratio_score(
+                        analysis.recovery_duration_seconds / 60.0,
+                        planned_recovery_minutes,
+                    )
 
         matching_scores = [
             (date_score, 50),
@@ -155,14 +189,14 @@ class AtlasWorkoutExecutionMatcher:
                 BlockType.COOL_DOWN,
             }
         ]
-        repeated_blocks = [
+        work_blocks = [
             block
             for block in planned_active_blocks
-            if block.repetitions > 1
+            if block.block_type == BlockType.WORK
         ]
         repetition_blocks = (
-            repeated_blocks
-            if repeated_blocks
+            work_blocks
+            if work_blocks
             else planned_active_blocks
         )
         planned_repetitions = sum(
@@ -221,7 +255,9 @@ class AtlasWorkoutExecutionMatcher:
             )
 
         structured_execution = analysis.workout_execution
-        if (
+        if aligned_intervals:
+            completed_repetitions = len(aligned_intervals)
+        elif (
             activity.workout_steps
             and structured_execution.planned_repetition_count > 0
         ):
@@ -250,6 +286,7 @@ class AtlasWorkoutExecutionMatcher:
             recovery_compliance_score=recovery_score,
             execution_score=execution_score,
             observations=reasons.copy(),
+            interval_details=aligned_intervals,
         )
 
         return AtlasWorkoutExecutionMatch(
@@ -270,6 +307,156 @@ class AtlasWorkoutExecutionMatcher:
             ),
             reasons=reasons,
         )
+
+    @staticmethod
+    def _planned_intervals(
+        planned_workout: AdaptiveWorkout,
+    ) -> list[dict[str, object]]:
+        """Déplie tous les paliers de travail, même s'ils diffèrent."""
+        intervals: list[dict[str, object]] = []
+        work_blocks = [
+            block for block in planned_workout.blocks
+            if block.block_type == BlockType.WORK
+        ]
+        for block in work_blocks:
+            for _ in range(max(1, int(block.repetitions or 1))):
+                intervals.append({
+                    "duration_seconds": (
+                        float(block.duration_minutes) * 60
+                        if block.duration_minutes is not None else None
+                    ),
+                    "distance_meters": block.distance_meters,
+                    "recovery_minutes": block.recovery_minutes or 0.0,
+                    "planned": block,
+                })
+        return intervals
+
+    @classmethod
+    def _aligned_intervals(
+        cls,
+        planned: list[dict[str, object]],
+        blocks: list[object],
+        expected_types: set[str] | None,
+    ) -> list[dict[str, object]]:
+        """Aligne une pyramide sur les groupes rapides dans leur ordre réel."""
+        if not planned or not expected_types:
+            return []
+
+        groups: list[dict[str, object]] = []
+        current: list[tuple[int, object]] = []
+
+        def finish() -> None:
+            if not current:
+                return
+            duration = sum(float(item.duration_seconds) for _, item in current)
+            distance = sum(float(item.distance_meters) for _, item in current)
+            speed_items = [
+                item for _, item in current
+                if item.average_speed_kmh is not None
+            ]
+            weighted_speed = (
+                sum(
+                    float(item.average_speed_kmh) * float(item.duration_seconds)
+                    for item in speed_items
+                ) / sum(float(item.duration_seconds) for item in speed_items)
+                if speed_items else None
+            )
+            heart_values = [
+                float(item.average_heart_rate_bpm)
+                for _, item in current
+                if item.average_heart_rate_bpm is not None
+            ]
+            groups.append({
+                "start": current[0][0],
+                "end": current[-1][0],
+                "block_type": str(current[0][1].block_type),
+                "duration_seconds": duration,
+                "distance_meters": distance,
+                "average_speed_kmh": weighted_speed,
+                "average_heart_rate_bpm": (
+                    sum(heart_values) / len(heart_values) if heart_values else None
+                ),
+                "maximum_heart_rate_bpm": max(
+                    (float(item.maximum_heart_rate_bpm) for _, item in current
+                     if item.maximum_heart_rate_bpm is not None),
+                    default=None,
+                ),
+            })
+            current.clear()
+
+        for index, block in enumerate(blocks):
+            if str(block.block_type) in expected_types:
+                current.append((index, block))
+            else:
+                finish()
+        finish()
+        if not groups:
+            return []
+
+        # Programmation dynamique : conserve l'ordre, mais peut ignorer un
+        # faux fragment rapide avant ou entre deux véritables fractions.
+        memo: dict[tuple[int, int], tuple[float, list[tuple[int, int]]]] = {}
+
+        def solve(pi: int, gi: int) -> tuple[float, list[tuple[int, int]]]:
+            key = (pi, gi)
+            if key in memo:
+                return memo[key]
+            if pi >= len(planned):
+                return (0.0, [])
+            if gi >= len(groups):
+                return (4.0 * (len(planned) - pi), [])
+            expected = planned[pi]
+            actual = groups[gi]
+            duration_target = expected["duration_seconds"]
+            if duration_target:
+                duration_cost = abs(
+                    float(actual["duration_seconds"]) - float(duration_target)
+                ) / float(duration_target)
+            else:
+                target_distance = float(expected["distance_meters"] or 1)
+                duration_cost = abs(
+                    float(actual["distance_meters"]) - target_distance
+                ) / target_distance
+            target_score = cls._block_target_score(
+                expected["planned"], SimpleNamespace(**actual)
+            )
+            match_cost, match_pairs = solve(pi + 1, gi + 1)
+            match = (duration_cost + (100 - target_score) / 100 + match_cost,
+                     [(pi, gi), *match_pairs])
+            skip_cost, skip_pairs = solve(pi, gi + 1)
+            skip = (0.35 + skip_cost, skip_pairs)
+            memo[key] = min(match, skip, key=lambda item: item[0])
+            return memo[key]
+
+        _, pairs = solve(0, 0)
+        details: list[dict[str, object]] = []
+        for pair_index, (planned_index, group_index) in enumerate(pairs):
+            group = groups[group_index]
+            next_start = (
+                groups[pairs[pair_index + 1][1]]["start"]
+                if pair_index + 1 < len(pairs) else None
+            )
+            recovery_seconds = None
+            if next_start is not None:
+                recovery_seconds = sum(
+                    float(blocks[index].duration_seconds)
+                    for index in range(int(group["end"]) + 1, int(next_start))
+                    if str(blocks[index].block_type) == "recovery"
+                )
+            details.append({
+                key: value for key, value in {
+                    "planned_index": planned_index,
+                    "planned_duration_seconds": planned[planned_index]["duration_seconds"],
+                    "block_type": group["block_type"],
+                    "duration_seconds": group["duration_seconds"],
+                    "distance_meters": group["distance_meters"],
+                    "average_speed_kmh": group["average_speed_kmh"],
+                    "average_heart_rate_bpm": group["average_heart_rate_bpm"],
+                    "maximum_heart_rate_bpm": group["maximum_heart_rate_bpm"],
+                    "recovery_seconds": recovery_seconds,
+                }.items()
+            })
+        return details
 
     @staticmethod
     def _expected_execution_types(
