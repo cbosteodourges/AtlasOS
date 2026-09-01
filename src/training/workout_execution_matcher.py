@@ -498,6 +498,8 @@ class AtlasWorkoutExecutionMatcher:
                     "planned_index": planned_index,
                     "planned_duration_seconds": planned_duration,
                     "block_type": group["block_type"],
+                    "start_seconds": group.get("start"),
+                    "end_seconds": group.get("end"),
                     "duration_seconds": reported_duration,
                     "distance_meters": reported_distance,
                     "average_speed_kmh": group["average_speed_kmh"],
