@@ -2377,13 +2377,19 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const dominantType = String(
       analysis.dominant_work_type || ""
     );
-    const plannedMainBlock = (workout.blocks || []).find(
+    const plannedWorkBlocks = (workout.blocks || []).filter(
       block => ["work", "interval"].includes(block.block_type)
     );
-    const plannedRepetitions = Number(
-      execution.planned_repetition_count ||
-      plannedMainBlock?.repetitions ||
-      1
+    const plannedMainBlock = plannedWorkBlocks[0];
+    const plannedIntervalDefinitions = plannedWorkBlocks.flatMap(block =>
+      Array.from({ length: Number(block.repetitions) || 1 }, () => ({
+        block,
+        durationSeconds: Number(block.duration_minutes) * 60 ||
+          Number(block.duration_seconds) || 0
+      }))
+    );
+    const plannedRepetitions = plannedIntervalDefinitions.length || Number(
+      execution.planned_repetition_count || 1
     );
     const plannedWorkDurationSeconds = Number(
       plannedMainBlock?.duration_minutes
@@ -2414,13 +2420,25 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       detailedBlocks,
       workTypes
     );
-    let intervalGroups = detectedIntervalGroups;
+    const alignedIntervalDetails = Array.isArray(execution.interval_details)
+      ? execution.interval_details
+      : [];
+    let intervalGroups = alignedIntervalDetails.length
+      ? alignedIntervalDetails.map(item => ({
+          block: item,
+          sources: [],
+          recovery: Number.isFinite(Number(item.recovery_seconds))
+            ? { duration_seconds: Number(item.recovery_seconds) }
+            : null
+        }))
+      : detectedIntervalGroups;
 
     // Une montée progressive pendant l'endurance peut traverser brièvement
     // Z3/SV2. Ces passages courts ne sont pas des répétitions structurées.
     // Quand une durée est prescrite, Atlas conserve en priorité le nombre
     // prévu de groupes dont la durée est la plus proche de la cible.
     if (
+      !alignedIntervalDetails.length &&
       plannedWorkDurationSeconds > 0 &&
       detectedIntervalGroups.length > plannedRepetitions
     ) {
@@ -2461,7 +2479,8 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     );
     const timelineBlocks = detailedBlocks.map(block => {
       const duration = Number(block.duration_seconds) || 0;
-      const isRejectedWorkFragment = workTypes.has(block.block_type) &&
+      const isRejectedWorkFragment = !alignedIntervalDetails.length &&
+        workTypes.has(block.block_type) &&
         !selectedWorkSources.has(block);
       const isShortTransition = (
         String(workout.workout_type || "") === "threshold_sv2" &&
@@ -2514,8 +2533,10 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     );
     const totalSpecificDurationSeconds = workDurationSeconds +
       partialWorkDurationSeconds;
-    const plannedSpecificDurationSeconds = plannedWorkDurationSeconds *
-      plannedRepetitions;
+    const plannedSpecificDurationSeconds = plannedIntervalDefinitions.reduce(
+      (total, item) => total + item.durationSeconds,
+      0
+    ) || plannedWorkDurationSeconds * plannedRepetitions;
     const specificCompletionPercent = plannedSpecificDurationSeconds > 0
       ? Math.round(
           totalSpecificDurationSeconds /
@@ -2705,19 +2726,28 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         </div>
       `;
     }).join("");
-    const completedIntervalLabel = Number(
-      plannedMainBlock?.duration_minutes
-    ) > 0
-      ? `${validatedRepetitions} blocs de ${reportNumber(
-          plannedMainBlock.duration_minutes,
-          0
-        )} min`
-      : `${validatedRepetitions} répétitions`;
-    const intervalCompletionSummary = Number(
-      plannedMainBlock?.duration_minutes
-    ) > 0
-      ? `${completedIntervalLabel} réalisés sur ${plannedRepetitions} prévus`
-      : `${completedIntervalLabel} réalisées sur ${plannedRepetitions} prévues`;
+    const plannedPattern = plannedWorkBlocks.map(block => {
+      const repetitions = Number(block.repetitions) || 1;
+      const seconds = Number(block.duration_minutes) * 60 ||
+        Number(block.duration_seconds) || 0;
+      return `${repetitions} × ${reportBlockTime(seconds)}`;
+    }).join(" + ");
+    const heterogeneousIntervals = new Set(
+      plannedIntervalDefinitions.map(item => item.durationSeconds)
+    ).size > 1;
+    const completedIntervalLabel = heterogeneousIntervals
+      ? `${validatedRepetitions} fractions (${plannedPattern})`
+      : Number(plannedMainBlock?.duration_minutes) > 0
+        ? `${validatedRepetitions} blocs de ${reportNumber(
+            plannedMainBlock.duration_minutes,
+            0
+          )} min`
+        : `${validatedRepetitions} répétitions`;
+    const intervalCompletionSummary = heterogeneousIntervals
+      ? `${validatedRepetitions} fractions réalisées sur ${plannedRepetitions} prévues`
+      : Number(plannedMainBlock?.duration_minutes) > 0
+        ? `${completedIntervalLabel} réalisés sur ${plannedRepetitions} prévus`
+        : `${completedIntervalLabel} réalisées sur ${plannedRepetitions} prévues`;
     const avatarIsFemale = (
       localStorage.getItem("atlasPreselectedAvatar") || "male"
     ) === "female";
