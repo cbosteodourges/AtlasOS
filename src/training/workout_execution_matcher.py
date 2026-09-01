@@ -506,6 +506,11 @@ class AtlasWorkoutExecutionMatcher:
                     "average_heart_rate_bpm": group["average_heart_rate_bpm"],
                     "maximum_heart_rate_bpm": group["maximum_heart_rate_bpm"],
                     "recovery_seconds": recovery_seconds,
+                    "recovery_distance_meters": group.get("raw_recovery_distance_meters"),
+                    "recovery_average_speed_kmh": group.get("raw_recovery_average_speed_kmh"),
+                    "recovery_average_heart_rate_bpm": group.get("raw_recovery_average_heart_rate_bpm"),
+                    "recovery_average_power_watts": group.get("raw_recovery_average_power_watts"),
+                    "recovery_average_cadence_spm": group.get("raw_recovery_average_cadence_spm"),
                 }.items()
             })
         return details
@@ -605,9 +610,57 @@ class AtlasWorkoutExecutionMatcher:
                 "maximum_heart_rate_bpm": max(heart_rates, default=None),
             })
         for left, right in zip(groups, groups[1:]):
-            left["raw_recovery_seconds"] = max(
+            recovery_seconds = max(
                 0.0,
                 float(right["start"]) - float(left["end"]),
+            )
+            left["raw_recovery_seconds"] = recovery_seconds
+            recovery_start = session_start + float(left["end"])
+            recovery_end = session_start + float(right["start"])
+            recovery_samples = [
+                sample for sample in activity.samples
+                if recovery_start < timestamp(sample.timestamp) < recovery_end
+            ]
+            recovery_speeds = [
+                float(sample.speed_mps) * 3.6
+                for sample in recovery_samples
+                if sample.speed_mps is not None
+            ]
+            recovery_hearts = [
+                float(sample.heart_rate_bpm)
+                for sample in recovery_samples
+                if sample.heart_rate_bpm is not None
+            ]
+            recovery_powers = [
+                float(sample.power_watts)
+                for sample in recovery_samples
+                if sample.power_watts is not None
+            ]
+            recovery_cadences = [
+                float(sample.cadence_spm)
+                for sample in recovery_samples
+                if sample.cadence_spm is not None
+            ]
+            recovery_speed = (
+                sum(recovery_speeds) / len(recovery_speeds)
+                if recovery_speeds else None
+            )
+            left["raw_recovery_distance_meters"] = (
+                recovery_speed / 3.6 * recovery_seconds
+                if recovery_speed is not None else None
+            )
+            left["raw_recovery_average_speed_kmh"] = recovery_speed
+            left["raw_recovery_average_heart_rate_bpm"] = (
+                sum(recovery_hearts) / len(recovery_hearts)
+                if recovery_hearts else None
+            )
+            left["raw_recovery_average_power_watts"] = (
+                sum(recovery_powers) / len(recovery_powers)
+                if recovery_powers else None
+            )
+            left["raw_recovery_average_cadence_spm"] = (
+                sum(recovery_cadences) / len(recovery_cadences)
+                if recovery_cadences else None
             )
         return groups
 
