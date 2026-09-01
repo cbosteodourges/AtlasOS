@@ -1453,6 +1453,130 @@
     }
   };
 
+  async function renderStravaWizard(providerName = "Strava") {
+    connectionWizard.hidden = false;
+    connectionWizard.innerHTML = `
+      <div class="sensor-wizard-message">
+        <span>STRAVA · VÉRIFICATION</span>
+        <h3>Connexion à Strava</h3>
+        <p>Atlas vérifie la configuration du connecteur…</p>
+      </div>
+    `;
+
+    try {
+      const response = await fetch(
+        `/api/atlas/strava/status?v=${Date.now()}`,
+        { cache: "no-store" }
+      );
+      const status = await response.json();
+      if (!response.ok || !status.ok) {
+        throw new Error(status.error || "État Strava indisponible.");
+      }
+
+      if (!status.configured) {
+        connectionWizard.innerHTML = `
+          <div class="sensor-wizard-message">
+            <span>STRAVA · CONFIGURATION REQUISE</span>
+            <h3>Enregistrer Atlas auprès de Strava</h3>
+            <p>La récupération des activités est prête. Il reste à renseigner
+            l’identifiant et le secret de l’application Strava dans la
+            passerelle Atlas.</p>
+            <small>Health Connect continue de fonctionner normalement pendant
+            cette configuration.</small>
+          </div>
+        `;
+        syncStatus.textContent =
+          "Strava · identifiants d’application à configurer.";
+        return;
+      }
+
+      if (!status.connected) {
+        connectionWizard.innerHTML = `
+          <div class="sensor-wizard-message">
+            <span>STRAVA · AUTORISATION</span>
+            <h3>Autoriser Atlas à lire mes activités</h3>
+            <p>Strava complétera Health Connect avec le GPS, le dénivelé,
+            les tours, la pente, la cadence, la puissance et les flux
+            chronologiques disponibles.</p>
+            <button type="button" data-strava-connect>
+              Connecter mon compte Strava
+            </button>
+          </div>
+        `;
+        syncStatus.textContent =
+          "Strava configuré · autorisation personnelle nécessaire.";
+        return;
+      }
+
+      const athleteName = [
+        status.athlete?.firstname,
+        status.athlete?.lastname
+      ].filter(Boolean).join(" ");
+      connectionWizard.innerHTML = `
+        <div class="sensor-wizard-message">
+          <span>STRAVA · CONNECTÉ</span>
+          <h3>${athleteName || providerName} est prêt</h3>
+          <p>Health Connect reste prioritaire. Strava complète les champs
+          absents et les séries plus détaillées, sans créer de doublon.</p>
+          <label class="sensor-history-choice">
+            <span>Première synchronisation</span>
+            <select data-strava-history>
+              <option value="recent">Activités récentes</option>
+              <option value="all">Importer aussi l’historique</option>
+            </select>
+          </label>
+          <button type="button" data-strava-sync>
+            Synchroniser Strava avec Atlas
+          </button>
+        </div>
+      `;
+      document.querySelector('[data-provider="strava"]')
+        ?.classList.add("connected");
+      syncStatus.textContent = "Strava connecté · prêt à synchroniser.";
+    } catch (error) {
+      connectionWizard.innerHTML = `
+        <div class="sensor-wizard-message error">
+          <h3>Connexion Strava indisponible</h3>
+          <p>${error.message}</p>
+        </div>
+      `;
+      syncStatus.textContent = "Strava · vérification impossible.";
+    }
+  }
+
+  async function synchronizeStrava() {
+    const button = connectionWizard.querySelector("[data-strava-sync]");
+    const fullHistory = connectionWizard
+      .querySelector("[data-strava-history]")?.value === "all";
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Synchronisation en cours…";
+    }
+    syncStatus.textContent =
+      "Strava · récupération et fusion avec Health Connect…";
+    try {
+      const response = await fetch("/api/atlas/strava/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify({ full_history: fullHistory })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) {
+        throw new Error(result.error || "Synchronisation Strava impossible.");
+      }
+      syncStatus.textContent =
+        `Strava synchronisé · ${result.received} activité(s) reçue(s), ` +
+        `${result.detailed} détaillée(s), ${result.total} activité(s) Atlas.`;
+      if (button) button.textContent = "Synchronisation terminée";
+    } catch (error) {
+      syncStatus.textContent = `Strava · ${error.message}`;
+      if (button) {
+        button.disabled = false;
+        button.textContent = "Réessayer la synchronisation";
+      }
+    }
+  }
+
   function openProviderWizard(button) {
     const provider = button.dataset.provider;
     const providerName =
@@ -1477,6 +1601,11 @@
       `;
       syncStatus.textContent =
         "Mode sans montre sélectionné · profil et séances saisis manuellement.";
+      return;
+    }
+
+    if (provider === "strava") {
+      renderStravaWizard(providerName);
       return;
     }
 
@@ -1604,6 +1733,14 @@
   });
 
   connectionWizard.addEventListener("click", event => {
+    if (event.target.closest("[data-strava-connect]")) {
+      window.location.href = "/api/atlas/strava/connect";
+      return;
+    }
+    if (event.target.closest("[data-strava-sync]")) {
+      synchronizeStrava();
+      return;
+    }
     if (event.target.closest('[data-provider-retry="garmin"]')) {
       openProviderWizard(
         document.querySelector('[data-provider="garmin"]')
@@ -1643,6 +1780,19 @@
     localStorage.removeItem(SENSOR_CONNECTION_KEY);
     localStorage.removeItem(SENSOR_SETUP_KEY);
     setSensorOnboardingComplete(false);
+  }
+
+  if (new URLSearchParams(window.location.search).get("strava") === "connected") {
+    const stravaButton = document.querySelector('[data-provider="strava"]');
+    if (stravaButton) {
+      stravaButton.classList.add("selected", "connected");
+      renderStravaWizard("Strava");
+    }
+    window.history.replaceState(
+      {},
+      "",
+      window.location.pathname + window.location.hash
+    );
   }
 
   window.addEventListener("atlas:athlete-profile-loaded", () => {
