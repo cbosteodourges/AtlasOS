@@ -319,7 +319,7 @@ class AtlasWorkoutExecutionMatcher:
             block for block in planned_workout.blocks
             if block.block_type == BlockType.WORK
         ]
-        for block in work_blocks:
+        for block_index, block in enumerate(work_blocks):
             for _ in range(max(1, int(block.repetitions or 1))):
                 intervals.append({
                     "duration_seconds": (
@@ -330,7 +330,10 @@ class AtlasWorkoutExecutionMatcher:
                     "recovery_minutes": block.recovery_minutes or 0.0,
                     "planned": block,
                 })
-            optional_text = f"{block.name} {block.instructions}".lower()
+            optional_text = (
+                f"{block.name} {block.instructions} "
+                f"{planned_workout.title if block_index == len(work_blocks) - 1 else ''}"
+            ).lower()
             if (
                 "facultative" in optional_text
                 and ("seconde" in optional_text or "1 à 2" in optional_text)
@@ -526,10 +529,6 @@ class AtlasWorkoutExecutionMatcher:
             for item in planned
             if item["planned"].target.speed_min_kmh is not None
         ]
-        if not minimum_targets:
-            return []
-        threshold_kmh = min(minimum_targets) * 0.85
-
         def timestamp(value: object) -> float:
             if hasattr(value, "timestamp"):
                 return float(value.timestamp())
@@ -548,6 +547,13 @@ class AtlasWorkoutExecutionMatcher:
         )
         if len(speed_samples) < 2:
             return []
+        if minimum_targets:
+            threshold_kmh = min(minimum_targets) * 0.85
+        else:
+            speeds = sorted(speed for _, speed in speed_samples if speed > 0)
+            median_speed = speeds[len(speeds) // 2]
+            fast_speed = speeds[min(len(speeds) - 1, round(len(speeds) * 0.90))]
+            threshold_kmh = median_speed + (fast_speed - median_speed) * 0.40
         session_start = speed_samples[0][0]
         runs: list[list[tuple[float, float]]] = []
         current: list[tuple[float, float]] = []
