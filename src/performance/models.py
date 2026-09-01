@@ -61,6 +61,9 @@ class PerformanceGoal:
     target_time_minutes: Optional[int] = None
     discipline: str = "running"
     priority: str = "principal"
+    elevation_gain_m: Optional[int] = None
+    elevation_loss_m: Optional[int] = None
+    terrain_technicality: str = "unknown"
 
     @property
     def target_pace_seconds_per_km(self) -> Optional[int]:
