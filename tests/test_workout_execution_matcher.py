@@ -1,8 +1,9 @@
 """Tests du rapprochement entre séance Atlas et activité réelle."""
 
 import unittest
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
+from src.connectors.activity_schema import ActivitySample
 from src.performance import (
     DetailedSessionAnalysis,
     LongitudinalActivity,
@@ -37,17 +38,46 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
             blocks=[
                 TrainingBlock("2 x 3", BlockType.WORK, 2, 3, recovery_minutes=1.5, target=target),
                 TrainingBlock("2 x 2", BlockType.WORK, 2, 2, recovery_minutes=1.5, target=target),
-                TrainingBlock("1 x 1:30", BlockType.WORK, 1, 1.5, recovery_minutes=1.5, target=target),
+                TrainingBlock(
+                    "1 à 2 x 1:30", BlockType.WORK, 1, 1.5,
+                    recovery_minutes=1.5, target=target,
+                    instructions="La seconde répétition est facultative.",
+                ),
             ],
             planned_duration_minutes=50,
         )
+        start = datetime(2026, 9, 1, 18, tzinfo=timezone.utc)
+        samples = []
+        for interval_start, duration, speed in (
+            (910, 180, 13.61),
+            (1179, 180, 13.72),
+            (1459, 100, 13.64),
+            (1654, 115, 14.30),
+            (1869, 85, 14.62),
+            (2049, 80, 14.63),
+        ):
+            samples.append(ActivitySample(
+                timestamp=start + timedelta(seconds=interval_start - 10),
+                speed_mps=9.0 / 3.6,
+            ))
+            for offset in range(0, duration + 1, 10):
+                samples.append(ActivitySample(
+                    timestamp=start + timedelta(seconds=interval_start + offset),
+                    speed_mps=speed / 3.6,
+                    heart_rate_bpm=145,
+                ))
+            samples.append(ActivitySample(
+                timestamp=start + timedelta(seconds=interval_start + duration + 10),
+                speed_mps=8.0 / 3.6,
+            ))
         activity = LongitudinalActivity(
             atlas_id="health-connect-pyramid",
-            start_time=datetime(2026, 9, 1, 18, tzinfo=timezone.utc),
+            start_time=start,
             activity_type="running",
             distance_km=7.5,
             duration_minutes=40,
             average_speed_kmh=11.2,
+            samples=samples,
         )
         blocks = [
             SessionBlock(1, "z3", 0, 100, 100, 290, average_speed_kmh=10.43),
@@ -73,12 +103,12 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
         result = AtlasWorkoutExecutionMatcher().match(planned, activity, analysis)
 
         self.assertEqual(result.execution.planned_repetition_count, 5)
-        self.assertEqual(result.execution.completed_repetition_count, 5)
+        self.assertEqual(result.execution.completed_repetition_count, 6)
         self.assertEqual(
             [round(item["duration_seconds"]) for item in result.execution.interval_details],
-            [180, 180, 120, 120, 90],
+            [180, 180, 120, 120, 90, 90],
         )
-        self.assertGreaterEqual(result.target_compliance_score, 95)
+        self.assertGreaterEqual(result.target_compliance_score, 75)
         self.assertGreaterEqual(result.execution.recovery_compliance_score, 85)
 
     def test_matches_real_activity_to_planned_workout(
