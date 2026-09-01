@@ -8,6 +8,7 @@ import re
 
 from src.performance.athlete_profile import AthleteProfile
 
+from .endurance_event_specializer import EnduranceEventSpecializer
 from .program_models import AdaptiveTrainingProgram, TrainingPhase
 from .session_models import BlockType, WorkoutPriority, WorkoutType
 
@@ -90,6 +91,7 @@ class TrainingProgramValidator:
         self._validate_program_frame(program, report)
         self._validate_weeks(program, report)
         self._validate_race(program, report)
+        self._validate_endurance_specificity(program, report)
         if profile is not None:
             self._validate_profile_constraints(program, profile, report)
         return report
@@ -411,6 +413,86 @@ class TrainingProgramValidator:
                 "RACE_DISTANCE",
                 "la distance de compétition ne correspond pas à l'objectif",
                 workout_id=race.workout_id,
+            )
+
+    def _validate_endurance_specificity(
+        self,
+        program: AdaptiveTrainingProgram,
+        report: ProgramValidationReport,
+    ) -> None:
+        spec = EnduranceEventSpecializer().resolve(program.goal)
+        if spec is None:
+            return
+
+        workouts = [
+            workout
+            for week in program.weeks
+            for workout in week.workouts
+        ]
+        long_runs = [
+            workout
+            for workout in workouts
+            if workout.workout_type == WorkoutType.LONG_RUN
+        ]
+        if not long_runs:
+            self._issue(
+                report,
+                "error",
+                "ENDURANCE_LONG_RUN",
+                f"aucune sortie longue spécifique {spec.label}",
+            )
+            return
+
+        if not all(item.fueling_strategy for item in long_runs):
+            self._issue(
+                report,
+                "error",
+                "ENDURANCE_FUELING",
+                "stratégie de ravitaillement absente d'une sortie longue",
+            )
+
+        if spec.is_trail:
+            if not all(
+                item.planned_elevation_gain_m
+                and item.planned_elevation_gain_m > 0
+                for item in long_runs
+            ):
+                self._issue(
+                    report,
+                    "error",
+                    "TRAIL_ELEVATION",
+                    "dénivelé absent d'une sortie longue trail",
+                )
+            hill_sessions = [
+                item for item in workouts
+                if item.title.startswith("Côtes spécifiques")
+            ]
+            if not hill_sessions:
+                self._issue(
+                    report,
+                    "error",
+                    "TRAIL_SPECIFICITY",
+                    "aucune séance de montée et descente spécifique",
+                )
+            if spec.back_to_back and not any(
+                item.title.startswith("Week-end enchaîné")
+                for item in long_runs
+            ):
+                self._issue(
+                    report,
+                    "error",
+                    "TRAIL_BACK_TO_BACK",
+                    "aucun week-end de sorties longues enchaînées",
+                )
+        elif not any(
+            item.title.startswith("Allure marathon")
+            for item in workouts
+        ):
+            self._issue(
+                report,
+                "error",
+                "MARATHON_PACE",
+                "aucun bloc spécifique à l'allure marathon",
             )
 
     def _validate_profile_constraints(
