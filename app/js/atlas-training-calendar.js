@@ -2496,8 +2496,15 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     // référence visuelle. Le compteur de la source peut rester inférieur
     // quand un tour automatique a fragmenté une étape chronométrée.
     const validatedRepetitions = workBlocks.length;
+    const optionalFractionCompleted = validatedRepetitions > plannedRepetitions &&
+      plannedWorkBlocks.some(block => /facultative/i.test(
+        `${block.name || ""} ${block.instructions || ""}`
+      ));
+    const authorizedRepetitions = optionalFractionCompleted
+      ? validatedRepetitions
+      : plannedRepetitions;
     const incompleteRepetitions = Math.max(
-      plannedRepetitions - validatedRepetitions,
+      authorizedRepetitions - validatedRepetitions,
       0
     );
     const completeBlockSources = new Set(rawWorkBlocks);
@@ -2533,10 +2540,15 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     );
     const totalSpecificDurationSeconds = workDurationSeconds +
       partialWorkDurationSeconds;
-    const plannedSpecificDurationSeconds = plannedIntervalDefinitions.reduce(
+    let plannedSpecificDurationSeconds = plannedIntervalDefinitions.reduce(
       (total, item) => total + item.durationSeconds,
       0
     ) || plannedWorkDurationSeconds * plannedRepetitions;
+    if (optionalFractionCompleted && plannedIntervalDefinitions.length) {
+      plannedSpecificDurationSeconds +=
+        plannedIntervalDefinitions[plannedIntervalDefinitions.length - 1]
+          .durationSeconds;
+    }
     const specificCompletionPercent = plannedSpecificDurationSeconds > 0
       ? Math.round(
           totalSpecificDurationSeconds /
@@ -2730,7 +2742,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       const repetitions = Number(block.repetitions) || 1;
       const seconds = Number(block.duration_minutes) * 60 ||
         Number(block.duration_seconds) || 0;
-      return `${repetitions} × ${reportBlockTime(seconds)}`;
+      const optionalSecond = /facultative/i.test(
+        `${block.name || ""} ${block.instructions || ""}`
+      ) && /(?:seconde|1\s*à\s*2)/i.test(
+        `${block.name || ""} ${block.instructions || ""}`
+      );
+      return `${optionalSecond ? "1 à 2" : repetitions} × ${reportBlockTime(seconds)}`;
     }).join(" + ");
     const heterogeneousIntervals = new Set(
       plannedIntervalDefinitions.map(item => item.durationSeconds)
@@ -2743,7 +2760,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             0
           )} min`
         : `${validatedRepetitions} répétitions`;
-    const intervalCompletionSummary = heterogeneousIntervals
+    const intervalCompletionSummary = optionalFractionCompleted
+      ? `${validatedRepetitions} fractions réalisées · noyau complet + fraction facultative`
+      : heterogeneousIntervals
       ? `${validatedRepetitions} fractions réalisées sur ${plannedRepetitions} prévues`
       : Number(plannedMainBlock?.duration_minutes) > 0
         ? `${completedIntervalLabel} réalisés sur ${plannedRepetitions} prévus`
@@ -2874,13 +2893,17 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                 <section class="narrative-analysis-section interval-analysis-section">
                   <div class="report-heading">
                     <span class="report-kicker">LECTURE ATLAS</span>
-                    <h3>Une série régulière jusqu’au dernier bloc</h3>
+                    <h3>${heterogeneousIntervals
+                      ? "Une pyramide complète avec progression sur les fractions courtes"
+                      : "Une série régulière jusqu’au dernier bloc"}</h3>
                   </div>
                   <p>
                     Les blocs complets (${completedIntervalLabel})
                     ont été réalisés à ${reportPace(3600 / averageWorkSpeed)}
                     de moyenne. L’écart d’allure de ${reportNumber(paceSpread, 0)} s/km
-                    confirme une exécution homogène.
+                    ${heterogeneousIntervals
+                      ? "reflète les durées différentes de la pyramide."
+                      : "confirme une exécution homogène."}
                   </p>
                   ${incompleteRepetitions > 0 ? `
                     <p>
