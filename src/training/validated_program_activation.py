@@ -133,6 +133,73 @@ def _cycling(day: date, minutes: int = 60) -> dict[str, Any]:
                     priority="optional", sport="cycling")
 
 
+def _easy_with_strides(
+    day: date,
+    minutes: int,
+    snapshot: dict[str, Any],
+    *,
+    key: str,
+    title: str,
+    low: int,
+    high: int,
+    seconds: int,
+    recovery: float,
+    hill: bool = False,
+) -> dict[str, Any]:
+    work_minutes = low * seconds / 60
+    recovery_minutes = max(0, low - 1) * recovery
+    cool_down = 10
+    easy_minutes = max(
+        10,
+        minutes - work_minutes - recovery_minutes - cool_down,
+    )
+    target = {
+        "zone": 5,
+        "rpe_0_10": 7 if hill else 6.5,
+        "intensity_pattern": "interval",
+    }
+    location = "en côte" if hill else "relâchées"
+    return _workout(
+        day,
+        key,
+        "endurance_z2",
+        title,
+        "Entretenir la qualité neuromusculaire sans fatigue résiduelle.",
+        minutes,
+        [
+            _block(
+                "Endurance facile avant les accélérations",
+                "warm_up",
+                duration=easy_minutes,
+                target=_target(snapshot, "z2"),
+            ),
+            _block(
+                f"{low} à {high} × {seconds} s {location}",
+                "work",
+                duration=seconds / 60,
+                repetitions=low,
+                recovery=recovery,
+                target=target,
+                instructions=(
+                    f"{low} répétitions prévues ; jusqu'à {high} seulement "
+                    "si chaque accélération reste relâchée et techniquement propre."
+                ),
+            ),
+            _block(
+                "Retour au calme",
+                "cool_down",
+                duration=cool_down,
+                target=_target(snapshot, "recovery"),
+            ),
+        ],
+        priority="support",
+        notes=[
+            f"Récupération active complète de {recovery:g} min entre les accélérations.",
+            "Aucune fatigue résiduelle ne doit être recherchée.",
+        ],
+    )
+
+
 def _vo2_distance(day: date, distance: int, low: int, high: int,
                   snapshot: dict[str, Any], duration: int) -> dict[str, Any]:
     return _quality(day, "vo2", "vma_short",
@@ -150,10 +217,13 @@ def _vo2_time(day: date, low: int, high: int, seconds: int,
     return _quality(day, "vo2-time", "vma_long",
         f"Temps de soutien VO₂max · {low} à {high} × {seconds // 60 if seconds % 60 == 0 else '1 min 30'}",
         "Développer le temps de soutien à VO₂max avec une exécution régulière.", duration,
-        [_block(f"{low} à {high} répétitions", "work", duration=minutes,
+        [_block(f"{low} à {high} × {seconds // 60 if seconds % 60 == 0 else '1 min 30'}", "work", duration=minutes,
                 repetitions=low, recovery=2, target=_target(snapshot, "vo2"),
                 instructions=f"Commencer par {low}; plafond {high} si la dernière fraction reste propre.")],
-        snapshot, [f"Volume possible : {low * minutes:g} à {high * minutes:g} min."])
+        snapshot, [
+            f"Volume possible : {low * minutes:g} à {high * minutes:g} min.",
+            "Compléter en endurance très facile pour atteindre la durée totale prévue.",
+        ])
 
 
 def _vo2_pyramid(day: date, snapshot: dict[str, Any], duration: int) -> dict[str, Any]:
@@ -192,7 +262,10 @@ def _threshold_desc(day: date, snapshot: dict[str, Any], duration: int) -> dict[
          _block("1600 m", "work", distance=1600, recovery=1.75, target=target),
          _block("1200 m facultatifs", "work", distance=1200, target=target,
                 instructions="Effectuer uniquement si la séance reste contrôlée.")],
-        snapshot, ["Deux fractions constituent le noyau ; la troisième reste facultative."])
+        snapshot, [
+            "Deux fractions constituent le noyau ; la troisième reste facultative.",
+            "Récupération active de 2 min après 2000 m puis 1 min 45 après 1600 m.",
+        ])
 
 
 def _hybrid(day: date, reps: int, work_minutes: int, total_minutes: int,
@@ -262,17 +335,35 @@ def build_validated_weeks(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
                    "development", f"Cycle 1 · semaine de charge {i + 1}")
 
     start = starts[3]
-    build_week(3, [_easy(start, 35, snapshot),
-                   _easy(start + timedelta(days=1), 40, snapshot, "hill-microdose"),
-                   _strength(start + timedelta(days=2), 18),
-                   _easy(start + timedelta(days=3), 35, snapshot, "easy-2"),
-                   _easy(start + timedelta(days=5), 40, snapshot, "strides"),
-                   _cycling(start + timedelta(days=6), 50)],
-               "recovery", "Consolidation · endurance et microdoses", True)
-    weeks[-1]["workouts"][1]["title"] = "Endurance + 6 à 8 × 12 s en côte"
-    weeks[-1]["workouts"][1]["coach_notes"].append("Récupération complète 2 min 30 ; aucune fatigue résiduelle.")
-    weeks[-1]["workouts"][-2]["title"] = "Endurance + 6 à 8 × 20 s relâchées"
-    weeks[-1]["workouts"][-2]["coach_notes"].append("85–92 %, récupération complète 2 min.")
+    build_week(3, [
+        _easy(start, 35, snapshot),
+        _easy_with_strides(
+            start + timedelta(days=1),
+            40,
+            snapshot,
+            key="hill-microdose",
+            title="Endurance + 6 à 8 × 12 s en côte",
+            low=6,
+            high=8,
+            seconds=12,
+            recovery=2.5,
+            hill=True,
+        ),
+        _strength(start + timedelta(days=2), 18),
+        _easy(start + timedelta(days=3), 35, snapshot, "easy-2"),
+        _easy_with_strides(
+            start + timedelta(days=5),
+            40,
+            snapshot,
+            key="strides",
+            title="Endurance + 6 à 8 × 20 s relâchées",
+            low=6,
+            high=8,
+            seconds=20,
+            recovery=2,
+        ),
+        _cycling(start + timedelta(days=6), 50),
+    ], "recovery", "Consolidation · endurance et microdoses", True)
 
     second = [
         (lambda d: _vo2_distance(d, 400, 6, 8, snapshot, 50),
@@ -312,9 +403,18 @@ def build_validated_weeks(snapshot: dict[str, Any]) -> list[dict[str, Any]]:
     build_week(8, [_easy(start, 35, snapshot),
                    _vo2_time(start + timedelta(days=1), 5, 6, 60, snapshot, 38),
                    _mobility(start + timedelta(days=2), 12),
-                   _easy(start + timedelta(days=3), 30, snapshot, "race-easy"),
+                   _easy_with_strides(
+                       start + timedelta(days=3),
+                       30,
+                       snapshot,
+                       key="race-easy",
+                       title="Endurance facile + 4 lignes droites",
+                       low=4,
+                       high=4,
+                       seconds=15,
+                       recovery=1,
+                   ),
                    race], "race_week", "Semaine de course · fraîcheur prioritaire")
-    weeks[-1]["workouts"][-2]["title"] = "Endurance facile + 4 lignes droites"
 
     return weeks
 
