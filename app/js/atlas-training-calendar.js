@@ -2242,9 +2242,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     if (!report) {
       return `
         <section class="execution-report-empty">
-          <strong>Aucun compte-rendu FIT associé</strong>
+          <strong>Aucun compte-rendu d’activité associé</strong>
           <p>
-            Après l’import Garmin, Atlas comparera ici la séance réalisée
+            Après la synchronisation, Atlas comparera ici la séance réalisée
             avec la prescription et expliquera son raisonnement.
           </p>
         </section>
@@ -2275,6 +2275,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       plannedMainBlock?.repetitions ||
       1
     );
+    const plannedWorkDurationSeconds = Number(
+      plannedMainBlock?.duration_minutes
+    ) * 60 || Number(plannedMainBlock?.duration_seconds) || 0;
     const expectedReportWorkTypes = {
       threshold_sv2: new Set(["z3", "sv2"]),
       vma_short: new Set(["sv2", "vma"]),
@@ -2297,21 +2300,60 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           "z1"
         ].includes(block.block_type));
     const workTypes = new Set(rawWorkBlocks.map(block => block.block_type));
-    const intervalGroups = reportIntervalGroups(detailedBlocks, workTypes);
+    const detectedIntervalGroups = reportIntervalGroups(
+      detailedBlocks,
+      workTypes
+    );
+    let intervalGroups = detectedIntervalGroups;
+
+    // Une montée progressive pendant l'endurance peut traverser brièvement
+    // Z3/SV2. Ces passages courts ne sont pas des répétitions structurées.
+    // Quand une durée est prescrite, Atlas conserve en priorité le nombre
+    // prévu de groupes dont la durée est la plus proche de la cible.
+    if (
+      plannedWorkDurationSeconds > 0 &&
+      detectedIntervalGroups.length > plannedRepetitions
+    ) {
+      const minimumCompleteDuration = Math.max(
+        10,
+        plannedWorkDurationSeconds * 0.45
+      );
+      const compatibleGroups = detectedIntervalGroups.filter(
+        group => Number(group.block.duration_seconds) >= minimumCompleteDuration
+      );
+      const candidates = compatibleGroups.length >= plannedRepetitions
+        ? compatibleGroups
+        : detectedIntervalGroups;
+      const selected = new Set(
+        [...candidates]
+          .sort((left, right) => (
+            Math.abs(
+              Number(left.block.duration_seconds) -
+              plannedWorkDurationSeconds
+            ) -
+            Math.abs(
+              Number(right.block.duration_seconds) -
+              plannedWorkDurationSeconds
+            )
+          ))
+          .slice(0, plannedRepetitions)
+      );
+      intervalGroups = detectedIntervalGroups.filter(
+        group => selected.has(group)
+      );
+    }
+
     const workBlocks = intervalGroups.length
       ? intervalGroups.map(group => group.block)
       : rawWorkBlocks;
     // Les blocs reconstruits et affichés dans le tableau constituent la
-    // référence visuelle. Le compteur Garmin peut rester inférieur quand
-    // un Auto Lap a fragmenté une étape chronométrée.
+    // référence visuelle. Le compteur de la source peut rester inférieur
+    // quand un tour automatique a fragmenté une étape chronométrée.
     const validatedRepetitions = workBlocks.length;
     const incompleteRepetitions = Math.max(
       plannedRepetitions - validatedRepetitions,
       0
     );
-    const plannedWorkDurationSeconds = Number(
-      plannedMainBlock?.duration_minutes
-    ) * 60 || Number(plannedMainBlock?.duration_seconds) || 0;
     const completeBlockSources = new Set(rawWorkBlocks);
     const plannedWorkZone = atlasDisplayZone(workout, plannedMainBlock);
     const partialWorkBlocks = incompleteRepetitions > 0 &&
@@ -2452,6 +2494,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       ? maximumWorkHeartRate
       : Number(activity.maximum_heart_rate_bpm);
     const analyzedSessionLabel = {
+      threshold_sv2: "Travail structuré sous SV2",
+      vma_short: "Intervalles VO₂max",
+      vma_long: "Intervalles VO₂max",
+      mixed_threshold_vo2: "Séance mixte seuil et VO₂max",
+      triangular_vo2: "Séance VO₂max triangulaire",
+      long_run: "Sortie longue"
+    }[String(workout.workout_type || "")] || ({
       vma: "Intervalles VO₂max",
       sv2: "Travail au seuil",
       z3: "Tempo",
@@ -2459,7 +2508,15 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       z1: "Récupération",
       sprint: "Sprints",
       acceleration: "Accélérations"
-    }[dominantType] || sessionTypeLabel(activity.session_type);
+    }[dominantType] || sessionTypeLabel(activity.session_type));
+    const activityProvider = String(
+      report.provider || activity.provider || ""
+    ).toLowerCase();
+    const activitySourceLabel = activityProvider === "health_connect"
+      ? "données Santé Connect issues de Garmin"
+      : activityProvider.includes("fit") || activityProvider === "garmin"
+        ? "fichier FIT Garmin"
+        : "données d’activité";
     const durationDelta = actualDuration - plannedDuration;
     const distanceDelta = actualDistance - plannedDistance;
     const executionScore = Number(execution.execution_score);
@@ -2543,7 +2600,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             <h2>${escapeHtml(execution.workout_name || workout.title)}</h2>
             <p>
               ${escapeHtml(analyzedSessionLabel)}
-              · séance Garmin reconnue avec une confiance de
+              · ${activitySourceLabel} reconnues avec une confiance de
               ${reportScore(match.match_confidence_score)}.
             </p>
           </div>
@@ -2836,7 +2893,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                     <textarea name="comment" maxlength="1200" rows="3" placeholder="Ex. allure volontairement constante, jambes lourdes, vent, mauvaise nuit…">${escapeHtml(userContext?.comment || "")}</textarea>
                   </label>
                   <div class="context-form-footer">
-                    <small>Cette déclaration est enregistrée séparément des données Garmin et reste historisée.</small>
+                    <small>Cette déclaration est enregistrée séparément des données d’activité et reste historisée.</small>
                     <button type="submit">Enregistrer mon contexte</button>
                   </div>
                   <p class="context-form-status" data-context-form-status aria-live="polite"></p>
