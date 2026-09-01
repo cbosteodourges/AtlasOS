@@ -17,7 +17,7 @@ from src.physiology.nutrition_hydration import NutritionHydrationAnalyzer
 
 PHYSIOLOGY_KEYS = {"vo2_max", "vma_kmh", "vma_training_reference_kmh",
                    "maximum_heart_rate_bpm", "sv1", "sv2"}
-HEALTH_CONNECT_ANALYSIS_VERSION = 7
+HEALTH_CONNECT_ANALYSIS_VERSION = 8
 
 
 class PostSyncOrchestrator:
