@@ -355,16 +355,18 @@
           ? new Date(now.getTime() - selectedPhysiologyPeriod * 86400000)
           : null;
         const points = physiologyHistory
-          .filter(item => !cutoff || new Date(item.day) >= cutoff)
+          .filter(item => !cutoff || new Date(item.timestamp || item.day) >= cutoff)
           .map(item => ({
             day: item.day,
+            timestamp: item.timestamp || item.day,
             value: Number(item[selectedPhysiologyMetric]),
             kind: item.kind,
             method: item.method,
             confidence: item.confidence,
+            adjustedMetrics: item.adjusted_metrics || [],
           }))
           .filter(item => Number.isFinite(item.value) && item.value > 0)
-          .sort((a, b) => String(a.day).localeCompare(String(b.day)));
+          .sort((a, b) => String(a.timestamp).localeCompare(String(b.timestamp)));
         chartSvg.replaceChildren();
         if (points.length < 2) {
           chartRoot?.classList.add("is-empty");
@@ -404,7 +406,12 @@
           circle.setAttribute("class", `chart-point${point.kind === "validated" ? " is-validated" : ""}`);
           const title = document.createElementNS(ns, "title");
           const [label, unit] = metricMeta[selectedPhysiologyMetric];
-          title.textContent = `${new Date(point.day).toLocaleDateString("fr-FR")} · ${label} ${point.value.toLocaleString("fr-FR")} ${unit}`;
+          const measuredAt = new Date(point.timestamp);
+          const dateLabel = measuredAt.toLocaleDateString("fr-FR");
+          const timeLabel = point.timestamp.includes("T")
+            ? ` à ${measuredAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
+            : "";
+          title.textContent = `${dateLabel}${timeLabel} · ${label} ${point.value.toLocaleString("fr-FR")} ${unit}`;
           circle.appendChild(title);
           chartSvg.appendChild(circle);
         });
@@ -425,9 +432,12 @@
         if (chartSummary) chartSummary.textContent = `${label} : ${points.at(-1).value.toLocaleString("fr-FR")} ${unit} · ${deltaLabel}`;
         const chartNote = document.querySelector("[data-physiology-chart-note]");
         const estimatedCount = points.filter(point => point.kind === "atlas_estimate").length;
-        if (chartNote) chartNote.textContent = estimatedCount
-          ? `${estimatedCount} point${estimatedCount > 1 ? "s" : ""} hebdomadaire${estimatedCount > 1 ? "s" : ""} rétrospectif${estimatedCount > 1 ? "s" : ""} Atlas, calculé${estimatedCount > 1 ? "s" : ""} depuis les séances FIT et recalé${estimatedCount > 1 ? "s" : ""} sur votre référence actuelle.`
-          : "Courbe fondée sur les références physiologiques validées.";
+        const adjustmentCount = points.filter(point => point.kind === "validated" && point.adjustedMetrics.length).length;
+        if (chartNote) chartNote.textContent = adjustmentCount
+          ? `${adjustmentCount} ajustement${adjustmentCount > 1 ? "s" : ""} issu${adjustmentCount > 1 ? "s" : ""} des séances · chaque modification validée est enregistrée automatiquement.`
+          : estimatedCount
+            ? `${estimatedCount} point${estimatedCount > 1 ? "s" : ""} rétrospectif${estimatedCount > 1 ? "s" : ""} Atlas, calculé${estimatedCount > 1 ? "s" : ""} depuis les séances disponibles.`
+            : "Courbe fondée sur les références physiologiques validées.";
         if (chartMessage) chartMessage.textContent = "";
       };
       document.querySelectorAll("[data-physiology-metric]").forEach(button => button.addEventListener("click", () => {
