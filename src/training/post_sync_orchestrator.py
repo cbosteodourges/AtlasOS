@@ -448,6 +448,11 @@ class PostSyncOrchestrator:
     def _current_physiology(self) -> dict[str, Any]:
         saved = self._read("physiology-longitudinal.json", {}).get("current")
         saved = saved if isinstance(saved, dict) else {}
+        if saved.get("vo2_max_status") == "auto_validated_quality_session":
+            try:
+                saved = {**saved, "vo2_max": round(float(saved["vo2_max"]))}
+            except (KeyError, TypeError, ValueError):
+                pass
         program = self._read("training-program.json", {})
         snapshot = program.get("athlete_snapshot") if isinstance(program, dict) else None
         snapshot = snapshot if isinstance(snapshot, dict) else {}
