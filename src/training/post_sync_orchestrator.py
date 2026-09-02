@@ -486,13 +486,10 @@ class PostSyncOrchestrator:
         previous: dict[str, Any],
         estimate: dict[str, Any],
     ) -> tuple[dict[str, Any], list[str]]:
-        """Applique seulement les évolutions rapides à faible risque.
-
-        Une séance de qualité peut confirmer une hausse bornée de VO2max. Les
-        seuils, la VMA et la FC maximale exigent toujours une validation dédiée.
-        """
+        """Applique l'avis de chaque séance avec des variations bornées."""
 
         profile = deepcopy(previous)
+        applied: list[str] = []
         observed = estimate.get("observed") or {}
         candidate = estimate.get("vo2_max")
         previous_vo2 = previous.get("vo2_max")
@@ -500,17 +497,87 @@ class PostSyncOrchestrator:
             candidate = float(candidate)
             previous_vo2 = float(previous_vo2)
         except (TypeError, ValueError):
-            return profile, []
+            candidate = previous_vo2 = None
         if (
-            estimate.get("decision") == "increase_candidate"
+            candidate is not None
+            and previous_vo2 is not None
+            and estimate.get("decision") == "increase_candidate"
             and observed.get("fast_vo2_signal") is True
             and 0 < candidate - previous_vo2 <= 1.0
         ):
             profile["vo2_max"] = candidate
             profile["vo2_max_status"] = "auto_validated_quality_session"
             profile["vo2_max_updated_at"] = estimate.get("updated_at")
-            return profile, ["vo2_max"]
-        return profile, []
+            applied.append("vo2_max")
+
+        assessment = estimate.get("session_assessment") or {}
+        activity_id = assessment.get("activity_id")
+        if (
+            not activity_id
+            or activity_id == previous.get("last_session_assessment_id")
+        ):
+            return profile, applied
+        signals = assessment.get("signals") or {}
+
+        def adjusted_value(
+            old: Any,
+            new: Any,
+            limit: float,
+            digits: int = 2,
+        ):
+            try:
+                old_number = float(old)
+                new_number = float(new)
+            except (TypeError, ValueError):
+                return new
+            return round(
+                max(
+                    old_number - limit,
+                    min(old_number + limit, new_number),
+                ),
+                digits,
+            )
+
+        vma_signal = signals.get("vma_kmh") or {}
+        if float(vma_signal.get("confidence") or 0) >= .80:
+            profile["vma_kmh"] = adjusted_value(
+                profile.get("vma_kmh")
+                or profile.get("vma_training_reference_kmh"),
+                vma_signal.get("candidate"),
+                .20,
+            )
+            profile["vma_training_reference_kmh"] = profile["vma_kmh"]
+            applied.append("vma_kmh")
+
+        for threshold in ("sv1", "sv2"):
+            signal = signals.get(threshold) or {}
+            if float(signal.get("confidence") or 0) < .72:
+                continue
+            current_threshold = profile.get(threshold) or {}
+            updated_threshold = {**current_threshold}
+            if signal.get("speed_kmh") is not None:
+                updated_threshold["speed_kmh"] = adjusted_value(
+                    current_threshold.get("speed_kmh"),
+                    signal.get("speed_kmh"),
+                    .10,
+                )
+            if signal.get("heart_rate_bpm") is not None:
+                updated_threshold["heart_rate_bpm"] = adjusted_value(
+                    current_threshold.get("heart_rate_bpm"),
+                    signal.get("heart_rate_bpm"),
+                    2,
+                    0,
+                )
+            updated_threshold["status"] = "session_adjusted_estimate"
+            updated_threshold["updated_at"] = estimate.get("updated_at")
+            updated_threshold["evidence"] = signal.get("evidence")
+            profile[threshold] = updated_threshold
+            applied.append(threshold)
+
+        if signals:
+            profile["last_session_assessment_id"] = activity_id
+            profile["last_session_assessment"] = assessment
+        return profile, applied
 
     def _read(self, name: str, default: Any) -> Any:
         path = self.private_dir / name
