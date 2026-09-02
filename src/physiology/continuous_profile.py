@@ -34,8 +34,12 @@ def _bounded(previous: float | None, estimate: float, daily_change: float) -> fl
     return max(previous - daily_change, min(previous + daily_change, estimate))
 
 
-def _best_sustained_speed(samples: Iterable[Any]) -> float | None:
-    """Meilleure médiane soutenue sur trois minutes, quelle que soit la fréquence."""
+def _best_sustained_speed(
+    samples: Iterable[Any],
+    minimum_seconds: float = 170,
+    maximum_seconds: float = 210,
+) -> float | None:
+    """Meilleure médiane soutenue sur une durée, quelle que soit la fréquence."""
 
     points = sorted(
         (
@@ -55,11 +59,11 @@ def _best_sustained_speed(samples: Iterable[Any]) -> float | None:
         window: list[float] = []
         previous_stamp = start
         for stamp, speed in points[start_index:]:
-            if stamp - previous_stamp > 30 or stamp - start > 210:
+            if stamp - previous_stamp > 30 or stamp - start > maximum_seconds:
                 break
             window.append(speed)
             previous_stamp = stamp
-            if stamp - start >= 170 and len(window) >= 12:
+            if stamp - start >= minimum_seconds and len(window) >= 6:
                 candidates.append(median(window))
                 break
     return max(candidates) if candidates else None
@@ -82,6 +86,7 @@ class ContinuousPhysiologyEstimator:
             in {"run", "running", "trail_running", "56"}
         ]
         sustained_speeds: list[float] = []
+        recent_session_signals: list[dict[str, float]] = []
         threshold_speeds: list[float] = []
         threshold_hr: list[float] = []
 
@@ -90,6 +95,12 @@ class ContinuousPhysiologyEstimator:
             sustained = _best_sustained_speed(samples)
             if sustained is not None:
                 sustained_speeds.append(sustained)
+            short_sustained = _best_sustained_speed(samples, 80, 110)
+            if sustained is not None and short_sustained is not None:
+                recent_session_signals.append({
+                    "three_minutes_kmh": sustained,
+                    "ninety_seconds_kmh": short_sustained,
+                })
 
             average = _number(getattr(activity, "average_speed_mps", None))
             duration_seconds = _number(getattr(activity, "duration_seconds", None))
@@ -163,10 +174,36 @@ class ContinuousPhysiologyEstimator:
         old_sv1 = _number(sv1_current.get("speed_kmh"))
         old_sv2 = _number(sv2_current.get("speed_kmh"))
 
+        # Réactivité courte : une séance de qualité peut confirmer immédiatement
+        # un gain modeste de VO2max. Il faut à la fois soutenir près de la VMA
+        # pendant trois minutes et dépasser cette référence sur une fraction
+        # courte. Ce signal ne déplace pas, à lui seul, les seuils ventilatoires.
+        fast_vo2_signal = False
+        strongest_signal: dict[str, float] | None = None
+        if old_vma is not None and recent_session_signals:
+            strongest_signal = max(
+                recent_session_signals,
+                key=lambda item: (
+                    item["three_minutes_kmh"] + item["ninety_seconds_kmh"]
+                ),
+            )
+            fast_vo2_signal = (
+                strongest_signal["three_minutes_kmh"] >= old_vma * .97
+                and strongest_signal["ninety_seconds_kmh"] >= old_vma * 1.03
+            )
+
         proposed_vma = _bounded(old_vma, observed_vma, .2)
         proposed_vo2 = _bounded(old_vo2, 3.5 * proposed_vma, .7)
-        proposed_sv1 = _bounded(old_sv1, observed_sv1, .15)
-        proposed_sv2 = _bounded(old_sv2, observed_sv2, .15)
+        if fast_vo2_signal and old_vo2 is not None:
+            proposed_vo2 = max(proposed_vo2, old_vo2 + 1.0)
+        proposed_sv1 = (
+            _bounded(old_sv1, observed_sv1, .15)
+            if threshold_speeds else (old_sv1 or observed_sv1)
+        )
+        proposed_sv2 = (
+            _bounded(old_sv2, observed_sv2, .15)
+            if threshold_speeds else (old_sv2 or observed_sv2)
+        )
 
         # Une absence de test maximal n'est pas une preuve de régression.
         vma = round(max(old_vma or proposed_vma, proposed_vma), 2)
@@ -213,6 +250,14 @@ class ContinuousPhysiologyEstimator:
             "observed": {
                 "vma_kmh": round(observed_vma, 2),
                 "sv2_speed_kmh": round(observed_sv2, 2),
+                "fast_vo2_signal": fast_vo2_signal,
+                "strongest_session": (
+                    {
+                        key: round(value, 2)
+                        for key, value in strongest_signal.items()
+                    }
+                    if strongest_signal else None
+                ),
             },
             "maximum_heart_rate_bpm": maximum_hr,
             "warning": (
