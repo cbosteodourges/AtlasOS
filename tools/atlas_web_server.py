@@ -440,6 +440,23 @@ def load_authorized_training_program():
         program,
         entitlement["tier"],
     )
+    # Le programme conserve l'instantané qui a servi à sa génération, mais
+    # l'interface affiche toujours les références physiologiques actives.
+    longitudinal = _read_private_json(
+        ROOT / "atlas-data" / "private" / "physiology-longitudinal.json",
+        {},
+    )
+    current = longitudinal.get("current") or {}
+    if isinstance(current, dict) and current:
+        snapshot = filtered.get("athlete_snapshot") or {}
+        merged_snapshot = {**snapshot, **current}
+        for threshold in ("sv1", "sv2"):
+            if isinstance(current.get(threshold), dict):
+                merged_snapshot[threshold] = {
+                    **(snapshot.get(threshold) or {}),
+                    **current[threshold],
+                }
+        filtered["athlete_snapshot"] = merged_snapshot
     filtered["access_control"]["account_id"] = entitlement["account_id"]
     filtered["access_control"]["display_name"] = entitlement["display_name"]
     filtered["historical_completed_workouts"] = (
