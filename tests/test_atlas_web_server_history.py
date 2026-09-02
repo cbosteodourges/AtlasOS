@@ -7,6 +7,7 @@ from unittest.mock import patch
 from tools.atlas_web_server import (
     historical_completed_workouts_for_program,
     load_historical_workouts,
+    load_physiology_history,
     load_physiological_reference,
     load_user_objectives,
     load_user_profile,
@@ -16,6 +17,43 @@ from tools.atlas_web_server import (
 
 
 class AtlasWebServerHistoryTests(unittest.TestCase):
+    def test_physiology_history_keeps_multiple_adjustments_on_same_day(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            private = root / "atlas-data" / "private"
+            private.mkdir(parents=True)
+            (private / "physiology-longitudinal.json").write_text(json.dumps({
+                "history": [
+                    {
+                        "day": "2026-09-02",
+                        "timestamp": "2026-09-02T07:00:00+00:00",
+                        "activity_id": "run-1",
+                        "schema": "validated_profile_v1",
+                        "vo2_max": 51,
+                        "auto_applied": ["vo2_max"],
+                    },
+                    {
+                        "day": "2026-09-02",
+                        "timestamp": "2026-09-02T18:00:00+00:00",
+                        "activity_id": "run-2",
+                        "schema": "validated_profile_v1",
+                        "vo2_max": 51.3,
+                        "auto_applied": ["vo2_max", "vma_kmh"],
+                    },
+                ]
+            }), encoding="utf-8")
+
+            with patch("tools.atlas_web_server.ROOT", root):
+                history = load_physiology_history()
+
+            self.assertEqual(len(history), 2)
+            self.assertEqual(history[0]["activity_id"], "run-1")
+            self.assertEqual(history[1]["vo2_max"], 51.3)
+            self.assertEqual(
+                history[1]["adjusted_metrics"],
+                ["vo2_max", "vma_kmh"],
+            )
+
     def test_longitudinal_profile_overrides_program_snapshot(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
