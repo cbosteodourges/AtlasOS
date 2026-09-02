@@ -122,7 +122,9 @@ class PostSyncOrchestrator:
                 or profile.get("vma_training_reference_kmh")
             ),
             "sv1_speed_kmh": sv1.get("speed_kmh"),
+            "sv1_heart_rate_bpm": sv1.get("heart_rate_bpm"),
             "sv2_speed_kmh": sv2.get("speed_kmh"),
+            "sv2_heart_rate_bpm": sv2.get("heart_rate_bpm"),
             "maximum_heart_rate_bpm": profile.get("maximum_heart_rate_bpm"),
             "estimator_updated": bool(estimate.get("updated")),
             "estimator_confidence": estimate.get("confidence"),
@@ -473,7 +475,17 @@ class PostSyncOrchestrator:
             or snapshot.get("threshold_heart_rate_bpm")
         )
         sv2 = profile.get("sv2") or {}
-        if threshold_hr is not None and sv2.get("status") != "measured":
+        weak_sv2_statuses = {
+            None,
+            "",
+            "estimated",
+            "longitudinal",
+            "longitudinal_estimate",
+        }
+        if threshold_hr is not None and (
+            sv2.get("heart_rate_bpm") is None
+            or sv2.get("status") in weak_sv2_statuses
+        ):
             profile["sv2"] = {
                 **sv2,
                 "heart_rate_bpm": threshold_hr,
