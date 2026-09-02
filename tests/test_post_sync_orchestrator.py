@@ -43,6 +43,33 @@ class PostSyncOrchestratorTests(unittest.TestCase):
                 "validated_threshold_reference",
             )
 
+    def test_threshold_reference_preserves_session_adjusted_sv2_hr(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "training-program.json").write_text(json.dumps({
+                "athlete_snapshot": {},
+            }), encoding="utf-8")
+            (root / "physiology-longitudinal.json").write_text(json.dumps({
+                "current": {
+                    "sv2": {
+                        "speed_kmh": 12.85,
+                        "heart_rate_bpm": 155,
+                        "status": "session_adjusted_estimate",
+                    }
+                }
+            }), encoding="utf-8")
+            (root / "athlete-profile.json").write_text(json.dumps({
+                "physiological": {"threshold_heart_rate_bpm": 153}
+            }), encoding="utf-8")
+
+            profile = PostSyncOrchestrator(root)._current_physiology()
+
+            self.assertEqual(profile["sv2"]["heart_rate_bpm"], 155)
+            self.assertEqual(
+                profile["sv2"]["status"],
+                "session_adjusted_estimate",
+            )
+
     def test_auto_applies_only_bounded_fast_vo2_gain(self):
         previous = {
             "vo2_max": 50,
@@ -69,6 +96,44 @@ class PostSyncOrchestratorTests(unittest.TestCase):
         self.assertEqual(profile["vma_kmh"], 14)
         self.assertEqual(profile["sv1"]["speed_kmh"], 10.5)
         self.assertEqual(profile["sv2"]["speed_kmh"], 12.9)
+
+    def test_auto_applies_bounded_threshold_signal_once(self):
+        previous = {
+            "vo2_max": 51,
+            "vma_kmh": 14.57,
+            "sv1": {"speed_kmh": 10.35, "heart_rate_bpm": 138},
+            "sv2": {"speed_kmh": 12.75, "heart_rate_bpm": 153},
+        }
+        estimate = {
+            "decision": "maintain_reference",
+            "vo2_max": 51,
+            "updated_at": "2026-09-02T12:00:00+00:00",
+            "observed": {},
+            "session_assessment": {
+                "activity_id": "health_connect:threshold-1",
+                "signals": {
+                    "sv2": {
+                        "speed_kmh": 12.9,
+                        "heart_rate_bpm": 159,
+                        "confidence": .85,
+                        "evidence": "Palier soutenu proche du second seuil.",
+                    }
+                },
+            },
+        }
+
+        profile, applied = PostSyncOrchestrator._auto_apply_physiology(
+            previous, estimate
+        )
+        self.assertEqual(applied, ["sv2"])
+        self.assertEqual(profile["sv2"]["speed_kmh"], 12.85)
+        self.assertEqual(profile["sv2"]["heart_rate_bpm"], 155)
+
+        repeated, repeated_applied = PostSyncOrchestrator._auto_apply_physiology(
+            profile, estimate
+        )
+        self.assertEqual(repeated_applied, [])
+        self.assertEqual(repeated["sv2"]["heart_rate_bpm"], 155)
 
     def test_health_connect_activity_creates_detailed_execution(self):
         with tempfile.TemporaryDirectory() as directory:
