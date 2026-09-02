@@ -10,6 +10,85 @@ from src.training.post_sync_orchestrator import PostSyncOrchestrator
 
 
 class PostSyncOrchestratorTests(unittest.TestCase):
+    def test_refresh_records_each_distinct_session_adjustment(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "training-program.json").write_text(
+                json.dumps({"athlete_snapshot": {}}),
+                encoding="utf-8",
+            )
+            (root / "physiology-longitudinal.json").write_text(json.dumps({
+                "current": {
+                    "vo2_max": 51,
+                    "vma_kmh": 14.57,
+                    "sv1": {"speed_kmh": 10.25, "heart_rate_bpm": 136},
+                    "sv2": {"speed_kmh": 12.75, "heart_rate_bpm": 153},
+                },
+                "history": [],
+            }), encoding="utf-8")
+            estimates = [
+                {
+                    "updated": True,
+                    "decision": "maintain_reference",
+                    "updated_at": "2026-09-02T08:00:00+00:00",
+                    "session_assessment": {
+                        "activity_id": "run-1",
+                        "start_time": "2026-09-02T07:00:00+00:00",
+                        "signals": {
+                            "sv1": {
+                                "speed_kmh": 10.35,
+                                "heart_rate_bpm": 138,
+                                "confidence": .85,
+                            }
+                        },
+                    },
+                },
+                {
+                    "updated": True,
+                    "decision": "maintain_reference",
+                    "updated_at": "2026-09-02T19:00:00+00:00",
+                    "session_assessment": {
+                        "activity_id": "run-2",
+                        "start_time": "2026-09-02T18:00:00+00:00",
+                        "signals": {
+                            "sv2": {
+                                "speed_kmh": 12.85,
+                                "heart_rate_bpm": 155,
+                                "confidence": .85,
+                            }
+                        },
+                    },
+                },
+            ]
+
+            with patch(
+                "src.training.post_sync_orchestrator.ContinuousPhysiologyEstimator.estimate",
+                side_effect=estimates,
+            ):
+                orchestrator = PostSyncOrchestrator(root)
+                orchestrator.refresh_physiology(activities=[])
+                orchestrator.refresh_physiology(activities=[])
+
+            payload = json.loads(
+                (root / "physiology-longitudinal.json").read_text(encoding="utf-8")
+            )
+            validated = [
+                item for item in payload["history"]
+                if item.get("schema") == "validated_profile_v1"
+            ]
+            self.assertEqual(len(validated), 2)
+            self.assertEqual(
+                [item["activity_id"] for item in validated],
+                ["run-1", "run-2"],
+            )
+            self.assertEqual(
+                [item["timestamp"] for item in validated],
+                [
+                    "2026-09-02T07:00:00+00:00",
+                    "2026-09-02T18:00:00+00:00",
+                ],
+            )
+
     def test_threshold_reference_replaces_weaker_longitudinal_sv2_hr(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
