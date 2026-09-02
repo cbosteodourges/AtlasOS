@@ -66,7 +66,8 @@
     longitudinal_estimate: "Estimation longitudinale",
     validated: "Référence validée",
     validated_threshold_reference: "Référence de seuil validée",
-    measured: "Mesure validée"
+    measured: "Mesure validée",
+    session_adjusted_estimate: "Ajustement issu de la dernière séance"
   }[status] || "Référence Atlas");
 
   const renderIndexComponents = components => {
