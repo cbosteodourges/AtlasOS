@@ -97,9 +97,11 @@ class ContinuousPhysiologyEstimator:
                 sustained_speeds.append(sustained)
             short_sustained = _best_sustained_speed(samples, 80, 110)
             if sustained is not None and short_sustained is not None:
+                activity_stamp = _timestamp(getattr(activity, "start_time", None))
                 recent_session_signals.append({
                     "three_minutes_kmh": sustained,
                     "ninety_seconds_kmh": short_sustained,
+                    "activity_timestamp": activity_stamp or 0.0,
                 })
 
             average = _number(getattr(activity, "average_speed_mps", None))
@@ -181,11 +183,11 @@ class ContinuousPhysiologyEstimator:
         fast_vo2_signal = False
         strongest_signal: dict[str, float] | None = None
         if old_vma is not None and recent_session_signals:
+            # La réaction immédiate concerne la dernière séance exploitable,
+            # pas le meilleur effort éventuellement ancien de tout l'historique.
             strongest_signal = max(
                 recent_session_signals,
-                key=lambda item: (
-                    item["three_minutes_kmh"] + item["ninety_seconds_kmh"]
-                ),
+                key=lambda item: item["activity_timestamp"],
             )
             fast_vo2_signal = (
                 strongest_signal["three_minutes_kmh"] >= old_vma * .97
@@ -201,7 +203,11 @@ class ContinuousPhysiologyEstimator:
         proposed_vo2 = _bounded(old_vo2, 3.5 * proposed_vma, .7)
         if fast_vo2_signal and old_vo2 is not None:
             session_vo2 = round(strongest_signal["ninety_seconds_kmh"] * 3.5)
-            proposed_vo2 = max(proposed_vo2, min(old_vo2 + 1.0, session_vo2))
+            next_integer = round(old_vo2) + 1
+            proposed_vo2 = max(
+                proposed_vo2,
+                min(float(next_integer), float(session_vo2)),
+            )
         proposed_sv1 = (
             _bounded(old_sv1, observed_sv1, .15)
             if threshold_speeds else (old_sv1 or observed_sv1)
@@ -261,6 +267,7 @@ class ContinuousPhysiologyEstimator:
                     {
                         key: round(value, 2)
                         for key, value in strongest_signal.items()
+                        if key != "activity_timestamp"
                     }
                     if strongest_signal else None
                 ),
