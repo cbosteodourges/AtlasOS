@@ -7,6 +7,7 @@ from unittest.mock import patch
 from tools.atlas_web_server import (
     historical_completed_workouts_for_program,
     load_historical_workouts,
+    load_physiological_reference,
     load_user_objectives,
     load_user_profile,
     save_user_objectives,
@@ -15,6 +16,35 @@ from tools.atlas_web_server import (
 
 
 class AtlasWebServerHistoryTests(unittest.TestCase):
+    def test_longitudinal_profile_overrides_program_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            private = root / "atlas-data" / "private"
+            private.mkdir(parents=True)
+            program_path = private / "training-program.json"
+            program_path.write_text(json.dumps({
+                "athlete_snapshot": {
+                    "vo2_max": 50.3,
+                    "sv2": {"speed_kmh": 12.75, "heart_rate_bpm": 151},
+                }
+            }), encoding="utf-8")
+            (private / "physiology-longitudinal.json").write_text(json.dumps({
+                "current": {
+                    "vo2_max": 51,
+                    "sv2": {"speed_kmh": 12.9, "heart_rate_bpm": 160},
+                }
+            }), encoding="utf-8")
+
+            with (
+                patch("tools.atlas_web_server.ROOT", root),
+                patch("tools.atlas_web_server.PROGRAM_PATH", program_path),
+            ):
+                physiology = load_physiological_reference()
+
+            self.assertEqual(physiology["vo2_max"], 51)
+            self.assertEqual(physiology["sv2_speed_kmh"], 12.9)
+            self.assertEqual(physiology["sv2_heart_rate_bpm"], 160)
+
     def test_profile_is_persisted_outside_browser_storage(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "profile.json"
