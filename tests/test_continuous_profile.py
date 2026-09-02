@@ -73,6 +73,7 @@ class ContinuousProfileTests(unittest.TestCase):
         self.assertEqual(result["vma_kmh"], 14)
         self.assertEqual(result["sv1"]["speed_kmh"], 10.5)
         self.assertEqual(result["sv2"]["speed_kmh"], 12.9)
+
         self.assertLessEqual(result["confidence"], .90)
 
     def test_strong_quality_session_proposes_immediate_vo2_gain_only(self):
@@ -112,6 +113,12 @@ class ContinuousProfileTests(unittest.TestCase):
         self.assertTrue(result["observed"]["fast_vo2_signal"])
         self.assertEqual(result["sv1"]["speed_kmh"], 10.5)
         self.assertEqual(result["sv2"]["speed_kmh"], 12.9)
+
+        confirmed = ContinuousPhysiologyEstimator().estimate(
+            [activity], {**current, "vo2_max": 51}
+        )
+        self.assertEqual(confirmed["vo2_max"], 51)
+        self.assertFalse(confirmed["observed"]["fast_vo2_signal"])
 
 
 if __name__ == "__main__":
