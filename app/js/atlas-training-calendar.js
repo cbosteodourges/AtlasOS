@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 46530)
-Total output lines: 5082
-
 "use strict";
 
 /* GRILLE HEBDOMADAIRE PREMIUM ATLAS COACH */
@@ -59,7 +56,6 @@ Total output lines: 5082
   const DECISIONS_STORAGE_KEY = "atlasCoachWorkoutDecisions";
   const workoutIndex = new Map();
   let activeProgram = null;
-  let synchronizedPhysiology = null;
   let workoutDecisions = loadWorkoutDecisions();
   const executionReportCache = new Map();
   let historicalCompletedWorkouts = [];
@@ -2377,7 +2373,593 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             </p>
           </div>
           <div class="interval-result-grid">
-            <article><span>Temps roulé</span><strong>${reportBlockTi…6530 tokens truncated…>
+            <article><span>Temps roulé</span><strong>${reportBlockTime(duration * 60)}</strong><small>${reportNumber(distance, 2)} km</small></article>
+            <article><span>Vitesse moyenne</span><strong>${reportNumber(speed, 2)} km/h</strong><small>Aucune allure course à pied</small></article>
+            <article><span>Fréquence cardiaque</span><strong>${reportNumber(averageHeartRate, 0)} bpm</strong><small>max. ${reportNumber(maximumHeartRate, 0)} bpm${heartRateSpikeFiltered ? ` · pic capteur ${reportNumber(rawMaximumHeartRate, 0)} neutralisé` : ""}</small></article>
+            <article><span>Dénivelé positif</span><strong>${reportNumber(elevation, 0)} m</strong><small>Contrainte externe</small></article>
+          </div>
+        </section>
+
+        <details class="report-more">
+          <summary>Voir l’analyse physiologique complète</summary>
+          <div class="report-analysis-layout"><main>
+            <section class="narrative-analysis-section">
+              <div class="report-heading"><span class="report-kicker">LECTURE ATLAS</span><h3>Une charge croisée sans impact de course</h3></div>
+              <p>
+                Cette activité est analysée avec ses données propres au cyclisme : durée,
+                distance, vitesse, fréquence cardiaque, puissance et dénivelé lorsqu’ils
+                sont disponibles. Les zones VMA et les allures au kilomètre de course à
+                pied ne sont pas utilisées.
+              </p>
+            </section>
+          </main></div>
+        </details>
+      </section>
+    `;
+  }
+
+  function executionReportHtml(report, workout, userContext = null) {
+    if (!report) {
+      return `
+        <section class="execution-report-empty">
+          <strong>Aucun compte-rendu d’activité associé</strong>
+          <p>
+            Après la synchronisation, Atlas comparera ici la séance réalisée
+            avec la prescription et expliquera son raisonnement.
+          </p>
+        </section>
+      `;
+    }
+
+    const match = report.workout_match || {};
+    const execution = match.execution || {};
+    const activity = report.activity || {};
+    const drift = report.cardiac_drift || {};
+    const analysis = report.analysis || {};
+    const detailedBlocks = Array.isArray(analysis.blocks)
+      ? analysis.blocks
+      : [];
+    const isCycling = String(activity.sport || workout.sport || "") === "cycling" ||
+      String(analysis.session_type || "") === "cycling";
+    if (isCycling) {
+      return cyclingExecutionReportHtml(report, workout);
+    }
+    const dominantType = String(
+      analysis.dominant_work_type || ""
+    );
+    const plannedWorkBlocks = (workout.blocks || []).filter(
+      block => ["work", "interval"].includes(block.block_type)
+    );
+    const plannedMainBlock = plannedWorkBlocks[0];
+    const plannedIntervalDefinitions = plannedWorkBlocks.flatMap(block =>
+      Array.from({ length: Number(block.repetitions) || 1 }, () => ({
+        block,
+        durationSeconds: Number(block.duration_minutes) * 60 ||
+          Number(block.duration_seconds) || 0
+      }))
+    );
+    const plannedRepetitions = plannedIntervalDefinitions.length || Number(
+      execution.planned_repetition_count || 1
+    );
+    const plannedWorkDurationSeconds = Number(
+      plannedMainBlock?.duration_minutes
+    ) * 60 || Number(plannedMainBlock?.duration_seconds) || 0;
+    const expectedReportWorkTypes = {
+      threshold_sv2: new Set(["z3", "sv2"]),
+      vma_short: new Set(["sv2", "vma"]),
+      vma_long: new Set(["sv2", "vma"]),
+      mixed_threshold_vo2: new Set(["z3", "sv2", "vma"]),
+      triangular_vo2: new Set(["z3", "sv2", "vma"]),
+      long_run: new Set(["z3", "sv2"])
+    }[String(workout.workout_type || "")];
+    const matchingWorkBlocks = detailedBlocks.filter(
+      block => expectedReportWorkTypes
+        ? expectedReportWorkTypes.has(block.block_type)
+        : block.block_type === dominantType
+    );
+    const rawWorkBlocks = matchingWorkBlocks.length
+      ? matchingWorkBlocks
+      : detailedBlocks.filter(block => ![
+          "warm_up",
+          "cool_down",
+          "recovery",
+          "z1"
+        ].includes(block.block_type));
+    const workTypes = new Set(rawWorkBlocks.map(block => block.block_type));
+    const detectedIntervalGroups = reportIntervalGroups(
+      detailedBlocks,
+      workTypes
+    );
+    const alignedIntervalDetails = Array.isArray(execution.interval_details)
+      ? execution.interval_details
+      : [];
+    let intervalGroups = alignedIntervalDetails.length
+      ? alignedIntervalDetails.map(item => ({
+          block: item,
+          sources: [],
+          recovery: Number.isFinite(Number(item.recovery_seconds))
+            ? {
+                duration_seconds: Number(item.recovery_seconds),
+                distance_meters: Number(item.recovery_distance_meters),
+                average_speed_kmh: Number(item.recovery_average_speed_kmh),
+                average_heart_rate_bpm: Number(item.recovery_average_heart_rate_bpm),
+                ending_heart_rate_bpm: Number(item.recovery_ending_heart_rate_bpm),
+                heart_rate_drop_bpm: Number(item.recovery_heart_rate_drop_bpm),
+                average_power_watts: Number(item.recovery_average_power_watts),
+                average_cadence_spm: Number(item.recovery_average_cadence_spm)
+              }
+            : null
+        }))
+      : detectedIntervalGroups;
+
+    // Une montée progressive pendant l'endurance peut traverser brièvement
+    // Z3/SV2. Ces passages courts ne sont pas des répétitions structurées.
+    // Quand une durée est prescrite, Atlas conserve en priorité le nombre
+    // prévu de groupes dont la durée est la plus proche de la cible.
+    if (
+      !alignedIntervalDetails.length &&
+      plannedWorkDurationSeconds > 0 &&
+      detectedIntervalGroups.length > plannedRepetitions
+    ) {
+      const minimumCompleteDuration = Math.max(
+        10,
+        plannedWorkDurationSeconds * 0.45
+      );
+      const compatibleGroups = detectedIntervalGroups.filter(
+        group => Number(group.block.duration_seconds) >= minimumCompleteDuration
+      );
+      const candidates = compatibleGroups.length >= plannedRepetitions
+        ? compatibleGroups
+        : detectedIntervalGroups;
+      const selected = new Set(
+        [...candidates]
+          .sort((left, right) => (
+            Math.abs(
+              Number(left.block.duration_seconds) -
+              plannedWorkDurationSeconds
+            ) -
+            Math.abs(
+              Number(right.block.duration_seconds) -
+              plannedWorkDurationSeconds
+            )
+          ))
+          .slice(0, plannedRepetitions)
+      );
+      intervalGroups = detectedIntervalGroups.filter(
+        group => selected.has(group)
+      );
+    }
+
+    const workBlocks = intervalGroups.length
+      ? intervalGroups.map(group => group.block)
+      : rawWorkBlocks;
+    const selectedWorkSources = new Set(
+      intervalGroups.flatMap(group => group.sources || [])
+    );
+    const timelineBlocks = detailedBlocks.map(block => {
+      const duration = Number(block.duration_seconds) || 0;
+      const isRejectedWorkFragment = !alignedIntervalDetails.length &&
+        workTypes.has(block.block_type) &&
+        !selectedWorkSources.has(block);
+      const isShortTransition = (
+        String(workout.workout_type || "") === "threshold_sv2" &&
+        ["acceleration", "vma"].includes(block.block_type) &&
+        duration <= 30
+      );
+      if (isRejectedWorkFragment || isShortTransition) {
+        return { ...block, block_type: "z2" };
+      }
+      return block;
+    });
+    // Les blocs reconstruits et affichés dans le tableau constituent la
+    // référence visuelle. Le compteur de la source peut rester inférieur
+    // quand un tour automatique a fragmenté une étape chronométrée.
+    const validatedRepetitions = workBlocks.length;
+    const optionalFractionCompleted = validatedRepetitions > plannedRepetitions &&
+      (plannedWorkBlocks.some(block => /facultative/i.test(
+        `${block.name || ""} ${block.instructions || ""}`
+      )) || /1\s*à\s*2\s*[×x]/i.test(String(workout.title || "")));
+    const authorizedRepetitions = optionalFractionCompleted
+      ? validatedRepetitions
+      : plannedRepetitions;
+    const incompleteRepetitions = Math.max(
+      authorizedRepetitions - validatedRepetitions,
+      0
+    );
+    const completeBlockSources = new Set(rawWorkBlocks);
+    const plannedWorkZone = atlasDisplayZone(workout, plannedMainBlock);
+    const partialWorkBlocks = incompleteRepetitions > 0 &&
+      plannedWorkDurationSeconds > 0
+      ? detailedBlocks.filter(block => {
+          const duration = Number(block.duration_seconds) || 0;
+          return !completeBlockSources.has(block) &&
+            atlasDisplayZone(workout, block) === plannedWorkZone &&
+            duration > 0 &&
+            duration < plannedWorkDurationSeconds - 5;
+        })
+      : [];
+    const detectedPartialWorkDuration = Number(
+      analysis.partial_work_duration_seconds
+    );
+    const partialWorkDurationSeconds = Number.isFinite(
+      detectedPartialWorkDuration
+    ) && detectedPartialWorkDuration > 0
+      ? detectedPartialWorkDuration
+      : Math.min(partialWorkBlocks.reduce(
+        (total, block) => total + Number(block.duration_seconds || 0),
+        0
+      ), incompleteRepetitions * plannedWorkDurationSeconds);
+    const workDistanceKm = workBlocks.reduce(
+      (total, block) => total + Number(block.distance_meters || 0),
+      0
+    ) / 1000;
+    const workDurationSeconds = workBlocks.reduce(
+      (total, block) => total + Number(block.duration_seconds || 0),
+      0
+    );
+    const totalSpecificDurationSeconds = workDurationSeconds +
+      partialWorkDurationSeconds;
+    let plannedSpecificDurationSeconds = plannedIntervalDefinitions.reduce(
+      (total, item) => total + item.durationSeconds,
+      0
+    ) || plannedWorkDurationSeconds * plannedRepetitions;
+    if (optionalFractionCompleted && plannedIntervalDefinitions.length) {
+      plannedSpecificDurationSeconds +=
+        plannedIntervalDefinitions[plannedIntervalDefinitions.length - 1]
+          .durationSeconds;
+    }
+    const specificCompletionPercent = plannedSpecificDurationSeconds > 0
+      ? Math.round(
+          totalSpecificDurationSeconds /
+          plannedSpecificDurationSeconds * 100
+        )
+      : Number.NaN;
+    const mergedWork = mergeReportBlocks(workBlocks);
+    const averageWorkSpeed = Number(mergedWork.average_speed_kmh);
+    const averageWorkHeartRate = Number(
+      mergedWork.average_heart_rate_bpm
+    );
+    const workMaximumHeartRates = workBlocks.map(
+      block => Number(block.maximum_heart_rate_bpm)
+    ).filter(Number.isFinite);
+    const maximumWorkHeartRate = workMaximumHeartRates.length
+      ? Math.max(...workMaximumHeartRates)
+      : Number.NaN;
+    const averageWorkPower = Number(mergedWork.average_power_watts);
+    const averageWorkCadence = Number(mergedWork.average_cadence_spm);
+    const workSpeeds = workBlocks.map(
+      block => Number(block.average_speed_kmh)
+    ).filter(speed => Number.isFinite(speed) && speed > 0);
+    const speedSpread = workSpeeds.length
+      ? Math.max(...workSpeeds) - Math.min(...workSpeeds)
+      : Number.NaN;
+    const workPaces = workSpeeds.map(speed => 3600 / speed);
+    const paceSpread = workPaces.length
+      ? Math.max(...workPaces) - Math.min(...workPaces)
+      : Number.NaN;
+    const isIntervalSession = plannedRepetitions > 1 &&
+      workBlocks.length > 1;
+    const firstWorkBlock = workBlocks[0] || {};
+    const lastWorkBlock = workBlocks[workBlocks.length - 1] || {};
+    const fastestWorkBlock = workBlocks.reduce(
+      (fastest, block) => (
+        Number(block.average_speed_kmh) >
+        Number(fastest?.average_speed_kmh ?? -Infinity)
+          ? block
+          : fastest
+      ),
+      null
+    );
+    const intervalHeartRateChange =
+      Number(lastWorkBlock.average_heart_rate_bpm) -
+      Number(firstWorkBlock.average_heart_rate_bpm);
+    const intervalSpeedChangePercent =
+      Number(firstWorkBlock.average_speed_kmh) > 0
+        ? (
+            Number(lastWorkBlock.average_speed_kmh) /
+            Number(firstWorkBlock.average_speed_kmh) - 1
+          ) * 100
+        : Number.NaN;
+    const first = drift.first_segment || {};
+    const second = drift.second_segment || {};
+    const plannedDuration = Number(workout.planned_duration_minutes);
+    const actualDuration = Number(activity.duration_minutes);
+    const directPlannedDistance = Number(workout.planned_distance_km);
+    const estimatedPlannedDistance = (workout.blocks || []).reduce(
+      (total, block) => {
+        const repetitions = Number(block.repetitions) || 1;
+
+        if (block.distance_meters != null) {
+          return total +
+            Number(block.distance_meters) * repetitions / 1000;
+        }
+
+        const duration = Number(block.duration_minutes) || 0;
+        const speedMinimum = Number(block.target?.speed_min_kmh);
+        const speedMaximum = Number(block.target?.speed_max_kmh);
+
+        if (
+          duration > 0 &&
+          Number.isFinite(speedMinimum) &&
+          Number.isFinite(speedMaximum)
+        ) {
+          return total +
+            duration *
+            repetitions *
+            ((speedMinimum + speedMaximum) / 2) /
+            60;
+        }
+
+        return total;
+      },
+      0
+    );
+    const plannedDistanceRaw = directPlannedDistance > 0
+      ? directPlannedDistance
+      : estimatedPlannedDistance || Number.NaN;
+    const plannedDistance = Number.isFinite(plannedDistanceRaw)
+      ? Math.round(plannedDistanceRaw * 10) / 10
+      : Number.NaN;
+    const actualDistance = isIntervalSession
+      ? workDistanceKm
+      : Number(activity.distance_km);
+    const actualComparisonSpeed = isIntervalSession
+      ? averageWorkSpeed
+      : Number(activity.average_speed_kmh);
+    const actualComparisonHeartRate = isIntervalSession
+      ? averageWorkHeartRate
+      : Number(activity.average_heart_rate_bpm);
+    const actualComparisonMaximumHeartRate = isIntervalSession
+      ? maximumWorkHeartRate
+      : Number(activity.maximum_heart_rate_bpm);
+    const isHybridThresholdSession =
+      String(workout.workout_type || "") === "long_run" &&
+      isIntervalSession &&
+      /(?:sous|au)\s+SV2/i.test(String(workout.title || ""));
+    const analyzedSessionLabel = isHybridThresholdSession
+      ? "Travail structuré sous SV2"
+      : ({
+          threshold_sv2: "Travail structuré sous SV2",
+          vma_short: "Intervalles VO₂max",
+          vma_long: "Intervalles VO₂max",
+          mixed_threshold_vo2: "Séance mixte seuil et VO₂max",
+          triangular_vo2: "Séance VO₂max triangulaire",
+          long_run: "Sortie longue"
+        }[String(workout.workout_type || "")] || ({
+      vma: "Intervalles VO₂max",
+      sv2: "Travail au seuil",
+      z3: "Tempo",
+      z2: "Endurance fondamentale",
+      z1: "Récupération",
+      sprint: "Sprints",
+      acceleration: "Accélérations"
+    }[dominantType] || sessionTypeLabel(activity.session_type)));
+    const activityProvider = String(
+      report.provider || activity.provider || ""
+    ).toLowerCase();
+    const activitySourceLabel = activityProvider === "health_connect"
+      ? "données Santé Connect issues de Garmin"
+      : activityProvider.includes("fit") || activityProvider === "garmin"
+        ? "fichier FIT Garmin"
+        : "données d’activité";
+    const durationDelta = actualDuration - plannedDuration;
+    const distanceDelta = actualDistance - plannedDistance;
+    const executionScore = Number(execution.execution_score);
+    const targetScore = Number(match.target_compliance_score);
+    const temperature = Number(activity.temperature_c);
+    const elevation = Number(activity.elevation_gain_m);
+    const hillSamples = Number(drift.excluded_hill_sample_count);
+    const learningAllowed =
+      report.automatic_learning_allowed === true;
+    const contextInterpretation = userContext?.atlas_interpretation || null;
+    const contextActionLabels = {
+      maintain: "Maintien proposé",
+      monitor: "Maintien sous surveillance",
+      reduce_next_intensity: "Allègement proposé",
+      recovery_priority: "Récupération prioritaire"
+    };
+
+    const executionConclusion = executionScore >= 80
+      ? "La séance est globalement bien exécutée."
+      : executionScore >= 60
+        ? "La séance est exploitable, avec quelques écarts à surveiller."
+        : "La séance présente des écarts importants par rapport au plan.";
+
+    const targetConclusion = targetScore >= 85
+      ? "Les cibles physiologiques ont été bien respectées."
+      : targetScore >= 65
+        ? "Les cibles ont été partiellement respectées."
+        : "Les cibles prévues ont été peu respectées.";
+    const hasIntervalPower = workBlocks.some(block =>
+      Number.isFinite(Number(block.average_power_watts)) && Number(block.average_power_watts) > 0
+    );
+    const hasIntervalCadence = workBlocks.some(block =>
+      Number.isFinite(Number(block.average_cadence_spm)) && Number(block.average_cadence_spm) > 0
+    );
+    const intervalGrid = [
+      "48px", "90px", "90px", "105px", "115px", "115px",
+      ...(hasIntervalPower ? ["105px"] : []),
+      ...(hasIntervalCadence ? ["95px"] : []),
+      "minmax(210px, 1fr)"
+    ].join(" ");
+    const intervalRows = workBlocks.map((block, index) => {
+      const speed = Number(block.average_speed_kmh);
+      const recovery = intervalGroups[index]?.recovery || null;
+
+      return `
+        <div class="interval-detail-row">
+          <strong>${index + 1}</strong>
+          <span>${reportNumber(Number(block.distance_meters), 0)} m</span>
+          <span>${reportBlockTime(block.duration_seconds)}</span>
+          <span>${reportPace(3600 / speed)}</span>
+          <span>${reportNumber(speed, 2)} km/h</span>
+          <span>
+            ${reportNumber(block.average_heart_rate_bpm, 0)}
+            <small>max. ${reportNumber(block.maximum_heart_rate_bpm, 0)}</small>
+          </span>
+          ${hasIntervalPower ? `<span>${reportMeasuredValue(block.average_power_watts, 0, "W")}</span>` : ""}
+          ${hasIntervalCadence ? `<span>${reportMeasuredValue(block.average_cadence_spm, 0, "ppm")}</span>` : ""}
+          <span class="interval-recovery-detail">
+            ${recovery ? `
+              <b>${reportBlockTime(recovery.duration_seconds)} · ${reportNumber(recovery.distance_meters, 0)} m</b>
+              <small>${reportPace(3600 / Number(recovery.average_speed_kmh))} · ${reportNumber(recovery.average_speed_kmh, 2)} km/h</small>
+              <small>FC moy. ${reportNumber(recovery.average_heart_rate_bpm, 0)} bpm</small>
+              <small>FC fin ${reportNumber(recovery.ending_heart_rate_bpm, 0)} bpm · baisse ${reportNumber(recovery.heart_rate_drop_bpm, 0)} bpm</small>
+            ` : "—"}
+          </span>
+        </div>
+      `;
+    }).join("");
+    const plannedPattern = plannedWorkBlocks.map(block => {
+      const repetitions = Number(block.repetitions) || 1;
+      const seconds = Number(block.duration_minutes) * 60 ||
+        Number(block.duration_seconds) || 0;
+      const optionalSecond = /facultative/i.test(
+        `${block.name || ""} ${block.instructions || ""}`
+      ) && /(?:seconde|1\s*à\s*2)/i.test(
+        `${block.name || ""} ${block.instructions || ""}`
+      );
+      return `${optionalSecond ? "1 à 2" : repetitions} × ${reportBlockTime(seconds)}`;
+    }).join(" + ");
+    const heterogeneousIntervals = new Set(
+      plannedIntervalDefinitions.map(item => item.durationSeconds)
+    ).size > 1;
+    const completedIntervalLabel = heterogeneousIntervals
+      ? `${validatedRepetitions} fractions (${plannedPattern})`
+      : Number(plannedMainBlock?.duration_minutes) > 0
+        ? `${validatedRepetitions} blocs de ${reportNumber(
+            plannedMainBlock.duration_minutes,
+            0
+          )} min`
+        : `${validatedRepetitions} répétitions`;
+    const intervalCompletionSummary = optionalFractionCompleted
+      ? `${validatedRepetitions} fractions réalisées · noyau complet + fraction facultative`
+      : heterogeneousIntervals
+      ? `${validatedRepetitions} fractions réalisées sur ${plannedRepetitions} prévues`
+      : Number(plannedMainBlock?.duration_minutes) > 0
+        ? `${completedIntervalLabel} réalisés sur ${plannedRepetitions} prévus`
+        : `${completedIntervalLabel} réalisées sur ${plannedRepetitions} prévues`;
+    const avatarIsFemale = (
+      localStorage.getItem("atlasPreselectedAvatar") || "male"
+    ) === "female";
+    const reportAvatarSource = avatarIsFemale
+      ? "./assets/atlas-avatar-femme-clean-final.png?v=2"
+      : "./assets/atlas-avatar-homme-clean-final.png?v=2";
+
+    return `
+      <section class="execution-report execution-report-narrative">
+        <header class="report-cockpit-header">
+          <div>
+            <span>ANALYSE ATLAS · DONNÉES RÉELLES</span>
+            <h2>${escapeHtml(execution.workout_name || workout.title)}</h2>
+            <p>
+              ${escapeHtml(analyzedSessionLabel)}
+              · ${activitySourceLabel} reconnues avec une confiance de
+              ${reportScore(match.match_confidence_score)}.
+            </p>
+          </div>
+          <div class="report-main-score">
+            <strong>${reportScore(execution.execution_score)}</strong>
+            <span>Score d’exécution</span>
+          </div>
+          <img
+            class="report-mini-avatar"
+            src="${reportAvatarSource}"
+            alt="Votre jumeau numérique Atlas"
+          >
+        </header>
+
+        <section class="execution-score-explanation">
+          <div>
+            <span class="report-kicker">LECTURE DU SCORE</span>
+            <strong>Ce score mesure le respect de la prescription, pas votre niveau de forme.</strong>
+            <p>Les portions faciles ajoutées avant ou après les fractions sont conservées dans la séance, mais ne diminuent plus le respect de la cible spécifique.</p>
+          </div>
+          <dl>
+            <div><dt>Durée globale</dt><dd>${reportScore(match.duration_compliance_score)}</dd></div>
+            <div><dt>Cible spécifique</dt><dd>${reportScore(match.target_compliance_score)}</dd></div>
+            <div><dt>Récupérations</dt><dd>${Number.isFinite(Number(execution.recovery_compliance_score)) ? reportScore(execution.recovery_compliance_score) : "Non notées"}</dd></div>
+          </dl>
+        </section>
+
+        ${timelineHtml(
+          structuredReportTimelineSegments(
+            workout,
+            timelineBlocks,
+            dominantType,
+            alignedIntervalDetails,
+            actualDuration
+          ),
+          "Organisation de la séance réalisée"
+        )}
+
+        <section class="interval-result-summary">
+          <div class="report-heading">
+            <span class="report-kicker">RÉSULTAT</span>
+            <h3>
+              ${isIntervalSession
+                ? intervalCompletionSummary
+                : executionConclusion}
+            </h3>
+            <p>
+              ${isIntervalSession
+                ? `Bloc principal exécuté avec une conformité de ${reportScore(targetScore)}.`
+                : targetConclusion}
+            </p>
+            ${isIntervalSession && incompleteRepetitions > 0 ? `
+              <p class="report-interval-warning">
+                ${incompleteRepetitions} répétition${incompleteRepetitions > 1 ? "s" : ""}
+                interrompue${incompleteRepetitions > 1 ? "s" : ""} ou incomplète${incompleteRepetitions > 1 ? "s" : ""} :
+                conservée${incompleteRepetitions > 1 ? "s" : ""} dans la chronologie,
+                mais exclue${incompleteRepetitions > 1 ? "s" : ""} des moyennes ci-dessous.
+                ${partialWorkDurationSeconds > 0 ? `Durée retenue pour cette répétition :
+                  ${reportBlockTime(partialWorkDurationSeconds)}.` : ""}
+              </p>
+            ` : ""}
+          </div>
+
+          <div class="interval-result-grid">
+            <article>
+              <span>${dominantType === "sv2" ? "Volume spécifique" : "Travail rapide"}</span>
+              <strong>${reportBlockTime(totalSpecificDurationSeconds)}</strong>
+              <small>
+                ${plannedSpecificDurationSeconds > 0
+                  ? `${reportBlockTime(plannedSpecificDurationSeconds)} prévus · ${reportNumber(specificCompletionPercent, 0)} %`
+                  : `${reportNumber(workDistanceKm, 2)} km`}
+              </small>
+            </article>
+            <article>
+              <span>Allure moyenne</span>
+              <strong>${reportPace(3600 / averageWorkSpeed)}</strong>
+              <small>${reportNumber(averageWorkSpeed, 2)} km/h</small>
+            </article>
+            <article>
+              <span>Régularité</span>
+              <strong>${reportNumber(speedSpread, 2)} km/h</strong>
+              <small>${reportNumber(paceSpread, 0)} s/km d’écart</small>
+            </article>
+            <article>
+              <span>Fréquence cardiaque</span>
+              <strong>${reportNumber(averageWorkHeartRate, 0)} bpm</strong>
+              <small>max. ${reportNumber(maximumWorkHeartRate, 0)} bpm</small>
+            </article>
+          </div>
+        </section>
+
+        ${isIntervalSession ? `
+          <details class="interval-details-section compact-interval-details" open>
+            <summary>
+              <span class="report-kicker">TABLEAU RÉCAPITULATIF</span>
+              <strong>Détail des ${workBlocks.length} fractions et de leurs récupérations</strong>
+            </summary>
+            <div class="interval-detail-table" style="--interval-grid:${intervalGrid}">
+              <div class="interval-detail-row interval-detail-header">
+                <span>N°</span><span>Distance</span><span>Temps</span>
+                <span>Allure</span><span>Vitesse</span><span>FC moy.</span>
+                ${hasIntervalPower ? "<span>Puissance</span>" : ""}
+                ${hasIntervalCadence ? "<span>Cadence</span>" : ""}
+                <span>Récupération</span>
+              </div>
               ${intervalRows}
             </div>
           </details>
@@ -4273,9 +4855,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     });
     historicalCompletedWorkouts = [...historyByActivity.values()];
     renderCoachZones(program);
-    physiologicalRibbon(
-      synchronizedPhysiology || program.athlete_snapshot
-    );
+    physiologicalRibbon(program.athlete_snapshot);
     renderOverview(program);
 
     const access = program.access_control || {};
@@ -4376,7 +4956,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
 
     if (!physiology || typeof physiology !== "object") return;
 
-    synchronizedPhysiology = {
+    physiologicalRibbon({
       ...physiology,
       age_years:
         physiology.age_years ?? payload.age_years ??
@@ -4387,16 +4967,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         physiology.profile_confidence_score ??
         payload.profile_confidence_score ??
         payload.confidence_score ?? 90
-    };
-    physiologicalRibbon(synchronizedPhysiology);
+    });
   });
 
   window.addEventListener("atlas:training-program-loaded", event => {
     const program = event.detail;
     if (program?.athlete_snapshot) {
-      physiologicalRibbon(
-        synchronizedPhysiology || program.athlete_snapshot
-      );
+      physiologicalRibbon(program.athlete_snapshot);
     }
     if (program?.weeks && program?.goal && !activeProgram) {
       render(program).catch(error => {
