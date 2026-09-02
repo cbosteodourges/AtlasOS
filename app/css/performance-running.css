@@ -7813,3 +7813,49 @@ button.history-session-card:focus-visible {
   border: 1px solid #62e6a4 !important;
   background: #62d99b !important;
 }
+
+
+/* ATLAS COACH — CERcles PHYSIOLOGIQUES ALIGNÉS AVEC AUJOURD’HUI */
+@media (min-width: 1451px) {
+  .performance-header #atlasPhysiologyRibbon {
+    grid-template-columns: repeat(5, 142px) !important;
+    justify-content: space-between !important;
+    max-width: 1080px !important;
+    gap: 10px 24px !important;
+  }
+
+  #atlasPhysiologyRibbon > article {
+    width: 142px !important;
+    height: 142px !important;
+    min-width: 142px !important;
+    padding: 18px !important;
+  }
+
+  #atlasPhysiologyRibbon > article > span {
+    font-size: .72rem !important;
+    letter-spacing: .08em !important;
+    line-height: 1.1 !important;
+  }
+
+  #atlasPhysiologyRibbon > article > div {
+    margin-top: 7px !important;
+  }
+
+  #atlasPhysiologyRibbon > article > div strong {
+    font-size: 1.42rem !important;
+  }
+
+  #atlasPhysiologyRibbon > article > div small {
+    font-size: .62rem !important;
+  }
+
+  #atlasPhysiologyRibbon > article > i {
+    display: block !important;
+    max-width: 108px !important;
+    margin-top: 7px !important;
+    overflow: visible !important;
+    font-size: .58rem !important;
+    line-height: 1.2 !important;
+    -webkit-line-clamp: unset !important;
+  }
+}
