@@ -6,6 +6,29 @@ from src.physiology.continuous_profile import ContinuousPhysiologyEstimator
 
 
 class ContinuousProfileTests(unittest.TestCase):
+    def steady_activity(self, speed_kmh, heart_rate, duration_seconds=900):
+        start = datetime.now(timezone.utc)
+        samples = []
+        for offset in range(0, duration_seconds + 1, 10):
+            samples.append(ActivitySample(
+                timestamp=start + timedelta(seconds=offset),
+                speed_mps=speed_kmh / 3.6,
+            ))
+            samples.append(ActivitySample(
+                timestamp=start + timedelta(seconds=offset + 2),
+                heart_rate_bpm=heart_rate + min(2, offset // 300),
+            ))
+        return NormalizedActivity(
+            provider="health_connect",
+            external_id=f"steady-{speed_kmh}",
+            activity_type="run",
+            start_time=start.isoformat(),
+            duration_seconds=duration_seconds,
+            average_speed_mps=speed_kmh / 3.6,
+            average_heart_rate_bpm=heart_rate,
+            samples=samples,
+        )
+
     def activity(self, speed=4.0, heart_rate=158):
         samples = [ActivitySample(timestamp=str(i), speed_mps=speed, heart_rate_bpm=heart_rate)
                    for i in range(240)]
@@ -162,6 +185,37 @@ class ContinuousProfileTests(unittest.TestCase):
             result["observed"]["strongest_session"]["three_minutes_kmh"],
             15,
         )
+
+
+    def test_each_steady_session_can_observe_sv2_heart_rate(self):
+        result = ContinuousPhysiologyEstimator().estimate(
+            [self.steady_activity(12.8, 157)],
+            {
+                "vo2_max": 51,
+                "vma_kmh": 14.57,
+                "maximum_heart_rate_bpm": 170,
+                "sv1": {"speed_kmh": 10.35, "heart_rate_bpm": 138},
+                "sv2": {"speed_kmh": 12.75, "heart_rate_bpm": 153},
+            },
+        )
+        signal = result["session_assessment"]["signals"]["sv2"]
+        self.assertGreaterEqual(signal["confidence"], .72)
+        self.assertGreaterEqual(signal["heart_rate_bpm"], 158)
+
+    def test_endurance_near_sv1_can_observe_sv1_heart_rate(self):
+        result = ContinuousPhysiologyEstimator().estimate(
+            [self.steady_activity(10.3, 137, 1200)],
+            {
+                "vo2_max": 51,
+                "vma_kmh": 14.57,
+                "maximum_heart_rate_bpm": 170,
+                "sv1": {"speed_kmh": 10.35, "heart_rate_bpm": 138},
+                "sv2": {"speed_kmh": 12.75, "heart_rate_bpm": 153},
+            },
+        )
+        signal = result["session_assessment"]["signals"]["sv1"]
+        self.assertGreaterEqual(signal["confidence"], .72)
+        self.assertGreaterEqual(signal["heart_rate_bpm"], 138)
 
 
 if __name__ == "__main__":
