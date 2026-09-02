@@ -925,7 +925,7 @@ def historical_completed_workouts_for_program(
 
 
 def load_physiological_reference():
-    """Relit les références physiologiques conservées dans le programme actif."""
+    """Relit le socle du programme enrichi par le profil longitudinal actif."""
 
     if not PROGRAM_PATH.is_file():
         return {}
@@ -936,6 +936,13 @@ def load_physiological_reference():
         return {}
 
     snapshot = program.get("athlete_snapshot") or {}
+    longitudinal = _read_private_json(
+        ROOT / "atlas-data" / "private" / "physiology-longitudinal.json",
+        {},
+    )
+    current = longitudinal.get("current") or {}
+    if isinstance(current, dict):
+        snapshot = {**snapshot, **current}
     sv1 = snapshot.get("sv1") or {}
     sv2 = snapshot.get("sv2") or {}
     return {
