@@ -60,6 +60,15 @@
     return "Élevée";
   };
 
+  const physiologyStatusLabel = status => ({
+    estimated: "Estimation Atlas",
+    longitudinal: "Estimation longitudinale",
+    longitudinal_estimate: "Estimation longitudinale",
+    validated: "Référence validée",
+    validated_threshold_reference: "Référence de seuil validée",
+    measured: "Mesure validée"
+  }[status] || "Référence Atlas");
+
   const renderIndexComponents = components => {
     const container = document.querySelector("[data-index-components]");
     if (!container) return;
@@ -132,9 +141,9 @@
       setText("[data-physiology-vo2]", physiology.vo2_max != null ? `${decimal(physiology.vo2_max)} ml/kg/min` : "—");
       setText("[data-physiology-vma]", physiology.vma_kmh != null ? `${decimal(physiology.vma_kmh)} km/h` : "—");
       setText("[data-physiology-sv1]", physiology.sv1?.speed_kmh != null ? `${decimal(physiology.sv1.speed_kmh)} km/h` : "—");
-      setText("[data-physiology-sv1-hr]", physiology.sv1?.heart_rate_bpm != null ? `${physiology.sv1.heart_rate_bpm} bpm · estimation longitudinale` : "FC à confirmer");
+      setText("[data-physiology-sv1-hr]", physiology.sv1?.heart_rate_bpm != null ? `${physiology.sv1.heart_rate_bpm} bpm · ${physiologyStatusLabel(physiology.sv1.status)}` : "FC à confirmer");
       setText("[data-physiology-sv2]", physiology.sv2?.speed_kmh != null ? `${decimal(physiology.sv2.speed_kmh)} km/h` : "—");
-      setText("[data-physiology-sv2-hr]", physiology.sv2?.heart_rate_bpm != null ? `${physiology.sv2.heart_rate_bpm} bpm · estimation longitudinale` : "FC à confirmer");
+      setText("[data-physiology-sv2-hr]", physiology.sv2?.heart_rate_bpm != null ? `${physiology.sv2.heart_rate_bpm} bpm · ${physiologyStatusLabel(physiology.sv2.status)}` : "FC à confirmer");
       setText("[data-physiology-hrmax]", physiology.maximum_heart_rate_bpm != null ? `${physiology.maximum_heart_rate_bpm} bpm` : "—");
     }
   };
@@ -303,7 +312,7 @@
       setText(
         "[data-physiology-sv1-hr]",
         physiology.sv1_heart_rate_bpm != null
-          ? `${Math.round(physiology.sv1_heart_rate_bpm)} bpm · ${physiology.sv1_status || "référence"}`
+          ? `${Math.round(physiology.sv1_heart_rate_bpm)} bpm · ${physiologyStatusLabel(physiology.sv1_status)}`
           : "FC à confirmer"
       );
       setText(
@@ -315,7 +324,7 @@
       setText(
         "[data-physiology-sv2-hr]",
         physiology.sv2_heart_rate_bpm != null
-          ? `${Math.round(physiology.sv2_heart_rate_bpm)} bpm · ${physiology.sv2_status || "référence"}`
+          ? `${Math.round(physiology.sv2_heart_rate_bpm)} bpm · ${physiologyStatusLabel(physiology.sv2_status)}`
           : "FC à confirmer"
       );
       setText(
