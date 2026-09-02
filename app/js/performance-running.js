@@ -1046,6 +1046,7 @@
     const saved = restoreAtlasRunningProfile();
     const preserveMeasured = saved?.thresholdSource === "measured";
     const sources = [
+      "/api/atlas/sync-insights",
       window.ATLAS_ATHLETE_PROFILE_URL,
       "../atlas-data/private/athlete-profile.json",
       "/atlas-data/private/athlete-profile.json"
@@ -1057,7 +1058,8 @@
         if (!response.ok) continue;
 
         const payload = await response.json();
-        const physiology = payload?.physiological || payload;
+        const physiology =
+          payload?.physiology?.current || payload?.physiological || payload;
 
         if (!physiology) continue;
 
@@ -1112,7 +1114,7 @@
 
         window.dispatchEvent(new CustomEvent(
           "atlas:athlete-profile-loaded",
-          { detail: payload }
+          { detail: { ...payload, physiological: physiology } }
         ));
         return;
       } catch (error) {
