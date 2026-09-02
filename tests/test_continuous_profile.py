@@ -75,6 +75,44 @@ class ContinuousProfileTests(unittest.TestCase):
         self.assertEqual(result["sv2"]["speed_kmh"], 12.9)
         self.assertLessEqual(result["confidence"], .90)
 
+    def test_strong_quality_session_proposes_immediate_vo2_gain_only(self):
+        start = datetime.now(timezone.utc)
+        samples = []
+        for offset in range(0, 181, 10):
+            samples.append(ActivitySample(
+                timestamp=start + timedelta(seconds=offset),
+                speed_mps=13.7 / 3.6,
+                heart_rate_bpm=150,
+            ))
+        for offset in range(190, 281, 10):
+            samples.append(ActivitySample(
+                timestamp=start + timedelta(seconds=offset),
+                speed_mps=14.6 / 3.6,
+                heart_rate_bpm=158,
+            ))
+        activity = NormalizedActivity(
+            provider="health_connect",
+            external_id="quality-session",
+            activity_type="run",
+            start_time=start.isoformat(),
+            duration_seconds=1800,
+            average_speed_mps=11 / 3.6,
+            average_heart_rate_bpm=140,
+            samples=samples,
+        )
+        current = {
+            "vo2_max": 50,
+            "vma_kmh": 14,
+            "sv1": {"speed_kmh": 10.5, "heart_rate_bpm": 138},
+            "sv2": {"speed_kmh": 12.9, "heart_rate_bpm": 160},
+        }
+        result = ContinuousPhysiologyEstimator().estimate([activity], current)
+        self.assertEqual(result["vo2_max"], 51)
+        self.assertEqual(result["decision"], "increase_candidate")
+        self.assertTrue(result["observed"]["fast_vo2_signal"])
+        self.assertEqual(result["sv1"]["speed_kmh"], 10.5)
+        self.assertEqual(result["sv2"]["speed_kmh"], 12.9)
+
 
 if __name__ == "__main__":
     unittest.main()
