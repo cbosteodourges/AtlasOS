@@ -56,6 +56,7 @@
   const DECISIONS_STORAGE_KEY = "atlasCoachWorkoutDecisions";
   const workoutIndex = new Map();
   let activeProgram = null;
+  let synchronizedPhysiology = null;
   let workoutDecisions = loadWorkoutDecisions();
   const executionReportCache = new Map();
   let historicalCompletedWorkouts = [];
@@ -899,9 +900,13 @@
 
     const statusLabel = status => ({
       estimated: "Estimation Atlas",
-      longitudinal: "Longitudinal",
+      longitudinal: "Estimation longitudinale",
+      longitudinal_estimate: "Estimation longitudinale",
+      validated: "Référence validée",
+      validated_threshold_reference: "Référence de seuil validée",
+      measured: "Mesure validée",
       missing: "\u00c0 confirmer"
-    }[status] || status || "");
+    }[status] || "Référence Atlas");
 
     const metric = ({
       label,
@@ -4850,7 +4855,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     });
     historicalCompletedWorkouts = [...historyByActivity.values()];
     renderCoachZones(program);
-    physiologicalRibbon(program.athlete_snapshot);
+    physiologicalRibbon(
+      synchronizedPhysiology || program.athlete_snapshot
+    );
     renderOverview(program);
 
     const access = program.access_control || {};
@@ -4951,7 +4958,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
 
     if (!physiology || typeof physiology !== "object") return;
 
-    physiologicalRibbon({
+    synchronizedPhysiology = {
       ...physiology,
       age_years:
         physiology.age_years ?? payload.age_years ??
@@ -4962,13 +4969,16 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         physiology.profile_confidence_score ??
         payload.profile_confidence_score ??
         payload.confidence_score ?? 90
-    });
+    };
+    physiologicalRibbon(synchronizedPhysiology);
   });
 
   window.addEventListener("atlas:training-program-loaded", event => {
     const program = event.detail;
     if (program?.athlete_snapshot) {
-      physiologicalRibbon(program.athlete_snapshot);
+      physiologicalRibbon(
+        synchronizedPhysiology || program.athlete_snapshot
+      );
     }
     if (program?.weeks && program?.goal && !activeProgram) {
       render(program).catch(error => {
