@@ -190,12 +190,18 @@ class ContinuousPhysiologyEstimator:
             fast_vo2_signal = (
                 strongest_signal["three_minutes_kmh"] >= old_vma * .97
                 and strongest_signal["ninety_seconds_kmh"] >= old_vma * 1.03
+                and (
+                    old_vo2 is None
+                    or strongest_signal["ninety_seconds_kmh"] * 3.5
+                    >= old_vo2 + .5
+                )
             )
 
         proposed_vma = _bounded(old_vma, observed_vma, .2)
         proposed_vo2 = _bounded(old_vo2, 3.5 * proposed_vma, .7)
         if fast_vo2_signal and old_vo2 is not None:
-            proposed_vo2 = max(proposed_vo2, old_vo2 + 1.0)
+            session_vo2 = round(strongest_signal["ninety_seconds_kmh"] * 3.5)
+            proposed_vo2 = max(proposed_vo2, min(old_vo2 + 1.0, session_vo2))
         proposed_sv1 = (
             _bounded(old_sv1, observed_sv1, .15)
             if threshold_speeds else (old_sv1 or observed_sv1)
