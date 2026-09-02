@@ -43,52 +43,10 @@ class PostSyncOrchestrator:
         )
         self._write("atlas-recovery-index.json", recovery)
 
-        previous = self._current_physiology()
-        estimate = ContinuousPhysiologyEstimator().estimate(activities, previous)
-        proposed_profile = {
-            **previous,
-            **(
-                {key: value for key, value in estimate.items() if key in PHYSIOLOGY_KEYS}
-                if estimate.get("updated")
-                else {}
-            ),
-        }
-        profile, auto_applied = self._auto_apply_physiology(
-            previous,
-            estimate,
+        estimate, proposed_profile, auto_applied = self.refresh_physiology(
+            activities,
+            source,
         )
-        longitudinal = self._read("physiology-longitudinal.json", {"current": previous, "history": []})
-        history = [
-            item for item in longitudinal.get("history", [])
-            if item.get("schema") == "validated_profile_v1"
-        ]
-        history.extend(self._retrospective_physiology(activities, profile))
-        today = date.today().isoformat()
-        sv1 = profile.get("sv1") or {}
-        sv2 = profile.get("sv2") or {}
-        snapshot = {
-            "day": today,
-            "source": source,
-            "schema": "validated_profile_v1",
-            "vo2_max": profile.get("vo2_max"),
-            "vma_kmh": (
-                profile.get("vma_estimated_from_vo2_kmh")
-                or profile.get("vma_kmh")
-                or profile.get("vma_training_reference_kmh")
-            ),
-            "sv1_speed_kmh": sv1.get("speed_kmh"),
-            "sv2_speed_kmh": sv2.get("speed_kmh"),
-            "maximum_heart_rate_bpm": profile.get("maximum_heart_rate_bpm"),
-            "estimator_updated": bool(estimate.get("updated")),
-            "estimator_confidence": estimate.get("confidence"),
-            "auto_applied": auto_applied,
-        }
-        history = [item for item in history if str(item.get("day") or "")[:10] != today]
-        history.append(snapshot)
-        history.sort(key=lambda item: str(item.get("day") or ""))
-        longitudinal = {"current": profile, "latest_estimate": estimate, "history": history[-5000:],
-                        "updated_at": datetime.now(timezone.utc).isoformat()}
-        self._write("physiology-longitudinal.json", longitudinal)
 
         latest = recovery.get("latest") or {}
         weights = sorted((item for item in wellness if item.get("type") == "weight"),
@@ -120,6 +78,69 @@ class PostSyncOrchestrator:
         if proposal is not None:
             self._write("training-program-sync-proposal.json", proposal)
         return assessment
+
+    def refresh_physiology(
+        self,
+        activities: list[Any] | None = None,
+        source: str = "manual_physiology_refresh",
+    ) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
+        """Recalcule uniquement le profil, sans relancer toute la synchronisation."""
+
+        activities = activities if activities is not None else ActivityStore(
+            self.private_dir / "activities-unified.json"
+        ).load()
+        previous = self._current_physiology()
+        estimate = ContinuousPhysiologyEstimator().estimate(activities, previous)
+        proposed_profile = {
+            **previous,
+            **(
+                {key: value for key, value in estimate.items() if key in PHYSIOLOGY_KEYS}
+                if estimate.get("updated") else {}
+            ),
+        }
+        profile, auto_applied = self._auto_apply_physiology(previous, estimate)
+        longitudinal = self._read(
+            "physiology-longitudinal.json",
+            {"current": previous, "history": []},
+        )
+        history = [
+            item for item in longitudinal.get("history", [])
+            if item.get("schema") == "validated_profile_v1"
+        ]
+        history.extend(self._retrospective_physiology(activities, profile))
+        today = date.today().isoformat()
+        sv1 = profile.get("sv1") or {}
+        sv2 = profile.get("sv2") or {}
+        snapshot = {
+            "day": today,
+            "source": source,
+            "schema": "validated_profile_v1",
+            "vo2_max": profile.get("vo2_max"),
+            "vma_kmh": (
+                profile.get("vma_estimated_from_vo2_kmh")
+                or profile.get("vma_kmh")
+                or profile.get("vma_training_reference_kmh")
+            ),
+            "sv1_speed_kmh": sv1.get("speed_kmh"),
+            "sv2_speed_kmh": sv2.get("speed_kmh"),
+            "maximum_heart_rate_bpm": profile.get("maximum_heart_rate_bpm"),
+            "estimator_updated": bool(estimate.get("updated")),
+            "estimator_confidence": estimate.get("confidence"),
+            "auto_applied": auto_applied,
+        }
+        history = [
+            item for item in history
+            if str(item.get("day") or "")[:10] != today
+        ]
+        history.append(snapshot)
+        history.sort(key=lambda item: str(item.get("day") or ""))
+        self._write("physiology-longitudinal.json", {
+            "current": profile,
+            "latest_estimate": estimate,
+            "history": history[-5000:],
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        })
+        return estimate, proposed_profile, auto_applied
 
     def _refresh_activity_executions(self, activities: list[Any]) -> int:
         """Analyse les activités Health Connect sans exiger de fichier FIT."""
