@@ -108,11 +108,20 @@ class PostSyncOrchestrator:
             if item.get("schema") == "validated_profile_v1"
         ]
         history.extend(self._retrospective_physiology(activities, profile))
-        today = date.today().isoformat()
+        now = datetime.now(timezone.utc)
+        assessment = estimate.get("session_assessment") or {}
+        occurred_at = (
+            assessment.get("start_time")
+            or estimate.get("updated_at")
+            or now.isoformat()
+        )
+        today = str(occurred_at)[:10] or date.today().isoformat()
         sv1 = profile.get("sv1") or {}
         sv2 = profile.get("sv2") or {}
         snapshot = {
             "day": today,
+            "timestamp": occurred_at,
+            "activity_id": assessment.get("activity_id"),
             "source": source,
             "schema": "validated_profile_v1",
             "vo2_max": profile.get("vo2_max"),
@@ -130,12 +139,39 @@ class PostSyncOrchestrator:
             "estimator_confidence": estimate.get("confidence"),
             "auto_applied": auto_applied,
         }
-        history = [
-            item for item in history
-            if str(item.get("day") or "")[:10] != today
-        ]
-        history.append(snapshot)
-        history.sort(key=lambda item: str(item.get("day") or ""))
+        # La courbe mémorise chaque décision physiologique effective, y
+        # compris plusieurs ajustements le même jour. Un recalcul sans
+        # modification ne crée aucun faux point.
+        if auto_applied or not history:
+            snapshot_key = (
+                snapshot.get("activity_id"),
+                tuple(snapshot.get("auto_applied") or []),
+                snapshot.get("vo2_max"),
+                snapshot.get("vma_kmh"),
+                snapshot.get("sv1_speed_kmh"),
+                snapshot.get("sv1_heart_rate_bpm"),
+                snapshot.get("sv2_speed_kmh"),
+                snapshot.get("sv2_heart_rate_bpm"),
+            )
+            existing_keys = {
+                (
+                    item.get("activity_id"),
+                    tuple(item.get("auto_applied") or []),
+                    item.get("vo2_max"),
+                    item.get("vma_kmh"),
+                    item.get("sv1_speed_kmh"),
+                    item.get("sv1_heart_rate_bpm"),
+                    item.get("sv2_speed_kmh"),
+                    item.get("sv2_heart_rate_bpm"),
+                )
+                for item in history
+                if item.get("schema") == "validated_profile_v1"
+            }
+            if snapshot_key not in existing_keys:
+                history.append(snapshot)
+        history.sort(
+            key=lambda item: str(item.get("timestamp") or item.get("day") or "")
+        )
         self._write("physiology-longitudinal.json", {
             "current": profile,
             "latest_estimate": estimate,
