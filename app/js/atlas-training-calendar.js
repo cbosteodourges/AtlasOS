@@ -917,26 +917,21 @@
         flex-direction:column;
         align-items:center;
         justify-content:center;
-        width:126px;
-        height:126px;
-        min-width:126px;
+        width:142px;
+        height:142px;
+        min-width:142px;
         margin:auto;
-        padding:13px;
+        padding:18px;
         text-align:center;
-        border:2px solid transparent;
+        border:1px solid ${accent};
         border-radius:50%;
         background:
-          linear-gradient(#07182a,#07182a) padding-box,
-          conic-gradient(
-            from 215deg,
-            transparent 0deg,
-            ${accent} 48deg,
-            ${accent} 270deg,
-            transparent 330deg
-          ) border-box;
+          radial-gradient(circle at 50% 70%, ${glow}, transparent 63%),
+          #071728;
         box-shadow:
           0 0 22px ${glow},
-          inset 0 0 25px rgba(255,255,255,.025);
+          inset 0 0 0 7px #071728,
+          inset 0 0 0 8px ${accent}55;
       ">
         <span style="
           display:block;
@@ -1125,12 +1120,12 @@
       })}
 
       ${metric({
-        label: "Confiance profil",
-        value: snapshot.profile_confidence_score,
-        unit: "/100",
-        note: "Donn\u00e9es longitudinales Atlas",
-        accent: "#e1b14e",
-        glow: "rgba(225,177,78,.10)"
+        label: "FC maximale",
+        value: snapshot.maximum_heart_rate_bpm,
+        unit: "bpm",
+        note: "R\u00e9f\u00e9rence personnelle",
+        accent: "#f4c84a",
+        glow: "rgba(244,200,74,.13)"
       })}
         ${zoneRibbon}
     `;
