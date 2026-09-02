@@ -10,6 +10,33 @@ from src.training.post_sync_orchestrator import PostSyncOrchestrator
 
 
 class PostSyncOrchestratorTests(unittest.TestCase):
+    def test_auto_applies_only_bounded_fast_vo2_gain(self):
+        previous = {
+            "vo2_max": 50,
+            "vma_kmh": 14,
+            "sv1": {"speed_kmh": 10.5},
+            "sv2": {"speed_kmh": 12.9},
+        }
+        estimate = {
+            "decision": "increase_candidate",
+            "vo2_max": 51,
+            "vma_kmh": 14.2,
+            "sv1": {"speed_kmh": 10.7},
+            "sv2": {"speed_kmh": 13.1},
+            "updated_at": "2026-09-02T08:00:00+00:00",
+            "observed": {"fast_vo2_signal": True},
+        }
+
+        profile, applied = PostSyncOrchestrator._auto_apply_physiology(
+            previous, estimate
+        )
+
+        self.assertEqual(applied, ["vo2_max"])
+        self.assertEqual(profile["vo2_max"], 51)
+        self.assertEqual(profile["vma_kmh"], 14)
+        self.assertEqual(profile["sv1"]["speed_kmh"], 10.5)
+        self.assertEqual(profile["sv2"]["speed_kmh"], 12.9)
+
     def test_health_connect_activity_creates_detailed_execution(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
