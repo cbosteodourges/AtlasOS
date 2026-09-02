@@ -989,7 +989,7 @@ def load_physiological_reference():
 
 
 def load_physiology_history():
-    """Normalise la mémoire physiologique quotidienne pour les courbes du profil."""
+    """Normalise les mesures physiologiques datées pour les courbes du profil."""
 
     path = ROOT / "atlas-data" / "private" / "physiology-longitudinal.json"
     try:
@@ -1005,7 +1005,7 @@ def load_physiology_history():
         "sv2_speed_kmh": (6, 28),
         "maximum_heart_rate_bpm": (100, 230),
     }
-    by_day = {}
+    points = []
     for raw in payload.get("history", []):
         # Les anciennes lignes contenaient des sorties intermédiaires de
         # l'estimateur. Elles ne constituent pas des mesures longitudinales.
@@ -1015,22 +1015,27 @@ def load_physiology_history():
         day = str(raw.get("day") or "")[:10]
         if not day:
             continue
+        timestamp = str(raw.get("timestamp") or day)
         current = {}
         for key, (minimum, maximum) in ranges.items():
             value = _wellness_number(raw.get(key))
             current[key] = value if value is not None and minimum <= value <= maximum else None
         if not any(value is not None for value in current.values()):
             continue
-        by_day[day] = {
+        points.append({
             "day": day,
+            "timestamp": timestamp,
+            "activity_id": raw.get("activity_id"),
             "source": raw.get("source"),
             "kind": "validated" if schema == "validated_profile_v1" else "atlas_estimate",
             "method": raw.get("method"),
             "confidence": _wellness_number(raw.get("estimator_confidence")),
             "evidence_sessions": raw.get("evidence_sessions"),
+            "adjusted_metrics": raw.get("auto_applied") or [],
             **current,
-        }
-    return [by_day[day] for day in sorted(by_day)]
+        })
+    points.sort(key=lambda item: item["timestamp"])
+    return points
 
 
 def load_workout_contexts():
