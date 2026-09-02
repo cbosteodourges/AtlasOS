@@ -456,9 +456,30 @@ class PostSyncOrchestrator:
         program = self._read("training-program.json", {})
         snapshot = program.get("athlete_snapshot") if isinstance(program, dict) else None
         snapshot = snapshot if isinstance(snapshot, dict) else {}
+        athlete = self._read("athlete-profile.json", {})
+        athlete_physiology = (
+            athlete.get("physiological")
+            if isinstance(athlete, dict) else None
+        )
+        athlete_physiology = (
+            athlete_physiology
+            if isinstance(athlete_physiology, dict) else {}
+        )
         # Le programme fournit le socle initial ; la mémoire longitudinale porte
         # ensuite les validations et les mises à jour physiologiques plus récentes.
-        return {**snapshot, **saved}
+        profile = {**snapshot, **saved}
+        threshold_hr = (
+            athlete_physiology.get("threshold_heart_rate_bpm")
+            or snapshot.get("threshold_heart_rate_bpm")
+        )
+        sv2 = profile.get("sv2") or {}
+        if threshold_hr is not None and sv2.get("status") != "measured":
+            profile["sv2"] = {
+                **sv2,
+                "heart_rate_bpm": threshold_hr,
+                "status": "validated_threshold_reference",
+            }
+        return profile
 
     @staticmethod
     def _auto_apply_physiology(
