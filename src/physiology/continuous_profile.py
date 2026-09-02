@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from bisect import bisect_left
 from statistics import median
 from typing import Any, Iterable
 
@@ -67,6 +68,102 @@ def _best_sustained_speed(
                 candidates.append(median(window))
                 break
     return max(candidates) if candidates else None
+
+
+def _aligned_speed_heart_rate_points(
+    samples: Iterable[Any],
+    heart_rate_ceiling: float,
+) -> list[tuple[float, float, float]]:
+    """Aligne les flux vitesse et FC séparés de Health Connect."""
+
+    speeds = sorted(
+        (stamp, speed * 3.6)
+        for sample in samples
+        if (stamp := _timestamp(getattr(sample, "timestamp", None))) is not None
+        and (speed := _number(getattr(sample, "speed_mps", None))) is not None
+        and 4 <= speed * 3.6 <= 30
+    )
+    heart_rates = sorted(
+        (stamp, heart_rate)
+        for sample in samples
+        if (stamp := _timestamp(getattr(sample, "timestamp", None))) is not None
+        and (heart_rate := _number(
+            getattr(sample, "heart_rate_bpm", None)
+        )) is not None
+        and 60 <= heart_rate <= heart_rate_ceiling
+    )
+    if not speeds or not heart_rates:
+        return []
+
+    heart_rate_stamps = [item[0] for item in heart_rates]
+    aligned = []
+    for stamp, speed in speeds:
+        index = bisect_left(heart_rate_stamps, stamp)
+        candidates = heart_rates[max(0, index - 1):index + 1]
+        if not candidates:
+            continue
+        hr_stamp, heart_rate = min(
+            candidates,
+            key=lambda item: abs(item[0] - stamp),
+        )
+        if abs(hr_stamp - stamp) <= 15:
+            aligned.append((stamp, speed, heart_rate))
+    return aligned
+
+
+def _zone_observation(
+    samples: Iterable[Any],
+    speed_min_kmh: float,
+    speed_max_kmh: float,
+    minimum_seconds: float,
+    maximum_seconds: float,
+    heart_rate_ceiling: float,
+) -> dict[str, float] | None:
+    """Cherche une fenêtre stable exploitable pour un seuil donné."""
+
+    points = _aligned_speed_heart_rate_points(samples, heart_rate_ceiling)
+    if len(points) < 8:
+        return None
+
+    best = None
+    for start_index, (start, _, _) in enumerate(points):
+        window = []
+        previous_stamp = start
+        for stamp, speed, heart_rate in points[start_index:]:
+            elapsed = stamp - start
+            if stamp - previous_stamp > 30 or elapsed > maximum_seconds:
+                break
+            window.append((stamp, speed, heart_rate))
+            previous_stamp = stamp
+            if elapsed < minimum_seconds or len(window) < 8:
+                continue
+            in_zone = [
+                item for item in window
+                if speed_min_kmh <= item[1] <= speed_max_kmh
+            ]
+            ratio = len(in_zone) / len(window)
+            if ratio < .72:
+                continue
+            latter_half = in_zone[len(in_zone) // 2:] or in_zone
+            observation = {
+                "speed_kmh": median(item[1] for item in in_zone),
+                "heart_rate_bpm": median(item[2] for item in latter_half),
+                "duration_seconds": elapsed,
+                "in_zone_ratio": ratio,
+                "confidence": min(
+                    .92,
+                    .55 + .20 * ratio + .17 * min(
+                        1, elapsed / maximum_seconds
+                    ),
+                ),
+            }
+            score = (
+                observation["confidence"]
+                + elapsed / maximum_seconds * .1
+            )
+            if best is None or score > best[0]:
+                best = (score, observation)
+    return best[1] if best else None
 
 
 class ContinuousPhysiologyEstimator:
@@ -199,6 +296,89 @@ class ContinuousPhysiologyEstimator:
                 )
             )
 
+
+        # Chaque nouvelle course produit son propre avis physiologique. Les
+        # fenêtres diffèrent selon le paramètre : effort bref près de la VMA,
+        # palier soutenu près du SV2, ou endurance stable proche du SV1.
+        latest_run = max(
+            runs,
+            key=lambda item: (
+                _timestamp(getattr(item, "start_time", None)) or 0
+            ),
+        )
+        latest_run_stamp = (
+            _timestamp(getattr(latest_run, "start_time", None)) or 0
+        )
+        if (
+            strongest_signal
+            and abs(
+                strongest_signal["activity_timestamp"] - latest_run_stamp
+            ) > 1
+        ):
+            fast_vo2_signal = False
+        latest_samples = getattr(latest_run, "samples", []) or []
+        reference_vma = old_vma or observed_vma
+        reference_sv1 = old_sv1 or reference_vma * .74
+        reference_sv2 = old_sv2 or reference_vma * .88
+        sv1_observation = _zone_observation(
+            latest_samples,
+            reference_vma * .64,
+            reference_vma * .83,
+            8 * 60,
+            30 * 60,
+            usable_hr_ceiling,
+        )
+        if (
+            sv1_observation
+            and sv1_observation["speed_kmh"] < reference_sv1 * .92
+        ):
+            sv1_observation = None
+        sv2_observation = _zone_observation(
+            latest_samples,
+            reference_vma * .82,
+            reference_vma * .96,
+            4 * 60,
+            15 * 60,
+            usable_hr_ceiling,
+        )
+        if (
+            sv2_observation
+            and sv2_observation["speed_kmh"] < reference_sv2 * .93
+        ):
+            sv2_observation = None
+
+        session_assessment: dict[str, Any] = {
+            "activity_id": getattr(latest_run, "atlas_id", None),
+            "start_time": getattr(latest_run, "start_time", None),
+            "evaluated": True,
+            "signals": {},
+        }
+        if fast_vo2_signal and strongest_signal:
+            session_assessment["signals"]["vo2_max"] = {
+                "candidate": round(
+                    strongest_signal["ninety_seconds_kmh"] * 3.5, 1
+                ),
+                "confidence": .90,
+                "evidence": "Fraction rapide soutenue de 90 s à 3 min.",
+            }
+            session_assessment["signals"]["vma_kmh"] = {
+                "candidate": round(
+                    strongest_signal["three_minutes_kmh"], 2
+                ),
+                "confidence": .86,
+                "evidence": "Vitesse soutenue pendant environ 3 minutes.",
+            }
+        if sv1_observation:
+            session_assessment["signals"]["sv1"] = {
+                **sv1_observation,
+                "evidence": "Endurance stable proche du premier seuil.",
+            }
+        if sv2_observation:
+            session_assessment["signals"]["sv2"] = {
+                **sv2_observation,
+                "evidence": "Palier soutenu proche du second seuil.",
+            }
+
         proposed_vma = _bounded(old_vma, observed_vma, .2)
         proposed_vo2 = _bounded(old_vo2, 3.5 * proposed_vma, .7)
         if fast_vo2_signal and old_vo2 is not None:
@@ -272,6 +452,7 @@ class ContinuousPhysiologyEstimator:
                     if strongest_signal else None
                 ),
             },
+            "session_assessment": session_assessment,
             "maximum_heart_rate_bpm": maximum_hr,
             "warning": (
                 "Estimation d’entraînement, non mesure médicale. "
