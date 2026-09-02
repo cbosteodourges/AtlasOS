@@ -53,9 +53,10 @@ class PostSyncOrchestrator:
                 else {}
             ),
         }
-        # Le profil affiché et historisé reste la référence active. Une estimation
-        # n'entre dans le profil qu'après validation explicite de la proposition.
-        profile = previous
+        profile, auto_applied = self._auto_apply_physiology(
+            previous,
+            estimate,
+        )
         longitudinal = self._read("physiology-longitudinal.json", {"current": previous, "history": []})
         history = [
             item for item in longitudinal.get("history", [])
@@ -80,6 +81,7 @@ class PostSyncOrchestrator:
             "maximum_heart_rate_bpm": profile.get("maximum_heart_rate_bpm"),
             "estimator_updated": bool(estimate.get("updated")),
             "estimator_confidence": estimate.get("confidence"),
+            "auto_applied": auto_applied,
         }
         history = [item for item in history if str(item.get("day") or "")[:10] != today]
         history.append(snapshot)
@@ -112,6 +114,7 @@ class PostSyncOrchestrator:
             "program_proposal_available": proposal is not None,
             "health_connect_activities_analyzed": analyzed_activities,
             "requires_user_validation": True,
+            "physiology_auto_applied": auto_applied,
         }
         self._write("daily-sync-assessment.json", assessment)
         if proposal is not None:
@@ -427,9 +430,40 @@ class PostSyncOrchestrator:
         program = self._read("training-program.json", {})
         snapshot = program.get("athlete_snapshot") if isinstance(program, dict) else None
         snapshot = snapshot if isinstance(snapshot, dict) else {}
-        # La référence active affichée dans Atlas Coach reste l'ancre officielle.
-        # Les estimations continues complètent les champs absents sans l'écraser.
-        return {**saved, **snapshot}
+        # Le programme fournit le socle initial ; la mémoire longitudinale porte
+        # ensuite les validations et les mises à jour physiologiques plus récentes.
+        return {**snapshot, **saved}
+
+    @staticmethod
+    def _auto_apply_physiology(
+        previous: dict[str, Any],
+        estimate: dict[str, Any],
+    ) -> tuple[dict[str, Any], list[str]]:
+        """Applique seulement les évolutions rapides à faible risque.
+
+        Une séance de qualité peut confirmer une hausse bornée de VO2max. Les
+        seuils, la VMA et la FC maximale exigent toujours une validation dédiée.
+        """
+
+        profile = deepcopy(previous)
+        observed = estimate.get("observed") or {}
+        candidate = estimate.get("vo2_max")
+        previous_vo2 = previous.get("vo2_max")
+        try:
+            candidate = float(candidate)
+            previous_vo2 = float(previous_vo2)
+        except (TypeError, ValueError):
+            return profile, []
+        if (
+            estimate.get("decision") == "increase_candidate"
+            and observed.get("fast_vo2_signal") is True
+            and 0 < candidate - previous_vo2 <= 1.0
+        ):
+            profile["vo2_max"] = candidate
+            profile["vo2_max_status"] = "auto_validated_quality_session"
+            profile["vo2_max_updated_at"] = estimate.get("updated_at")
+            return profile, ["vo2_max"]
+        return profile, []
 
     def _read(self, name: str, default: Any) -> Any:
         path = self.private_dir / name
