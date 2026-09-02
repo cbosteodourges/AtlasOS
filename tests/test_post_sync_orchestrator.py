@@ -10,6 +10,39 @@ from src.training.post_sync_orchestrator import PostSyncOrchestrator
 
 
 class PostSyncOrchestratorTests(unittest.TestCase):
+    def test_threshold_reference_replaces_weaker_longitudinal_sv2_hr(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "training-program.json").write_text(json.dumps({
+                "athlete_snapshot": {
+                    "sv2": {
+                        "speed_kmh": 12.9,
+                        "heart_rate_bpm": 151,
+                        "status": "longitudinal_estimate",
+                    },
+                }
+            }), encoding="utf-8")
+            (root / "physiology-longitudinal.json").write_text(json.dumps({
+                "current": {
+                    "sv2": {
+                        "speed_kmh": 12.9,
+                        "heart_rate_bpm": 151,
+                        "status": "longitudinal_estimate",
+                    }
+                }
+            }), encoding="utf-8")
+            (root / "athlete-profile.json").write_text(json.dumps({
+                "physiological": {"threshold_heart_rate_bpm": 160}
+            }), encoding="utf-8")
+
+            profile = PostSyncOrchestrator(root)._current_physiology()
+
+            self.assertEqual(profile["sv2"]["heart_rate_bpm"], 160)
+            self.assertEqual(
+                profile["sv2"]["status"],
+                "validated_threshold_reference",
+            )
+
     def test_auto_applies_only_bounded_fast_vo2_gain(self):
         previous = {
             "vo2_max": 50,
