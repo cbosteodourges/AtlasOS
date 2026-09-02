@@ -120,6 +120,49 @@ class ContinuousProfileTests(unittest.TestCase):
         self.assertEqual(confirmed["vo2_max"], 51)
         self.assertFalse(confirmed["observed"]["fast_vo2_signal"])
 
+    def test_fast_signal_uses_latest_session_not_historical_maximum(self):
+        now = datetime.now(timezone.utc)
+
+        def quality_activity(identifier, start, long_speed, short_speed):
+            samples = [
+                ActivitySample(
+                    timestamp=start + timedelta(seconds=offset),
+                    speed_mps=long_speed / 3.6,
+                    heart_rate_bpm=150,
+                )
+                for offset in range(0, 181, 10)
+            ]
+            samples.extend(
+                ActivitySample(
+                    timestamp=start + timedelta(seconds=offset),
+                    speed_mps=short_speed / 3.6,
+                    heart_rate_bpm=158,
+                )
+                for offset in range(190, 281, 10)
+            )
+            return NormalizedActivity(
+                provider="health_connect",
+                external_id=identifier,
+                activity_type="run",
+                start_time=start.isoformat(),
+                duration_seconds=1800,
+                average_speed_mps=11 / 3.6,
+                average_heart_rate_bpm=140,
+                samples=samples,
+            )
+
+        old = quality_activity("old", now - timedelta(days=30), 16.4, 16.5)
+        latest = quality_activity("latest", now, 13.7, 14.6)
+        result = ContinuousPhysiologyEstimator().estimate(
+            [latest, old], {"vo2_max": 50.3, "vma_kmh": 14}
+        )
+
+        self.assertEqual(result["vo2_max"], 51)
+        self.assertLess(
+            result["observed"]["strongest_session"]["three_minutes_kmh"],
+            15,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
