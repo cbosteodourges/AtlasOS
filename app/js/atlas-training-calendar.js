@@ -905,6 +905,7 @@
       validated: "Référence validée",
       validated_threshold_reference: "Référence de seuil validée",
       measured: "Mesure validée",
+      session_adjusted_estimate: "Ajustement issu de la dernière séance",
       missing: "\u00c0 confirmer"
     }[status] || "Référence Atlas");
 
