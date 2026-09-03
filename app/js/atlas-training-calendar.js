@@ -1771,6 +1771,14 @@ const target = compactTarget(workout, zone);
         segments.push({
           zone: atlasDisplayZone(workout, block),
           duration,
+          speed: (() => {
+            const values = [block.target?.speed_min_kmh, block.target?.speed_max_kmh]
+              .map(Number)
+              .filter(value => value > 0);
+            return values.length
+              ? values.reduce((total, value) => total + value, 0) / values.length
+              : undefined;
+          })(),
           label: optional
             ? `${block.name || "Fraction"} · facultative`
             : block.name || block.block_type || "Étape",
@@ -1807,6 +1815,7 @@ const target = compactTarget(workout, zone);
           : block.block_type
       }),
       duration: Math.max((Number(block.duration_seconds) || 0) / 60, .25),
+      speed: Number(block.average_speed_kmh) || undefined,
       label: block.block_type || "Bloc réalisé"
     }));
 
@@ -1860,6 +1869,7 @@ const target = compactTarget(workout, zone);
       segments.push({
         zone: atlasDisplayZone(workout, interval),
         duration: durationSeconds / 60,
+        speed: Number.isFinite(speed) ? speed : undefined,
         label: `Fraction ${index + 1}${Number.isFinite(speed) ? ` · ${reportNumber(speed, 2)} km/h` : ""}`,
         optional: index >= (workout.blocks || []).filter(
           block => ["work", "interval"].includes(block.block_type)
@@ -1901,17 +1911,41 @@ const target = compactTarget(workout, zone);
   function timelineHtml(segments, label) {
     if (!segments.length) return "";
 
+    const zoneSpeedAverages = new Map();
+    segments.forEach(segment => {
+      const speed = Number(segment.speed);
+      if (!(speed > 0)) return;
+      const values = zoneSpeedAverages.get(segment.zone) || [];
+      values.push(speed);
+      zoneSpeedAverages.set(segment.zone, values);
+    });
+    zoneSpeedAverages.forEach((values, zone) => {
+      zoneSpeedAverages.set(
+        zone,
+        values.reduce((total, value) => total + value, 0) / values.length
+      );
+    });
+    const heightPercent = segment => {
+      const base = ({ 1: 42, 2: 57, 3: 78, 4: 90, 5: 98 })[segment.zone] || 42;
+      const speed = Number(segment.speed);
+      const reference = zoneSpeedAverages.get(segment.zone);
+      const speedAdjustment = speed > 0 && reference > 0
+        ? Math.max(-7, Math.min(7, (speed - reference) * 16))
+        : 0;
+      return Math.max(34, Math.min(100, base + speedAdjustment));
+    };
+
     return `
       <section class="atlas-workout-timeline" aria-label="${escapeHtml(label)}">
         <header>
           <strong>Déroulé de la séance</strong>
-          <small>La largeur représente la durée · la couleur représente votre zone</small>
+          <small>Largeur : durée · hauteur : vitesse/intensité · couleur : zone</small>
         </header>
         <div class="workout-timeline-bars">
           ${segments.map((segment, index) => `
             <i
               class="timeline-zone-${segment.zone}${segment.optional ? " timeline-segment-optional" : ""}"
-              style="--segment-weight:${Math.max(segment.duration, .5)};--segment-color:${DISPLAY_ZONE_COLORS[segment.zone]}"
+              style="--segment-weight:${Math.max(segment.duration, .5)};--segment-color:${DISPLAY_ZONE_COLORS[segment.zone]};height:${heightPercent(segment)}%"
               tabindex="0"
               data-step="${index + 1}"
               data-label="${escapeHtml(segment.label)} · ${readableWorkTime(segment.duration)} · Z${segment.zone}"
