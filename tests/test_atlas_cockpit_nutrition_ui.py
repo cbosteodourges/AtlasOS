@@ -31,6 +31,11 @@ class AtlasCockpitNutritionUiTests(unittest.TestCase):
         self.assertIn("atlasAppearanceTheme", self.cockpit_script)
         self.assertIn("localStorage.setItem(themeKey", self.cockpit_script)
         self.assertIn('body[data-atlas-theme="ocean"]', self.cockpit_styles)
+        for canvas in ("cosmos", "pearl", "mist", "sand", "ice", "sage"):
+            self.assertIn(f'value="{canvas}"', self.page)
+            self.assertIn(f'body[data-atlas-canvas="{canvas}"]', self.cockpit_styles)
+        self.assertIn("atlasAppearanceCanvas", self.cockpit_script)
+        self.assertIn("localStorage.setItem(canvasKey", self.cockpit_script)
 
 
 if __name__ == "__main__":

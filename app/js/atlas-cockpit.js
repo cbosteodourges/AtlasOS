@@ -39,25 +39,6 @@
     });
   });
 
-  const performanceGrid = document.querySelector(".performance-context-grid");
-  if (performanceGrid?.children.length > 1) {
-    const switcher = document.createElement("div");
-    switcher.className = "mobile-performance-switcher";
-    ["Meilleures", "Plus difficiles"].forEach((label, index) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.classList.toggle("is-active", index === 0);
-      button.textContent = label;
-      button.addEventListener("click", () => {
-        [...switcher.children].forEach((item, itemIndex) => item.classList.toggle("is-active", itemIndex === index));
-        [...performanceGrid.children].forEach((item, itemIndex) => item.classList.toggle("is-mobile-hidden", itemIndex !== index));
-      });
-      switcher.appendChild(button);
-    });
-    performanceGrid.before(switcher);
-    [...performanceGrid.children].forEach((item, index) => item.classList.toggle("is-mobile-hidden", index !== 0));
-  }
-
   const selectedAvatar =
     localStorage.getItem("atlasPreselectedAvatar") || "male";
   const avatar = document.getElementById("cockpitAvatar");
@@ -645,55 +626,6 @@
       renderList("[data-analysis-vigilance]", analysis.vigilance);
       renderList("[data-analysis-priorities]", analysis.priorities);
 
-      const comparison = analysis.performance_comparison;
-      setText(
-        "[data-performance-message]",
-        comparison?.message || "Comparaison indisponible."
-      );
-      const formatContext = group => {
-        const rows = [
-          ["Sommeil avant", group?.sleep_score_before, "/100"],
-          ["VFC avant", group?.hrv_before_ms, " ms"],
-          ["Récupération avant", group?.recovery_before, "/100"],
-          ["Indice Atlas avant", group?.atlas_index_before, "/100"],
-          ["Effort perçu après", group?.perceived_effort_after, "/10"],
-          ["Sensation après", group?.sensation_after, "/10"],
-          ["Fatigue après", group?.fatigue_after, "/10"],
-          ["Douleur après", group?.pain_after, "/10"]
-        ];
-        return rows.filter(([_label, value]) => value != null);
-      };
-      const renderContext = (selector, group) => {
-        const target = document.querySelector(selector);
-        if (!target) return;
-        target.replaceChildren();
-        formatContext(group).forEach(([label, value, unit]) => {
-          const term = document.createElement("dt");
-          term.textContent = label;
-          const detail = document.createElement("dd");
-          detail.textContent = `${String(value).replace(".", ",")}${unit}`;
-          target.append(term, detail);
-        });
-        if (!target.children.length) {
-          const detail = document.createElement("dd");
-          detail.textContent = "Contexte Wellness insuffisant";
-          target.appendChild(detail);
-        }
-      };
-      setText(
-        "[data-best-score]",
-        comparison?.best
-          ? `${String(comparison.best.execution_score).replace(".", ",")}/100`
-          : "—"
-      );
-      setText(
-        "[data-difficult-score]",
-        comparison?.difficult
-          ? `${String(comparison.difficult.execution_score).replace(".", ",")}/100`
-          : "—"
-      );
-      renderContext("[data-best-context]", comparison?.best);
-      renderContext("[data-difficult-context]", comparison?.difficult);
     }
 
     setText(
@@ -765,6 +697,7 @@
   const dashboardKey = "atlasCockpitVisibleMetrics";
   const dashboardInputs = [...document.querySelectorAll("[data-dashboard-panel] input[type='checkbox']")];
   const themeInputs = [...document.querySelectorAll("input[name='atlas-theme']")];
+  const canvasInputs = [...document.querySelectorAll("input[name='atlas-canvas']")];
   const themeKey = "atlasAppearanceTheme";
   const applyTheme = theme => {
     const supported = ["night", "ocean", "graphite", "aurora", "forest", "violet", "ember", "deepsea"];
@@ -776,6 +709,18 @@
   themeInputs.forEach(input => input.addEventListener("change", () => {
     localStorage.setItem(themeKey, input.value);
     applyTheme(input.value);
+  }));
+  const canvasKey = "atlasAppearanceCanvas";
+  const applyCanvas = canvas => {
+    const supported = ["cosmos", "pearl", "mist", "sand", "ice", "sage"];
+    const selected = supported.includes(canvas) ? canvas : "cosmos";
+    document.body.dataset.atlasCanvas = selected;
+    canvasInputs.forEach(input => { input.checked = input.value === selected; });
+  };
+  applyCanvas(localStorage.getItem(canvasKey) || "cosmos");
+  canvasInputs.forEach(input => input.addEventListener("change", () => {
+    localStorage.setItem(canvasKey, input.value);
+    applyCanvas(input.value);
   }));
   const applyDashboard = () => {
     let selected;

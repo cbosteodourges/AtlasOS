@@ -41,6 +41,17 @@ body[data-atlas-theme="forest"]{--bg:#06110f;--page-bg:radial-gradient(circle at
 body[data-atlas-theme="violet"]{--bg:#0d0918;--page-bg:radial-gradient(circle at 72% 12%,rgba(141,83,225,.3),transparent 38%),linear-gradient(155deg,#110b20,#050711 68%);--panel:rgba(24,15,43,.88);--panel-strong:rgba(30,18,53,.97);--line:rgba(184,133,255,.24);--cyan:#d2a8ff;--blue:#9a76ff}
 body[data-atlas-theme="ember"]{--bg:#140b08;--page-bg:radial-gradient(circle at 82% 9%,rgba(213,100,48,.26),transparent 36%),linear-gradient(145deg,#170d0a,#070707 70%);--panel:rgba(39,20,15,.9);--panel-strong:rgba(48,23,17,.97);--line:rgba(255,159,99,.24);--cyan:#ffb06f;--blue:#df7556;--muted:#bba49a}
 body[data-atlas-theme="deepsea"]{--bg:#010b16;--page-bg:radial-gradient(circle at 50% -8%,rgba(0,107,175,.36),transparent 43%),linear-gradient(180deg,#031426,#010711 74%);--panel:rgba(3,24,43,.9);--panel-strong:rgba(4,31,54,.97);--line:rgba(49,178,240,.24);--cyan:#4dd8ff;--blue:#167bd8}
+
+body[data-atlas-canvas="cosmos"]{--canvas-bg:radial-gradient(circle at 76% 8%,rgba(13,106,153,.18),transparent 34%),#010711}
+body[data-atlas-canvas="pearl"]{--canvas-bg:linear-gradient(145deg,#fff,#edf3f6 72%)}
+body[data-atlas-canvas="mist"]{--canvas-bg:linear-gradient(145deg,#dce5e9,#b8c8d0 72%)}
+body[data-atlas-canvas="sand"]{--canvas-bg:linear-gradient(145deg,#f2eadc,#d9cbb6 72%)}
+body[data-atlas-canvas="ice"]{--canvas-bg:linear-gradient(145deg,#e5f5f8,#bfdde6 72%)}
+body[data-atlas-canvas="sage"]{--canvas-bg:linear-gradient(145deg,#e2ece5,#bed1c3 72%)}
+body[data-atlas-canvas]{background:var(--canvas-bg);background-attachment:fixed}
+body[data-atlas-canvas]:not([data-atlas-canvas="cosmos"]) .home-header h1{color:#102536}
+body[data-atlas-canvas]:not([data-atlas-canvas="cosmos"]) .home-header p{color:#506675}
+body[data-atlas-canvas]:not([data-atlas-canvas="cosmos"]) .home-header .eyebrow{color:#087fa2}
 a, button { color: inherit; font: inherit; }
 a { text-decoration: none; }
 
@@ -140,6 +151,12 @@ a { text-decoration: none; }
 .appearance-settings { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 4px 0 2px; padding: 0; border: 0; }
 .appearance-settings legend, .settings-section-title { margin-bottom: 5px; font-size: .76rem; letter-spacing: .08em; text-transform: uppercase; }
 .appearance-settings label { position:relative;display:grid;justify-items:center;gap:5px;min-height:68px;padding:8px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025);font-size:.7rem;cursor:pointer}.appearance-settings label:has(input:checked){border-color:var(--cyan);box-shadow:0 0 0 1px color-mix(in srgb,var(--cyan) 35%,transparent)}.appearance-settings label:has(input:focus-visible){outline:2px solid var(--cyan);outline-offset:2px}.appearance-settings input{position:absolute;opacity:0}.appearance-settings i{display:block;width:38px;height:28px;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:#020914}.appearance-settings [data-theme-preview="ocean"] i{background:linear-gradient(145deg,#00556a,#00141c)}.appearance-settings [data-theme-preview="graphite"] i{background:linear-gradient(145deg,#454b50,#111315)}.appearance-settings [data-theme-preview="aurora"] i{background:linear-gradient(135deg,#159b95,#573296)}.appearance-settings [data-theme-preview="forest"] i{background:linear-gradient(135deg,#27845d,#06110f)}.appearance-settings [data-theme-preview="violet"] i{background:linear-gradient(135deg,#8d53df,#130b20)}.appearance-settings [data-theme-preview="ember"] i{background:linear-gradient(135deg,#d56430,#170d0a)}.appearance-settings [data-theme-preview="deepsea"] i{background:linear-gradient(135deg,#087db9,#010b16)}
+.appearance-settings [data-canvas-preview="cosmos"] i{background:radial-gradient(circle at 70% 20%,#136990,#010711 64%)}
+.appearance-settings [data-canvas-preview="pearl"] i{background:linear-gradient(145deg,#fff,#e6eef2)}
+.appearance-settings [data-canvas-preview="mist"] i{background:linear-gradient(145deg,#dce5e9,#aebfc7)}
+.appearance-settings [data-canvas-preview="sand"] i{background:linear-gradient(145deg,#f2eadc,#cdbca4)}
+.appearance-settings [data-canvas-preview="ice"] i{background:linear-gradient(145deg,#e5f5f8,#acd4df)}
+.appearance-settings [data-canvas-preview="sage"] i{background:linear-gradient(145deg,#e2ece5,#aac4b1)}
 @media(max-width:520px){.appearance-settings{grid-template-columns:repeat(2,1fr)}.dashboard-settings{padding:22px 18px}}
 .eyebrow { color: var(--cyan); font-size: .72rem; font-weight: 700; letter-spacing: .13em; }
 h1 { margin: 8px 0 5px; font-size: clamp(1.9rem, 3vw, 3rem); }
