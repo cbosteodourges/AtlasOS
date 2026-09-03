@@ -47,6 +47,12 @@ summary:focus-visible, input:focus-visible, textarea:focus-visible {
   }
   .atlas-global-nav::-webkit-scrollbar { display: none; }
   .atlas-global-nav .atlas-nav-item { min-width: 58px; min-height: 52px; }
+  .atlas-global-nav .atlas-talk-button { display: none !important; }
+  .atlas-sidebar > .atlas-talk-button { display: none !important; }
+  .atlas-global-nav .atlas-nav-label {
+    font-size: .68rem !important;
+    text-overflow: clip;
+  }
   .athlete-analysis-home, .performance-context, .longitudinal-evidence {
     max-width: 100%;
     overflow: hidden;
@@ -72,6 +78,184 @@ summary:focus-visible, input:focus-visible, textarea:focus-visible {
   }
   .periods::-webkit-scrollbar { display: none; }
   .periods button { flex: 0 0 auto; }
+}
+
+/* Expérience mobile Atlas : priorité à la synthèse, détails consultables ensuite. */
+@media (max-width: 700px) {
+  .atlas-home {
+    padding-inline: 14px !important;
+  }
+  .home-header {
+    gap: 14px;
+    padding-block: 22px !important;
+  }
+  .home-header h1 {
+    font-size: clamp(2.2rem, 11vw, 3.2rem) !important;
+  }
+  .home-header p {
+    margin-bottom: 0 !important;
+  }
+  .home-grid {
+    gap: 18px !important;
+  }
+  .twin-panel {
+    min-height: 430px !important;
+    max-height: 430px;
+  }
+  .twin-panel img {
+    height: 100% !important;
+    object-fit: contain !important;
+  }
+  .twin-caption {
+    padding: 14px !important;
+  }
+  .readiness-card {
+    gap: 14px !important;
+    padding: 20px !important;
+  }
+  .metrics {
+    display: grid !important;
+    grid-auto-columns: minmax(220px, 78vw);
+    grid-auto-flow: column;
+    grid-template-columns: none !important;
+    gap: 12px !important;
+    padding-bottom: 6px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .metrics::-webkit-scrollbar { display: none; }
+  .metrics > * {
+    min-height: 128px !important;
+    scroll-snap-align: start;
+  }
+  .next-session,
+  .focus-card,
+  .goal-card {
+    padding: 20px !important;
+  }
+  .athlete-analysis-home {
+    padding: 18px !important;
+  }
+  .analysis-benchmarks,
+  .physiology-reference-grid.physiology-rings,
+  .insight-lanes > article > ul,
+  .insight-lanes > article > ol,
+  .longitudinal-evidence > [data-longitudinal-conclusions] {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .analysis-benchmarks::-webkit-scrollbar,
+  .physiology-reference-grid.physiology-rings::-webkit-scrollbar,
+  .insight-lanes > article > ul::-webkit-scrollbar,
+  .insight-lanes > article > ol::-webkit-scrollbar,
+  .longitudinal-evidence > [data-longitudinal-conclusions]::-webkit-scrollbar {
+    display: none;
+  }
+  .analysis-benchmarks {
+    grid-auto-columns: minmax(220px, 75vw);
+  }
+  .physiology-reference-grid.physiology-rings {
+    grid-auto-columns: 142px;
+    justify-content: start !important;
+    padding: 18px 16px !important;
+  }
+  .physiology-rings .physiology-ring {
+    width: 136px !important;
+    height: 136px !important;
+    min-height: 136px !important;
+    scroll-snap-align: center;
+  }
+  .physiology-reference {
+    overflow: hidden !important;
+  }
+  .physiology-metric-tabs,
+  .physiology-period-tabs {
+    flex-wrap: nowrap !important;
+    width: 100%;
+    padding-bottom: 5px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .physiology-metric-tabs::-webkit-scrollbar,
+  .physiology-period-tabs::-webkit-scrollbar { display: none; }
+  .physiology-metric-tabs button,
+  .physiology-period-tabs button { flex: 0 0 auto; }
+  .insight-lanes > article > ul,
+  .insight-lanes > article > ol,
+  .longitudinal-evidence > [data-longitudinal-conclusions] {
+    grid-auto-columns: minmax(245px, 82vw) !important;
+  }
+  .insight-lanes li,
+  .longitudinal-evidence [data-longitudinal-conclusions] > article {
+    min-height: 0 !important;
+    scroll-snap-align: start;
+  }
+
+  .nutrition-page {
+    padding: 34px 14px 32px !important;
+  }
+  .nutrition-hero {
+    margin-bottom: 20px !important;
+  }
+  .nutrition-hero h1 {
+    font-size: 2.65rem !important;
+  }
+  .daily-summary,
+  .expenditure-card,
+  .education-card,
+  .guidance-card,
+  .entry-card {
+    padding: 18px !important;
+    border-radius: 20px !important;
+  }
+  .summary-grid,
+  .energy-flow,
+  .education-grid {
+    display: grid !important;
+    grid-auto-flow: column;
+    grid-template-columns: none !important;
+    gap: 12px !important;
+    padding-bottom: 6px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .summary-grid::-webkit-scrollbar,
+  .energy-flow::-webkit-scrollbar,
+  .education-grid::-webkit-scrollbar { display: none; }
+  .summary-grid { grid-auto-columns: minmax(235px, 82vw); }
+  .summary-grid .hydration-card { grid-column: auto !important; }
+  .macro-card,
+  .hydration-card {
+    min-height: 185px !important;
+    scroll-snap-align: start;
+  }
+  .energy-flow { grid-auto-columns: minmax(230px, 80vw); }
+  .energy-flow > b { display: none; }
+  .energy-flow article,
+  .education-grid article {
+    min-height: 180px;
+    scroll-snap-align: start;
+  }
+  .education-grid { grid-auto-columns: minmax(250px, 84vw); }
+  .nutrition-entry-toggle {
+    width: 100%;
+    min-height: 50px;
+    margin-top: 16px;
+    border: 0;
+    border-radius: 14px;
+    background: linear-gradient(90deg, #159bd8, #35d9c1);
+    color: #00121b;
+    font: inherit;
+    font-weight: 800;
+  }
+  .entry-card.is-collapsed form { display: none !important; }
 }
 
 @media (max-width: 700px) {

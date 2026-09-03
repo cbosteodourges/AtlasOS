@@ -52,7 +52,7 @@
       ${coachSubnav}
       ${primaryItem({ href: "./atlas-hub.html#injuries", tab: "injuries", icon: "♡", label: "Santé", active: isHub, extra: 'data-health-root="true"' })}
       ${healthSubnav}
-      ${primaryItem({ href: "./nutrition-hydration.html", icon: "◒", label: "Nutrition & Hydratation", active: isNutrition, extra: 'data-nutrition-root' })}
+      ${primaryItem({ href: "./nutrition-hydration.html", icon: "◒", label: "Nutrition", active: isNutrition, extra: 'data-nutrition-root' })}
     </nav>
 
     ${isCoach ? "" : `<button class="atlas-talk-button" type="button" data-atlas-talk>

@@ -77,6 +77,25 @@
     render(payload.summary);
   });
 
+  const entryCard = one(".entry-card");
+  const entryForm = one("[data-nutrition-form]");
+  if (entryCard && entryForm) {
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "nutrition-entry-toggle";
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.textContent = "Ajouter un repas ou une collation";
+    entryCard.insertBefore(toggle, entryForm);
+    entryCard.classList.add("is-collapsed");
+    toggle.addEventListener("click", () => {
+      const opening = entryCard.classList.toggle("is-open");
+      entryCard.classList.toggle("is-collapsed", !opening);
+      toggle.setAttribute("aria-expanded", String(opening));
+      toggle.textContent = opening ? "Refermer le formulaire" : "Ajouter un repas ou une collation";
+      if (opening) entryForm.querySelector("input")?.focus({ preventScroll: true });
+    });
+  }
+
   document.querySelectorAll("[data-water]").forEach(button => button.addEventListener("click", async () => {
     setText("[data-nutrition-status]", "Enregistrement…");
     try {
