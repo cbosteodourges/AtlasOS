@@ -1851,7 +1851,7 @@ const target = compactTarget(workout, zone);
       ? prescribedWarmupSeconds
       : reportedFirstStart;
     if (firstStart > 0) {
-      segments.push({ zone: 2, duration: firstStart / 60, label: "Échauffement" });
+      segments.push({ zone: 1, duration: firstStart / 60, label: "Échauffement" });
     }
 
     intervals.forEach((interval, index) => {
@@ -1893,7 +1893,7 @@ const target = compactTarget(workout, zone);
       : reportedLastEnd;
     const coolDownSeconds = Math.max(0, sessionSeconds - lastEnd);
     if (coolDownSeconds > 5) {
-      segments.push({ zone: 1, duration: coolDownSeconds / 60, label: "Retour au calme" });
+      segments.push({ zone: 2, duration: coolDownSeconds / 60, label: "Retour au calme" });
     }
     return segments;
   }
