@@ -1722,7 +1722,34 @@ const target = compactTarget(workout, zone);
       if (paces.length) {
         return distanceKm * (paces.reduce((sum, pace) => sum + pace, 0) / paces.length);
       }
-      return 1;
+
+      const vma = Number(
+        synchronizedPhysiology?.vma_training_reference_kmh ||
+        synchronizedPhysiology?.vma_kmh
+      );
+      const sv1 = Number(synchronizedPhysiology?.sv1?.speed_kmh);
+      const sv2 = Number(synchronizedPhysiology?.sv2?.speed_kmh);
+      const zone = Number(target.zone);
+      const personalZoneSpeed = {
+        1: vma > 0 ? vma * .60 : 8,
+        2: vma > 0 ? ((vma * .65) + (sv1 > 0 ? sv1 : vma * .75)) / 2 : 10,
+        3: vma > 0 ? ((sv1 > 0 ? sv1 : vma * .75) + (sv2 > 0 ? sv2 : vma * .92)) / 2 : 12,
+        4: vma > 0 ? ((sv2 > 0 ? sv2 : vma * .92) + vma) / 2 : 14,
+        5: vma > 0 ? vma * 1.05 : 16,
+      }[zone];
+      const sport = String(workout.sport || "running").toLowerCase();
+      if (personalZoneSpeed > 0 && ["running", "run", "road_running", "trail"].includes(sport)) {
+        return distanceKm / personalZoneSpeed * 60;
+      }
+
+      const totalDistance = blocks.reduce((sum, candidate) => (
+        sum + Number(candidate.distance_meters || 0) * workoutRepetitionRange(candidate).maximum
+      ), 0);
+      const plannedDuration = Number(workout.planned_duration_minutes);
+      if (totalDistance > 0 && plannedDuration > 0) {
+        return plannedDuration * Number(block.distance_meters) / totalDistance;
+      }
+      return distanceKm / 10 * 60;
     };
 
     blocks.forEach((block, blockIndex) => {
