@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "atlas-shell-v17";
+const CACHE_NAME = "atlas-shell-v18";
 const APP_SHELL = [
   "./atlas-cockpit.html",
   "./performance-running.html",

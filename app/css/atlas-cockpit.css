@@ -2,6 +2,8 @@
   --bg: #010711;
   --panel: rgba(5, 20, 35, .82);
   --panel-strong: rgba(6, 25, 43, .96);
+  --panel-solid: #051423;
+  --panel-strong-solid: #06192b;
   --line: rgba(62, 201, 255, .18);
   --cyan: #38d1ff;
   --blue: #1c82ff;
@@ -23,6 +25,8 @@ body[data-atlas-theme="ocean"] {
   --bg: #00141c;
   --panel: rgba(3, 35, 46, .84);
   --panel-strong: rgba(4, 42, 55, .97);
+  --panel-solid: #03232e;
+  --panel-strong-solid: #042a37;
   --line: rgba(67, 224, 213, .22);
   --cyan: #43e0d5;
   --blue: #19a8d8;
@@ -31,16 +35,18 @@ body[data-atlas-theme="graphite"] {
   --bg: #111315;
   --panel: rgba(29, 32, 35, .9);
   --panel-strong: rgba(34, 37, 41, .98);
+  --panel-solid: #1d2023;
+  --panel-strong-solid: #222529;
   --line: rgba(220, 231, 238, .17);
   --cyan: #b7e8ff;
   --blue: #7ca8ff;
   --muted: #aab2b8;
 }
-body[data-atlas-theme="aurora"]{--bg:#07101c;--page-bg:radial-gradient(circle at 78% 8%,rgba(76,41,154,.34),transparent 34%),radial-gradient(circle at 18% 36%,rgba(16,155,149,.25),transparent 38%),#050b16;--panel:rgba(8,22,39,.88);--panel-strong:rgba(10,27,47,.97);--line:rgba(99,224,209,.23);--cyan:#64e6d4;--blue:#9282ff}
-body[data-atlas-theme="forest"]{--bg:#06110f;--page-bg:radial-gradient(circle at 82% 15%,rgba(46,145,92,.25),transparent 36%),linear-gradient(145deg,#071512,#030908 72%);--panel:rgba(7,30,25,.9);--panel-strong:rgba(8,37,30,.97);--line:rgba(89,220,156,.22);--cyan:#68e4b1;--blue:#55bfa7}
-body[data-atlas-theme="violet"]{--bg:#0d0918;--page-bg:radial-gradient(circle at 72% 12%,rgba(141,83,225,.3),transparent 38%),linear-gradient(155deg,#110b20,#050711 68%);--panel:rgba(24,15,43,.88);--panel-strong:rgba(30,18,53,.97);--line:rgba(184,133,255,.24);--cyan:#d2a8ff;--blue:#9a76ff}
-body[data-atlas-theme="ember"]{--bg:#140b08;--page-bg:radial-gradient(circle at 82% 9%,rgba(213,100,48,.26),transparent 36%),linear-gradient(145deg,#170d0a,#070707 70%);--panel:rgba(39,20,15,.9);--panel-strong:rgba(48,23,17,.97);--line:rgba(255,159,99,.24);--cyan:#ffb06f;--blue:#df7556;--muted:#bba49a}
-body[data-atlas-theme="deepsea"]{--bg:#010b16;--page-bg:radial-gradient(circle at 50% -8%,rgba(0,107,175,.36),transparent 43%),linear-gradient(180deg,#031426,#010711 74%);--panel:rgba(3,24,43,.9);--panel-strong:rgba(4,31,54,.97);--line:rgba(49,178,240,.24);--cyan:#4dd8ff;--blue:#167bd8}
+body[data-atlas-theme="aurora"]{--bg:#07101c;--page-bg:radial-gradient(circle at 78% 8%,rgba(76,41,154,.34),transparent 34%),radial-gradient(circle at 18% 36%,rgba(16,155,149,.25),transparent 38%),#050b16;--panel:rgba(8,22,39,.88);--panel-strong:rgba(10,27,47,.97);--panel-solid:#081627;--panel-strong-solid:#0a1b2f;--line:rgba(99,224,209,.23);--cyan:#64e6d4;--blue:#9282ff}
+body[data-atlas-theme="forest"]{--bg:#06110f;--page-bg:radial-gradient(circle at 82% 15%,rgba(46,145,92,.25),transparent 36%),linear-gradient(145deg,#071512,#030908 72%);--panel:rgba(7,30,25,.9);--panel-strong:rgba(8,37,30,.97);--panel-solid:#071e19;--panel-strong-solid:#08251e;--line:rgba(89,220,156,.22);--cyan:#68e4b1;--blue:#55bfa7}
+body[data-atlas-theme="violet"]{--bg:#0d0918;--page-bg:radial-gradient(circle at 72% 12%,rgba(141,83,225,.3),transparent 38%),linear-gradient(155deg,#110b20,#050711 68%);--panel:rgba(24,15,43,.88);--panel-strong:rgba(30,18,53,.97);--panel-solid:#180f2b;--panel-strong-solid:#1e1235;--line:rgba(184,133,255,.24);--cyan:#d2a8ff;--blue:#9a76ff}
+body[data-atlas-theme="ember"]{--bg:#140b08;--page-bg:radial-gradient(circle at 82% 9%,rgba(213,100,48,.26),transparent 36%),linear-gradient(145deg,#170d0a,#070707 70%);--panel:rgba(39,20,15,.9);--panel-strong:rgba(48,23,17,.97);--panel-solid:#27140f;--panel-strong-solid:#301711;--line:rgba(255,159,99,.24);--cyan:#ffb06f;--blue:#df7556;--muted:#bba49a}
+body[data-atlas-theme="deepsea"]{--bg:#010b16;--page-bg:radial-gradient(circle at 50% -8%,rgba(0,107,175,.36),transparent 43%),linear-gradient(180deg,#031426,#010711 74%);--panel:rgba(3,24,43,.9);--panel-strong:rgba(4,31,54,.97);--panel-solid:#03182b;--panel-strong-solid:#041f36;--line:rgba(49,178,240,.24);--cyan:#4dd8ff;--blue:#167bd8}
 
 body[data-atlas-canvas="cosmos"]{--canvas-bg:radial-gradient(circle at 76% 8%,rgba(13,106,153,.18),transparent 34%),#010711}
 body[data-atlas-canvas="pearl"]{--canvas-bg:linear-gradient(145deg,#fff,#edf3f6 72%)}
@@ -49,6 +55,8 @@ body[data-atlas-canvas="sand"]{--canvas-bg:linear-gradient(145deg,#f2eadc,#d9cbb
 body[data-atlas-canvas="ice"]{--canvas-bg:linear-gradient(145deg,#e5f5f8,#bfdde6 72%)}
 body[data-atlas-canvas="sage"]{--canvas-bg:linear-gradient(145deg,#e2ece5,#bed1c3 72%)}
 body[data-atlas-canvas]{background:var(--canvas-bg);background-attachment:fixed}
+body[data-atlas-canvas]:not([data-atlas-canvas="cosmos"]){--panel:var(--panel-solid);--panel-strong:var(--panel-strong-solid)}
+body[data-atlas-canvas]:not([data-atlas-canvas="cosmos"]) :is(.twin-panel,.fuel-card,.athlete-analysis-home,.energy-signature,.energy-domain,.energy-reading article,.analysis-secondary-details,.analysis-benchmarks article,.analysis-columns article,.longitudinal-evidence,.longitudinal-evidence article){background-color:var(--bg)}
 body[data-atlas-canvas]:not([data-atlas-canvas="cosmos"]) .home-header h1{color:#102536}
 body[data-atlas-canvas]:not([data-atlas-canvas="cosmos"]) .home-header p{color:#506675}
 body[data-atlas-canvas]:not([data-atlas-canvas="cosmos"]) .home-header .eyebrow{color:#087fa2}
