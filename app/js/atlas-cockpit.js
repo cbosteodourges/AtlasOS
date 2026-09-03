@@ -698,9 +698,10 @@
   const dashboardInputs = [...document.querySelectorAll("[data-dashboard-panel] input[type='checkbox']")];
   const themeInputs = [...document.querySelectorAll("input[name='atlas-theme']")];
   const canvasInputs = [...document.querySelectorAll("input[name='atlas-canvas']")];
+  const sidebarInputs = [...document.querySelectorAll("input[name='atlas-sidebar']")];
   const themeKey = "atlasAppearanceTheme";
   const applyTheme = theme => {
-    const supported = ["night", "ocean", "graphite", "aurora", "forest", "violet", "ember", "deepsea"];
+    const supported = ["night", "ocean", "graphite", "aurora", "forest", "violet", "ember", "deepsea", "lagoon", "plum", "rose", "sand-card", "frost", "white"];
     const selected = supported.includes(theme) ? theme : "night";
     document.body.dataset.atlasTheme = selected;
     themeInputs.forEach(input => { input.checked = input.value === selected; });
@@ -712,7 +713,7 @@
   }));
   const canvasKey = "atlasAppearanceCanvas";
   const applyCanvas = canvas => {
-    const supported = ["cosmos", "pearl", "mist", "sand", "ice", "sage"];
+    const supported = ["cosmos", "pearl", "mist", "sand", "ice", "sage", "white", "sky", "lavender", "blush", "slate"];
     const selected = supported.includes(canvas) ? canvas : "cosmos";
     document.body.dataset.atlasCanvas = selected;
     canvasInputs.forEach(input => { input.checked = input.value === selected; });
@@ -721,6 +722,18 @@
   canvasInputs.forEach(input => input.addEventListener("change", () => {
     localStorage.setItem(canvasKey, input.value);
     applyCanvas(input.value);
+  }));
+  const sidebarKey = "atlasAppearanceSidebar";
+  const applySidebar = sidebar => {
+    const supported = ["atlas", "ocean", "graphite", "forest", "violet", "copper", "ice", "pearl"];
+    const selected = supported.includes(sidebar) ? sidebar : "atlas";
+    document.body.dataset.atlasSidebar = selected;
+    sidebarInputs.forEach(input => { input.checked = input.value === selected; });
+  };
+  applySidebar(localStorage.getItem(sidebarKey) || "atlas");
+  sidebarInputs.forEach(input => input.addEventListener("change", () => {
+    localStorage.setItem(sidebarKey, input.value);
+    applySidebar(input.value);
   }));
   const applyDashboard = () => {
     let selected;

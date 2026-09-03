@@ -26,16 +26,21 @@ class AtlasCockpitNutritionUiTests(unittest.TestCase):
         self.assertIn(".daily-summary", self.styles)
 
     def test_cockpit_appearance_presets_are_local_and_non_destructive(self):
-        for theme in ("night", "ocean", "graphite", "aurora", "forest", "violet", "ember", "deepsea"):
+        for theme in ("night", "ocean", "graphite", "aurora", "forest", "violet", "ember", "deepsea", "lagoon", "plum", "rose", "sand-card", "frost", "white"):
             self.assertIn(f'value="{theme}"', self.page)
         self.assertIn("atlasAppearanceTheme", self.cockpit_script)
         self.assertIn("localStorage.setItem(themeKey", self.cockpit_script)
         self.assertIn('body[data-atlas-theme="ocean"]', self.cockpit_styles)
-        for canvas in ("cosmos", "pearl", "mist", "sand", "ice", "sage"):
+        for canvas in ("cosmos", "pearl", "mist", "sand", "ice", "sage", "white", "sky", "lavender", "blush", "slate"):
             self.assertIn(f'value="{canvas}"', self.page)
             self.assertIn(f'body[data-atlas-canvas="{canvas}"]', self.cockpit_styles)
         self.assertIn("atlasAppearanceCanvas", self.cockpit_script)
         self.assertIn("localStorage.setItem(canvasKey", self.cockpit_script)
+        for sidebar in ("atlas", "ocean", "graphite", "forest", "violet", "copper", "ice", "pearl"):
+            self.assertIn(f'value="{sidebar}"', self.page)
+            self.assertIn(f'body[data-atlas-sidebar="{sidebar}"]', self.cockpit_styles)
+        self.assertIn("atlasAppearanceSidebar", self.cockpit_script)
+        self.assertIn("localStorage.setItem(sidebarKey", self.cockpit_script)
 
 
 if __name__ == "__main__":
