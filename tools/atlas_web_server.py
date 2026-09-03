@@ -1893,6 +1893,7 @@ def _athlete_analysis(history):
     priorities = []
     physiology = load_physiological_reference()
     longitudinal_report = _longitudinal_training_report(history)
+    energy_signature = _energy_signature()
 
     latest_hrv = latest.get("hrv_last_night_ms")
     latest_weekly = latest.get("hrv_weekly_average_ms")
@@ -2010,6 +2011,7 @@ def _athlete_analysis(history):
             ),
         },
         "performance_comparison": _performance_comparison(history),
+        "energy_signature": energy_signature,
         "longitudinal_report": longitudinal_report,
         "physiology": physiology,
         "physiology_history": load_physiology_history(),
@@ -2024,6 +2026,147 @@ def _athlete_analysis(history):
         "medical_notice": (
             "Analyse d’aide à l’entraînement, non diagnostique. Une douleur persistante "
             "ou un symptôme inhabituel nécessite un avis professionnel."
+        ),
+    }
+
+
+def _energy_signature():
+    """Décrit les filières réellement observées dans les séances FIT."""
+    domains = {
+        "endurance": {"label": "Endurance fondamentale", "short": "Z1–Z2", "scores": [], "dates": []},
+        "tempo": {"label": "Tempo", "short": "Z3", "scores": [], "dates": []},
+        "threshold": {"label": "Seuil", "short": "SV2", "scores": [], "dates": []},
+        "vo2": {"label": "Puissance aérobie", "short": "VO₂max", "scores": [], "dates": []},
+    }
+
+    def domain_for(item):
+        analysis = item.get("analysis") or {}
+        activity = item.get("activity") or {}
+        values = " ".join(str(value or "").lower() for value in (
+            analysis.get("dominant_work_type"),
+            analysis.get("session_type"),
+            activity.get("session_type"),
+            ((item.get("workout_match") or {}).get("execution") or {}).get("workout_name"),
+        ))
+        if any(token in values for token in ("vma", "vo2", "vo₂", "max_aerobic")):
+            return "vo2"
+        if any(token in values for token in ("sv2", "threshold", "seuil")):
+            return "threshold"
+        if any(token in values for token in ("tempo", "z3", "steady")):
+            return "tempo"
+        if any(token in values for token in ("endurance", "easy", "recovery", "z1", "z2", "long_run")):
+            return "endurance"
+        return None
+
+    def session_score(item, domain):
+        match = item.get("workout_match") or {}
+        execution = match.get("execution") or {}
+        candidates = (
+            execution.get("execution_score"),
+            execution.get("target_compliance_score"),
+            match.get("target_compliance_score"),
+            (item.get("analysis") or {}).get("analysis_confidence_score"),
+            (item.get("activity") or {}).get("data_quality_score"),
+        )
+        score = next((_wellness_number(value) for value in candidates if _wellness_number(value) is not None), None)
+        if score is None:
+            return None
+        score = max(0.0, min(100.0, score))
+        if domain == "endurance":
+            drift = item.get("cardiac_drift") or {}
+            decoupling = _wellness_number(drift.get("aerobic_decoupling_percent"))
+            if drift.get("analyzable") and decoupling is not None:
+                drift_score = max(35.0, min(100.0, 100.0 - abs(decoupling) * 6.0))
+                score = score * 0.65 + drift_score * 0.35
+        repetitions = _wellness_number(execution.get("planned_repetition_count"))
+        completed = _wellness_number(execution.get("completed_repetition_count"))
+        if domain in {"threshold", "vo2"} and repetitions and completed is not None:
+            completion_score = max(0.0, min(100.0, completed / repetitions * 100.0))
+            score = score * 0.75 + completion_score * 0.25
+        return round(score, 1)
+
+    competitions = []
+    for item in load_execution_summaries():
+        activity = item.get("activity") or {}
+        if activity.get("sport") not in {"running", "run", "road_running", "trail"}:
+            continue
+        domain = domain_for(item)
+        if domain:
+            score = session_score(item, domain)
+            if score is not None:
+                domains[domain]["scores"].append(score)
+                domains[domain]["dates"].append(str(item.get("start_time") or "")[:10])
+        descriptor = " ".join(str(value or "").lower() for value in (
+            activity.get("session_type"),
+            (item.get("analysis") or {}).get("session_type"),
+            ((item.get("workout_match") or {}).get("execution") or {}).get("workout_name"),
+        ))
+        if any(token in descriptor for token in ("race", "competition", "course officielle")):
+            competitions.append(item)
+
+    available = []
+    for key, domain in domains.items():
+        scores = domain.pop("scores")
+        dates = domain.pop("dates")
+        count = len(scores)
+        average = round(sum(scores) / count) if count else None
+        trend = None
+        if count >= 4:
+            split = count // 2
+            early = sum(scores[:split]) / split
+            late = sum(scores[split:]) / (count - split)
+            delta = late - early
+            trend = "en progression" if delta >= 3 else ("en retrait" if delta <= -3 else "stable")
+        confidence = min(95, 30 + count * 9) if count else 0
+        interpretation = (
+            "Données insuffisantes pour caractériser cette filière."
+            if count == 0 else
+            f"{count} séance(s) exploitable(s) ; niveau observé {average}/100"
+            + (f", tendance {trend}." if trend else ".")
+        )
+        domain.update({
+            "key": key,
+            "score": average,
+            "session_count": count,
+            "confidence": confidence,
+            "trend": trend,
+            "interpretation": interpretation,
+            "latest_session": max(dates) if dates else None,
+        })
+        if count >= 2 and average is not None:
+            available.append(domain)
+
+    ranked = sorted(available, key=lambda item: (item["score"], item["confidence"]), reverse=True)
+    dominant = ranked[0] if ranked else None
+    secondary = ranked[1] if len(ranked) > 1 else None
+    overall_confidence = round(sum(item["confidence"] for item in available) / len(available)) if available else 0
+    return {
+        "status": "established" if len(available) >= 3 else "building",
+        "headline": (
+            f"Point fort observé : {dominant['label'].lower()}"
+            if dominant else "Signature énergétique en construction"
+        ),
+        "summary": (
+            f"Les séances analysées mettent d’abord en valeur {dominant['label'].lower()}"
+            + (f", puis {secondary['label'].lower()}." if secondary else ".")
+            if dominant else
+            "Atlas attend davantage de séances classées pour identifier une dominante fiable."
+        ),
+        "dominant_domain": dominant["key"] if dominant else None,
+        "confidence": overall_confidence,
+        "domains": list(domains.values()),
+        "competition": {
+            "count": len(competitions),
+            "status": "available" if competitions else "missing",
+            "message": (
+                f"{len(competitions)} compétition(s) explicitement identifiée(s) dans les séances analysées."
+                if competitions else
+                "Aucune compétition n’est encore identifiée avec assez de certitude dans les fichiers analysés."
+            ),
+        },
+        "cellular_interpretation": (
+            "Atlas décrit une réponse fonctionnelle à l’effort. Les adaptations mitochondriales, "
+            "les fibres musculaires et l’utilisation des substrats restent des hypothèses, jamais des mesures directes."
         ),
     }
 

@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#020914">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Atlas OS — Aujourd’hui</title>
-  <link rel="stylesheet" href="./css/atlas-cockpit.css?v=23">
+  <link rel="stylesheet" href="./css/atlas-cockpit.css?v=24">
   <link rel="stylesheet" href="./css/atlas-global-nav.css?v=18">
   <link rel="stylesheet" href="./css/atlas-conversation.css?v=8">
   <link rel="stylesheet" href="./css/atlas-conversation-refinement.css?v=1">
-  <link rel="stylesheet" href="./css/atlas-responsive.css?v=6">
+  <link rel="stylesheet" href="./css/atlas-responsive.css?v=7">
 </head>
 <body>
   <div class="atlas-shell">
@@ -131,12 +131,26 @@
         </header>
         <button class="mobile-analysis-toggle" type="button" aria-expanded="false" aria-controls="athleteAnalysisDetails">Voir l’analyse complète</button>
         <div class="athlete-analysis-details" id="athleteAnalysisDetails">
+        <section class="energy-signature" aria-labelledby="energySignatureTitle">
+          <header>
+            <div><span class="eyebrow">SIGNATURE ÉNERGÉTIQUE PERSONNELLE</span><h3 id="energySignatureTitle" data-energy-headline>Profil en construction</h3><p data-energy-summary>Atlas classe les séances FIT réellement exploitables.</p></div>
+            <div class="energy-confidence"><strong data-energy-confidence>—</strong><span>/100</span><small>confiance</small></div>
+          </header>
+          <div class="energy-domain-grid" data-energy-domains></div>
+          <div class="energy-reading">
+            <article><span>TRANSFERT EN COMPÉTITION</span><strong data-energy-competition-title>À documenter</strong><p data-energy-competition></p></article>
+            <article><span>LECTURE PHYSIOLOGIQUE</span><strong>Fonctionnement observé, pas diagnostic cellulaire</strong><p data-energy-cellular></p></article>
+          </div>
+        </section>
+        <details class="analysis-secondary-details">
+          <summary>Wellness et disponibilité récente</summary>
         <div class="analysis-benchmarks">
           <article><span>VFC moyenne · 28 jours</span><strong data-analysis-hrv>—</strong><small data-analysis-hrv-trend></small></article>
           <article><span>Sommeil moyen · 28 jours</span><strong data-analysis-sleep>—</strong><small data-analysis-sleep-trend></small></article>
           <article><span>FC repos · 28 jours</span><strong data-analysis-resting>—</strong><small data-analysis-resting-trend></small></article>
           <article><span>Couverture récente</span><strong data-analysis-coverage>—</strong><small data-analysis-freshness></small></article>
         </div>
+        </details>
           <section class="physiology-reference" data-dashboard-metric="physiology" aria-labelledby="physiologyReferenceTitle">
           <header>
             <span class="eyebrow">RÉFÉRENCES PHYSIOLOGIQUES</span>
@@ -175,6 +189,8 @@
             <footer><strong data-physiology-chart-summary>Première référence enregistrée</strong><small data-physiology-chart-note>Atlas n’affiche une tendance qu’avec au moins deux mesures distinctes.</small></footer>
           </section>
         </section>
+        <details class="analysis-secondary-details">
+          <summary>Preuves détaillées, vigilances et contexte</summary>
         <div class="analysis-columns insight-lanes">
           <article class="analysis-strengths"><span class="eyebrow">FORCES OBSERVÉES</span><h3>Vos appuis actuels</h3><ul data-analysis-strengths></ul></article>
           <article class="analysis-vigilance"><span class="eyebrow">POINTS DE VIGILANCE</span><h3>Ce qui mérite votre attention</h3><ul data-analysis-vigilance></ul></article>
@@ -197,6 +213,7 @@
           </div>
         </section>
         <footer><p data-analysis-confidence-text>Calcul de confiance en cours…</p><small data-analysis-notice></small><button type="button" onclick="window.print()">Imprimer le rapport</button></footer>
+        </details>
         </div>
       </section>
     </main>
@@ -228,7 +245,7 @@
     <label><input type="checkbox" value="physiology" checked> VO₂max, VMA et seuils</label>
   </section>
   <script src="./js/atlas-conversation.js?v=9"></script>
-  <script src="./js/atlas-cockpit.js?v=32"></script>
+  <script src="./js/atlas-cockpit.js?v=33"></script>
   <script src="./js/atlas-pwa.js?v=3"></script>
 </body>
 </html>

@@ -337,6 +337,34 @@
     if (analysis) {
       setText("[data-analysis-summary]", analysis.summary);
       setText("[data-analysis-confidence]", analysis.confidence?.score ?? "—");
+      const energy = analysis.energy_signature;
+      setText("[data-energy-headline]", energy?.headline || "Signature énergétique en construction");
+      setText("[data-energy-summary]", energy?.summary || "Atlas attend des séances FIT exploitables.");
+      setText("[data-energy-confidence]", energy?.confidence ?? "—");
+      setText(
+        "[data-energy-competition-title]",
+        energy?.competition?.status === "available" ? "Compétitions retrouvées" : "Historique à identifier"
+      );
+      setText("[data-energy-competition]", energy?.competition?.message);
+      setText("[data-energy-cellular]", energy?.cellular_interpretation);
+      const energyRoot = document.querySelector("[data-energy-domains]");
+      if (energyRoot) {
+        energyRoot.replaceChildren();
+        (energy?.domains || []).forEach(domain => {
+          const article = document.createElement("article");
+          const score = domain.score == null ? null : Math.max(0, Math.min(100, Number(domain.score)));
+          article.className = `energy-domain energy-domain-${domain.key}`;
+          if (domain.key === energy?.dominant_domain) article.classList.add("is-dominant");
+          article.innerHTML = `
+            <div><span>${domain.short}</span><b>${domain.label}</b>${domain.key === energy?.dominant_domain ? "<em>Point fort</em>" : ""}</div>
+            <strong>${score == null ? "—" : Math.round(score)}<small>/100</small></strong>
+            <i><span style="width:${score || 0}%"></span></i>
+            <p>${domain.interpretation}</p>
+            <footer><span>${domain.session_count} séance(s)</span><span>confiance ${domain.confidence}/100</span></footer>
+          `;
+          energyRoot.appendChild(article);
+        });
+      }
       setText(
         "[data-analysis-coverage]",
         analysis.confidence ? `${analysis.confidence.coverage_28d} %` : "—"
