@@ -20,6 +20,44 @@
     });
   }
 
+  document.querySelectorAll(".insight-lanes > article").forEach((lane, index) => {
+    const content = lane.querySelector("ul, ol");
+    const heading = lane.querySelector("h3");
+    if (!content || !heading) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "mobile-lane-toggle";
+    button.setAttribute("aria-expanded", "false");
+    button.textContent = "Afficher les repères";
+    heading.insertAdjacentElement("afterend", button);
+    lane.classList.add("is-mobile-lane-collapsed");
+    button.addEventListener("click", () => {
+      const opening = lane.classList.toggle("is-mobile-lane-open");
+      lane.classList.toggle("is-mobile-lane-collapsed", !opening);
+      button.setAttribute("aria-expanded", String(opening));
+      button.textContent = opening ? "Masquer les repères" : "Afficher les repères";
+    });
+  });
+
+  const performanceGrid = document.querySelector(".performance-context-grid");
+  if (performanceGrid?.children.length > 1) {
+    const switcher = document.createElement("div");
+    switcher.className = "mobile-performance-switcher";
+    ["Meilleures", "Plus difficiles"].forEach((label, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.classList.toggle("is-active", index === 0);
+      button.textContent = label;
+      button.addEventListener("click", () => {
+        [...switcher.children].forEach((item, itemIndex) => item.classList.toggle("is-active", itemIndex === index));
+        [...performanceGrid.children].forEach((item, itemIndex) => item.classList.toggle("is-mobile-hidden", itemIndex !== index));
+      });
+      switcher.appendChild(button);
+    });
+    performanceGrid.before(switcher);
+    [...performanceGrid.children].forEach((item, index) => item.classList.toggle("is-mobile-hidden", index !== 0));
+  }
+
   const selectedAvatar =
     localStorage.getItem("atlasPreselectedAvatar") || "male";
   const avatar = document.getElementById("cockpitAvatar");
