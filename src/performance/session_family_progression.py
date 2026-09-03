@@ -215,3 +215,252 @@ def build_endurance_progression(
         ),
     })
     return result
+
+
+INTENSITY_FAMILIES = {
+    "tempo": {
+        "label": "Tempo",
+        "short": "Z3",
+        "tokens": ("tempo", "z3", "steady"),
+        "block_tokens": ("tempo", "z3", "steady"),
+        "minimum_work_minutes": 12,
+        "metric": "efficiency",
+    },
+    "threshold": {
+        "label": "Seuil",
+        "short": "SV2",
+        "tokens": ("sv2", "threshold", "seuil"),
+        "block_tokens": ("sv2", "threshold", "seuil"),
+        "minimum_work_minutes": 8,
+        "metric": "efficiency",
+    },
+    "vo2": {
+        "label": "Puissance aérobie",
+        "short": "VO₂max",
+        "tokens": ("vma", "vo2", "vo₂", "max_aerobic"),
+        "block_tokens": ("vma", "vo2", "vo₂", "max_aerobic"),
+        "minimum_work_minutes": 4,
+        "metric": "speed",
+    },
+}
+
+
+def _weighted_block_metrics(
+    item: dict[str, Any],
+    block_tokens: tuple[str, ...],
+) -> tuple[float | None, float | None, float | None, int]:
+    blocks = (item.get("analysis") or {}).get("blocks") or []
+    selected = []
+    for block in blocks:
+        block_type = str(block.get("block_type") or "").lower()
+        if any(token in block_type for token in block_tokens):
+            duration = _number(block.get("duration_seconds"))
+            speed = _number(block.get("average_speed_kmh"))
+            heart_rate = _number(block.get("average_heart_rate_bpm"))
+            if duration and duration > 0 and speed:
+                selected.append((duration, speed, heart_rate))
+    if not selected:
+        return None, None, None, 0
+    duration = sum(value[0] for value in selected)
+    speed = sum(value[0] * value[1] for value in selected) / duration
+    hr_values = [value for value in selected if value[2] is not None]
+    heart_rate = (
+        sum(value[0] * value[2] for value in hr_values)
+        / sum(value[0] for value in hr_values)
+        if hr_values else None
+    )
+    return speed, heart_rate, duration / 60, len(selected)
+
+
+def build_intensity_progression(
+    summaries: list[dict[str, Any]],
+    family: str,
+) -> dict[str, Any]:
+    """Compare Z3, SV2 ou VO₂max à partir des seuls blocs de travail."""
+    if family not in INTENSITY_FAMILIES:
+        raise ValueError(f"Filière non prise en charge : {family}")
+    config = INTENSITY_FAMILIES[family]
+    accepted: list[dict[str, Any]] = []
+    rejected: Counter[str] = Counter()
+
+    for item in summaries:
+        activity = item.get("activity") or {}
+        if str(activity.get("sport") or "").lower() not in {
+            "running", "run", "road_running", "trail",
+        }:
+            continue
+        descriptor = _descriptor(item)
+        if not any(token in descriptor for token in config["tokens"]):
+            continue
+        integrity = (item.get("analysis") or {}).get("data_integrity") or {}
+        if integrity.get("physiological_data_usable") is False:
+            rejected["données physiologiques non fiables"] += 1
+            continue
+        day = _day(item.get("start_time"))
+        quality = _number(activity.get("data_quality_score"))
+        if day is None or (quality is not None and quality < 50):
+            rejected["qualité insuffisante"] += 1
+            continue
+
+        speed, heart_rate, work_minutes, repetitions = _weighted_block_metrics(
+            item, config["block_tokens"],
+        )
+        # Les anciens FIT tempo peuvent ne pas disposer de tours détaillés.
+        # On accepte alors la partie de travail agrégée, jamais la séance
+        # entière pour le SV2 ou la VO₂max.
+        analysis = item.get("analysis") or {}
+        if speed is None and family == "tempo":
+            work_seconds = _number(analysis.get("work_duration_seconds"))
+            work_distance = _number(analysis.get("work_distance_meters"))
+            if work_seconds and work_distance:
+                speed = work_distance / work_seconds * 3.6
+                work_minutes = work_seconds / 60
+                heart_rate = _number(activity.get("average_heart_rate_bpm"))
+                repetitions = 1
+        if speed is None or work_minutes is None:
+            rejected["blocs de travail absents"] += 1
+            continue
+        if work_minutes < config["minimum_work_minutes"] or not 6 <= speed <= 24:
+            rejected["travail spécifique insuffisant"] += 1
+            continue
+        if heart_rate is not None and not 80 <= heart_rate <= 205:
+            heart_rate = None
+        accepted.append({
+            "day": day,
+            "speed_kmh": speed,
+            "heart_rate_bpm": heart_rate,
+            "work_minutes": work_minutes,
+            "repetitions": repetitions,
+            "quality": quality,
+        })
+
+    accepted.sort(key=lambda item: item["day"])
+    if accepted:
+        reference_work = _median(item["work_minutes"] for item in accepted)
+        protocol = [
+            item for item in accepted
+            if reference_work * .65 <= item["work_minutes"] <= reference_work * 1.35
+        ]
+        rejected["protocole trop différent"] += len(accepted) - len(protocol)
+        accepted = protocol
+    reference_hr_values = [
+        item["heart_rate_bpm"] for item in accepted
+        if item["heart_rate_bpm"] is not None
+    ]
+    reference_hr = _median(reference_hr_values) if reference_hr_values else None
+    if reference_hr is not None and config["metric"] == "efficiency":
+        comparable = [
+            item for item in accepted
+            if item["heart_rate_bpm"] is not None
+            and abs(item["heart_rate_bpm"] - reference_hr) <= 15
+        ]
+        rejected["réponse cardiaque non comparable"] += len(accepted) - len(comparable)
+        accepted = comparable
+
+    for item in accepted:
+        item["metric"] = (
+            item["speed_kmh"] / item["heart_rate_bpm"]
+            if config["metric"] == "efficiency" else item["speed_kmh"]
+        )
+    count = len(accepted)
+    points = [{
+        "day": item["day"],
+        "work_speed_kmh": round(item["speed_kmh"], 2),
+        "work_heart_rate_bpm": (
+            round(item["heart_rate_bpm"])
+            if item["heart_rate_bpm"] is not None else None
+        ),
+        "work_minutes": round(item["work_minutes"], 1),
+        "repetitions": item["repetitions"],
+    } for item in accepted]
+    result = {
+        "family": family,
+        "label": config["label"],
+        "short": config["short"],
+        "available": count >= 4,
+        "session_count": count,
+        "points": points,
+        "excluded": sum(rejected.values()),
+        "exclusion_reasons": dict(rejected),
+        "reference_heart_rate_bpm": round(reference_hr) if reference_hr else None,
+        "trend": "insufficient",
+        "trend_percent": None,
+        "confidence": min(95, 25 + count * 7),
+        "headline": f"Historique {config['short']} en construction",
+        "summary": f"{count} séance(s) comparable(s) ; quatre sont nécessaires pour conclure.",
+    }
+    if count < 4:
+        return result
+
+    window = min(5, count // 2)
+    early = accepted[:window]
+    recent = accepted[-window:]
+    early_metric = _median(item["metric"] for item in early)
+    recent_metric = _median(item["metric"] for item in recent)
+    change = (recent_metric / early_metric - 1) * 100
+    trend = "up" if change >= 1.5 else ("down" if change <= -1.5 else "stable")
+    early_speed = (
+        early_metric * reference_hr
+        if config["metric"] == "efficiency" else _median(item["speed_kmh"] for item in early)
+    )
+    recent_speed = (
+        recent_metric * reference_hr
+        if config["metric"] == "efficiency" else _median(item["speed_kmh"] for item in recent)
+    )
+    early_hr = [item["heart_rate_bpm"] for item in early if item["heart_rate_bpm"] is not None]
+    recent_hr = [item["heart_rate_bpm"] for item in recent if item["heart_rate_bpm"] is not None]
+    quality = [item["quality"] for item in accepted if item["quality"] is not None]
+    confidence = min(95, round(38 + min(32, count * 4) + (_median(quality) if quality else 50) * .2))
+    result.update({
+        "trend": trend,
+        "trend_percent": round(change, 1),
+        "confidence": confidence,
+        "headline": f"{config['label']} : " + {"up": "progression", "stable": "maintien", "down": "régression"}[trend],
+        "summary": (
+            f"Vitesse des blocs comparables : {early_speed:.2f} → {recent_speed:.2f} km/h "
+            f"({change:+.1f} %)."
+        ),
+        "early": {
+            "session_count": len(early), "work_speed_kmh": round(early_speed, 2),
+            "heart_rate_bpm": round(_median(early_hr)) if early_hr else None,
+            "from": early[0]["day"], "to": early[-1]["day"],
+        },
+        "recent": {
+            "session_count": len(recent), "work_speed_kmh": round(recent_speed, 2),
+            "heart_rate_bpm": round(_median(recent_hr)) if recent_hr else None,
+            "from": recent[0]["day"], "to": recent[-1]["day"],
+        },
+        "method": (
+            "Comparaison médiane des blocs de travail de protocoles proches. "
+            + (
+                "Vitesse ramenée à une réponse cardiaque commune."
+                if config["metric"] == "efficiency"
+                else "La vitesse des répétitions prime ; la FC reste contextuelle en VO₂max."
+            )
+        ),
+    })
+    return result
+
+
+def build_tempo_progression(summaries: list[dict[str, Any]]) -> dict[str, Any]:
+    return build_intensity_progression(summaries, "tempo")
+
+
+def build_threshold_progression(summaries: list[dict[str, Any]]) -> dict[str, Any]:
+    return build_intensity_progression(summaries, "threshold")
+
+
+def build_vo2_progression(summaries: list[dict[str, Any]]) -> dict[str, Any]:
+    return build_intensity_progression(summaries, "vo2")
+
+
+def build_all_family_progressions(
+    summaries: list[dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Prépare toutes les filières, sans imposer leur intégration à l'UI."""
+    return {
+        "endurance": build_endurance_progression(summaries),
+        "tempo": build_tempo_progression(summaries),
+        "threshold": build_threshold_progression(summaries),
+        "vo2": build_vo2_progression(summaries),
+    }
