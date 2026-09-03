@@ -498,8 +498,14 @@ class AtlasWorkoutExecutionMatcher:
                     "planned_index": planned_index,
                     "planned_duration_seconds": planned_duration,
                     "block_type": group["block_type"],
-                    "start_seconds": group.get("start"),
-                    "end_seconds": group.get("end"),
+                    "start_seconds": (
+                        group.get("start")
+                        if group.get("timeline_seconds") else None
+                    ),
+                    "end_seconds": (
+                        group.get("end")
+                        if group.get("timeline_seconds") else None
+                    ),
                     "duration_seconds": reported_duration,
                     "distance_meters": reported_distance,
                     "average_speed_kmh": group["average_speed_kmh"],
@@ -602,6 +608,7 @@ class AtlasWorkoutExecutionMatcher:
             groups.append({
                 "start": round(start_time - session_start),
                 "end": round(end_time - session_start),
+                "timeline_seconds": True,
                 "block_type": "vma",
                 "duration_seconds": float(observed_duration),
                 "distance_meters": average_speed / 3.6 * observed_duration,

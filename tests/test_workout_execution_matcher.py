@@ -455,6 +455,11 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
             planned, activity, analysis
         )
 
+        self.assertTrue(all(
+            item["start_seconds"] is None
+            and item["end_seconds"] is None
+            for item in result.execution.interval_details
+        ))
         self.assertEqual(
             result.execution.recovery_compliance_score,
             100,

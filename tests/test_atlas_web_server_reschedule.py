@@ -85,8 +85,8 @@ class AtlasWebServerRescheduleTests(unittest.TestCase):
         self.assertIn('CHOIX ÉQUILIBRÉ', calendar)
         self.assertIn('CHARGE ÉLEVÉE', calendar)
         self.assertIn('PRUDENCE ATLAS', calendar)
-        self.assertIn('performance-running.css?v=73', page)
-        self.assertIn('atlas-training-calendar.js?v=87', page)
+        self.assertIn('performance-running.css?v=74', page)
+        self.assertIn('atlas-training-calendar.js?v=88', page)
         self.assertIn('compact-interval-details" open', calendar)
         self.assertIn('interval-recovery-detail', calendar)
         self.assertIn('execution-score-explanation', calendar)
@@ -95,6 +95,8 @@ class AtlasWebServerRescheduleTests(unittest.TestCase):
         self.assertIn('distanceKm / representativeSpeed * 60', calendar)
         self.assertIn('personalZoneSpeed', calendar)
         self.assertIn('plannedDuration * Number(block.distance_meters) / totalDistance', calendar)
+        self.assertIn('const optionalMetric = value =>', calendar)
+        self.assertIn('Durées de récupération', calendar)
 
 
 if __name__ == "__main__":

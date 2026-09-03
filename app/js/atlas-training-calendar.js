@@ -2528,20 +2528,25 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const alignedIntervalDetails = Array.isArray(execution.interval_details)
       ? execution.interval_details
       : [];
+    const optionalMetric = value => {
+      if (value == null || value === "") return undefined;
+      const numeric = Number(value);
+      return Number.isFinite(numeric) ? numeric : undefined;
+    };
     let intervalGroups = alignedIntervalDetails.length
       ? alignedIntervalDetails.map(item => ({
           block: item,
           sources: [],
-          recovery: Number.isFinite(Number(item.recovery_seconds))
+          recovery: optionalMetric(item.recovery_seconds) > 0
             ? {
-                duration_seconds: Number(item.recovery_seconds),
-                distance_meters: Number(item.recovery_distance_meters),
-                average_speed_kmh: Number(item.recovery_average_speed_kmh),
-                average_heart_rate_bpm: Number(item.recovery_average_heart_rate_bpm),
-                ending_heart_rate_bpm: Number(item.recovery_ending_heart_rate_bpm),
-                heart_rate_drop_bpm: Number(item.recovery_heart_rate_drop_bpm),
-                average_power_watts: Number(item.recovery_average_power_watts),
-                average_cadence_spm: Number(item.recovery_average_cadence_spm)
+                duration_seconds: optionalMetric(item.recovery_seconds),
+                distance_meters: optionalMetric(item.recovery_distance_meters),
+                average_speed_kmh: optionalMetric(item.recovery_average_speed_kmh),
+                average_heart_rate_bpm: optionalMetric(item.recovery_average_heart_rate_bpm),
+                ending_heart_rate_bpm: optionalMetric(item.recovery_ending_heart_rate_bpm),
+                heart_rate_drop_bpm: optionalMetric(item.recovery_heart_rate_drop_bpm),
+                average_power_watts: optionalMetric(item.recovery_average_power_watts),
+                average_cadence_spm: optionalMetric(item.recovery_average_cadence_spm)
               }
             : null
         }))
@@ -2933,7 +2938,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           <dl>
             <div><dt>Durée globale</dt><dd>${reportScore(match.duration_compliance_score)}</dd></div>
             <div><dt>Cible spécifique</dt><dd>${reportScore(match.target_compliance_score)}</dd></div>
-            <div><dt>Récupérations</dt><dd>${Number.isFinite(Number(execution.recovery_compliance_score)) ? reportScore(execution.recovery_compliance_score) : "Non notées"}</dd></div>
+            <div><dt>Durées de récupération</dt><dd>${Number.isFinite(Number(execution.recovery_compliance_score)) ? reportScore(execution.recovery_compliance_score) : "Non notées"}</dd></div>
           </dl>
         </section>
 
