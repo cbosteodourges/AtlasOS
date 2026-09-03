@@ -1,6 +1,18 @@
 "use strict";
 
 (() => {
+  const analysis = document.querySelector(".athlete-analysis-home");
+  const analysisToggle = document.querySelector(".mobile-analysis-toggle");
+  if (analysis && analysisToggle) {
+    analysis.classList.add("is-mobile-collapsed");
+    analysisToggle.addEventListener("click", () => {
+      const opening = analysis.classList.toggle("is-mobile-open");
+      analysis.classList.toggle("is-mobile-collapsed", !opening);
+      analysisToggle.setAttribute("aria-expanded", String(opening));
+      analysisToggle.textContent = opening ? "Réduire l’analyse" : "Voir l’analyse complète";
+    });
+  }
+
   const selectedAvatar =
     localStorage.getItem("atlasPreselectedAvatar") || "male";
   const avatar = document.getElementById("cockpitAvatar");

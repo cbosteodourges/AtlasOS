@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="./css/atlas-global-nav.css?v=18">
   <link rel="stylesheet" href="./css/atlas-conversation.css?v=8">
   <link rel="stylesheet" href="./css/atlas-conversation-refinement.css?v=1">
-  <link rel="stylesheet" href="./css/atlas-responsive.css?v=3">
+  <link rel="stylesheet" href="./css/atlas-responsive.css?v=4">
 </head>
 <body>
   <div class="atlas-shell">
@@ -129,6 +129,8 @@
           </div>
           <div class="analysis-confidence"><strong data-analysis-confidence>—</strong><span>/100</span><small>confiance des données</small></div>
         </header>
+        <button class="mobile-analysis-toggle" type="button" aria-expanded="false" aria-controls="athleteAnalysisDetails">Voir l’analyse complète</button>
+        <div class="athlete-analysis-details" id="athleteAnalysisDetails">
         <div class="analysis-benchmarks">
           <article><span>VFC moyenne · 28 jours</span><strong data-analysis-hrv>—</strong><small data-analysis-hrv-trend></small></article>
           <article><span>Sommeil moyen · 28 jours</span><strong data-analysis-sleep>—</strong><small data-analysis-sleep-trend></small></article>
@@ -195,6 +197,7 @@
           </div>
         </section>
         <footer><p data-analysis-confidence-text>Calcul de confiance en cours…</p><small data-analysis-notice></small><button type="button" onclick="window.print()">Imprimer le rapport</button></footer>
+        </div>
       </section>
     </main>
   </div>
@@ -225,7 +228,7 @@
     <label><input type="checkbox" value="physiology" checked> VO₂max, VMA et seuils</label>
   </section>
   <script src="./js/atlas-conversation.js?v=9"></script>
-  <script src="./js/atlas-cockpit.js?v=29"></script>
+  <script src="./js/atlas-cockpit.js?v=30"></script>
   <script src="./js/atlas-pwa.js?v=3"></script>
 </body>
 </html>
