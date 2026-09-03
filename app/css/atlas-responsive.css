@@ -82,6 +82,26 @@ summary:focus-visible, input:focus-visible, textarea:focus-visible {
 
 /* Expérience mobile Atlas : priorité à la synthèse, détails consultables ensuite. */
 @media (max-width: 700px) {
+  .analysis-secondary-details > summary small {
+    display: block;
+    margin: 4px 0 0;
+  }
+  .analysis-secondary-details > .insight-lanes {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    margin: 10px !important;
+  }
+  .analysis-secondary-details > .insight-lanes > article {
+    padding: 15px !important;
+  }
+  .analysis-secondary-details > .insight-lanes > article > ul,
+  .analysis-secondary-details > .insight-lanes > article > ol {
+    display: block !important;
+    overflow: visible !important;
+  }
+  .technical-evidence-details {
+    margin: 10px !important;
+  }
   .atlas-home {
     padding-inline: 14px !important;
   }
@@ -462,8 +482,8 @@ summary:focus-visible, input:focus-visible, textarea:focus-visible {
   .physiology-chart svg {
     width: 100% !important;
   }
-  .physiology-chart { min-height: 250px !important; }
-  .physiology-chart svg { height: 250px !important; }
+  .physiology-chart { min-height: 285px !important; }
+  .physiology-chart svg { height: 285px !important; }
 
   .mobile-lane-toggle {
     display: block;

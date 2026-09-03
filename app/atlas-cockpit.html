@@ -142,16 +142,7 @@
             <article><span>LECTURE PHYSIOLOGIQUE</span><strong>Fonctionnement observé, pas diagnostic cellulaire</strong><p data-energy-cellular></p></article>
           </div>
         </section>
-        <details class="analysis-secondary-details">
-          <summary>Wellness et disponibilité récente</summary>
-        <div class="analysis-benchmarks">
-          <article><span>VFC moyenne · 28 jours</span><strong data-analysis-hrv>—</strong><small data-analysis-hrv-trend></small></article>
-          <article><span>Sommeil moyen · 28 jours</span><strong data-analysis-sleep>—</strong><small data-analysis-sleep-trend></small></article>
-          <article><span>FC repos · 28 jours</span><strong data-analysis-resting>—</strong><small data-analysis-resting-trend></small></article>
-          <article><span>Couverture récente</span><strong data-analysis-coverage>—</strong><small data-analysis-freshness></small></article>
-        </div>
-        </details>
-          <section class="physiology-reference" data-dashboard-metric="physiology" aria-labelledby="physiologyReferenceTitle">
+        <section class="physiology-reference" data-dashboard-metric="physiology" aria-labelledby="physiologyReferenceTitle">
           <header>
             <span class="eyebrow">RÉFÉRENCES PHYSIOLOGIQUES</span>
             <h3 id="physiologyReferenceTitle">Votre potentiel et vos seuils</h3>
@@ -183,19 +174,30 @@
               <button type="button" data-physiology-period="3650">10 ans</button><button type="button" data-physiology-period="0">Tout</button>
             </div>
             <div class="physiology-chart" data-physiology-chart role="img" aria-label="Évolution physiologique">
-              <svg viewBox="0 0 900 230" preserveAspectRatio="none" aria-hidden="true"></svg>
+              <svg viewBox="0 0 960 300" preserveAspectRatio="none" aria-hidden="true"></svg>
               <p data-physiology-chart-message>Historique physiologique en construction.</p>
             </div>
             <footer><strong data-physiology-chart-summary>Première référence enregistrée</strong><small data-physiology-chart-note>Atlas n’affiche une tendance qu’avec au moins deux mesures distinctes.</small></footer>
           </section>
         </section>
+        <details class="analysis-secondary-details wellness-details">
+          <summary>Wellness et disponibilité récente <small>État des 28 derniers jours</small></summary>
+          <div class="analysis-benchmarks">
+            <article><span>VFC moyenne · 28 jours</span><strong data-analysis-hrv>—</strong><small data-analysis-hrv-trend></small></article>
+            <article><span>Sommeil moyen · 28 jours</span><strong data-analysis-sleep>—</strong><small data-analysis-sleep-trend></small></article>
+            <article><span>FC repos · 28 jours</span><strong data-analysis-resting>—</strong><small data-analysis-resting-trend></small></article>
+            <article><span>Couverture récente</span><strong data-analysis-coverage>—</strong><small data-analysis-freshness></small></article>
+          </div>
+        </details>
         <details class="analysis-secondary-details">
-          <summary>Preuves détaillées, vigilances et contexte</summary>
+          <summary>Ce qu’Atlas retient <small>Forces, vigilance et prochain levier</small></summary>
         <div class="analysis-columns insight-lanes">
           <article class="analysis-strengths"><span class="eyebrow">FORCES OBSERVÉES</span><h3>Vos appuis actuels</h3><ul data-analysis-strengths></ul></article>
           <article class="analysis-vigilance"><span class="eyebrow">POINTS DE VIGILANCE</span><h3>Ce qui mérite votre attention</h3><ul data-analysis-vigilance></ul></article>
           <article class="analysis-priorities"><span class="eyebrow">AXES DE TRAVAIL</span><h3>Vos prochains leviers</h3><ol data-analysis-priorities></ol></article>
         </div>
+        <details class="technical-evidence-details">
+          <summary>Consulter les chiffres justificatifs</summary>
         <section class="longitudinal-evidence" aria-labelledby="longitudinalEvidenceTitle">
           <header><span class="eyebrow">CONCLUSIONS ARGUMENTÉES</span><h3 id="longitudinalEvidenceTitle">Les tendances solides à retenir</h3></header>
           <div data-longitudinal-conclusions></div>
@@ -212,6 +214,7 @@
             <article><span>SÉANCES PLUS DIFFICILES</span><strong data-difficult-score>—</strong><dl data-difficult-context></dl></article>
           </div>
         </section>
+        </details>
         <footer><p data-analysis-confidence-text>Calcul de confiance en cours…</p><small data-analysis-notice></small><button type="button" onclick="window.print()">Imprimer le rapport</button></footer>
         </details>
         </div>

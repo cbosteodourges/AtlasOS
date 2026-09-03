@@ -466,20 +466,42 @@
         const min = Math.min(...values);
         const max = Math.max(...values);
         const spread = Math.max(max - min, Math.abs(max || 1) * 0.04);
+        const axisMin = min - spread * 0.22;
+        const axisMax = max + spread * 0.22;
+        const plot = { left: 82, right: 930, top: 32, bottom: 244 };
         const coords = points.map((point, index) => {
-          const x = 42 + index * (816 / Math.max(1, points.length - 1));
-          const y = 190 - ((point.value - (min - spread * 0.25)) / (spread * 1.5)) * 145;
+          const x = plot.left + index * ((plot.right - plot.left) / Math.max(1, points.length - 1));
+          const y = plot.bottom - ((point.value - axisMin) / (axisMax - axisMin)) * (plot.bottom - plot.top);
           return { ...point, x, y };
         });
         const ns = "http://www.w3.org/2000/svg";
-        [55, 105, 155, 205].forEach(y => {
+        const [, chartUnit] = metricMeta[selectedPhysiologyMetric];
+        Array.from({ length: 5 }, (_, index) => index).forEach(index => {
+          const y = plot.top + index * ((plot.bottom - plot.top) / 4);
+          const value = axisMax - index * ((axisMax - axisMin) / 4);
           const line = document.createElementNS(ns, "line");
-          line.setAttribute("x1", "42"); line.setAttribute("x2", "858");
+          line.setAttribute("x1", String(plot.left)); line.setAttribute("x2", String(plot.right));
           line.setAttribute("y1", String(y)); line.setAttribute("y2", String(y));
           line.setAttribute("class", "chart-grid"); chartSvg.appendChild(line);
+          const tick = document.createElementNS(ns, "text");
+          tick.setAttribute("x", String(plot.left - 12)); tick.setAttribute("y", String(y + 4));
+          tick.setAttribute("text-anchor", "end"); tick.setAttribute("class", "chart-axis-label");
+          tick.textContent = `${value.toLocaleString("fr-FR", { maximumFractionDigits: 1 })}`;
+          chartSvg.appendChild(tick);
         });
+        const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+        const meanY = plot.bottom - ((mean - axisMin) / (axisMax - axisMin)) * (plot.bottom - plot.top);
+        const meanLine = document.createElementNS(ns, "line");
+        meanLine.setAttribute("x1", String(plot.left)); meanLine.setAttribute("x2", String(plot.right));
+        meanLine.setAttribute("y1", String(meanY)); meanLine.setAttribute("y2", String(meanY));
+        meanLine.setAttribute("class", "chart-mean"); chartSvg.appendChild(meanLine);
+        const meanLabel = document.createElementNS(ns, "text");
+        meanLabel.setAttribute("x", String(plot.right - 5)); meanLabel.setAttribute("y", String(meanY - 7));
+        meanLabel.setAttribute("text-anchor", "end"); meanLabel.setAttribute("class", "chart-mean-label");
+        meanLabel.textContent = `Moyenne ${mean.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} ${chartUnit}`;
+        chartSvg.appendChild(meanLabel);
         const area = document.createElementNS(ns, "path");
-        area.setAttribute("d", `M ${coords[0].x} 205 L ${coords.map(p => `${p.x} ${p.y}`).join(" L ")} L ${coords.at(-1).x} 205 Z`);
+        area.setAttribute("d", `M ${coords[0].x} ${plot.bottom} L ${coords.map(p => `${p.x} ${p.y}`).join(" L ")} L ${coords.at(-1).x} ${plot.bottom} Z`);
         area.setAttribute("class", "chart-area"); chartSvg.appendChild(area);
         const path = document.createElementNS(ns, "path");
         path.setAttribute("d", `M ${coords.map(p => `${p.x} ${p.y}`).join(" L ")}`);
@@ -500,11 +522,12 @@
           circle.appendChild(title);
           chartSvg.appendChild(circle);
         });
-        [coords[0], coords.at(-1)].forEach((point, index) => {
+        const datePoints = [...new Set([0, Math.floor((coords.length - 1) / 2), coords.length - 1])].map(index => coords[index]);
+        datePoints.forEach((point, index) => {
           const label = document.createElementNS(ns, "text");
           label.setAttribute("x", String(point.x));
-          label.setAttribute("y", "222");
-          label.setAttribute("text-anchor", index ? "end" : "start");
+          label.setAttribute("y", "274");
+          label.setAttribute("text-anchor", index === 0 ? "start" : index === datePoints.length - 1 ? "end" : "middle");
           label.setAttribute("class", "chart-date");
           label.textContent = new Date(point.day).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "2-digit" });
           chartSvg.appendChild(label);
@@ -564,15 +587,24 @@
           ? `${Math.round(analysis.benchmarks.resting_hr_28d)} bpm`
           : "Donnée insuffisante"
       );
-      const trendText = (value, unit, inverse = false) => {
-        if (value == null) return "Tendance 7 jours indisponible";
+      const setTrend = (selector, value, unit, inverse = false) => {
+        const target = document.querySelector(selector);
+        if (!target) return;
+        if (value == null) {
+          target.textContent = "Tendance 7 jours indisponible";
+          target.dataset.trend = "unknown";
+          return;
+        }
         const sign = value > 0 ? "+" : "";
-        const direction = value === 0 ? "stable" : ((value > 0) !== inverse ? "en hausse" : "en baisse");
-        return `7 j : ${sign}${String(value).replace(".", ",")}${unit} · ${direction}`;
+        const favorable = (value > 0) !== inverse;
+        const stable = Math.abs(Number(value)) < 0.25;
+        const direction = stable ? "maintien" : favorable ? "progression" : "baisse";
+        target.dataset.trend = stable ? "stable" : favorable ? "up" : "down";
+        target.textContent = `7 j : ${sign}${String(value).replace(".", ",")}${unit} · ${direction}`;
       };
-      setText("[data-analysis-hrv-trend]", trendText(analysis.benchmarks?.hrv_change_7d, " ms"));
-      setText("[data-analysis-sleep-trend]", trendText(analysis.benchmarks?.sleep_change_7d, " pt"));
-      setText("[data-analysis-resting-trend]", trendText(analysis.benchmarks?.resting_hr_change_7d, " bpm", true));
+      setTrend("[data-analysis-hrv-trend]", analysis.benchmarks?.hrv_change_7d, " ms");
+      setTrend("[data-analysis-sleep-trend]", analysis.benchmarks?.sleep_change_7d, " pt");
+      setTrend("[data-analysis-resting-trend]", analysis.benchmarks?.resting_hr_change_7d, " bpm", true);
       const freshness = analysis.confidence?.freshness_days;
       setText("[data-analysis-freshness]", freshness == null
         ? "Fraîcheur inconnue"
