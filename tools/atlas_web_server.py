@@ -23,9 +23,6 @@ from src.atlas_brain import AtlasBrain
 from src.connectors.garmin_wellness import GarminWellnessConnector
 from src.connectors import ActivityStore, HealthConnectBridge, StravaConnector, StravaOAuthService
 from src.patient.patient import Patient
-from src.performance.session_family_progression import (
-    build_endurance_progression,
-)
 from src.twin.digital_twin import DigitalTwin
 from src.training.daily_preparation_service import (
     DailyPreparationService,
@@ -2159,7 +2156,6 @@ def _energy_signature():
         "dominant_domain": dominant["key"] if dominant else None,
         "confidence": overall_confidence,
         "domains": list(domains.values()),
-        "family_progression": build_endurance_progression(execution_summaries),
         "competition": {
             "count": len(competitions),
             "status": "available" if competitions else "missing",
