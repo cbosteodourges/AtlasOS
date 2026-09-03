@@ -45,6 +45,8 @@ class AtlasCockpitNutritionUiTests(unittest.TestCase):
     def test_cockpit_displays_endurance_family_progression(self):
         self.assertIn("data-family-progression", self.page)
         self.assertIn("data-family-chart", self.page)
+        self.assertIn(".family-chart > p[hidden]", self.cockpit_styles)
+        self.assertIn("trend_percent", self.cockpit_script)
         self.assertIn("family_progression", self.cockpit_script)
         self.assertIn("equivalent_speed_kmh", self.cockpit_script)
 

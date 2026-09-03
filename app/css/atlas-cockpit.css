@@ -882,3 +882,7 @@ body[data-avatar="female"] .twin-panel img {
   overflow-wrap: anywhere;
   text-wrap: balance;
 }
+
+.family-chart > p[hidden] {
+  display: none !important;
+}

@@ -376,7 +376,11 @@
       if (familyTrend) {
         const labels = { up: "↗ Progression", stable: "→ Maintien", down: "↘ Régression", insufficient: "À confirmer" };
         familyTrend.dataset.trend = family?.trend || "insufficient";
-        familyTrend.textContent = labels[family?.trend] || labels.insufficient;
+        const trendPercent = Number(family?.trend_percent);
+        const percentage = Number.isFinite(trendPercent)
+          ? ` · ${trendPercent > 0 ? "+" : ""}${String(trendPercent).replace(".", ",")} %`
+          : "";
+        familyTrend.textContent = `${labels[family?.trend] || labels.insufficient}${percentage}`;
       }
       const familyChart = document.querySelector("[data-family-chart]");
       const familySvg = familyChart?.querySelector("svg");
