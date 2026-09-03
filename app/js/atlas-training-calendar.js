@@ -1838,7 +1838,18 @@ const target = compactTarget(workout, zone);
 
     const segments = [];
     const sessionSeconds = Math.max(0, Number(activityDurationMinutes) * 60);
-    const firstStart = Math.max(0, Number(intervals[0].start_seconds));
+    const reportedFirstStart = Math.max(0, Number(intervals[0].start_seconds));
+    const prescribedWarmupSeconds = (workout.blocks || [])
+      .filter(block => ["warm_up", "warmup"].includes(String(block.block_type || "")))
+      .reduce((total, block) => total + (
+        Math.max(0, Number(block.duration_minutes) || 0) * 60
+        + Math.max(0, Number(block.duration_seconds) || 0)
+      ), 0);
+    const legacyTimeline = prescribedWarmupSeconds > 0
+      && reportedFirstStart < prescribedWarmupSeconds * .5;
+    const firstStart = legacyTimeline
+      ? prescribedWarmupSeconds
+      : reportedFirstStart;
     if (firstStart > 0) {
       segments.push({ zone: 2, duration: firstStart / 60, label: "Échauffement" });
     }
@@ -1865,9 +1876,21 @@ const target = compactTarget(workout, zone);
     });
 
     const last = intervals[intervals.length - 1];
-    const lastEnd = Number.isFinite(Number(last.end_seconds))
+    const reportedLastEnd = Number.isFinite(Number(last.end_seconds))
       ? Number(last.end_seconds)
       : Number(last.start_seconds) + Number(last.duration_seconds);
+    const structuredWorkSeconds = intervals.reduce(
+      (total, interval) => total
+        + Math.max(0, Number(interval.duration_seconds) || 0)
+        + Math.max(0, Number(interval.recovery_seconds) || 0),
+      0
+    );
+    const reportedSpan = Math.max(0, reportedLastEnd - reportedFirstStart);
+    const timestampsAreCompressed = structuredWorkSeconds > 0
+      && reportedSpan < structuredWorkSeconds * .8;
+    const lastEnd = (legacyTimeline || timestampsAreCompressed)
+      ? firstStart + structuredWorkSeconds
+      : reportedLastEnd;
     const coolDownSeconds = Math.max(0, sessionSeconds - lastEnd);
     if (coolDownSeconds > 5) {
       segments.push({ zone: 1, duration: coolDownSeconds / 60, label: "Retour au calme" });
