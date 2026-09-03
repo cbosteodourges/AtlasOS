@@ -392,8 +392,11 @@ class AtlasWorkoutExecutionMatcher:
                 if item.average_heart_rate_bpm is not None
             ]
             groups.append({
-                "start": current[0][0],
-                "end": current[-1][0],
+                "start": float(current[0][1].start_offset_seconds),
+                "end": float(current[-1][1].end_offset_seconds),
+                "start_index": current[0][0],
+                "end_index": current[-1][0],
+                "timeline_seconds": True,
                 "block_type": str(current[0][1].block_type),
                 "duration_seconds": duration,
                 "distance_meters": distance,
@@ -480,17 +483,21 @@ class AtlasWorkoutExecutionMatcher:
                 if group.get("average_speed_kmh") is not None
                 else float(group["distance_meters"])
             )
-            next_start = (
-                groups[pairs[pair_index + 1][1]]["start"]
+            next_group = (
+                groups[pairs[pair_index + 1][1]]
                 if pair_index + 1 < len(pairs) else None
             )
             recovery_seconds = None
             if group.get("raw_recovery_seconds") is not None:
                 recovery_seconds = float(group["raw_recovery_seconds"])
-            elif next_start is not None and blocks:
+            elif next_group is not None and blocks:
+                end_index = int(group.get("end_index", group["end"]))
+                next_start_index = int(
+                    next_group.get("start_index", next_group["start"])
+                )
                 recovery_seconds = sum(
                     float(blocks[index].duration_seconds)
-                    for index in range(int(group["end"]) + 1, int(next_start))
+                    for index in range(end_index + 1, next_start_index)
                     if str(blocks[index].block_type) == "recovery"
                 )
             details.append({
