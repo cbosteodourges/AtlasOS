@@ -26,7 +26,7 @@ class AtlasCockpitNutritionUiTests(unittest.TestCase):
         self.assertIn(".daily-summary", self.styles)
 
     def test_cockpit_appearance_presets_are_local_and_non_destructive(self):
-        for theme in ("night", "ocean", "graphite"):
+        for theme in ("night", "ocean", "graphite", "aurora", "forest", "violet", "ember", "deepsea"):
             self.assertIn(f'value="{theme}"', self.page)
         self.assertIn("atlasAppearanceTheme", self.cockpit_script)
         self.assertIn("localStorage.setItem(themeKey", self.cockpit_script)

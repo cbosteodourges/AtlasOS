@@ -374,9 +374,8 @@
             <div><span>${domain.short}</span><b>${domain.label}</b>${domain.key === energy?.dominant_domain ? "<em>Point fort</em>" : ""}</div>
             <strong>${score == null ? "—" : Math.round(score)}<small>/100</small></strong>
             <i><span style="width:${score || 0}%"></span></i>
-            <p>${domain.session_count ? "Niveau calculé à partir des séances classées dans cette filière." : "Données insuffisantes pour caractériser cette filière."}</p>
+            <p>${domain.session_count ? `Niveau calculé à partir de ${domain.session_count} séance${domain.session_count > 1 ? "s" : ""} classée${domain.session_count > 1 ? "s" : ""} dans cette filière.` : "Données insuffisantes pour caractériser cette filière."}</p>
             <span class="energy-trend" data-trend="${trendTone}">${trendLabel}</span>
-            <footer><span>${domain.session_count} séance(s)</span><span>confiance ${domain.confidence}/100</span></footer>
           `;
           energyRoot.appendChild(article);
         });
@@ -791,7 +790,7 @@
   const themeInputs = [...document.querySelectorAll("input[name='atlas-theme']")];
   const themeKey = "atlasAppearanceTheme";
   const applyTheme = theme => {
-    const supported = ["night", "ocean", "graphite"];
+    const supported = ["night", "ocean", "graphite", "aurora", "forest", "violet", "ember", "deepsea"];
     const selected = supported.includes(theme) ? theme : "night";
     document.body.dataset.atlasTheme = selected;
     themeInputs.forEach(input => { input.checked = input.value === selected; });
