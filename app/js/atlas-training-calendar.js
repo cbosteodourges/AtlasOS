@@ -1697,10 +1697,37 @@ const target = compactTarget(workout, zone);
     const segments = [];
     const blocks = workout.blocks || [];
 
+    const paceMinutesPerKm = value => {
+      const match = String(value || "").match(/^(\d+):([0-5]\d)/);
+      return match ? Number(match[1]) + Number(match[2]) / 60 : null;
+    };
+    const blockDuration = block => {
+      const explicit = Number(block.duration_minutes) ||
+        (Number(block.duration_seconds) || 0) / 60;
+      if (explicit > 0) return explicit;
+
+      const distanceKm = Number(block.distance_meters) / 1000;
+      if (!(distanceKm > 0)) return 1;
+      const target = block.target || {};
+      const speeds = [target.speed_min_kmh, target.speed_max_kmh]
+        .map(Number)
+        .filter(speed => speed > 0);
+      if (speeds.length) {
+        const representativeSpeed = speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length;
+        return distanceKm / representativeSpeed * 60;
+      }
+      const paces = [target.pace_min_per_km, target.pace_max_per_km]
+        .map(paceMinutesPerKm)
+        .filter(pace => pace > 0);
+      if (paces.length) {
+        return distanceKm * (paces.reduce((sum, pace) => sum + pace, 0) / paces.length);
+      }
+      return 1;
+    };
+
     blocks.forEach((block, blockIndex) => {
       const repetitions = workoutRepetitionRange(block);
-      const duration = Number(block.duration_minutes) ||
-        (Number(block.duration_seconds) || 0) / 60 || 1;
+      const duration = blockDuration(block);
       const recovery = Number(block.recovery_minutes) ||
         (Number(block.recovery_seconds) || 0) / 60;
       const laterWorkBlock = blocks.slice(blockIndex + 1).some(
