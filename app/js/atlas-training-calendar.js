@@ -2591,10 +2591,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       return Number.isFinite(numeric) ? numeric : undefined;
     };
     let intervalGroups = alignedIntervalDetails.length
-      ? alignedIntervalDetails.map(item => ({
-          block: item,
-          sources: [],
-          recovery: optionalMetric(item.recovery_seconds) > 0
+      ? alignedIntervalDetails.map((item, index) => {
+          const detectedRecovery = detectedIntervalGroups[index]?.recovery || null;
+          const storedRecovery = optionalMetric(item.recovery_seconds) > 0
             ? {
                 duration_seconds: optionalMetric(item.recovery_seconds),
                 distance_meters: optionalMetric(item.recovery_distance_meters),
@@ -2605,8 +2604,17 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                 average_power_watts: optionalMetric(item.recovery_average_power_watts),
                 average_cadence_spm: optionalMetric(item.recovery_average_cadence_spm)
               }
-            : null
-        }))
+            : null;
+          return {
+          block: item,
+          sources: detectedIntervalGroups[index]?.sources || [],
+          recovery: storedRecovery
+            ? { ...detectedRecovery, ...Object.fromEntries(
+                Object.entries(storedRecovery).filter(([, value]) => value !== undefined)
+              ) }
+            : detectedRecovery
+          };
+        })
       : detectedIntervalGroups;
 
     // Une montée progressive pendant l'endurance peut traverser brièvement
@@ -2902,6 +2910,10 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const intervalRows = workBlocks.map((block, index) => {
       const speed = Number(block.average_speed_kmh);
       const recovery = intervalGroups[index]?.recovery || null;
+      const recoverySpeed = Number(recovery?.average_speed_kmh);
+      const recoveryAverageHeartRate = Number(recovery?.average_heart_rate_bpm);
+      const recoveryEndingHeartRate = Number(recovery?.ending_heart_rate_bpm);
+      const recoveryHeartRateDrop = Number(recovery?.heart_rate_drop_bpm);
 
       return `
         <div class="interval-detail-row">
@@ -2918,11 +2930,11 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           ${hasIntervalCadence ? `<span>${reportMeasuredValue(block.average_cadence_spm, 0, "ppm")}</span>` : ""}
           <span class="interval-recovery-detail">
             ${recovery ? `
-              <b>${reportBlockTime(recovery.duration_seconds)} · ${reportNumber(recovery.distance_meters, 0)} m</b>
-              <small>${reportPace(3600 / Number(recovery.average_speed_kmh))} · ${reportNumber(recovery.average_speed_kmh, 2)} km/h</small>
-              <small>FC moy. ${reportNumber(recovery.average_heart_rate_bpm, 0)} bpm</small>
-              <small>FC fin ${reportNumber(recovery.ending_heart_rate_bpm, 0)} bpm · baisse ${reportNumber(recovery.heart_rate_drop_bpm, 0)} bpm</small>
-            ` : "—"}
+              <b>${reportBlockTime(recovery.duration_seconds)}${Number(recovery.distance_meters) > 0 ? ` · ${reportNumber(recovery.distance_meters, 0)} m` : ""}</b>
+              ${recoverySpeed > 0 ? `<small>${reportPace(3600 / recoverySpeed)} · ${reportNumber(recoverySpeed, 2)} km/h</small>` : ""}
+              ${recoveryAverageHeartRate > 0 ? `<small>FC moy. ${reportNumber(recoveryAverageHeartRate, 0)} bpm</small>` : ""}
+              ${recoveryEndingHeartRate > 0 ? `<small>FC fin ${reportNumber(recoveryEndingHeartRate, 0)} bpm${recoveryHeartRateDrop >= 0 ? ` · baisse ${reportNumber(recoveryHeartRateDrop, 0)} bpm` : ""}</small>` : ""}
+            ` : index === workBlocks.length - 1 ? "Retour au calme" : "Données non mesurées"}
           </span>
         </div>
       `;

@@ -76,7 +76,7 @@ class PwaAssetsTests(unittest.TestCase):
     def test_styles_and_scripts_are_network_first(self):
         worker = (APP_ROOT / "service-worker.js").read_text(encoding="utf-8")
         pwa = (APP_ROOT / "js" / "atlas-pwa.js").read_text(encoding="utf-8")
-        self.assertIn('CACHE_NAME = "atlas-shell-v28"', worker)
+        self.assertIn('CACHE_NAME = "atlas-shell-v29"', worker)
         self.assertIn('["style", "script"]', worker)
         self.assertIn('fetch(event.request, { cache: "no-store" })', worker)
         self.assertIn('service-worker.js?v=4', pwa)
@@ -98,6 +98,8 @@ class PwaAssetsTests(unittest.TestCase):
         )
         self.assertIn("const heightPercent = segment =>", calendar)
         self.assertIn("(speed - reference) * 16", calendar)
+        self.assertIn("const detectedRecovery =", calendar)
+        self.assertIn('"Retour au calme" : "Données non mesurées"', calendar)
 
     def test_mobile_global_navigation_keeps_four_labeled_destinations(self):
         navigation_css = (APP_ROOT / "css" / "atlas-global-nav.css").read_text(
