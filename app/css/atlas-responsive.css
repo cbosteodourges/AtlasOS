@@ -293,22 +293,23 @@ summary:focus-visible, input:focus-visible, textarea:focus-visible {
   .home-grid { display: flex !important; flex-direction: column; }
   .home-content { order: 1; }
   .twin-panel {
-    order: 2 !important;
-    min-height: 250px !important;
-    max-height: 250px !important;
+    order: -1 !important;
+    min-height: 430px !important;
+    max-height: 430px !important;
   }
   .twin-panel img {
-    inset: 0 0 auto 50% !important;
-    width: 58% !important;
-    height: 100% !important;
+    inset: 1% 0 auto 50% !important;
+    width: 82% !important;
+    height: 82% !important;
+    object-fit: contain !important;
   }
   .twin-caption {
     inset: auto 0 0 !important;
-    padding: 12px 16px !important;
-    background: linear-gradient(transparent, rgba(1, 9, 18, .96) 32%) !important;
+    padding: 18px 16px 16px !important;
+    background: linear-gradient(transparent, rgba(1, 9, 18, .98) 24%) !important;
   }
-  .twin-caption small { display: none; }
-  .twin-caption strong { font-size: 1.25rem !important; }
+  .twin-caption small { display: block; }
+  .twin-caption strong { font-size: 1.45rem !important; }
 
   .metrics {
     display: grid !important;
@@ -337,42 +338,63 @@ summary:focus-visible, input:focus-visible, textarea:focus-visible {
     font-weight: 800;
   }
   .athlete-analysis-home.is-mobile-collapsed .athlete-analysis-details { display: none !important; }
+  .athlete-analysis-details { min-width: 0; }
   .athlete-analysis-home > header { margin-bottom: 0 !important; }
   .athlete-analysis-home > header p { display: none; }
 
-  .athlete-analysis-home.is-mobile-open .analysis-benchmarks,
-  .athlete-analysis-home.is-mobile-open .physiology-reference-grid.physiology-rings,
-  .athlete-analysis-home.is-mobile-open .insight-lanes > article > ul,
-  .athlete-analysis-home.is-mobile-open .insight-lanes > article > ol,
-  .athlete-analysis-home.is-mobile-open .longitudinal-evidence > [data-longitudinal-conclusions] {
-    grid-auto-flow: row !important;
-    grid-auto-columns: auto !important;
-    overflow: visible !important;
-  }
   .athlete-analysis-home.is-mobile-open .analysis-benchmarks {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-columns: none !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: calc(100% - 22px) !important;
+    overflow-x: auto !important;
     margin-top: 18px;
   }
   .athlete-analysis-home.is-mobile-open .physiology-reference-grid.physiology-rings {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    justify-items: center !important;
+    grid-template-columns: none !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: 148px !important;
+    justify-items: start !important;
+    overflow-x: auto !important;
   }
   .athlete-analysis-home.is-mobile-open .insight-lanes > article > ul,
   .athlete-analysis-home.is-mobile-open .insight-lanes > article > ol,
   .athlete-analysis-home.is-mobile-open .longitudinal-evidence > [data-longitudinal-conclusions] {
-    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-columns: none !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: calc(100% - 18px) !important;
+    overflow-x: auto !important;
   }
   .athlete-analysis-home.is-mobile-open .longitudinal-evidence [data-longitudinal-conclusions] > article {
     width: auto !important;
     min-width: 0 !important;
   }
+  .athlete-analysis-home.is-mobile-open .performance-context-grid {
+    display: grid !important;
+    grid-template-columns: none !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: calc(100% - 18px) !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory;
+  }
+  .athlete-analysis-home.is-mobile-open .performance-context-grid > article,
+  .athlete-analysis-home.is-mobile-open .analysis-benchmarks > article,
+  .athlete-analysis-home.is-mobile-open .insight-lanes li,
+  .athlete-analysis-home.is-mobile-open .longitudinal-evidence article {
+    scroll-snap-align: start;
+  }
+  .athlete-analysis-home.is-mobile-open .physiology-reference,
+  .athlete-analysis-home.is-mobile-open .physiology-evolution,
+  .athlete-analysis-home.is-mobile-open .insight-lanes > article,
+  .athlete-analysis-home.is-mobile-open .longitudinal-evidence,
+  .athlete-analysis-home.is-mobile-open .performance-context {
+    margin-inline: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
 }
 
 @media (max-width: 390px) {
   .metrics { grid-template-columns: minmax(0, 1fr) !important; }
-  .athlete-analysis-home.is-mobile-open .analysis-benchmarks {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

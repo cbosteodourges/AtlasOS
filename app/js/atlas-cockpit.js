@@ -3,13 +3,20 @@
 (() => {
   const analysis = document.querySelector(".athlete-analysis-home");
   const analysisToggle = document.querySelector(".mobile-analysis-toggle");
+  const athleteProfileLink = document.querySelector(".athlete-profile-link");
   if (analysis && analysisToggle) {
     analysis.classList.add("is-mobile-collapsed");
-    analysisToggle.addEventListener("click", () => {
-      const opening = analysis.classList.toggle("is-mobile-open");
+    const setAnalysisOpen = opening => {
+      analysis.classList.toggle("is-mobile-open", opening);
       analysis.classList.toggle("is-mobile-collapsed", !opening);
       analysisToggle.setAttribute("aria-expanded", String(opening));
       analysisToggle.textContent = opening ? "Réduire l’analyse" : "Voir l’analyse complète";
+    };
+    analysisToggle.addEventListener("click", () => setAnalysisOpen(!analysis.classList.contains("is-mobile-open")));
+    athleteProfileLink?.addEventListener("click", event => {
+      event.preventDefault();
+      setAnalysisOpen(true);
+      analysis.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
 
