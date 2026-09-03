@@ -8,20 +8,29 @@ ROOT = Path(__file__).resolve().parents[1]
 class AtlasCockpitNutritionUiTests(unittest.TestCase):
     def setUp(self):
         self.page = (ROOT / "app" / "atlas-cockpit.html").read_text(encoding="utf-8")
-        self.script = (ROOT / "app" / "js" / "atlas-cockpit.js").read_text(encoding="utf-8")
-        self.styles = (ROOT / "app" / "css" / "atlas-cockpit.css").read_text(encoding="utf-8")
+        self.module = (ROOT / "app" / "nutrition-hydration.html").read_text(encoding="utf-8")
+        self.script = (ROOT / "app" / "js" / "nutrition-hydration.js").read_text(encoding="utf-8")
+        self.styles = (ROOT / "app" / "css" / "nutrition-hydration.css").read_text(encoding="utf-8")
+        self.cockpit_script = (ROOT / "app" / "js" / "atlas-cockpit.js").read_text(encoding="utf-8")
+        self.cockpit_styles = (ROOT / "app" / "css" / "atlas-cockpit.css").read_text(encoding="utf-8")
 
     def test_founder_pilot_has_visible_daily_tools(self):
-        for marker in ("NUTRITION &amp; HYDRATATION", 'data-water="250"', 'data-water="500"',
+        for marker in ("Nutrition &amp; Hydratation", 'data-water="250"', 'data-water="500"',
                        "data-nutrition-form", "data-hydration-progress"):
-            self.assertIn(marker, self.page)
+            self.assertIn(marker, self.module)
         self.assertIn("data-nutrition-nav", self.page)
 
     def test_module_uses_api_and_dashboard_preference(self):
         self.assertIn('/api/atlas/nutrition-hydration', self.script)
-        self.assertIn("atlasNutritionPilotAdded", self.script)
-        self.assertIn("nutritionNav.hidden = false", self.script)
-        self.assertIn(".fuel-card", self.styles)
+        self.assertIn("data-nutrition-form", self.script)
+        self.assertIn(".daily-summary", self.styles)
+
+    def test_cockpit_appearance_presets_are_local_and_non_destructive(self):
+        for theme in ("night", "ocean", "graphite"):
+            self.assertIn(f'value="{theme}"', self.page)
+        self.assertIn("atlasAppearanceTheme", self.cockpit_script)
+        self.assertIn("localStorage.setItem(themeKey", self.cockpit_script)
+        self.assertIn('body[data-atlas-theme="ocean"]', self.cockpit_styles)
 
 
 if __name__ == "__main__":

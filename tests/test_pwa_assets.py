@@ -66,7 +66,7 @@ class PwaAssetsTests(unittest.TestCase):
         hub = (APP_ROOT / "atlas-hub.html").read_text(encoding="utf-8")
 
         self.assertIn('app.querySelector(":scope > .sidebar")?.remove()', navigation)
-        self.assertIn("atlas-global-nav.js?v=16", hub)
+        self.assertIn("atlas-global-nav.js?v=17", hub)
         self.assertIn("atlas-pwa.js?v=3", hub)
         self.assertIn(
             'document.body.classList.toggle("has-atlas-context-nav", !isHub)',
@@ -76,7 +76,7 @@ class PwaAssetsTests(unittest.TestCase):
     def test_styles_and_scripts_are_network_first(self):
         worker = (APP_ROOT / "service-worker.js").read_text(encoding="utf-8")
         pwa = (APP_ROOT / "js" / "atlas-pwa.js").read_text(encoding="utf-8")
-        self.assertIn('CACHE_NAME = "atlas-shell-v5"', worker)
+        self.assertIn('CACHE_NAME = "atlas-shell-v7"', worker)
         self.assertIn('["style", "script"]', worker)
         self.assertIn('fetch(event.request, { cache: "no-store" })', worker)
         self.assertIn('service-worker.js?v=4', pwa)
@@ -97,7 +97,8 @@ class PwaAssetsTests(unittest.TestCase):
             navigation_css,
         )
         self.assertIn(".atlas-global-nav .atlas-primary-nav", navigation_css)
-        self.assertIn('data-history-root="true"', navigation)
+        self.assertNotIn('data-history-root="true"', navigation)
+        self.assertIn('data-coach-nav="history"', navigation)
         self.assertIn(".atlas-global-nav .atlas-nav-label", navigation_css)
         self.assertIn("opacity: 1", navigation_css)
         self.assertIn(".app.has-atlas-global-nav", navigation_css)

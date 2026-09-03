@@ -174,7 +174,7 @@ class GarminConnectorTests(unittest.TestCase):
         )
         self.assertEqual(
             activity.raw_metadata["laps"][0]["timestamp"],
-            "2026-08-02T08:10:00+02:00",
+            "2026-08-02T06:10:00+00:00",
         )
         self.assertEqual(
             activity.raw_metadata["time_in_zones"][0]["1"],

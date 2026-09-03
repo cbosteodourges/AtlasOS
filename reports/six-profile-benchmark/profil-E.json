@@ -1,0 +1,4977 @@
+{
+  "profile_label": "Confirmé — marathon",
+  "persona": {
+    "age": 46,
+    "sex": "femme",
+    "occupation": "profession libérale",
+    "history": "10 ans, trois marathons",
+    "fragility": "tolérance digestive à tester"
+  },
+  "profile": {
+    "athlete_id": "benchmark-e",
+    "declared_level": "competitive",
+    "observed_level": "competitive",
+    "training_age_years": 8,
+    "primary_sport": "running",
+    "secondary_sports": [],
+    "physiological": {
+      "age_years": null,
+      "sex": null,
+      "height_cm": null,
+      "weight_kg": null,
+      "maximum_heart_rate_bpm": null,
+      "maximum_heart_rate_confidence_score": 0,
+      "maximum_heart_rate_source": "",
+      "maximum_heart_rate_evidence": [],
+      "rejected_heart_rate_activity_ids": [],
+      "resting_heart_rate_bpm": null,
+      "threshold_heart_rate_bpm": null,
+      "vma_kmh": 16.2,
+      "vo2_max": 57,
+      "threshold_speed_kmh": 14.2,
+      "sv1": {
+        "threshold_name": "sv1",
+        "speed_kmh": null,
+        "heart_rate_bpm": null,
+        "minimum_speed_kmh": null,
+        "maximum_speed_kmh": null,
+        "minimum_heart_rate_bpm": null,
+        "maximum_heart_rate_bpm": null,
+        "confidence_score": 0,
+        "observation_count": 0,
+        "trend": "unknown",
+        "last_updated_at": null,
+        "evidence": [],
+        "history": []
+      },
+      "sv2": {
+        "threshold_name": "sv2",
+        "speed_kmh": null,
+        "heart_rate_bpm": null,
+        "minimum_speed_kmh": null,
+        "maximum_speed_kmh": null,
+        "minimum_heart_rate_bpm": null,
+        "maximum_heart_rate_bpm": null,
+        "confidence_score": 0,
+        "observation_count": 0,
+        "trend": "unknown",
+        "last_updated_at": null,
+        "evidence": [],
+        "history": []
+      },
+      "hrv_baseline_ms": null,
+      "body_battery_baseline": null
+    },
+    "availability": {
+      "available_days_per_week": 6,
+      "preferred_training_days": [],
+      "unavailable_days": [],
+      "maximum_weekly_hours": null,
+      "professional_constraints": "Horaires de travail variables",
+      "family_constraints": "Disponibilités familiales prioritaires"
+    },
+    "tolerance": {
+      "usual_running_distance_per_week_km": 65,
+      "usual_running_sessions_per_week": 5,
+      "maximum_observed_weekly_distance_km": null,
+      "maximum_tolerated_weekly_distance_km": 85,
+      "usual_high_intensity_sessions_per_week": null,
+      "usual_long_runs_per_month": null,
+      "usual_recovery_days_after_intensity": null,
+      "usual_recovery_days_after_long_run": null,
+      "recent_load_change_percent": null,
+      "learned_physiological_tolerance_score": 70,
+      "learned_biomechanical_tolerance_score": 68,
+      "learned_response_count": 0,
+      "positive_response_count": 0,
+      "delayed_response_count": 0,
+      "adverse_response_count": 0,
+      "session_type_tolerance_scores": {},
+      "structure_tolerance_scores": {},
+      "last_learning_update": null
+    },
+    "competition_count": 0,
+    "successful_competition_count": 0,
+    "preferred_competition_types": [],
+    "current_pain_or_injury": false,
+    "pain_or_injury_notes": "",
+    "medical_constraints": [],
+    "history_activity_count": 390,
+    "history_duration_weeks": 80,
+    "data_quality_score": 82,
+    "profile_confidence_score": 78,
+    "strengths": [
+      "SV1 de travail estimé à 11.6 km/h"
+    ],
+    "limitations": [],
+    "missing_data": []
+  },
+  "program": {
+    "athlete_id": "benchmark-e",
+    "goal": {
+      "name": "Marathon",
+      "event_date": "2026-11-29",
+      "distance_km": 42.195,
+      "target_time_minutes": 195,
+      "discipline": "running",
+      "priority": "principal",
+      "elevation_gain_m": null,
+      "elevation_loss_m": null,
+      "terrain_technicality": "unknown"
+    },
+    "created_at": "2026-09-02",
+    "start_date": "2026-09-07",
+    "end_date": "2026-11-29",
+    "settings": {
+      "running_sessions_per_week": 5,
+      "optional_running_sessions_per_week": 1,
+      "strength_sessions_per_week": 2,
+      "cycling_sessions_per_week": 0,
+      "preferred_long_run_day": "sunday",
+      "preferred_quality_days": [
+        "tuesday",
+        "friday"
+      ],
+      "include_mobility": true,
+      "avoid_consecutive_intense_days": true,
+      "maximum_weekly_progression_percent": 8,
+      "prioritize_metabolic_quality": false,
+      "race_week_sharpening_days_before": null
+    },
+    "weeks": [
+      {
+        "week_number": 1,
+        "start_date": "2026-09-07",
+        "end_date": "2026-09-13",
+        "phase": "base",
+        "objective": "Construire le socle aérobie et biomécanique.",
+        "workouts": [
+          {
+            "workout_id": "2026-09-07-endurance_z2",
+            "workout_date": "2026-09-07",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-09-08-tempo_z3-endurance-specific",
+            "workout_date": "2026-09-08",
+            "workout_type": "tempo_z3",
+            "title": "Allure marathon · 3 × 8 min",
+            "objective": "Stabiliser l'économie de course à l'allure marathon.",
+            "blocks": [
+              {
+                "name": "Échauffement progressif",
+                "block_type": "warm_up",
+                "repetitions": 1,
+                "duration_minutes": 15,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              },
+              {
+                "name": "Blocs à allure marathon",
+                "block_type": "work",
+                "repetitions": 3,
+                "duration_minutes": 8,
+                "distance_meters": null,
+                "recovery_minutes": 3,
+                "target": {
+                  "zone": 3,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 12.72,
+                  "speed_max_kmh": 13.24,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Allure régulière, relâchée et compatible avec la stratégie énergétique de course."
+              },
+              {
+                "name": "Retour au calme",
+                "block_type": "cool_down",
+                "repetitions": 1,
+                "duration_minutes": 10,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 1,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 2,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 55,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route régulière",
+            "fueling_strategy": "Tester la boisson et les glucides prévus en compétition.",
+            "expected_response": {
+              "physiological_load_0_100": 82,
+              "biomechanical_load_0_100": 78,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 72,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "quadriceps"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 1,
+            "replacement_types": [
+              "endurance_z2"
+            ],
+            "coach_notes": [
+              "Tester la boisson et les glucides prévus en compétition.",
+              "Réévaluation récupération et douleur le jour même."
+            ]
+          },
+          {
+            "workout_id": "2026-09-10-endurance_z2",
+            "workout_date": "2026-09-10",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-09-10-strength",
+            "workout_date": "2026-09-10",
+            "workout_type": "strength",
+            "title": "Renforcement du coureur",
+            "objective": "Développer la force utile, la stabilité et la tolérance biomécanique.",
+            "blocks": [
+              {
+                "name": "Renforcement fonctionnel",
+                "block_type": "strength",
+                "repetitions": 1,
+                "duration_minutes": 20,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": null,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Travail contrôlé des mollets, quadriceps, ischio-jambiers, hanches et tronc."
+              }
+            ],
+            "sport": "strength",
+            "priority": "support",
+            "planned_duration_minutes": 20,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 45,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 24,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "mollets",
+                "genoux",
+                "hanches",
+                "rachis"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "mobility"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-09-12-endurance_z2",
+            "workout_date": "2026-09-12",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-09-13-long_run",
+            "workout_date": "2026-09-13",
+            "workout_type": "long_run",
+            "title": "Sortie longue spécifique · Marathon route",
+            "objective": "Développer l'endurance marathon, la résistance musculaire et la stratégie énergétique.",
+            "blocks": [
+              {
+                "name": "Endurance longue",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 75,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 9.72,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 4,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Conserver une allure régulière, facile et compatible avec une conversation. Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés."
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 75,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route et allure régulière",
+            "fueling_strategy": "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+            "expected_response": {
+              "physiological_load_0_100": 65,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "hanches"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "endurance_z2",
+              "cycling"
+            ],
+            "coach_notes": [
+              "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+              "Aucun nouveau produit ni matériel le jour de la compétition."
+            ]
+          }
+        ],
+        "target_running_distance_km": null,
+        "target_duration_minutes": 285,
+        "is_recovery_week": false,
+        "coach_notes": [
+          "Semaine construite avec Atlas Research."
+        ]
+      },
+      {
+        "week_number": 2,
+        "start_date": "2026-09-14",
+        "end_date": "2026-09-20",
+        "phase": "base",
+        "objective": "Construire le socle aérobie et biomécanique.",
+        "workouts": [
+          {
+            "workout_id": "2026-09-14-endurance_z2",
+            "workout_date": "2026-09-14",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-09-15-tempo_z3-endurance-specific",
+            "workout_date": "2026-09-15",
+            "workout_type": "tempo_z3",
+            "title": "Allure marathon · 3 × 8 min",
+            "objective": "Stabiliser l'économie de course à l'allure marathon.",
+            "blocks": [
+              {
+                "name": "Échauffement progressif",
+                "block_type": "warm_up",
+                "repetitions": 1,
+                "duration_minutes": 15,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              },
+              {
+                "name": "Blocs à allure marathon",
+                "block_type": "work",
+                "repetitions": 3,
+                "duration_minutes": 8,
+                "distance_meters": null,
+                "recovery_minutes": 3,
+                "target": {
+                  "zone": 3,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 12.72,
+                  "speed_max_kmh": 13.24,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Allure régulière, relâchée et compatible avec la stratégie énergétique de course."
+              },
+              {
+                "name": "Retour au calme",
+                "block_type": "cool_down",
+                "repetitions": 1,
+                "duration_minutes": 10,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 1,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 2,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 55,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route régulière",
+            "fueling_strategy": "Tester la boisson et les glucides prévus en compétition.",
+            "expected_response": {
+              "physiological_load_0_100": 82,
+              "biomechanical_load_0_100": 78,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 72,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "quadriceps"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 1,
+            "replacement_types": [
+              "endurance_z2"
+            ],
+            "coach_notes": [
+              "Tester la boisson et les glucides prévus en compétition.",
+              "Réévaluation récupération et douleur le jour même."
+            ]
+          },
+          {
+            "workout_id": "2026-09-17-endurance_z2",
+            "workout_date": "2026-09-17",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-09-17-strength",
+            "workout_date": "2026-09-17",
+            "workout_type": "strength",
+            "title": "Renforcement du coureur",
+            "objective": "Développer la force utile, la stabilité et la tolérance biomécanique.",
+            "blocks": [
+              {
+                "name": "Renforcement fonctionnel",
+                "block_type": "strength",
+                "repetitions": 1,
+                "duration_minutes": 20,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": null,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Travail contrôlé des mollets, quadriceps, ischio-jambiers, hanches et tronc."
+              }
+            ],
+            "sport": "strength",
+            "priority": "support",
+            "planned_duration_minutes": 20,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 45,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 24,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "mollets",
+                "genoux",
+                "hanches",
+                "rachis"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "mobility"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-09-19-endurance_z2",
+            "workout_date": "2026-09-19",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-09-20-long_run",
+            "workout_date": "2026-09-20",
+            "workout_type": "long_run",
+            "title": "Sortie longue spécifique · Marathon route",
+            "objective": "Développer l'endurance marathon, la résistance musculaire et la stratégie énergétique.",
+            "blocks": [
+              {
+                "name": "Endurance longue",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 81,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 9.72,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 4,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Conserver une allure régulière, facile et compatible avec une conversation. Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés."
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 81,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route et allure régulière",
+            "fueling_strategy": "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+            "expected_response": {
+              "physiological_load_0_100": 65,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "hanches"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "endurance_z2",
+              "cycling"
+            ],
+            "coach_notes": [
+              "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+              "Aucun nouveau produit ni matériel le jour de la compétition."
+            ]
+          }
+        ],
+        "target_running_distance_km": null,
+        "target_duration_minutes": 291,
+        "is_recovery_week": false,
+        "coach_notes": [
+          "Semaine construite avec Atlas Research."
+        ]
+      },
+      {
+        "week_number": 3,
+        "start_date": "2026-09-21",
+        "end_date": "2026-09-27",
+        "phase": "base",
+        "objective": "Construire le socle aérobie et biomécanique.",
+        "workouts": [
+          {
+            "workout_id": "2026-09-21-endurance_z2",
+            "workout_date": "2026-09-21",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-09-22-tempo_z3-endurance-specific",
+            "workout_date": "2026-09-22",
+            "workout_type": "tempo_z3",
+            "title": "Allure marathon · 3 × 8 min",
+            "objective": "Stabiliser l'économie de course à l'allure marathon.",
+            "blocks": [
+              {
+                "name": "Échauffement progressif",
+                "block_type": "warm_up",
+                "repetitions": 1,
+                "duration_minutes": 15,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              },
+              {
+                "name": "Blocs à allure marathon",
+                "block_type": "work",
+                "repetitions": 3,
+                "duration_minutes": 8,
+                "distance_meters": null,
+                "recovery_minutes": 3,
+                "target": {
+                  "zone": 3,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 12.72,
+                  "speed_max_kmh": 13.24,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Allure régulière, relâchée et compatible avec la stratégie énergétique de course."
+              },
+              {
+                "name": "Retour au calme",
+                "block_type": "cool_down",
+                "repetitions": 1,
+                "duration_minutes": 10,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 1,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 2,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 55,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route régulière",
+            "fueling_strategy": "Tester la boisson et les glucides prévus en compétition.",
+            "expected_response": {
+              "physiological_load_0_100": 82,
+              "biomechanical_load_0_100": 78,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 72,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "quadriceps"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 1,
+            "replacement_types": [
+              "endurance_z2"
+            ],
+            "coach_notes": [
+              "Tester la boisson et les glucides prévus en compétition.",
+              "Réévaluation récupération et douleur le jour même."
+            ]
+          },
+          {
+            "workout_id": "2026-09-24-endurance_z2",
+            "workout_date": "2026-09-24",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-09-24-strength",
+            "workout_date": "2026-09-24",
+            "workout_type": "strength",
+            "title": "Renforcement du coureur",
+            "objective": "Développer la force utile, la stabilité et la tolérance biomécanique.",
+            "blocks": [
+              {
+                "name": "Renforcement fonctionnel",
+                "block_type": "strength",
+                "repetitions": 1,
+                "duration_minutes": 20,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": null,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Travail contrôlé des mollets, quadriceps, ischio-jambiers, hanches et tronc."
+              }
+            ],
+            "sport": "strength",
+            "priority": "support",
+            "planned_duration_minutes": 20,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 45,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 24,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "mollets",
+                "genoux",
+                "hanches",
+                "rachis"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "mobility"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-09-26-endurance_z2",
+            "workout_date": "2026-09-26",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-09-27-long_run",
+            "workout_date": "2026-09-27",
+            "workout_type": "long_run",
+            "title": "Sortie longue spécifique · Marathon route",
+            "objective": "Développer l'endurance marathon, la résistance musculaire et la stratégie énergétique.",
+            "blocks": [
+              {
+                "name": "Endurance longue",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 87,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 9.72,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 4,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Conserver une allure régulière, facile et compatible avec une conversation. Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés."
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 87,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route et allure régulière",
+            "fueling_strategy": "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+            "expected_response": {
+              "physiological_load_0_100": 65,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "hanches"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "endurance_z2",
+              "cycling"
+            ],
+            "coach_notes": [
+              "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+              "Aucun nouveau produit ni matériel le jour de la compétition."
+            ]
+          }
+        ],
+        "target_running_distance_km": null,
+        "target_duration_minutes": 297,
+        "is_recovery_week": false,
+        "coach_notes": [
+          "Semaine construite avec Atlas Research."
+        ]
+      },
+      {
+        "week_number": 4,
+        "start_date": "2026-09-28",
+        "end_date": "2026-10-04",
+        "phase": "base",
+        "objective": "Construire le socle aérobie et biomécanique.",
+        "workouts": [
+          {
+            "workout_id": "2026-09-28-endurance_z2",
+            "workout_date": "2026-09-28",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-09-29-tempo_z3-endurance-specific",
+            "workout_date": "2026-09-29",
+            "workout_type": "tempo_z3",
+            "title": "Allure marathon · 3 × 8 min",
+            "objective": "Stabiliser l'économie de course à l'allure marathon.",
+            "blocks": [
+              {
+                "name": "Échauffement progressif",
+                "block_type": "warm_up",
+                "repetitions": 1,
+                "duration_minutes": 15,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              },
+              {
+                "name": "Blocs à allure marathon",
+                "block_type": "work",
+                "repetitions": 3,
+                "duration_minutes": 8,
+                "distance_meters": null,
+                "recovery_minutes": 3,
+                "target": {
+                  "zone": 3,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 12.72,
+                  "speed_max_kmh": 13.24,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Allure régulière, relâchée et compatible avec la stratégie énergétique de course."
+              },
+              {
+                "name": "Retour au calme",
+                "block_type": "cool_down",
+                "repetitions": 1,
+                "duration_minutes": 10,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 1,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 2,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 55,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route régulière",
+            "fueling_strategy": "Tester la boisson et les glucides prévus en compétition.",
+            "expected_response": {
+              "physiological_load_0_100": 82,
+              "biomechanical_load_0_100": 78,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 72,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "quadriceps"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 1,
+            "replacement_types": [
+              "endurance_z2"
+            ],
+            "coach_notes": [
+              "Tester la boisson et les glucides prévus en compétition.",
+              "Réévaluation récupération et douleur le jour même."
+            ]
+          },
+          {
+            "workout_id": "2026-10-01-endurance_z2",
+            "workout_date": "2026-10-01",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-01-strength",
+            "workout_date": "2026-10-01",
+            "workout_type": "strength",
+            "title": "Renforcement du coureur",
+            "objective": "Développer la force utile, la stabilité et la tolérance biomécanique.",
+            "blocks": [
+              {
+                "name": "Renforcement fonctionnel",
+                "block_type": "strength",
+                "repetitions": 1,
+                "duration_minutes": 20,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": null,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Travail contrôlé des mollets, quadriceps, ischio-jambiers, hanches et tronc."
+              }
+            ],
+            "sport": "strength",
+            "priority": "support",
+            "planned_duration_minutes": 20,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 45,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 24,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "mollets",
+                "genoux",
+                "hanches",
+                "rachis"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "mobility"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-03-endurance_z2",
+            "workout_date": "2026-10-03",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-04-long_run",
+            "workout_date": "2026-10-04",
+            "workout_type": "long_run",
+            "title": "Sortie longue spécifique · Marathon route",
+            "objective": "Développer l'endurance marathon, la résistance musculaire et la stratégie énergétique.",
+            "blocks": [
+              {
+                "name": "Endurance longue",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 94,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 9.72,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 4,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Conserver une allure régulière, facile et compatible avec une conversation. Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés."
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 94,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route et allure régulière",
+            "fueling_strategy": "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+            "expected_response": {
+              "physiological_load_0_100": 65,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "hanches"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "endurance_z2",
+              "cycling"
+            ],
+            "coach_notes": [
+              "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+              "Aucun nouveau produit ni matériel le jour de la compétition."
+            ]
+          }
+        ],
+        "target_running_distance_km": null,
+        "target_duration_minutes": 304,
+        "is_recovery_week": false,
+        "coach_notes": [
+          "Semaine construite avec Atlas Research."
+        ]
+      },
+      {
+        "week_number": 5,
+        "start_date": "2026-10-05",
+        "end_date": "2026-10-11",
+        "phase": "development",
+        "objective": "Développer progressivement les qualités ciblées.",
+        "workouts": [
+          {
+            "workout_id": "2026-10-05-endurance_z2",
+            "workout_date": "2026-10-05",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-06-tempo_z3-endurance-specific",
+            "workout_date": "2026-10-06",
+            "workout_type": "tempo_z3",
+            "title": "Allure marathon · 3 × 12 min",
+            "objective": "Stabiliser l'économie de course à l'allure marathon.",
+            "blocks": [
+              {
+                "name": "Échauffement progressif",
+                "block_type": "warm_up",
+                "repetitions": 1,
+                "duration_minutes": 15,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              },
+              {
+                "name": "Blocs à allure marathon",
+                "block_type": "work",
+                "repetitions": 3,
+                "duration_minutes": 12,
+                "distance_meters": null,
+                "recovery_minutes": 3,
+                "target": {
+                  "zone": 3,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 12.72,
+                  "speed_max_kmh": 13.24,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Allure régulière, relâchée et compatible avec la stratégie énergétique de course."
+              },
+              {
+                "name": "Retour au calme",
+                "block_type": "cool_down",
+                "repetitions": 1,
+                "duration_minutes": 10,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 1,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 2,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 67,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route régulière",
+            "fueling_strategy": "Tester la boisson et les glucides prévus en compétition.",
+            "expected_response": {
+              "physiological_load_0_100": 82,
+              "biomechanical_load_0_100": 78,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 72,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "quadriceps"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 1,
+            "replacement_types": [
+              "endurance_z2"
+            ],
+            "coach_notes": [
+              "Tester la boisson et les glucides prévus en compétition.",
+              "Réévaluation récupération et douleur le jour même."
+            ]
+          },
+          {
+            "workout_id": "2026-10-08-endurance_z2",
+            "workout_date": "2026-10-08",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-08-strength",
+            "workout_date": "2026-10-08",
+            "workout_type": "strength",
+            "title": "Renforcement du coureur",
+            "objective": "Développer la force utile, la stabilité et la tolérance biomécanique.",
+            "blocks": [
+              {
+                "name": "Renforcement fonctionnel",
+                "block_type": "strength",
+                "repetitions": 1,
+                "duration_minutes": 20,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": null,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Travail contrôlé des mollets, quadriceps, ischio-jambiers, hanches et tronc."
+              }
+            ],
+            "sport": "strength",
+            "priority": "support",
+            "planned_duration_minutes": 20,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 45,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 24,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "mollets",
+                "genoux",
+                "hanches",
+                "rachis"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "mobility"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-10-endurance_z2",
+            "workout_date": "2026-10-10",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-11-long_run",
+            "workout_date": "2026-10-11",
+            "workout_type": "long_run",
+            "title": "Sortie longue spécifique · Marathon route",
+            "objective": "Développer l'endurance marathon, la résistance musculaire et la stratégie énergétique.",
+            "blocks": [
+              {
+                "name": "Endurance longue",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 102,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 9.72,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 4,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Conserver une allure régulière, facile et compatible avec une conversation. Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés."
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 102,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route et allure régulière",
+            "fueling_strategy": "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+            "expected_response": {
+              "physiological_load_0_100": 65,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "hanches"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "endurance_z2",
+              "cycling"
+            ],
+            "coach_notes": [
+              "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+              "Aucun nouveau produit ni matériel le jour de la compétition."
+            ]
+          }
+        ],
+        "target_running_distance_km": null,
+        "target_duration_minutes": 324,
+        "is_recovery_week": false,
+        "coach_notes": [
+          "Semaine construite avec Atlas Research."
+        ]
+      },
+      {
+        "week_number": 6,
+        "start_date": "2026-10-12",
+        "end_date": "2026-10-18",
+        "phase": "development",
+        "objective": "Développer progressivement les qualités ciblées.",
+        "workouts": [
+          {
+            "workout_id": "2026-10-12-endurance_z2",
+            "workout_date": "2026-10-12",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-13-tempo_z3-endurance-specific",
+            "workout_date": "2026-10-13",
+            "workout_type": "tempo_z3",
+            "title": "Allure marathon · 3 × 12 min",
+            "objective": "Stabiliser l'économie de course à l'allure marathon.",
+            "blocks": [
+              {
+                "name": "Échauffement progressif",
+                "block_type": "warm_up",
+                "repetitions": 1,
+                "duration_minutes": 15,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              },
+              {
+                "name": "Blocs à allure marathon",
+                "block_type": "work",
+                "repetitions": 3,
+                "duration_minutes": 12,
+                "distance_meters": null,
+                "recovery_minutes": 3,
+                "target": {
+                  "zone": 3,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 12.72,
+                  "speed_max_kmh": 13.24,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Allure régulière, relâchée et compatible avec la stratégie énergétique de course."
+              },
+              {
+                "name": "Retour au calme",
+                "block_type": "cool_down",
+                "repetitions": 1,
+                "duration_minutes": 10,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 1,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 2,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 67,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route régulière",
+            "fueling_strategy": "Tester la boisson et les glucides prévus en compétition.",
+            "expected_response": {
+              "physiological_load_0_100": 82,
+              "biomechanical_load_0_100": 78,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 72,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "quadriceps"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 1,
+            "replacement_types": [
+              "endurance_z2"
+            ],
+            "coach_notes": [
+              "Tester la boisson et les glucides prévus en compétition.",
+              "Réévaluation récupération et douleur le jour même."
+            ]
+          },
+          {
+            "workout_id": "2026-10-15-endurance_z2",
+            "workout_date": "2026-10-15",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-15-strength",
+            "workout_date": "2026-10-15",
+            "workout_type": "strength",
+            "title": "Renforcement du coureur",
+            "objective": "Développer la force utile, la stabilité et la tolérance biomécanique.",
+            "blocks": [
+              {
+                "name": "Renforcement fonctionnel",
+                "block_type": "strength",
+                "repetitions": 1,
+                "duration_minutes": 20,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": null,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Travail contrôlé des mollets, quadriceps, ischio-jambiers, hanches et tronc."
+              }
+            ],
+            "sport": "strength",
+            "priority": "support",
+            "planned_duration_minutes": 20,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 45,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 24,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "mollets",
+                "genoux",
+                "hanches",
+                "rachis"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "mobility"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-17-endurance_z2",
+            "workout_date": "2026-10-17",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-18-long_run",
+            "workout_date": "2026-10-18",
+            "workout_type": "long_run",
+            "title": "Sortie longue spécifique · Marathon route",
+            "objective": "Développer l'endurance marathon, la résistance musculaire et la stratégie énergétique.",
+            "blocks": [
+              {
+                "name": "Endurance longue",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 110,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 9.72,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 4,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Conserver une allure régulière, facile et compatible avec une conversation. Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés."
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 110,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route et allure régulière",
+            "fueling_strategy": "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+            "expected_response": {
+              "physiological_load_0_100": 65,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "hanches"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "endurance_z2",
+              "cycling"
+            ],
+            "coach_notes": [
+              "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+              "Aucun nouveau produit ni matériel le jour de la compétition."
+            ]
+          }
+        ],
+        "target_running_distance_km": null,
+        "target_duration_minutes": 332,
+        "is_recovery_week": false,
+        "coach_notes": [
+          "Semaine construite avec Atlas Research."
+        ]
+      },
+      {
+        "week_number": 7,
+        "start_date": "2026-10-19",
+        "end_date": "2026-10-25",
+        "phase": "specific",
+        "objective": "Rapprocher les séances des exigences de l’objectif.",
+        "workouts": [
+          {
+            "workout_id": "2026-10-19-endurance_z2",
+            "workout_date": "2026-10-19",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-20-tempo_z3-endurance-specific",
+            "workout_date": "2026-10-20",
+            "workout_type": "tempo_z3",
+            "title": "Allure marathon · 3 × 18 min",
+            "objective": "Stabiliser l'économie de course à l'allure marathon.",
+            "blocks": [
+              {
+                "name": "Échauffement progressif",
+                "block_type": "warm_up",
+                "repetitions": 1,
+                "duration_minutes": 15,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              },
+              {
+                "name": "Blocs à allure marathon",
+                "block_type": "work",
+                "repetitions": 3,
+                "duration_minutes": 18,
+                "distance_meters": null,
+                "recovery_minutes": 3,
+                "target": {
+                  "zone": 3,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 12.72,
+                  "speed_max_kmh": 13.24,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Allure régulière, relâchée et compatible avec la stratégie énergétique de course."
+              },
+              {
+                "name": "Retour au calme",
+                "block_type": "cool_down",
+                "repetitions": 1,
+                "duration_minutes": 10,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 1,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 2,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 85,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route régulière",
+            "fueling_strategy": "Tester la boisson et les glucides prévus en compétition.",
+            "expected_response": {
+              "physiological_load_0_100": 82,
+              "biomechanical_load_0_100": 78,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 72,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "quadriceps"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 1,
+            "replacement_types": [
+              "endurance_z2"
+            ],
+            "coach_notes": [
+              "Tester la boisson et les glucides prévus en compétition.",
+              "Réévaluation récupération et douleur le jour même."
+            ]
+          },
+          {
+            "workout_id": "2026-10-22-endurance_z2",
+            "workout_date": "2026-10-22",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-22-strength",
+            "workout_date": "2026-10-22",
+            "workout_type": "strength",
+            "title": "Renforcement du coureur",
+            "objective": "Développer la force utile, la stabilité et la tolérance biomécanique.",
+            "blocks": [
+              {
+                "name": "Renforcement fonctionnel",
+                "block_type": "strength",
+                "repetitions": 1,
+                "duration_minutes": 20,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": null,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Travail contrôlé des mollets, quadriceps, ischio-jambiers, hanches et tronc."
+              }
+            ],
+            "sport": "strength",
+            "priority": "support",
+            "planned_duration_minutes": 20,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 45,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 24,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "mollets",
+                "genoux",
+                "hanches",
+                "rachis"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "mobility"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-24-endurance_z2",
+            "workout_date": "2026-10-24",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-25-long_run",
+            "workout_date": "2026-10-25",
+            "workout_type": "long_run",
+            "title": "Sortie longue spécifique · Marathon route",
+            "objective": "Développer l'endurance marathon, la résistance musculaire et la stratégie énergétique.",
+            "blocks": [
+              {
+                "name": "Endurance longue",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 119,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 9.72,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 4,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Conserver une allure régulière, facile et compatible avec une conversation. Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés."
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 119,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route et allure régulière",
+            "fueling_strategy": "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+            "expected_response": {
+              "physiological_load_0_100": 65,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "hanches"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "endurance_z2",
+              "cycling"
+            ],
+            "coach_notes": [
+              "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+              "Aucun nouveau produit ni matériel le jour de la compétition."
+            ]
+          }
+        ],
+        "target_running_distance_km": null,
+        "target_duration_minutes": 359,
+        "is_recovery_week": false,
+        "coach_notes": [
+          "Semaine construite avec Atlas Research."
+        ]
+      },
+      {
+        "week_number": 8,
+        "start_date": "2026-10-26",
+        "end_date": "2026-11-01",
+        "phase": "specific",
+        "objective": "Rapprocher les séances des exigences de l’objectif.",
+        "workouts": [
+          {
+            "workout_id": "2026-10-26-endurance_z2",
+            "workout_date": "2026-10-26",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-27-tempo_z3-endurance-specific",
+            "workout_date": "2026-10-27",
+            "workout_type": "tempo_z3",
+            "title": "Allure marathon · 3 × 18 min",
+            "objective": "Stabiliser l'économie de course à l'allure marathon.",
+            "blocks": [
+              {
+                "name": "Échauffement progressif",
+                "block_type": "warm_up",
+                "repetitions": 1,
+                "duration_minutes": 15,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              },
+              {
+                "name": "Blocs à allure marathon",
+                "block_type": "work",
+                "repetitions": 3,
+                "duration_minutes": 18,
+                "distance_meters": null,
+                "recovery_minutes": 3,
+                "target": {
+                  "zone": 3,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 12.72,
+                  "speed_max_kmh": 13.24,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Allure régulière, relâchée et compatible avec la stratégie énergétique de course."
+              },
+              {
+                "name": "Retour au calme",
+                "block_type": "cool_down",
+                "repetitions": 1,
+                "duration_minutes": 10,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 1,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 2,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 85,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route régulière",
+            "fueling_strategy": "Tester la boisson et les glucides prévus en compétition.",
+            "expected_response": {
+              "physiological_load_0_100": 82,
+              "biomechanical_load_0_100": 78,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 72,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "quadriceps"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 1,
+            "replacement_types": [
+              "endurance_z2"
+            ],
+            "coach_notes": [
+              "Tester la boisson et les glucides prévus en compétition.",
+              "Réévaluation récupération et douleur le jour même."
+            ]
+          },
+          {
+            "workout_id": "2026-10-29-endurance_z2",
+            "workout_date": "2026-10-29",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-29-strength",
+            "workout_date": "2026-10-29",
+            "workout_type": "strength",
+            "title": "Renforcement du coureur",
+            "objective": "Développer la force utile, la stabilité et la tolérance biomécanique.",
+            "blocks": [
+              {
+                "name": "Renforcement fonctionnel",
+                "block_type": "strength",
+                "repetitions": 1,
+                "duration_minutes": 20,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": null,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Travail contrôlé des mollets, quadriceps, ischio-jambiers, hanches et tronc."
+              }
+            ],
+            "sport": "strength",
+            "priority": "support",
+            "planned_duration_minutes": 20,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 45,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 24,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "mollets",
+                "genoux",
+                "hanches",
+                "rachis"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "mobility"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-10-31-endurance_z2",
+            "workout_date": "2026-10-31",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-11-01-long_run",
+            "workout_date": "2026-11-01",
+            "workout_type": "long_run",
+            "title": "Sortie longue spécifique · Marathon route",
+            "objective": "Développer l'endurance marathon, la résistance musculaire et la stratégie énergétique.",
+            "blocks": [
+              {
+                "name": "Endurance longue",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 129,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 9.72,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 4,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Conserver une allure régulière, facile et compatible avec une conversation. Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés."
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 129,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route et allure régulière",
+            "fueling_strategy": "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+            "expected_response": {
+              "physiological_load_0_100": 65,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "hanches"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "endurance_z2",
+              "cycling"
+            ],
+            "coach_notes": [
+              "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+              "Aucun nouveau produit ni matériel le jour de la compétition."
+            ]
+          }
+        ],
+        "target_running_distance_km": null,
+        "target_duration_minutes": 369,
+        "is_recovery_week": false,
+        "coach_notes": [
+          "Semaine construite avec Atlas Research."
+        ]
+      },
+      {
+        "week_number": 9,
+        "start_date": "2026-11-02",
+        "end_date": "2026-11-08",
+        "phase": "specific",
+        "objective": "Rapprocher les séances des exigences de l’objectif.",
+        "workouts": [
+          {
+            "workout_id": "2026-11-02-endurance_z2",
+            "workout_date": "2026-11-02",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-11-03-tempo_z3-endurance-specific",
+            "workout_date": "2026-11-03",
+            "workout_type": "tempo_z3",
+            "title": "Allure marathon · 3 × 18 min",
+            "objective": "Stabiliser l'économie de course à l'allure marathon.",
+            "blocks": [
+              {
+                "name": "Échauffement progressif",
+                "block_type": "warm_up",
+                "repetitions": 1,
+                "duration_minutes": 15,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              },
+              {
+                "name": "Blocs à allure marathon",
+                "block_type": "work",
+                "repetitions": 3,
+                "duration_minutes": 18,
+                "distance_meters": null,
+                "recovery_minutes": 3,
+                "target": {
+                  "zone": 3,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 12.72,
+                  "speed_max_kmh": 13.24,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Allure régulière, relâchée et compatible avec la stratégie énergétique de course."
+              },
+              {
+                "name": "Retour au calme",
+                "block_type": "cool_down",
+                "repetitions": 1,
+                "duration_minutes": 10,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 1,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 2,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 85,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route régulière",
+            "fueling_strategy": "Tester la boisson et les glucides prévus en compétition.",
+            "expected_response": {
+              "physiological_load_0_100": 82,
+              "biomechanical_load_0_100": 78,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 72,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "quadriceps"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 1,
+            "replacement_types": [
+              "endurance_z2"
+            ],
+            "coach_notes": [
+              "Tester la boisson et les glucides prévus en compétition.",
+              "Réévaluation récupération et douleur le jour même."
+            ]
+          },
+          {
+            "workout_id": "2026-11-05-endurance_z2",
+            "workout_date": "2026-11-05",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-11-05-strength",
+            "workout_date": "2026-11-05",
+            "workout_type": "strength",
+            "title": "Renforcement du coureur",
+            "objective": "Développer la force utile, la stabilité et la tolérance biomécanique.",
+            "blocks": [
+              {
+                "name": "Renforcement fonctionnel",
+                "block_type": "strength",
+                "repetitions": 1,
+                "duration_minutes": 20,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": null,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Travail contrôlé des mollets, quadriceps, ischio-jambiers, hanches et tronc."
+              }
+            ],
+            "sport": "strength",
+            "priority": "support",
+            "planned_duration_minutes": 20,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 45,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 24,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "mollets",
+                "genoux",
+                "hanches",
+                "rachis"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "mobility"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-11-07-endurance_z2",
+            "workout_date": "2026-11-07",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-11-08-long_run",
+            "workout_date": "2026-11-08",
+            "workout_type": "long_run",
+            "title": "Sortie longue spécifique · Marathon route",
+            "objective": "Développer l'endurance marathon, la résistance musculaire et la stratégie énergétique.",
+            "blocks": [
+              {
+                "name": "Endurance longue",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 139,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 9.72,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 4,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Conserver une allure régulière, facile et compatible avec une conversation. Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés."
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 139,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route et allure régulière",
+            "fueling_strategy": "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+            "expected_response": {
+              "physiological_load_0_100": 65,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "hanches"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "endurance_z2",
+              "cycling"
+            ],
+            "coach_notes": [
+              "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+              "Aucun nouveau produit ni matériel le jour de la compétition."
+            ]
+          }
+        ],
+        "target_running_distance_km": null,
+        "target_duration_minutes": 379,
+        "is_recovery_week": false,
+        "coach_notes": [
+          "Semaine construite avec Atlas Research."
+        ]
+      },
+      {
+        "week_number": 10,
+        "start_date": "2026-11-09",
+        "end_date": "2026-11-15",
+        "phase": "specific",
+        "objective": "Rapprocher les séances des exigences de l’objectif.",
+        "workouts": [
+          {
+            "workout_id": "2026-11-09-endurance_z2",
+            "workout_date": "2026-11-09",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-11-10-tempo_z3-endurance-specific",
+            "workout_date": "2026-11-10",
+            "workout_type": "tempo_z3",
+            "title": "Allure marathon · 3 × 18 min",
+            "objective": "Stabiliser l'économie de course à l'allure marathon.",
+            "blocks": [
+              {
+                "name": "Échauffement progressif",
+                "block_type": "warm_up",
+                "repetitions": 1,
+                "duration_minutes": 15,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              },
+              {
+                "name": "Blocs à allure marathon",
+                "block_type": "work",
+                "repetitions": 3,
+                "duration_minutes": 18,
+                "distance_meters": null,
+                "recovery_minutes": 3,
+                "target": {
+                  "zone": 3,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 12.72,
+                  "speed_max_kmh": 13.24,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Allure régulière, relâchée et compatible avec la stratégie énergétique de course."
+              },
+              {
+                "name": "Retour au calme",
+                "block_type": "cool_down",
+                "repetitions": 1,
+                "duration_minutes": 10,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 1,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 2,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 85,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route régulière",
+            "fueling_strategy": "Tester la boisson et les glucides prévus en compétition.",
+            "expected_response": {
+              "physiological_load_0_100": 82,
+              "biomechanical_load_0_100": 78,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 72,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "quadriceps"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 1,
+            "replacement_types": [
+              "endurance_z2"
+            ],
+            "coach_notes": [
+              "Tester la boisson et les glucides prévus en compétition.",
+              "Réévaluation récupération et douleur le jour même."
+            ]
+          },
+          {
+            "workout_id": "2026-11-12-endurance_z2",
+            "workout_date": "2026-11-12",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-11-12-strength",
+            "workout_date": "2026-11-12",
+            "workout_type": "strength",
+            "title": "Renforcement du coureur",
+            "objective": "Développer la force utile, la stabilité et la tolérance biomécanique.",
+            "blocks": [
+              {
+                "name": "Renforcement fonctionnel",
+                "block_type": "strength",
+                "repetitions": 1,
+                "duration_minutes": 20,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": null,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Travail contrôlé des mollets, quadriceps, ischio-jambiers, hanches et tronc."
+              }
+            ],
+            "sport": "strength",
+            "priority": "support",
+            "planned_duration_minutes": 20,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 45,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 24,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "mollets",
+                "genoux",
+                "hanches",
+                "rachis"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "mobility"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-11-14-endurance_z2",
+            "workout_date": "2026-11-14",
+            "workout_type": "endurance_z2",
+            "title": "Endurance fondamentale Z2",
+            "objective": "Développer le socle aérobie avec une contrainte maîtrisée.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 45,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 11.02,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 45,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 40,
+              "biomechanical_load_0_100": 35,
+              "recovery_min_hours": 18,
+              "recovery_max_hours": 30,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-11-15-long_run",
+            "workout_date": "2026-11-15",
+            "workout_type": "long_run",
+            "title": "Sortie longue spécifique · Marathon route",
+            "objective": "Développer l'endurance marathon, la résistance musculaire et la stratégie énergétique.",
+            "blocks": [
+              {
+                "name": "Endurance longue",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 150,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 9.72,
+                  "speed_max_kmh": 11.66,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 4,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Conserver une allure régulière, facile et compatible avec une conversation. Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés."
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 150,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route et allure régulière",
+            "fueling_strategy": "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+            "expected_response": {
+              "physiological_load_0_100": 65,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "hanches"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "endurance_z2",
+              "cycling"
+            ],
+            "coach_notes": [
+              "Tester 50 à 80 g de glucides par heure, avec hydratation et sodium individualisés.",
+              "Aucun nouveau produit ni matériel le jour de la compétition."
+            ]
+          }
+        ],
+        "target_running_distance_km": null,
+        "target_duration_minutes": 390,
+        "is_recovery_week": false,
+        "coach_notes": [
+          "Semaine construite avec Atlas Research."
+        ]
+      },
+      {
+        "week_number": 11,
+        "start_date": "2026-11-16",
+        "end_date": "2026-11-22",
+        "phase": "taper",
+        "objective": "Réduire la fatigue tout en conservant de l’activation.",
+        "workouts": [
+          {
+            "workout_id": "2026-11-16-recovery_run",
+            "workout_date": "2026-11-16",
+            "workout_type": "recovery_run",
+            "title": "Footing de récupération",
+            "objective": "Favoriser la récupération active.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 30,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 1,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 10.21,
+                  "speed_max_kmh": 11.02,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 2.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 30,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 25,
+              "biomechanical_load_0_100": 22,
+              "recovery_min_hours": 8,
+              "recovery_max_hours": 18,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-11-17-tempo_z3-endurance-specific",
+            "workout_date": "2026-11-17",
+            "workout_type": "tempo_z3",
+            "title": "Allure marathon · 3 × 8 min",
+            "objective": "Stabiliser l'économie de course à l'allure marathon.",
+            "blocks": [
+              {
+                "name": "Échauffement progressif",
+                "block_type": "warm_up",
+                "repetitions": 1,
+                "duration_minutes": 15,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 2,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 3,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              },
+              {
+                "name": "Blocs à allure marathon",
+                "block_type": "work",
+                "repetitions": 3,
+                "duration_minutes": 8,
+                "distance_meters": null,
+                "recovery_minutes": 3,
+                "target": {
+                  "zone": 3,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 12.72,
+                  "speed_max_kmh": 13.24,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Allure régulière, relâchée et compatible avec la stratégie énergétique de course."
+              },
+              {
+                "name": "Retour au calme",
+                "block_type": "cool_down",
+                "repetitions": 1,
+                "duration_minutes": 10,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 1,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 2,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": ""
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 55,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route régulière",
+            "fueling_strategy": "Tester la boisson et les glucides prévus en compétition.",
+            "expected_response": {
+              "physiological_load_0_100": 82,
+              "biomechanical_load_0_100": 78,
+              "recovery_min_hours": 36,
+              "recovery_max_hours": 72,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "quadriceps"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 1,
+            "replacement_types": [
+              "endurance_z2"
+            ],
+            "coach_notes": [
+              "Tester la boisson et les glucides prévus en compétition.",
+              "Réévaluation récupération et douleur le jour même."
+            ]
+          },
+          {
+            "workout_id": "2026-11-22-recovery_run",
+            "workout_date": "2026-11-22",
+            "workout_type": "recovery_run",
+            "title": "Footing de récupération",
+            "objective": "Favoriser la récupération active.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 30,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 1,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 10.21,
+                  "speed_max_kmh": 11.02,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 2.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 30,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 25,
+              "biomechanical_load_0_100": 22,
+              "recovery_min_hours": 8,
+              "recovery_max_hours": 18,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-11-22-strength",
+            "workout_date": "2026-11-22",
+            "workout_type": "strength",
+            "title": "Renforcement du coureur",
+            "objective": "Développer la force utile, la stabilité et la tolérance biomécanique.",
+            "blocks": [
+              {
+                "name": "Renforcement fonctionnel",
+                "block_type": "strength",
+                "repetitions": 1,
+                "duration_minutes": 20,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": null,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": null,
+                  "speed_max_kmh": null,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 6,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Travail contrôlé des mollets, quadriceps, ischio-jambiers, hanches et tronc."
+              }
+            ],
+            "sport": "strength",
+            "priority": "support",
+            "planned_duration_minutes": 20,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 45,
+              "biomechanical_load_0_100": 65,
+              "recovery_min_hours": 24,
+              "recovery_max_hours": 48,
+              "sensitive_structures": [
+                "mollets",
+                "genoux",
+                "hanches",
+                "rachis"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "mobility"
+            ],
+            "coach_notes": []
+          }
+        ],
+        "target_running_distance_km": null,
+        "target_duration_minutes": 135,
+        "is_recovery_week": true,
+        "coach_notes": [
+          "Semaine construite avec Atlas Research."
+        ]
+      },
+      {
+        "week_number": 12,
+        "start_date": "2026-11-23",
+        "end_date": "2026-11-29",
+        "phase": "race_week",
+        "objective": "Arriver disponible et réaliser la compétition.",
+        "workouts": [
+          {
+            "workout_id": "2026-11-23-recovery_run",
+            "workout_date": "2026-11-23",
+            "workout_type": "recovery_run",
+            "title": "Footing de récupération",
+            "objective": "Favoriser la récupération active.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 30,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 1,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 10.21,
+                  "speed_max_kmh": 11.02,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 2.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 30,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 25,
+              "biomechanical_load_0_100": 22,
+              "recovery_min_hours": 8,
+              "recovery_max_hours": 18,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-11-28-recovery_run",
+            "workout_date": "2026-11-28",
+            "workout_type": "recovery_run",
+            "title": "Footing de récupération",
+            "objective": "Favoriser la récupération active.",
+            "blocks": [
+              {
+                "name": "Course continue facile",
+                "block_type": "continuous",
+                "repetitions": 1,
+                "duration_minutes": 30,
+                "distance_meters": null,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": 1,
+                  "pace_min_per_km": null,
+                  "pace_max_per_km": null,
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 10.21,
+                  "speed_max_kmh": 11.02,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 2.5,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Rester en aisance respiratoire et ralentir si la fréquence cardiaque dérive."
+              }
+            ],
+            "sport": "running",
+            "priority": "support",
+            "planned_duration_minutes": 30,
+            "planned_distance_km": null,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "",
+            "fueling_strategy": "",
+            "expected_response": {
+              "physiological_load_0_100": 25,
+              "biomechanical_load_0_100": 22,
+              "recovery_min_hours": 8,
+              "recovery_max_hours": 18,
+              "sensitive_structures": [
+                "mollets",
+                "tendons d'Achille"
+              ]
+            },
+            "movable": true,
+            "maximum_shift_days": 2,
+            "replacement_types": [
+              "cycling",
+              "rest"
+            ],
+            "coach_notes": []
+          },
+          {
+            "workout_id": "2026-11-29-race_specific",
+            "workout_date": "2026-11-29",
+            "workout_type": "race_specific",
+            "title": "Marathon route · Marathon",
+            "objective": "Réaliser l'objectif de compétition préparé par Atlas Coach.",
+            "blocks": [
+              {
+                "name": "Compétition",
+                "block_type": "work",
+                "repetitions": 1,
+                "duration_minutes": null,
+                "distance_meters": 42195,
+                "recovery_minutes": null,
+                "target": {
+                  "zone": null,
+                  "pace_min_per_km": "4:37",
+                  "pace_max_per_km": "4:37",
+                  "heart_rate_min_bpm": null,
+                  "heart_rate_max_bpm": null,
+                  "speed_min_kmh": 12.98,
+                  "speed_max_kmh": 12.98,
+                  "power_min_watts": null,
+                  "power_max_watts": null,
+                  "rpe_0_10": 9,
+                  "gradient_min_percent": null,
+                  "gradient_max_percent": null,
+                  "intensity_pattern": "constant",
+                  "transition_seconds": null
+                },
+                "instructions": "Départ contrôlé, allure marathon stable, ravitaillement précoce et régulier, ajustement seulement selon les signaux physiologiques et les conditions."
+              }
+            ],
+            "sport": "running",
+            "priority": "key",
+            "planned_duration_minutes": 195,
+            "planned_distance_km": 42.195,
+            "planned_elevation_gain_m": null,
+            "planned_elevation_loss_m": null,
+            "terrain_focus": "route",
+            "fueling_strategy": "Plan validé à l'entraînement : 50 à 80 g de glucides par heure, hydratation et sodium individualisés.",
+            "expected_response": {
+              "physiological_load_0_100": 95,
+              "biomechanical_load_0_100": 85,
+              "recovery_min_hours": 72,
+              "recovery_max_hours": 120,
+              "sensitive_structures": [
+                "pieds",
+                "mollets",
+                "tendons d'Achille",
+                "genoux",
+                "hanches"
+              ]
+            },
+            "movable": false,
+            "maximum_shift_days": 0,
+            "replacement_types": [],
+            "coach_notes": [
+              "Objectif chronométrique : 195 minutes.",
+              "Plan validé à l'entraînement : 50 à 80 g de glucides par heure, hydratation et sodium individualisés.",
+              "Stratégie de matériel, allure et ravitaillement répétée avant course."
+            ]
+          }
+        ],
+        "target_running_distance_km": null,
+        "target_duration_minutes": 255,
+        "is_recovery_week": false,
+        "coach_notes": [
+          "Semaine fondamentale sans protocole intense Atlas Research."
+        ]
+      }
+    ],
+    "explanation": "Programme périodisé à partir du profil longitudinal, des tolérances apprises et du registre Atlas Research. Spécialisation Marathon route.",
+    "warnings": []
+  },
+  "adaptation_scenarios": [
+    {
+      "situation": "Réussite",
+      "atlas_response": "Conserver la structure ; n'augmenter que dans les bornes de progression et après confirmation à 24–72 h."
+    },
+    {
+      "situation": "Fatigue",
+      "atlas_response": "Réduire le volume spécifique ou remplacer l'intensité par de l'endurance facile ; préserver l'objectif de la semaine."
+    },
+    {
+      "situation": "Douleur",
+      "atlas_response": "Suspendre l'intensité et la charge mécanique concernée ; proposer repos, vélo doux ou avis professionnel selon gravité."
+    },
+    {
+      "situation": "Séance manquée",
+      "atlas_response": "Prévisualiser le déplacement ; conserver ou remplacer la séance cible et choisir explicitement si le reste est décalé."
+    }
+  ]
+}

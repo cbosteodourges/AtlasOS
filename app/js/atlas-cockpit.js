@@ -654,7 +654,20 @@
 
   const dashboardPanel = document.querySelector("[data-dashboard-panel]");
   const dashboardKey = "atlasCockpitVisibleMetrics";
-  const dashboardInputs = [...document.querySelectorAll("[data-dashboard-panel] input")];
+  const dashboardInputs = [...document.querySelectorAll("[data-dashboard-panel] input[type='checkbox']")];
+  const themeInputs = [...document.querySelectorAll("input[name='atlas-theme']")];
+  const themeKey = "atlasAppearanceTheme";
+  const applyTheme = theme => {
+    const supported = ["night", "ocean", "graphite"];
+    const selected = supported.includes(theme) ? theme : "night";
+    document.body.dataset.atlasTheme = selected;
+    themeInputs.forEach(input => { input.checked = input.value === selected; });
+  };
+  applyTheme(localStorage.getItem(themeKey) || "night");
+  themeInputs.forEach(input => input.addEventListener("change", () => {
+    localStorage.setItem(themeKey, input.value);
+    applyTheme(input.value);
+  }));
   const applyDashboard = () => {
     let selected;
     try { selected = JSON.parse(localStorage.getItem(dashboardKey) || "null"); } catch (_error) { selected = null; }

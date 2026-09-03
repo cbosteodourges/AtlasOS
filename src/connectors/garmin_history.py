@@ -6,7 +6,7 @@ Connecteur de l'historique résumé exporté par Garmin Connect.
 import csv
 import hashlib
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -494,7 +494,8 @@ class GarminHistoryConnector(ActivityConnector):
                     date_value,
                     date_format,
                 )
-                return parsed_date.astimezone().isoformat()
+                # Normalisation stable, indépendante du fuseau de la machine.
+                return parsed_date.astimezone(timezone.utc).isoformat()
             except ValueError:
                 continue
 

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#020914">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Atlas OS — Aujourd’hui</title>
-  <link rel="stylesheet" href="./css/atlas-cockpit.css?v=22">
+  <link rel="stylesheet" href="./css/atlas-cockpit.css?v=23">
   <link rel="stylesheet" href="./css/atlas-global-nav.css?v=15">
   <link rel="stylesheet" href="./css/atlas-conversation.css?v=8">
   <link rel="stylesheet" href="./css/atlas-conversation-refinement.css?v=1">
@@ -51,7 +51,7 @@
         </div>
         <div class="header-actions">
           <div class="sync-state"><i></i> Données actualisées</div>
-          <button class="dashboard-settings-button" type="button" data-dashboard-settings>Choisir mes indicateurs</button>
+          <button class="dashboard-settings-button" type="button" data-dashboard-settings aria-label="Personnaliser Atlas"><span aria-hidden="true">⚙</span> Personnaliser</button>
         </div>
       </header>
 
@@ -207,8 +207,15 @@
   </section>
   <section class="dashboard-settings" data-dashboard-panel hidden aria-labelledby="dashboardSettingsTitle">
     <button type="button" data-dashboard-close aria-label="Fermer">×</button>
-    <h2 id="dashboardSettingsTitle">Mes indicateurs</h2>
-    <p>Choisissez ce qu’Atlas affiche à l’ouverture. Ce réglage reste enregistré sur cet appareil.</p>
+    <h2 id="dashboardSettingsTitle">Personnaliser Atlas</h2>
+    <p>Choisissez l’ambiance et les indicateurs affichés. Ces réglages restent enregistrés sur cet appareil.</p>
+    <fieldset class="appearance-settings">
+      <legend>Fond d’écran</legend>
+      <label><input type="radio" name="atlas-theme" value="night" checked> Nuit Atlas</label>
+      <label><input type="radio" name="atlas-theme" value="ocean"> Océan</label>
+      <label><input type="radio" name="atlas-theme" value="graphite"> Graphite</label>
+    </fieldset>
+    <strong class="settings-section-title">Indicateurs d’accueil</strong>
     <label><input type="checkbox" value="recovery-index" checked> Indice de récupération Atlas</label>
     <label><input type="checkbox" value="recovery" checked> Récupération</label>
     <label><input type="checkbox" value="sleep" checked> Sommeil</label>
@@ -218,7 +225,7 @@
     <label><input type="checkbox" value="physiology" checked> VO₂max, VMA et seuils</label>
   </section>
   <script src="./js/atlas-conversation.js?v=9"></script>
-  <script src="./js/atlas-cockpit.js?v=28"></script>
+  <script src="./js/atlas-cockpit.js?v=29"></script>
   <script src="./js/atlas-pwa.js?v=3"></script>
 </body>
 </html>

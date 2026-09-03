@@ -5,7 +5,7 @@ Connecteur Garmin fondé sur les fichiers d'activités FIT.
 
 import hashlib
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import (
     Any,
@@ -579,7 +579,10 @@ class GarminConnector(ActivityConnector):
             return ""
 
         if isinstance(value, datetime):
-            return value.astimezone().isoformat()
+            # Les activités unifiées utilisent une chronologie absolue.
+            # Ne pas dépendre du fuseau du serveur (PC français, CI en UTC,
+            # futur hébergement) : une même activité doit garder la même date.
+            return value.astimezone(timezone.utc).isoformat()
 
         return str(value)
 

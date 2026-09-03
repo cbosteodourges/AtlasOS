@@ -13,6 +13,8 @@ from src.connectors.activity_ingestion import ActivityStore
 from src.physiology.atlas_recovery_index import AtlasRecoveryIndex
 from src.physiology.continuous_profile import ContinuousPhysiologyEstimator
 from src.physiology.nutrition_hydration import NutritionHydrationAnalyzer
+from src.training.response_followup_service import TrainingResponseFollowupService
+from src.training.training_program_loader import TrainingProgramLoader
 
 
 PHYSIOLOGY_KEYS = {"vo2_max", "vma_kmh", "vma_training_reference_kmh",
@@ -43,6 +45,10 @@ class PostSyncOrchestrator:
         )
         self._write("atlas-recovery-index.json", recovery)
 
+        response_followups = self._refresh_response_followups(
+            executions, recovery.get("history") or []
+        )
+
         estimate, proposed_profile, auto_applied = self.refresh_physiology(
             activities,
             source,
@@ -61,7 +67,10 @@ class PostSyncOrchestrator:
         self._write("nutrition-hydration-summary.json", nutrition)
         score = latest.get("atlas_recovery_index")
         action = self._action(score)
-        proposal = self._program_proposal(proposed_profile, action, score, estimate, nutrition)
+        proposal = self._program_proposal(
+            proposed_profile, action, score, estimate, nutrition,
+            response_followups.get("latest_actionable"),
+        )
         assessment = {
             "source": source,
             "synchronized_at": datetime.now(timezone.utc).isoformat(),
@@ -73,11 +82,44 @@ class PostSyncOrchestrator:
             "health_connect_activities_analyzed": analyzed_activities,
             "requires_user_validation": True,
             "physiology_auto_applied": auto_applied,
+            "training_response_followups": response_followups,
         }
         self._write("daily-sync-assessment.json", assessment)
         if proposal is not None:
             self._write("training-program-sync-proposal.json", proposal)
         return assessment
+
+    def _refresh_response_followups(self, executions, recovery_history):
+        """Ferme automatiquement la fenêtre de réponse à 24–72 heures."""
+        program_path = self.private_dir / "training-program.json"
+        if not program_path.is_file():
+            return {"evaluated": 0, "actionable": 0, "latest_actionable": None}
+        try:
+            workouts = TrainingProgramLoader().load(program_path)
+            contexts = self._read("atlas-coach-workout-contexts.json", [])
+            followups = TrainingResponseFollowupService().build(
+                workouts, executions, recovery_history, contexts
+            )
+        except (TypeError, ValueError, KeyError):
+            return {"evaluated": 0, "actionable": 0, "latest_actionable": None}
+        self._write("training-response-followups.json", followups)
+        actionable_items = [
+            item for item in followups
+            if item.get("next_decision_context", {}).get("usable")
+        ]
+        latest = actionable_items[-1] if actionable_items else None
+        return {
+            "evaluated": len(followups),
+            "actionable": len(actionable_items),
+            "latest_actionable": (
+                {
+                    "workout_id": latest.get("workout_id"),
+                    "session_started_at": latest.get("session_started_at"),
+                    **latest.get("next_decision_context", {}),
+                }
+                if latest else None
+            ),
+        }
 
     def refresh_physiology(
         self,
@@ -391,7 +433,8 @@ class PostSyncOrchestrator:
                 "reason": "Récupération faible : endurance facile proposée à la place de l'intensité."}
 
     def _program_proposal(self, profile: dict[str, Any], action: dict[str, Any], score: Any,
-                          estimate: dict[str, Any], nutrition: dict[str, Any]) -> dict[str, Any] | None:
+                          estimate: dict[str, Any], nutrition: dict[str, Any],
+                          training_response: dict[str, Any] | None = None) -> dict[str, Any] | None:
         program = self._read("training-program.json", None)
         if not isinstance(program, dict):
             return None
@@ -406,6 +449,7 @@ class PostSyncOrchestrator:
             "daily_action": action,
             "physiology_update": estimate,
             "nutrition_hydration_context": nutrition,
+            "training_response_context_24_72h": training_response,
             "candidate_program": candidate,
         }
 

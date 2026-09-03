@@ -1,0 +1,47 @@
+[
+  {
+    "code": "A",
+    "label": "Débutant — premier 5 km",
+    "weeks": 12,
+    "running_workouts": 36,
+    "warnings": []
+  },
+  {
+    "code": "B",
+    "label": "Débutant régulier — premier 10 km",
+    "weeks": 12,
+    "running_workouts": 36,
+    "warnings": []
+  },
+  {
+    "code": "C",
+    "label": "Intermédiaire — semi-marathon",
+    "weeks": 12,
+    "running_workouts": 46,
+    "warnings": []
+  },
+  {
+    "code": "D",
+    "label": "Confirmé — 10 km performance",
+    "weeks": 12,
+    "running_workouts": 56,
+    "warnings": [
+      "Semaine 5 : Protocole Atlas encore expérimental.",
+      "Semaine 8 : Protocole Atlas encore expérimental."
+    ]
+  },
+  {
+    "code": "E",
+    "label": "Confirmé — marathon",
+    "weeks": 12,
+    "running_workouts": 56,
+    "warnings": []
+  },
+  {
+    "code": "F",
+    "label": "Coureur nature — trail court",
+    "weeks": 12,
+    "running_workouts": 46,
+    "warnings": []
+  }
+]
