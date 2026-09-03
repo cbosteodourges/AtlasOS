@@ -353,13 +353,29 @@
         (energy?.domains || []).forEach(domain => {
           const article = document.createElement("article");
           const score = domain.score == null ? null : Math.max(0, Math.min(100, Number(domain.score)));
+          const trendTone = domain.trend === "en progression"
+            ? "up"
+            : domain.trend === "stable"
+              ? "stable"
+              : domain.trend === "en retrait"
+                ? "down"
+                : "unknown";
+          const trendLabel = domain.trend === "en progression"
+            ? "Progression"
+            : domain.trend === "stable"
+              ? "Maintien"
+              : domain.trend === "en retrait"
+                ? "Baisse"
+                : "À confirmer";
           article.className = `energy-domain energy-domain-${domain.key}`;
+          article.dataset.trend = trendTone;
           if (domain.key === energy?.dominant_domain) article.classList.add("is-dominant");
           article.innerHTML = `
             <div><span>${domain.short}</span><b>${domain.label}</b>${domain.key === energy?.dominant_domain ? "<em>Point fort</em>" : ""}</div>
             <strong>${score == null ? "—" : Math.round(score)}<small>/100</small></strong>
             <i><span style="width:${score || 0}%"></span></i>
-            <p>${domain.interpretation}</p>
+            <p>${domain.session_count ? "Niveau calculé à partir des séances classées dans cette filière." : "Données insuffisantes pour caractériser cette filière."}</p>
+            <span class="energy-trend" data-trend="${trendTone}">${trendLabel}</span>
             <footer><span>${domain.session_count} séance(s)</span><span>confiance ${domain.confidence}/100</span></footer>
           `;
           energyRoot.appendChild(article);
