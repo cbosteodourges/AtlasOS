@@ -57,6 +57,10 @@ body[data-atlas-theme]:is([data-atlas-theme="rose"],[data-atlas-theme="sand-card
 body[data-atlas-theme]:is([data-atlas-theme="rose"],[data-atlas-theme="sand-card"],[data-atlas-theme="frost"],[data-atlas-theme="white"]) :is(.analysis-columns li,.analysis-secondary-details>summary,.longitudinal-evidence summary,.insight-lanes li){color:var(--text)}
 
 body[data-atlas-canvas="cosmos"]{--canvas-bg:radial-gradient(circle at 76% 8%,rgba(13,106,153,.18),transparent 34%),#010711}
+body[data-atlas-canvas="soft-night"]{--canvas-bg:linear-gradient(145deg,#16202b,#0a1018 72%)}
+body[data-atlas-canvas="smoky-blue"]{--canvas-bg:linear-gradient(145deg,#243541,#111b24 72%)}
+body[data-atlas-canvas="soft-gray"]{--canvas-bg:linear-gradient(145deg,#46515a,#252d34 72%)}
+body[data-atlas-canvas="soft-petrol"]{--canvas-bg:linear-gradient(145deg,#254044,#102326 72%)}
 body[data-atlas-canvas="pearl"]{--canvas-bg:linear-gradient(145deg,#fff,#edf3f6 72%)}
 body[data-atlas-canvas="mist"]{--canvas-bg:linear-gradient(145deg,#dce5e9,#b8c8d0 72%)}
 body[data-atlas-canvas="sand"]{--canvas-bg:linear-gradient(145deg,#f2eadc,#d9cbb6 72%)}
@@ -73,8 +77,8 @@ body[data-atlas-canvas]:not([data-atlas-canvas="cosmos"]) :is(.twin-panel,.fuel-
 body[data-atlas-canvas]:is([data-atlas-canvas="pearl"],[data-atlas-canvas="mist"],[data-atlas-canvas="sand"],[data-atlas-canvas="ice"],[data-atlas-canvas="sage"],[data-atlas-canvas="white"],[data-atlas-canvas="sky"],[data-atlas-canvas="lavender"],[data-atlas-canvas="blush"]) .home-header h1{color:#102536}
 body[data-atlas-canvas]:is([data-atlas-canvas="pearl"],[data-atlas-canvas="mist"],[data-atlas-canvas="sand"],[data-atlas-canvas="ice"],[data-atlas-canvas="sage"],[data-atlas-canvas="white"],[data-atlas-canvas="sky"],[data-atlas-canvas="lavender"],[data-atlas-canvas="blush"]) .home-header p{color:#506675}
 body[data-atlas-canvas]:is([data-atlas-canvas="pearl"],[data-atlas-canvas="mist"],[data-atlas-canvas="sand"],[data-atlas-canvas="ice"],[data-atlas-canvas="sage"],[data-atlas-canvas="white"],[data-atlas-canvas="sky"],[data-atlas-canvas="lavender"],[data-atlas-canvas="blush"]) .home-header .eyebrow{color:#087fa2}
-body[data-atlas-canvas]:is([data-atlas-canvas="cosmos"],[data-atlas-canvas="slate"]) .home-header h1{color:#f3f9fd}
-body[data-atlas-canvas]:is([data-atlas-canvas="cosmos"],[data-atlas-canvas="slate"]) .home-header p{color:#91aabd}
+body[data-atlas-canvas]:is([data-atlas-canvas="cosmos"],[data-atlas-canvas="soft-night"],[data-atlas-canvas="smoky-blue"],[data-atlas-canvas="soft-gray"],[data-atlas-canvas="soft-petrol"],[data-atlas-canvas="slate"]) .home-header h1{color:#f3f9fd}
+body[data-atlas-canvas]:is([data-atlas-canvas="cosmos"],[data-atlas-canvas="soft-night"],[data-atlas-canvas="smoky-blue"],[data-atlas-canvas="soft-gray"],[data-atlas-canvas="soft-petrol"],[data-atlas-canvas="slate"]) .home-header p{color:#b5c3cc}
 a, button { color: inherit; font: inherit; }
 a { text-decoration: none; }
 
@@ -195,6 +199,10 @@ body[data-atlas-sidebar]:is([data-atlas-sidebar="ice"],[data-atlas-sidebar="pear
 .appearance-settings [data-theme-preview="frost"] i{background:linear-gradient(135deg,#f8fdff,#b9dae4)}
 .appearance-settings [data-theme-preview="white"] i{background:#fff}
 .appearance-settings [data-canvas-preview="cosmos"] i{background:radial-gradient(circle at 70% 20%,#136990,#010711 64%)}
+.appearance-settings [data-canvas-preview="soft-night"] i{background:linear-gradient(145deg,#263544,#0a1018)}
+.appearance-settings [data-canvas-preview="smoky-blue"] i{background:linear-gradient(145deg,#405765,#111b24)}
+.appearance-settings [data-canvas-preview="soft-gray"] i{background:linear-gradient(145deg,#69747c,#252d34)}
+.appearance-settings [data-canvas-preview="soft-petrol"] i{background:linear-gradient(145deg,#3e6265,#102326)}
 .appearance-settings [data-canvas-preview="pearl"] i{background:linear-gradient(145deg,#fff,#e6eef2)}
 .appearance-settings [data-canvas-preview="mist"] i{background:linear-gradient(145deg,#dce5e9,#aebfc7)}
 .appearance-settings [data-canvas-preview="sand"] i{background:linear-gradient(145deg,#f2eadc,#cdbca4)}

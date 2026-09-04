@@ -713,7 +713,7 @@
   }));
   const canvasKey = "atlasAppearanceCanvas";
   const applyCanvas = canvas => {
-    const supported = ["cosmos", "pearl", "mist", "sand", "ice", "sage", "white", "sky", "lavender", "blush", "slate"];
+    const supported = ["cosmos", "soft-night", "smoky-blue", "soft-gray", "soft-petrol", "pearl", "mist", "sand", "ice", "sage", "white", "sky", "lavender", "blush", "slate"];
     const selected = supported.includes(canvas) ? canvas : "cosmos";
     document.body.dataset.atlasCanvas = selected;
     canvasInputs.forEach(input => { input.checked = input.value === selected; });
