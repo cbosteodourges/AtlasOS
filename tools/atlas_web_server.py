@@ -2300,7 +2300,7 @@ def _energy_signature():
         quality_factor = (sum(qualities) / len(qualities) / 100.0) if qualities else 0.5
         freshness_factor = 1.0 if freshness_days is None else max(0.35, 1.0 - freshness_days / 180.0)
         confidence = round(min(95.0, 100.0 * count_factor * quality_factor * freshness_factor)) if count else 0
-        evidence = "fort" if confidence >= 75 else ("modéré" if confidence >= 50 else "faible")
+        evidence = "forte" if confidence >= 75 else ("modérée" if confidence >= 50 else "faible")
         interpretation = (
             "Données insuffisantes pour caractériser cette filière."
             if count == 0 else
@@ -2334,12 +2334,12 @@ def _energy_signature():
     return {
         "status": "established" if len(available) >= 3 else "building",
         "headline": (
-            f"Filière la mieux étayée : {dominant['label'].lower()}"
+            f"Indice observé le plus élevé : {dominant['label'].lower()}"
             if dominant else "Signature énergétique en construction"
         ),
         "summary": (
-            f"Les mesures disponibles étayent d’abord {dominant['label'].lower()}"
-            + (f", puis {secondary['label'].lower()}." if secondary else ".")
+            f"L’indice relatif est actuellement le plus élevé en {dominant['label'].lower()}"
+            + (f", devant {secondary['label'].lower()}." if secondary else ".")
             if dominant else
             "Atlas attend davantage de séances classées pour identifier une dominante fiable."
         ),

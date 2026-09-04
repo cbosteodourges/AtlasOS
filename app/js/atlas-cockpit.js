@@ -357,7 +357,7 @@
           article.dataset.trend = trendTone;
           if (domain.key === energy?.dominant_domain) article.classList.add("is-dominant");
           article.innerHTML = `
-            <div><span>${domain.short}</span><b>${domain.label}</b>${domain.key === energy?.dominant_domain ? "<em>Mieux étayée</em>" : ""}</div>
+            <div><span>${domain.short}</span><b>${domain.label}</b>${domain.key === energy?.dominant_domain ? "<em>Indice le plus élevé</em>" : ""}</div>
             <strong>${score == null ? "—" : Math.round(score)}<small>/100 · indice observé</small></strong>
             <i><span style="width:${score || 0}%"></span></i>
             <p>${domain.session_count ? `${domain.session_count} séance${domain.session_count > 1 ? "s" : ""} exploitable${domain.session_count > 1 ? "s" : ""} · preuve ${evidence}.` : "Données insuffisantes pour caractériser cette filière."}</p>
