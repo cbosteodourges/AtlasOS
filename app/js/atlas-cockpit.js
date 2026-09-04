@@ -348,14 +348,24 @@
               : domain.trend === "en retrait"
                 ? "Baisse"
                 : "À confirmer";
+          const support = domain.support_capacity?.median_minutes;
+          const updated = domain.latest_session
+            ? new Date(`${domain.latest_session}T12:00:00`).toLocaleDateString("fr-FR")
+            : "—";
+          const evidence = domain.evidence?.level || "faible";
           article.className = `energy-domain energy-domain-${domain.key}`;
           article.dataset.trend = trendTone;
           if (domain.key === energy?.dominant_domain) article.classList.add("is-dominant");
           article.innerHTML = `
-            <div><span>${domain.short}</span><b>${domain.label}</b>${domain.key === energy?.dominant_domain ? "<em>Point fort</em>" : ""}</div>
-            <strong>${score == null ? "—" : Math.round(score)}<small>/100</small></strong>
+            <div><span>${domain.short}</span><b>${domain.label}</b>${domain.key === energy?.dominant_domain ? "<em>Mieux étayée</em>" : ""}</div>
+            <strong>${score == null ? "—" : Math.round(score)}<small>/100 · indice observé</small></strong>
             <i><span style="width:${score || 0}%"></span></i>
-            <p>${domain.session_count ? `Niveau calculé à partir de ${domain.session_count} séance${domain.session_count > 1 ? "s" : ""} classée${domain.session_count > 1 ? "s" : ""} dans cette filière.` : "Données insuffisantes pour caractériser cette filière."}</p>
+            <p>${domain.session_count ? `${domain.session_count} séance${domain.session_count > 1 ? "s" : ""} exploitable${domain.session_count > 1 ? "s" : ""} · preuve ${evidence}.` : "Données insuffisantes pour caractériser cette filière."}</p>
+            <dl class="energy-domain-facts">
+              <div><dt>Soutien médian</dt><dd>${support == null ? "—" : `${String(support).replace(".", ",")} min`}</dd></div>
+              <div><dt>Régularité</dt><dd>${domain.regularity?.label || "à confirmer"}</dd></div>
+              <div><dt>Actualisé</dt><dd>${updated} · ${domain.validity?.status || "—"}</dd></div>
+            </dl>
             <span class="energy-trend" data-trend="${trendTone}">${trendLabel}</span>
           `;
           energyRoot.appendChild(article);

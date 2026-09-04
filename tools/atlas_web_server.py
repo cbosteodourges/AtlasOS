@@ -2136,13 +2136,24 @@ def _athlete_analysis(history):
 
 
 def _energy_signature():
-    """Décrit les filières réellement observées dans les séances FIT."""
+    """Décrit les filières observées sans confondre exécution et capacité."""
     domains = {
-        "endurance": {"label": "Endurance fondamentale", "short": "Z1–Z2", "scores": [], "dates": []},
-        "tempo": {"label": "Tempo", "short": "Z3", "scores": [], "dates": []},
-        "threshold": {"label": "Seuil", "short": "SV2", "scores": [], "dates": []},
-        "vo2": {"label": "Puissance aérobie", "short": "VO₂max", "scores": [], "dates": []},
+        "endurance": {"label": "Endurance fondamentale", "short": "Z1–Z2", "observations": []},
+        "tempo": {"label": "Tempo", "short": "Z3", "observations": []},
+        "threshold": {"label": "Seuil", "short": "SV2", "observations": []},
+        "vo2": {"label": "Puissance aérobie", "short": "VO₂max", "observations": []},
     }
+    expected_support = {"endurance": 40.0, "tempo": 20.0, "threshold": 15.0, "vo2": 10.0}
+    physiology = load_physiological_reference()
+
+    def median(values):
+        ordered = sorted(values)
+        middle = len(ordered) // 2
+        return (
+            ordered[middle]
+            if len(ordered) % 2 else
+            (ordered[middle - 1] + ordered[middle]) / 2
+        )
 
     def domain_for(item):
         analysis = item.get("analysis") or {}
@@ -2163,32 +2174,70 @@ def _energy_signature():
             return "endurance"
         return None
 
-    def session_score(item, domain):
-        match = item.get("workout_match") or {}
-        execution = match.get("execution") or {}
-        candidates = (
-            execution.get("execution_score"),
-            execution.get("target_compliance_score"),
-            match.get("target_compliance_score"),
-            (item.get("analysis") or {}).get("analysis_confidence_score"),
-            (item.get("activity") or {}).get("data_quality_score"),
+    def speed_reference(domain):
+        vma = _wellness_number(physiology.get("vma_kmh"))
+        sv1 = _wellness_number(physiology.get("sv1_speed_kmh"))
+        sv2 = _wellness_number(physiology.get("sv2_speed_kmh"))
+        if domain == "endurance":
+            return sv1 or (vma * 0.70 if vma else None)
+        if domain == "tempo":
+            return ((sv1 + sv2) / 2 if sv1 and sv2 else (vma * 0.82 if vma else None))
+        if domain == "threshold":
+            return sv2 or (vma * 0.89 if vma else None)
+        return vma
+
+    def observed_metrics(item, domain):
+        activity = item.get("activity") or {}
+        analysis = item.get("analysis") or {}
+        domain_tokens = {
+            "endurance": ("z1", "z2", "endurance", "easy"),
+            "tempo": ("z3", "tempo", "steady"),
+            "threshold": ("sv2", "threshold", "seuil"),
+            "vo2": ("vma", "vo2", "vo₂", "max_aerobic"),
+        }[domain]
+        matching_blocks = []
+        for block in analysis.get("blocks") or []:
+            block_type = str(block.get("block_type") or block.get("type") or "").lower()
+            block_speed = _wellness_number(block.get("average_speed_kmh"))
+            block_duration = _wellness_number(block.get("duration_seconds"))
+            if any(token in block_type for token in domain_tokens) and block_speed and block_duration:
+                matching_blocks.append((block_speed, block_duration))
+        speed = (
+            sum(value * duration for value, duration in matching_blocks)
+            / sum(duration for _, duration in matching_blocks)
+            if matching_blocks else
+            _wellness_number(activity.get("average_speed_kmh"))
         )
-        score = next((_wellness_number(value) for value in candidates if _wellness_number(value) is not None), None)
-        if score is None:
+        support = _wellness_number(analysis.get("work_duration_seconds"))
+        if matching_blocks:
+            support = sum(duration for _, duration in matching_blocks)
+        if support is None and domain == "endurance":
+            duration = _wellness_number(activity.get("duration_minutes"))
+            support = duration * 60 if duration is not None else None
+        reference = speed_reference(domain)
+        if speed is None or speed <= 0 or reference is None or reference <= 0 or support is None or support <= 0:
             return None
-        score = max(0.0, min(100.0, score))
+
+        # L'indice est relatif aux références personnelles et au temps réellement
+        # soutenu. Les scores de conformité à la prescription n'interviennent pas.
+        speed_index = max(25.0, min(100.0, 70.0 + (speed / reference - 1.0) * 100.0))
+        support_minutes = support / 60.0
+        support_index = max(0.0, min(100.0, support_minutes / expected_support[domain] * 100.0))
+        score = speed_index * 0.65 + support_index * 0.35
         if domain == "endurance":
             drift = item.get("cardiac_drift") or {}
             decoupling = _wellness_number(drift.get("aerobic_decoupling_percent"))
             if drift.get("analyzable") and decoupling is not None:
-                drift_score = max(35.0, min(100.0, 100.0 - abs(decoupling) * 6.0))
-                score = score * 0.65 + drift_score * 0.35
-        repetitions = _wellness_number(execution.get("planned_repetition_count"))
-        completed = _wellness_number(execution.get("completed_repetition_count"))
-        if domain in {"threshold", "vo2"} and repetitions and completed is not None:
-            completion_score = max(0.0, min(100.0, completed / repetitions * 100.0))
-            score = score * 0.75 + completion_score * 0.25
-        return round(score, 1)
+                drift_index = max(30.0, min(100.0, 100.0 - abs(decoupling) * 7.0))
+                score = score * 0.75 + drift_index * 0.25
+        quality = _wellness_number(activity.get("data_quality_score"))
+        quality = max(0.0, min(100.0, quality if quality is not None else 50.0))
+        return {
+            "score": round(max(0.0, min(100.0, score)), 1),
+            "support_minutes": round(support_minutes, 1),
+            "quality": quality,
+            "date": str(item.get("start_time") or "")[:10],
+        }
 
     competitions = []
     execution_summaries = load_execution_summaries()
@@ -2198,10 +2247,9 @@ def _energy_signature():
             continue
         domain = domain_for(item)
         if domain:
-            score = session_score(item, domain)
-            if score is not None:
-                domains[domain]["scores"].append(score)
-                domains[domain]["dates"].append(str(item.get("start_time") or "")[:10])
+            observation = observed_metrics(item, domain)
+            if observation is not None:
+                domains[domain]["observations"].append(observation)
         descriptor = " ".join(str(value or "").lower() for value in (
             activity.get("session_type"),
             (item.get("analysis") or {}).get("session_type"),
@@ -2212,34 +2260,71 @@ def _energy_signature():
 
     available = []
     for key, domain in domains.items():
-        scores = domain.pop("scores")
-        dates = domain.pop("dates")
+        observations = sorted(domain.pop("observations"), key=lambda item: item["date"])
+        scores = [item["score"] for item in observations]
+        supports = [item["support_minutes"] for item in observations]
+        qualities = [item["quality"] for item in observations]
+        dates = [item["date"] for item in observations if item["date"]]
         count = len(scores)
-        average = round(sum(scores) / count) if count else None
+        average = round(median(scores)) if count else None
         trend = None
-        if count >= 4:
+        trend_delta = None
+        date_span = 0
+        if len(dates) >= 2:
+            try:
+                date_span = (date.fromisoformat(dates[-1]) - date.fromisoformat(dates[0])).days
+            except ValueError:
+                date_span = 0
+        if count >= 6 and date_span >= 21:
             split = count // 2
-            early = sum(scores[:split]) / split
-            late = sum(scores[split:]) / (count - split)
-            delta = late - early
-            trend = "en progression" if delta >= 3 else ("en retrait" if delta <= -3 else "stable")
-        confidence = min(95, 30 + count * 9) if count else 0
+            early = median(scores[:split])
+            late = median(scores[split:])
+            trend_delta = round(late - early, 1)
+            trend = "en progression" if trend_delta >= 3 else ("en retrait" if trend_delta <= -3 else "stable")
+
+        variability = None
+        regularity = "à confirmer"
+        if count >= 3 and average:
+            variability = round((sum((value - average) ** 2 for value in scores) / count) ** 0.5, 1)
+            regularity = "stable" if variability <= 5 else ("modérée" if variability <= 10 else "variable")
+        latest = max(dates) if dates else None
+        freshness_days = None
+        validity = "non datée"
+        if latest:
+            try:
+                freshness_days = max(0, (date.today() - date.fromisoformat(latest)).days)
+                validity = "actuelle" if freshness_days <= 42 else ("à actualiser" if freshness_days <= 84 else "ancienne")
+            except ValueError:
+                pass
+        count_factor = min(1.0, count / 8.0)
+        quality_factor = (sum(qualities) / len(qualities) / 100.0) if qualities else 0.5
+        freshness_factor = 1.0 if freshness_days is None else max(0.35, 1.0 - freshness_days / 180.0)
+        confidence = round(min(95.0, 100.0 * count_factor * quality_factor * freshness_factor)) if count else 0
+        evidence = "fort" if confidence >= 75 else ("modéré" if confidence >= 50 else "faible")
         interpretation = (
             "Données insuffisantes pour caractériser cette filière."
             if count == 0 else
-            f"{count} séance(s) exploitable(s) ; niveau observé {average}/100"
+            f"{count} séance(s) physiologiquement exploitable(s) ; indice observé {average}/100"
             + (f", tendance {trend}." if trend else ".")
         )
         domain.update({
             "key": key,
             "score": average,
+            "score_label": "Indice observé",
+            "score_basis": "Vitesse relative aux références personnelles et durée réellement soutenue.",
             "session_count": count,
             "confidence": confidence,
+            "evidence": {"level": evidence, "quality_mean": round(sum(qualities) / len(qualities)) if qualities else None},
             "trend": trend,
+            "trend_delta": trend_delta,
+            "trend_basis": "6 séances et 21 jours minimum" if trend is None else f"Écart entre moitiés chronologiques : {trend_delta:+.1f} points.",
+            "support_capacity": {"median_minutes": round(median(supports), 1) if supports else None, "label": "durée spécifique médiane"},
+            "regularity": {"label": regularity, "variability_points": variability},
             "interpretation": interpretation,
-            "latest_session": max(dates) if dates else None,
+            "latest_session": latest,
+            "validity": {"status": validity, "freshness_days": freshness_days},
         })
-        if count >= 2 and average is not None:
+        if count >= 3 and average is not None and confidence >= 30:
             available.append(domain)
 
     ranked = sorted(available, key=lambda item: (item["score"], item["confidence"]), reverse=True)
@@ -2249,11 +2334,11 @@ def _energy_signature():
     return {
         "status": "established" if len(available) >= 3 else "building",
         "headline": (
-            f"Point fort observé : {dominant['label'].lower()}"
+            f"Filière la mieux étayée : {dominant['label'].lower()}"
             if dominant else "Signature énergétique en construction"
         ),
         "summary": (
-            f"Les séances analysées mettent d’abord en valeur {dominant['label'].lower()}"
+            f"Les mesures disponibles étayent d’abord {dominant['label'].lower()}"
             + (f", puis {secondary['label'].lower()}." if secondary else ".")
             if dominant else
             "Atlas attend davantage de séances classées pour identifier une dominante fiable."
