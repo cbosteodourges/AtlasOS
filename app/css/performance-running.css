@@ -2836,6 +2836,149 @@ body[data-coach-section]
   }
 }
 
+/* CALIBRATION DU PROFIL — cinq étapes lisibles, moteur détaillé non exposé */
+.profile-calibration-panel {
+  display: grid;
+  gap: 26px;
+  max-width: 1470px;
+  margin: 30px auto 70px;
+  padding: 30px;
+  border: 1px solid rgba(53, 204, 255, .25);
+  background: rgba(5, 22, 39, .96);
+}
+
+.profile-calibration-panel[hidden] { display: none !important; }
+
+.profile-calibration-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 28px;
+  align-items: start;
+}
+
+.profile-calibration-heading p {
+  margin: 0 0 10px;
+  color: #35ccff;
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .16em;
+}
+
+.profile-calibration-heading h1 {
+  margin: 0 0 12px;
+  font-size: clamp(1.8rem, 3vw, 3rem);
+  line-height: 1.05;
+}
+
+.profile-calibration-heading > div > span,
+.profile-calibration-mentions article span,
+.profile-calibration-stages small,
+.profile-calibration-evidence span {
+  color: #9eb5c5;
+  line-height: 1.55;
+}
+
+.profile-calibration-score {
+  min-width: 142px;
+  padding: 20px;
+  text-align: center;
+  border: 1px solid rgba(81, 216, 146, .55);
+  border-radius: 24px;
+  background: rgba(81, 216, 146, .08);
+}
+
+.profile-calibration-score strong {
+  display: block;
+  color: #51d892;
+  font-size: 2rem;
+}
+
+.profile-calibration-score span { color: #9eb5c5; }
+
+.profile-calibration-mentions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.profile-calibration-mentions article {
+  display: grid;
+  gap: 7px;
+  padding: 20px;
+  border: 1px solid rgba(53, 204, 255, .18);
+  border-radius: 18px;
+  background: rgba(8, 28, 52, .72);
+}
+
+.profile-calibration-stages {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-calibration-stages li {
+  display: flex;
+  gap: 12px;
+  min-height: 118px;
+  padding: 17px;
+  border: 1px solid rgba(158, 181, 197, .2);
+  border-radius: 16px;
+  background: rgba(2, 13, 26, .65);
+}
+
+.profile-calibration-stages li > span {
+  display: grid;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  color: #7892a5;
+  font-weight: 800;
+}
+
+.profile-calibration-stages li div { display: grid; gap: 6px; align-content: start; }
+.profile-calibration-stages .is-completed { border-color: rgba(81, 216, 146, .45); }
+.profile-calibration-stages .is-completed > span { color: #51d892; }
+.profile-calibration-stages .is-active { border-color: #35ccff; box-shadow: 0 0 22px rgba(53, 204, 255, .1); }
+.profile-calibration-stages .is-active > span { color: #35ccff; }
+.profile-calibration-stages .is-upcoming { opacity: .68; }
+
+.profile-calibration-evidence {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(150px, 220px)) minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.profile-calibration-evidence > * {
+  margin: 0;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: rgba(53, 204, 255, .07);
+}
+
+.profile-calibration-evidence div { display: grid; gap: 5px; }
+.profile-calibration-evidence div strong { color: #35ccff; font-size: 1.4rem; }
+.profile-calibration-evidence p { display: grid; align-items: center; color: #f5fbff; }
+
+@media (max-width: 1100px) {
+  .profile-calibration-stages { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 700px) {
+  .profile-calibration-panel { padding: 20px; }
+  .profile-calibration-heading,
+  .profile-calibration-mentions,
+  .profile-calibration-stages,
+  .profile-calibration-evidence { grid-template-columns: 1fr; }
+  .profile-calibration-score { justify-self: stretch; }
+}
+
 #atlasPhysiologyRibbon .atlas-zone-ribbon > header {
   margin-bottom: 7px;
 }

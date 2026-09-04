@@ -98,6 +98,34 @@ Cette mémoire doit être consultée avant toute future modification de
 l'algorithme des seuils. Le terme de recherche recommandé dans le dépôt est
 `threshold_state_v2`.
 
+## Calibration d'un nouveau profil
+
+Depuis le 4 septembre 2026, l'accompagnement d'un utilisateur sans historique
+est organisé en cinq étapes visibles dans l'onglet « Calibration du profil » :
+
+1. profil provisoire à partir des informations initiales ;
+2. programme immédiatement disponible avec une intensité prudente ;
+3. calibration progressive pendant 2 à 4 semaines ;
+4. actualisation hebdomadaire à partir des tendances exploitables ;
+5. profil établi, relié aux zones et aux séances futures.
+
+L'interface compte uniquement les séances FIT qui comportent au moins un bloc
+daté avec durée, vitesse et fréquence cardiaque cohérentes. Le profil initial
+devient bien étayé à partir de 8 séances exploitables réparties sur 4 semaines,
+puis établi à partir de 12 séances et d'au moins 3 filières observées. Ces
+repères décrivent la maturité des données ; ils ne remplacent pas les règles de
+validation physiologique de `threshold_state_v2`.
+
+La communication publique reste volontairement sobre. Elle peut indiquer :
+
+- « Analyse longitudinale : Atlas observe l'évolution de votre profil au fil
+  des entraînements. »
+- « Programme connecté au profil : les évolutions confirmées influencent
+  automatiquement les prochaines séances. »
+
+Les coefficients, fenêtres d'analyse et règles de validation du moteur ne sont
+pas exposés dans l'interface publique.
+
 ## Améliorations futures prévues
 
 - intégrer pente, température, vent et surface avec un poids explicite ;

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#020713">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Atlas OS — Atlas Coach</title>
-  <link rel="stylesheet" href="./css/performance-running.css?v=76">
+  <link rel="stylesheet" href="./css/performance-running.css?v=77">
   <link rel="stylesheet" href="./css/atlas-training-history.css?v=1">
   <link rel="stylesheet" href="./css/atlas-global-nav.css?v=18"><link rel="stylesheet" href="./css/atlas-conversation.css?v=8"><link rel="stylesheet" href="./css/atlas-conversation-refinement.css?v=1"><link rel="stylesheet" href="./css/atlas-responsive.css?v=7">
   <style id="atlas-training-theme-guard">
@@ -94,6 +94,35 @@
         Performance
       </button>
     </nav>
+  </section>
+
+  <section class="panel profile-calibration-panel coach-section-panel" id="profileCalibrationPanel" data-coach-section="calibration" hidden aria-labelledby="profileCalibrationTitle">
+    <div class="profile-calibration-heading">
+      <div>
+        <p>PROFIL PHYSIOLOGIQUE ÉVOLUTIF</p>
+        <h1 id="profileCalibrationTitle">Un profil physiologique qui évolue avec vous</h1>
+        <span>Atlas s'appuie sur vos entraînements compatibles pour estimer et faire évoluer votre VO₂max, votre VMA, votre SV1 et votre SV2. Les évolutions confirmées actualisent vos zones et les séances à venir.</span>
+      </div>
+      <div class="profile-calibration-score" aria-live="polite">
+        <strong id="profileCalibrationStage">—</strong>
+        <span>étape actuelle</span>
+      </div>
+    </div>
+
+    <div class="profile-calibration-mentions" aria-label="Principes du profil évolutif">
+      <article><strong>Analyse longitudinale</strong><span>Atlas observe l'évolution de votre profil au fil des entraînements.</span></article>
+      <article><strong>Programme connecté au profil</strong><span>Les évolutions confirmées influencent automatiquement les prochaines séances.</span></article>
+    </div>
+
+    <ol class="profile-calibration-stages" id="profileCalibrationStages" aria-live="polite">
+      <li class="is-loading"><strong>Lecture de la mémoire d'entraînement…</strong></li>
+    </ol>
+
+    <div class="profile-calibration-evidence">
+      <div><span>Séances FIT exploitables</span><strong id="profileCalibrationSessions">—</strong></div>
+      <div><span>Semaines couvertes</span><strong id="profileCalibrationWeeks">—</strong></div>
+      <p id="profileCalibrationNextStep">Atlas vérifie les données disponibles.</p>
+    </div>
   </section>
 
   <!-- ████████████████████████████████████████████████████████
@@ -435,8 +464,8 @@
 
 <script src="./js/atlas-conversation.js?v=9"></script>
 <script src="./js/atlas-pwa.js?v=3"></script>
-<script src="./js/atlas-global-nav.js?v=19"></script>
-<script src="./js/performance-running.js?v=17"></script>
+<script src="./js/atlas-global-nav.js?v=20"></script>
+<script src="./js/performance-running.js?v=18"></script>
 <script src="./js/atlas-training-calendar.js?v=96"></script>
 <script src="./js/atlas-training-history.js?v=8"></script>
 </body>

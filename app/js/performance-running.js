@@ -1,6 +1,50 @@
 "use strict";
 
 (() => {
+  const stages = document.getElementById("profileCalibrationStages");
+  if (!stages) return;
+
+  const stageValue = document.getElementById("profileCalibrationStage");
+  const sessions = document.getElementById("profileCalibrationSessions");
+  const weeks = document.getElementById("profileCalibrationWeeks");
+  const nextStep = document.getElementById("profileCalibrationNextStep");
+
+  const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, character => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[character]));
+
+  const render = payload => {
+    stageValue.textContent = `${payload.active_stage}/5`;
+    sessions.textContent = String(payload.usable_session_count ?? 0);
+    weeks.textContent = String(payload.covered_week_count ?? 0);
+    nextStep.textContent = payload.next_step || "Atlas poursuit la calibration du profil.";
+    stages.innerHTML = (payload.stages || []).map(stage => `
+      <li class="is-${escapeHtml(stage.status)}">
+        <span>${escapeHtml(stage.number)}</span>
+        <div><strong>${escapeHtml(stage.title)}</strong><small>${escapeHtml(stage.description)}</small></div>
+      </li>
+    `).join("");
+  };
+
+  const load = async () => {
+    try {
+      const response = await fetch("/api/atlas-coach/profile-calibration", {
+        cache: "no-store"
+      });
+      if (!response.ok) throw new Error("calibration indisponible");
+      render(await response.json());
+    } catch (error) {
+      stages.innerHTML = "<li class=\"is-loading\"><strong>La calibration sera disponible après la prochaine synchronisation.</strong></li>";
+      nextStep.textContent = "Synchronisez une première séance ou complétez votre profil de départ.";
+    }
+  };
+
+  load();
+  window.addEventListener("atlas:athlete-profile-loaded", load);
+  window.addEventListener("atlas:training-program-loaded", load);
+})();
+
+(() => {
   const header = document.querySelector(".performance-header");
   if (!header) return;
 

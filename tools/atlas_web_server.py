@@ -33,6 +33,7 @@ from src.training.post_workout_context_analyzer import (
 )
 from src.training.user_workout_decision import UserWorkoutDecisionEngine
 from src.training.heart_rate_speed_profile import weekly_heart_rate_speed_profile
+from src.training.profile_calibration import profile_calibration_summary
 from src.training.subscription_access import (
     filter_program_for_subscription,
     normalize_tier,
@@ -3177,6 +3178,20 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             try:
                 self.send_json(200, {"ok": True, "profile": load_user_profile()})
             except (OSError, json.JSONDecodeError) as error:
+                self.send_json(500, {"ok": False, "error": str(error)})
+            return
+
+        if parsed.path == "/api/atlas-coach/profile-calibration":
+            try:
+                physiology = load_physiological_reference()
+                summary = profile_calibration_summary(
+                    load_execution_summaries(),
+                    physiology,
+                    profile_exists=bool(load_user_profile() or physiology),
+                    program_exists=PROGRAM_PATH.is_file(),
+                )
+                self.send_json(200, {"ok": True, **summary})
+            except (OSError, ValueError, json.JSONDecodeError) as error:
                 self.send_json(500, {"ok": False, "error": str(error)})
             return
 
