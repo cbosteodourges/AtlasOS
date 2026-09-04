@@ -1648,6 +1648,20 @@ const target = compactTarget(workout, zone);
     5: "#ff506c"
   };
 
+  // Invariant visuel Atlas : la couleur décrit le rôle du bloc dans la
+  // séance, pas uniquement sa zone physiologique. Une endurance Z2 placée
+  // avant ou entre les fractions reste donc bleue ; le vert est réservé au
+  // retour au calme.
+  const ATLAS_TIMELINE_ROLE_COLORS = Object.freeze({
+    preparation: DISPLAY_ZONE_COLORS[1],
+    easy: DISPLAY_ZONE_COLORS[1],
+    recovery: DISPLAY_ZONE_COLORS[1],
+    cool_down: DISPLAY_ZONE_COLORS[2],
+    specific_z3: DISPLAY_ZONE_COLORS[3],
+    specific_z4: DISPLAY_ZONE_COLORS[4],
+    specific_z5: DISPLAY_ZONE_COLORS[5]
+  });
+
   function canonicalBlockType(block = {}) {
     return String(block.block_type || "")
       .toLowerCase()
@@ -1717,6 +1731,21 @@ const target = compactTarget(workout, zone);
 
     const targetZone = Number(block.target?.zone);
     return targetZone >= 1 && targetZone <= 5 ? targetZone : 1;
+  }
+
+  function plannedTimelineColor(workout, block = {}) {
+    const blockType = canonicalBlockType(block);
+    if (blockType === "cool_down") return ATLAS_TIMELINE_ROLE_COLORS.cool_down;
+    if (["warm_up", "z1"].includes(blockType)) {
+      return ATLAS_TIMELINE_ROLE_COLORS.preparation;
+    }
+    if (["recovery", "rest"].includes(blockType)) {
+      return ATLAS_TIMELINE_ROLE_COLORS.recovery;
+    }
+
+    const zone = atlasDisplayZone(workout, block);
+    if (zone <= 2) return ATLAS_TIMELINE_ROLE_COLORS.easy;
+    return ATLAS_TIMELINE_ROLE_COLORS[`specific_z${zone}`] || DISPLAY_ZONE_COLORS[zone];
   }
 
   function workoutTimelineSegments(workout) {
@@ -1796,6 +1825,7 @@ const target = compactTarget(workout, zone);
         );
         segments.push({
           zone: atlasDisplayZone(workout, block),
+          color: plannedTimelineColor(workout, block),
           duration,
           speed: (() => {
             const values = [block.target?.speed_min_kmh, block.target?.speed_max_kmh]
@@ -1820,6 +1850,7 @@ const target = compactTarget(workout, zone);
         ) {
           segments.push({
             zone: 1,
+            color: ATLAS_TIMELINE_ROLE_COLORS.recovery,
             duration: recovery,
             label: optional
               ? "Récupération si fraction facultative réalisée"
@@ -1971,7 +2002,7 @@ const target = compactTarget(workout, zone);
           ${segments.map((segment, index) => `
             <i
               class="timeline-zone-${segment.zone}${segment.optional ? " timeline-segment-optional" : ""}"
-              style="--segment-weight:${Math.max(segment.duration, .5)};--segment-color:${DISPLAY_ZONE_COLORS[segment.zone]};height:${heightPercent(segment)}%"
+              style="--segment-weight:${Math.max(segment.duration, .5)};--segment-color:${segment.color || DISPLAY_ZONE_COLORS[segment.zone]};height:${heightPercent(segment)}%"
               tabindex="0"
               data-step="${index + 1}"
               data-label="${escapeHtml(segment.label)} · ${readableWorkTime(segment.duration)} · Z${segment.zone}"
