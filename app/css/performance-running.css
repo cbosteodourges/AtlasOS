@@ -2992,7 +2992,7 @@ body[data-coach-section]
 /* ATLAS COACH — ESPACE SOUS LE BANDEAU PHYSIOLOGIQUE */
 @media (min-width: 1181px) {
   .performance-app {
-    padding-top: 254px !important;
+    padding-top: var(--atlas-training-header-offset, 318px) !important;
   }
 
   .performance-header {

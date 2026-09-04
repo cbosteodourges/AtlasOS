@@ -76,7 +76,7 @@ class PwaAssetsTests(unittest.TestCase):
     def test_styles_and_scripts_are_network_first(self):
         worker = (APP_ROOT / "service-worker.js").read_text(encoding="utf-8")
         pwa = (APP_ROOT / "js" / "atlas-pwa.js").read_text(encoding="utf-8")
-        self.assertIn('CACHE_NAME = "atlas-shell-v35"', worker)
+        self.assertIn('CACHE_NAME = "atlas-shell-v36"', worker)
         self.assertIn('["style", "script"]', worker)
         self.assertIn('fetch(event.request, { cache: "no-store" })', worker)
         self.assertIn('service-worker.js?v=4', pwa)
@@ -117,6 +117,21 @@ class PwaAssetsTests(unittest.TestCase):
         self.assertIn(
             "segment.color || DISPLAY_ZONE_COLORS[segment.zone]",
             calendar,
+        )
+
+    def test_desktop_content_tracks_the_rendered_header_height(self):
+        calendar = (APP_ROOT / "js" / "atlas-training-calendar.js").read_text(
+            encoding="utf-8"
+        )
+        styles = (APP_ROOT / "css" / "performance-running.css").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("const HEADER_CONTENT_GAP_PX = 20", calendar)
+        self.assertIn("new ResizeObserver(syncTrainingHeaderOffset)", calendar)
+        self.assertIn('"--atlas-training-header-offset"', calendar)
+        self.assertIn(
+            "padding-top: var(--atlas-training-header-offset, 318px)",
+            styles,
         )
 
     def test_mobile_global_navigation_keeps_four_labeled_destinations(self):

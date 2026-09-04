@@ -9,6 +9,25 @@
 
   if (!overview || !calendar || !planPanel || !header) return;
 
+  const HEADER_CONTENT_GAP_PX = 20;
+  const syncTrainingHeaderOffset = () => {
+    const desktopHeader = window.matchMedia("(min-width: 1181px)").matches;
+    if (!desktopHeader) {
+      document.documentElement.style.removeProperty(
+        "--atlas-training-header-offset"
+      );
+      return;
+    }
+    document.documentElement.style.setProperty(
+      "--atlas-training-header-offset",
+      `${Math.ceil(header.getBoundingClientRect().height) + HEADER_CONTENT_GAP_PX}px`
+    );
+  };
+
+  new ResizeObserver(syncTrainingHeaderOffset).observe(header);
+  window.addEventListener("resize", syncTrainingHeaderOffset);
+  window.requestAnimationFrame(syncTrainingHeaderOffset);
+
   const DAY_LABELS = [
     "LUNDI",
     "MARDI",
