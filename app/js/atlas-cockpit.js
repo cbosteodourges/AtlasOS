@@ -105,8 +105,22 @@
     validated: "Référence validée",
     validated_threshold_reference: "Référence de seuil validée",
     measured: "Mesure validée",
-    session_adjusted_estimate: "Ajustement issu de la dernière séance"
+    session_adjusted_estimate: "Ajustement issu de la dernière séance",
+    weekly_validated_threshold_v2: "Validation Atlas sur 2 semaines"
   }[status] || "Référence Atlas");
+
+  const thresholdDetail = (base, state) => {
+    if (!state?.usable || state?.projection?.speed_kmh == null) return base;
+    const projection = state.projection;
+    const speed = Number(projection.speed_kmh).toLocaleString("fr-FR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    const fraction = projection.heart_rate_percent_max == null
+      ? ""
+      : ` · ${String(projection.heart_rate_percent_max).replace(".", ",")} % FCmax`;
+    return `${base} · projection ${speed} km/h / ${projection.heart_rate_bpm ?? "—"} bpm${fraction} · à confirmer`;
+  };
 
   const renderIndexComponents = components => {
     const container = document.querySelector("[data-index-components]");
@@ -176,13 +190,14 @@
     }
     const physiology = payload?.physiology?.current;
     if (physiology) {
+      const thresholdStates = payload?.physiology?.latest_threshold_evolution?.states || {};
       const decimal = value => String(value).replace(".", ",");
       setText("[data-physiology-vo2]", physiology.vo2_max != null ? `${decimal(physiology.vo2_max)} ml/kg/min` : "—");
       setText("[data-physiology-vma]", physiology.vma_kmh != null ? `${decimal(physiology.vma_kmh)} km/h` : "—");
       setText("[data-physiology-sv1]", physiology.sv1?.speed_kmh != null ? `${decimal(physiology.sv1.speed_kmh)} km/h` : "—");
-      setText("[data-physiology-sv1-hr]", physiology.sv1?.heart_rate_bpm != null ? `${physiology.sv1.heart_rate_bpm} bpm · ${physiologyStatusLabel(physiology.sv1.status)}` : "FC à confirmer");
+      setText("[data-physiology-sv1-hr]", thresholdDetail(physiology.sv1?.heart_rate_bpm != null ? `${physiology.sv1.heart_rate_bpm} bpm · ${physiologyStatusLabel(physiology.sv1.status)}` : "FC à confirmer", thresholdStates.sv1));
       setText("[data-physiology-sv2]", physiology.sv2?.speed_kmh != null ? `${decimal(physiology.sv2.speed_kmh)} km/h` : "—");
-      setText("[data-physiology-sv2-hr]", physiology.sv2?.heart_rate_bpm != null ? `${physiology.sv2.heart_rate_bpm} bpm · ${physiologyStatusLabel(physiology.sv2.status)}` : "FC à confirmer");
+      setText("[data-physiology-sv2-hr]", thresholdDetail(physiology.sv2?.heart_rate_bpm != null ? `${physiology.sv2.heart_rate_bpm} bpm · ${physiologyStatusLabel(physiology.sv2.status)}` : "FC à confirmer", thresholdStates.sv2));
       setText("[data-physiology-hrmax]", physiology.maximum_heart_rate_bpm != null ? `${physiology.maximum_heart_rate_bpm} bpm` : "—");
     }
   };
@@ -382,6 +397,7 @@
         analysis.confidence ? `${analysis.confidence.coverage_28d} %` : "—"
       );
       const physiology = analysis.physiology || {};
+      const thresholdStates = analysis.threshold_evolution?.states || {};
       const decimal = value => String(value).replace(".", ",");
       setText(
         "[data-physiology-vo2]",
@@ -409,9 +425,12 @@
       );
       setText(
         "[data-physiology-sv1-hr]",
-        physiology.sv1_heart_rate_bpm != null
-          ? `${Math.round(physiology.sv1_heart_rate_bpm)} bpm · ${physiologyStatusLabel(physiology.sv1_status)}`
-          : "FC à confirmer"
+        thresholdDetail(
+          physiology.sv1_heart_rate_bpm != null
+            ? `${Math.round(physiology.sv1_heart_rate_bpm)} bpm · ${physiologyStatusLabel(physiology.sv1_status)}`
+            : "FC à confirmer",
+          thresholdStates.sv1
+        )
       );
       setText(
         "[data-physiology-sv2]",
@@ -421,9 +440,12 @@
       );
       setText(
         "[data-physiology-sv2-hr]",
-        physiology.sv2_heart_rate_bpm != null
-          ? `${Math.round(physiology.sv2_heart_rate_bpm)} bpm · ${physiologyStatusLabel(physiology.sv2_status)}`
-          : "FC à confirmer"
+        thresholdDetail(
+          physiology.sv2_heart_rate_bpm != null
+            ? `${Math.round(physiology.sv2_heart_rate_bpm)} bpm · ${physiologyStatusLabel(physiology.sv2_status)}`
+            : "FC à confirmer",
+          thresholdStates.sv2
+        )
       );
       setText(
         "[data-physiology-hrmax]",

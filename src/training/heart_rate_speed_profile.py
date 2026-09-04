@@ -61,7 +61,10 @@ def extract_comparable_blocks(executions, physiology):
         quality = max(25.0, min(100.0, quality if quality is not None else 60.0))
         temperature = _number(activity.get("temperature_c"))
         for block_index, block in enumerate(analysis.get("blocks") or []):
-            domain = _domain(block.get("block_type") or block.get("type"))
+            raw_block_type = str(
+                block.get("block_type") or block.get("type") or ""
+            ).lower().replace("-", "_").replace(" ", "_")
+            domain = _domain(raw_block_type)
             speed = _number(block.get("average_speed_kmh"))
             heart_rate = _number(block.get("average_heart_rate_bpm"))
             duration = _number(block.get("duration_seconds"))
@@ -78,6 +81,7 @@ def extract_comparable_blocks(executions, physiology):
                 hrr = (heart_rate - resting_hr) / (maximum_hr - resting_hr)
             blocks.append({
                 "domain": domain,
+                "raw_block_type": raw_block_type,
                 "date": session_date,
                 "session_id": str(item.get("activity_id") or f"{session_date}:{session_index}"),
                 "block_id": block_index,
@@ -92,8 +96,26 @@ def extract_comparable_blocks(executions, physiology):
     return blocks
 
 
+def _flat_physiology(physiology):
+    """Accepte le format API plat et le profil interne imbriqué."""
+    sv1 = physiology.get("sv1") or {}
+    sv2 = physiology.get("sv2") or {}
+    return {
+        **physiology,
+        "sv1_speed_kmh": physiology.get("sv1_speed_kmh", sv1.get("speed_kmh")),
+        "sv1_heart_rate_bpm": physiology.get(
+            "sv1_heart_rate_bpm", sv1.get("heart_rate_bpm")
+        ),
+        "sv2_speed_kmh": physiology.get("sv2_speed_kmh", sv2.get("speed_kmh")),
+        "sv2_heart_rate_bpm": physiology.get(
+            "sv2_heart_rate_bpm", sv2.get("heart_rate_bpm")
+        ),
+    }
+
+
 def weekly_heart_rate_speed_profile(executions, physiology, as_of=None):
     """Compare 42 jours récents aux 140 jours précédents, allure par allure."""
+    physiology = _flat_physiology(physiology)
     as_of = as_of or date.today()
     recent_start = as_of - timedelta(days=41)
     history_start = as_of - timedelta(days=181)
@@ -229,4 +251,141 @@ def weekly_heart_rate_speed_profile(executions, physiology, as_of=None):
             "Projection hebdomadaire plafonnée à ±0,4 km/h.",
             "VMA et VO₂max restent à confirmer par des efforts spécifiques ou une compétition.",
         ],
+    }
+
+
+def weekly_threshold_state_profile(executions, physiology, as_of=None):
+    """Projette SV1 et SV2 comme couples vitesse–FC, sans les valider.
+
+    La vitesse projetée provient de l'évolution de FC à allure comparable.
+    La FC projetée ne provient que de blocs explicitement identifiés comme un
+    travail de seuil proche de la référence. Elle n'est donc jamais déduite
+    automatiquement d'une simple baisse de FC en endurance.
+    """
+
+    physiology = _flat_physiology(physiology)
+    as_of = as_of or date.today()
+    efficiency = weekly_heart_rate_speed_profile(
+        executions, physiology, as_of=as_of
+    )
+    recent_start = as_of - timedelta(days=41)
+    blocks = extract_comparable_blocks(executions, physiology)
+    maximum_hr = _number(physiology.get("maximum_heart_rate_bpm"))
+    resting_hr = _number(physiology.get("resting_heart_rate_bpm"))
+    definitions = {
+        "sv1": {
+            "domain": "endurance",
+            "speed": _number(physiology.get("sv1_speed_kmh")),
+            "heart_rate": _number(physiology.get("sv1_heart_rate_bpm")),
+            "tokens": ("sv1", "aerobic_threshold", "seuil_aerobie"),
+        },
+        "sv2": {
+            "domain": "threshold",
+            "speed": _number(physiology.get("sv2_speed_kmh")),
+            "heart_rate": _number(physiology.get("sv2_heart_rate_bpm")),
+            "tokens": ("sv2", "threshold", "seuil"),
+        },
+    }
+    states = {}
+    for name, definition in definitions.items():
+        current_speed = definition["speed"]
+        current_hr = definition["heart_rate"]
+        domain_result = (efficiency.get("domains") or {}).get(
+            definition["domain"], {}
+        )
+        projected_speed = _number(domain_result.get("projected_speed_kmh"))
+        explicit = [
+            block for block in blocks
+            if recent_start <= block["date"] <= as_of
+            and any(
+                token in block.get("raw_block_type", "")
+                for token in definition["tokens"]
+            )
+            and (
+                current_speed is None
+                or abs(block["speed_kmh"] - current_speed)
+                <= max(.45, current_speed * .06)
+            )
+        ]
+        sessions = {block["session_id"] for block in explicit}
+        observed_hr = _weighted_mean(explicit, "heart_rate_bpm") if explicit else None
+        projected_hr = current_hr
+        if current_hr is not None and observed_hr is not None and len(sessions) >= 2:
+            projected_hr = max(current_hr - 2, min(current_hr + 2, observed_hr))
+        elif current_hr is None and observed_hr is not None and len(sessions) >= 2:
+            projected_hr = observed_hr
+
+        speed_delta = (
+            projected_speed - current_speed
+            if projected_speed is not None and current_speed is not None else None
+        )
+        hr_delta = (
+            projected_hr - current_hr
+            if projected_hr is not None and current_hr is not None else None
+        )
+        displayed_projected_hr = (
+            round(projected_hr) if projected_hr is not None else None
+        )
+        confidence = min(
+            int(domain_result.get("confidence") or 0),
+            45 + min(30, len(sessions) * 10) + min(15, len(explicit) * 3),
+        )
+        usable = (
+            current_speed is not None
+            and current_hr is not None
+            and projected_speed is not None
+            and confidence >= 55
+        )
+        direction = None
+        if usable and speed_delta is not None:
+            direction = (
+                "progression" if speed_delta >= .08
+                else "regression" if speed_delta <= -.08
+                else "stable"
+            )
+        states[name] = {
+            "current": {
+                "speed_kmh": current_speed,
+                "heart_rate_bpm": current_hr,
+                "heart_rate_percent_max": (
+                    round(current_hr / maximum_hr * 100, 1)
+                    if current_hr is not None and maximum_hr else None
+                ),
+            },
+            "projection": {
+                "speed_kmh": round(projected_speed, 2) if projected_speed is not None else None,
+                "heart_rate_bpm": displayed_projected_hr,
+                "heart_rate_percent_max": (
+                    round(displayed_projected_hr / maximum_hr * 100, 1)
+                    if displayed_projected_hr is not None and maximum_hr else None
+                ),
+                "heart_rate_reserve_percent": (
+                    round((displayed_projected_hr - resting_hr) / (maximum_hr - resting_hr) * 100, 1)
+                    if displayed_projected_hr is not None and resting_hr is not None
+                    and maximum_hr and maximum_hr > resting_hr else None
+                ),
+            },
+            "speed_change_kmh": round(speed_delta, 2) if speed_delta is not None else None,
+            "heart_rate_change_bpm": round(hr_delta) if hr_delta is not None else None,
+            "direction": direction,
+            "confidence": confidence,
+            "usable": usable,
+            "threshold_specific_sessions": len(sessions),
+            "threshold_specific_blocks": len(explicit),
+            "status": "projection_a_confirmer" if usable else "donnees_insuffisantes",
+            "explanation": (
+                "Vitesse projetée par la relation allure–FC ; FC du seuil "
+                "estimée uniquement à partir de blocs explicitement proches du seuil."
+            ),
+        }
+    return {
+        "schema": "threshold_state_v2",
+        "week": efficiency["week"],
+        "as_of": efficiency["as_of"],
+        "next_review": efficiency["next_review"],
+        "states": states,
+        "validation_rule": (
+            "Deux semaines consécutives concordantes sont nécessaires avant "
+            "la modification automatique des références et du programme."
+        ),
     }

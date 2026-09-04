@@ -1,5 +1,9 @@
 # ATLAS OS — Vision du moteur Performance
 
+> Mémoire de décision associée :
+> [évolution conjointe de SV1 et SV2](ATLAS_MEMORY_THRESHOLD_EVOLUTION.md),
+> schéma `threshold_state_v2`.
+
 ## Objectif central
 
 ATLAS doit devenir un moteur de performance adaptatif capable de comprendre comment chaque utilisateur réagit à l’entraînement, d’identifier les préparations et les séances qui lui réussissent le mieux, puis de proposer et d’ajuster un plan jusqu’à une compétition cible.

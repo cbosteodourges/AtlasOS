@@ -3,7 +3,10 @@
 import unittest
 from datetime import date, timedelta
 
-from src.training.heart_rate_speed_profile import weekly_heart_rate_speed_profile
+from src.training.heart_rate_speed_profile import (
+    weekly_heart_rate_speed_profile,
+    weekly_threshold_state_profile,
+)
 
 
 PHYSIOLOGY = {
@@ -63,6 +66,39 @@ class HeartRateSpeedProfileTests(unittest.TestCase):
         item["analysis"]["data_integrity"]["heart_rate_reliable"] = False
         result = weekly_heart_rate_speed_profile([item], PHYSIOLOGY, as_of=date(2026, 9, 4))
         self.assertEqual(result["domains"]["threshold"]["recent_block_count"], 0)
+
+    def test_projects_speed_and_hr_as_a_threshold_pair(self):
+        as_of = date(2026, 9, 4)
+        executions = []
+        for offset, hr in ((100, 159), (90, 158), (80, 160), (20, 155), (12, 154), (4, 155)):
+            executions.append(session(as_of - timedelta(days=offset), hr, index=offset))
+
+        state = weekly_threshold_state_profile(
+            executions, PHYSIOLOGY, as_of=as_of
+        )["states"]["sv2"]
+
+        self.assertTrue(state["usable"])
+        self.assertEqual(state["direction"], "progression")
+        self.assertGreater(state["projection"]["speed_kmh"], 12.9)
+        self.assertEqual(state["projection"]["heart_rate_bpm"], 155)
+        self.assertEqual(state["projection"]["heart_rate_percent_max"], 91.2)
+        self.assertGreaterEqual(state["threshold_specific_sessions"], 2)
+
+    def test_does_not_infer_sv1_hr_from_generic_warmups(self):
+        as_of = date(2026, 9, 4)
+        executions = []
+        for offset, hr in ((100, 140), (90, 140), (20, 132), (10, 132)):
+            executions.append(session(
+                as_of - timedelta(days=offset), hr,
+                speed=10.0, kind="warmup", index=offset,
+            ))
+
+        state = weekly_threshold_state_profile(
+            executions, PHYSIOLOGY, as_of=as_of
+        )["states"]["sv1"]
+
+        self.assertEqual(state["projection"]["heart_rate_bpm"], 138)
+        self.assertEqual(state["threshold_specific_sessions"], 0)
 
 
 if __name__ == "__main__":

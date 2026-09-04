@@ -14,6 +14,7 @@ from src.physiology.atlas_recovery_index import AtlasRecoveryIndex
 from src.physiology.continuous_profile import ContinuousPhysiologyEstimator
 from src.physiology.nutrition_hydration import NutritionHydrationAnalyzer
 from src.training.response_followup_service import TrainingResponseFollowupService
+from src.training.heart_rate_speed_profile import weekly_threshold_state_profile
 from src.training.training_program_loader import TrainingProgramLoader
 
 
@@ -140,11 +141,22 @@ class PostSyncOrchestrator:
                 if estimate.get("updated") else {}
             ),
         }
-        profile, auto_applied = self._auto_apply_physiology(previous, estimate)
         longitudinal = self._read(
             "physiology-longitudinal.json",
             {"current": previous, "history": []},
         )
+        threshold_evolution = weekly_threshold_state_profile(
+            self._read("atlas-coach-executions.json", []),
+            previous,
+        )
+        profile, session_applied = self._auto_apply_physiology(previous, estimate)
+        profile, weekly_applied = self._apply_weekly_threshold_evolution(
+            profile,
+            threshold_evolution,
+            longitudinal.get("threshold_evolution_history") or [],
+        )
+        auto_applied = [*session_applied, *weekly_applied]
+        proposed_profile = {**proposed_profile, **profile}
         history = [
             item for item in longitudinal.get("history", [])
             if item.get("schema") == "validated_profile_v1"
@@ -214,13 +226,238 @@ class PostSyncOrchestrator:
         history.sort(
             key=lambda item: str(item.get("timestamp") or item.get("day") or "")
         )
+        threshold_history = [
+            item for item in longitudinal.get("threshold_evolution_history", [])
+            if item.get("week") != threshold_evolution.get("week")
+        ]
+        threshold_history.append({
+            **threshold_evolution,
+            "applied": weekly_applied,
+        })
+        if weekly_applied:
+            self._propagate_validated_physiology_to_program(
+                previous, profile, weekly_applied
+            )
         self._write("physiology-longitudinal.json", {
             "current": profile,
             "latest_estimate": estimate,
+            "latest_threshold_evolution": threshold_evolution,
+            "threshold_evolution_history": threshold_history[-104:],
             "history": history[-5000:],
             "updated_at": datetime.now(timezone.utc).isoformat(),
         })
         return estimate, proposed_profile, auto_applied
+
+    @staticmethod
+    def _apply_weekly_threshold_evolution(
+        profile: dict[str, Any],
+        evolution: dict[str, Any],
+        history: list[dict[str, Any]],
+    ) -> tuple[dict[str, Any], list[str]]:
+        """Valide uniquement deux semaines consécutives concordantes."""
+
+        result = deepcopy(profile)
+        applied: list[str] = []
+        current_week = evolution.get("week")
+        previous_weeks = [
+            item for item in history
+            if item.get("week") and item.get("week") != current_week
+        ]
+        previous_evolution = previous_weeks[-1] if previous_weeks else {}
+        previous_states = previous_evolution.get("states") or {}
+        for threshold in ("sv1", "sv2"):
+            state = (evolution.get("states") or {}).get(threshold) or {}
+            prior = previous_states.get(threshold) or {}
+            if (
+                not state.get("usable")
+                or not prior.get("usable")
+                or state.get("direction") not in {"progression", "regression"}
+                or state.get("direction") != prior.get("direction")
+                or int(state.get("confidence") or 0) < 65
+                or int(prior.get("confidence") or 0) < 65
+            ):
+                continue
+            current = result.get(threshold) or {}
+            projection = state.get("projection") or {}
+
+            def bounded(old, new, limit, digits):
+                try:
+                    old_value, new_value = float(old), float(new)
+                except (TypeError, ValueError):
+                    return new
+                return round(max(old_value - limit, min(old_value + limit, new_value)), digits)
+
+            updated = {
+                **current,
+                "speed_kmh": bounded(
+                    current.get("speed_kmh"), projection.get("speed_kmh"), .15, 2
+                ),
+                "heart_rate_bpm": bounded(
+                    current.get("heart_rate_bpm"),
+                    projection.get("heart_rate_bpm"),
+                    2,
+                    0,
+                ),
+                "status": "weekly_validated_threshold_v2",
+                "updated_at": evolution.get("as_of"),
+                "validation_week": current_week,
+                "confidence": state.get("confidence"),
+                "direction": state.get("direction"),
+                "evidence": (
+                    "Deux semaines concordantes : relation allure–FC et "
+                    "blocs spécifiques proches du seuil."
+                ),
+            }
+            if updated != current:
+                result[threshold] = updated
+                applied.append(threshold)
+        return result, applied
+
+    def _propagate_validated_physiology_to_program(
+        self,
+        previous: dict[str, Any],
+        profile: dict[str, Any],
+        applied: list[str],
+    ) -> None:
+        """Répercute les seuils validés dans le profil du programme actif.
+
+        Les séances existantes restent identifiables et ne sont jamais
+        dupliquées. Les générateurs et analyses suivants relisent ensuite ce
+        même instantané validé.
+        """
+
+        program = self._read("training-program.json", None)
+        if not isinstance(program, dict):
+            return
+        snapshot = program.get("athlete_snapshot") or {}
+        for key in applied:
+            if key in {"sv1", "sv2"}:
+                snapshot[key] = deepcopy(profile.get(key) or {})
+            elif key in {"vma_kmh", "vo2_max"}:
+                snapshot[key] = profile.get(key)
+        program["athlete_snapshot"] = snapshot
+        retargeted = self._retarget_future_workouts(
+            program, previous, profile, applied
+        )
+        program["automatic_physiology_revision"] = {
+            "schema": "threshold_state_v2",
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "metrics": applied,
+            "source": "weekly_hr_speed_threshold_model",
+            "future_workouts_retargeted": retargeted,
+            "previous": {
+                key: previous.get(key) for key in applied
+            },
+        }
+        self._write("training-program.json", program)
+
+    @staticmethod
+    def _retarget_future_workouts(
+        program: dict[str, Any],
+        previous: dict[str, Any],
+        profile: dict[str, Any],
+        applied: list[str],
+    ) -> int:
+        """Ajuste les cibles des séances futures sans changer leur identité."""
+
+        def threshold_values(source, key):
+            value = source.get(key) or {}
+            return value if isinstance(value, dict) else {}
+
+        ratios: dict[str, float] = {}
+        heart_rate_deltas: dict[str, float] = {}
+        for key in ("sv1", "sv2"):
+            if key not in applied:
+                continue
+            old = threshold_values(previous, key)
+            new = threshold_values(profile, key)
+            try:
+                ratio = float(new.get("speed_kmh")) / float(old.get("speed_kmh"))
+                ratios[key] = max(.98, min(1.02, ratio))
+            except (TypeError, ValueError, ZeroDivisionError):
+                pass
+            try:
+                heart_rate_deltas[key] = max(
+                    -2, min(2, float(new.get("heart_rate_bpm")) - float(old.get("heart_rate_bpm")))
+                )
+            except (TypeError, ValueError):
+                pass
+
+        if "vma_kmh" in applied:
+            try:
+                ratios["vma"] = max(
+                    .98,
+                    min(1.02, float(profile["vma_kmh"]) / float(previous["vma_kmh"])),
+                )
+            except (KeyError, TypeError, ValueError, ZeroDivisionError):
+                pass
+
+        def family(workout, block):
+            block_description = " ".join(str(value or "").lower() for value in (
+                block.get("block_type"), block.get("type"), block.get("name"),
+            ))
+            workout_description = " ".join(str(value or "").lower() for value in (
+                workout.get("workout_type"), workout.get("title"),
+            ))
+            if any(token in block_description for token in ("sv2", "threshold", "seuil", "subthreshold", "sous seuil")):
+                return "sv2"
+            if any(token in block_description for token in ("vma", "vo2", "vo₂")):
+                return "vma"
+            if any(token in block_description for token in ("warmup", "échauff", "cooldown", "retour au calme", "endurance", "easy", "z1", "z2", "recovery", "récup")):
+                return "sv1"
+            if any(token in workout_description for token in ("sv2", "threshold", "seuil", "subthreshold", "sous seuil")):
+                return "sv2"
+            if any(token in workout_description for token in ("vma", "vo2", "vo₂")):
+                return "vma"
+            if any(token in workout_description for token in ("endurance", "easy", "z1", "z2", "long")):
+                return "sv1"
+            return None
+
+        changed_workouts = 0
+        today = date.today().isoformat()
+        for week in program.get("weeks") or []:
+            for workout in week.get("workouts") or []:
+                workout_day = str(workout.get("workout_date") or "")[:10]
+                if workout_day and workout_day < today:
+                    continue
+                if workout.get("historical_execution") or workout.get("history_status") == "completed":
+                    continue
+                workout_changed = False
+                for block in workout.get("blocks") or []:
+                    target = block.get("target") or {}
+                    key = family(workout, block)
+                    factor = ratios.get(key)
+                    if factor is not None:
+                        for field in ("speed_min_kmh", "speed_max_kmh"):
+                            try:
+                                original = float(target[field])
+                            except (KeyError, TypeError, ValueError):
+                                continue
+                            adjusted = round(original * factor, 1)
+                            if adjusted != target[field]:
+                                target[field] = adjusted
+                                workout_changed = True
+                    delta_hr = heart_rate_deltas.get(key)
+                    if delta_hr is not None:
+                        for field in ("heart_rate_min_bpm", "heart_rate_max_bpm"):
+                            try:
+                                original = float(target[field])
+                            except (KeyError, TypeError, ValueError):
+                                continue
+                            adjusted = round(original + delta_hr)
+                            if adjusted != target[field]:
+                                target[field] = adjusted
+                                workout_changed = True
+                    if target:
+                        block["target"] = target
+                if workout_changed:
+                    workout["physiology_revision"] = {
+                        "schema": "threshold_state_v2",
+                        "reason": "Seuil hebdomadaire validé sur deux semaines concordantes.",
+                        "metrics": applied,
+                    }
+                    changed_workouts += 1
+        return changed_workouts
 
     def _refresh_activity_executions(self, activities: list[Any]) -> int:
         """Analyse les activités Health Connect sans exiger de fichier FIT."""
@@ -667,30 +904,20 @@ class PostSyncOrchestrator:
             profile["vma_training_reference_kmh"] = profile["vma_kmh"]
             applied.append("vma_kmh")
 
-        for threshold in ("sv1", "sv2"):
-            signal = signals.get(threshold) or {}
-            if float(signal.get("confidence") or 0) < .72:
-                continue
-            current_threshold = profile.get(threshold) or {}
-            updated_threshold = {**current_threshold}
-            if signal.get("speed_kmh") is not None:
-                updated_threshold["speed_kmh"] = adjusted_value(
-                    current_threshold.get("speed_kmh"),
-                    signal.get("speed_kmh"),
-                    .10,
-                )
-            if signal.get("heart_rate_bpm") is not None:
-                updated_threshold["heart_rate_bpm"] = adjusted_value(
-                    current_threshold.get("heart_rate_bpm"),
-                    signal.get("heart_rate_bpm"),
-                    2,
-                    0,
-                )
-            updated_threshold["status"] = "session_adjusted_estimate"
-            updated_threshold["updated_at"] = estimate.get("updated_at")
-            updated_threshold["evidence"] = signal.get("evidence")
-            profile[threshold] = updated_threshold
-            applied.append(threshold)
+        # SV1 et SV2 ne sont plus déplacés par une séance isolée. Les signaux
+        # restent mémorisés comme preuves, puis le moteur hebdomadaire exige
+        # deux semaines concordantes avant toute validation automatique.
+        pending_thresholds = {
+            threshold: signals[threshold]
+            for threshold in ("sv1", "sv2")
+            if threshold in signals
+        }
+        if pending_thresholds:
+            profile["pending_threshold_observations"] = {
+                "activity_id": activity_id,
+                "updated_at": estimate.get("updated_at"),
+                "signals": pending_thresholds,
+            }
 
         if signals:
             profile["last_session_assessment_id"] = activity_id

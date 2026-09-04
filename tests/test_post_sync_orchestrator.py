@@ -76,16 +76,17 @@ class PostSyncOrchestratorTests(unittest.TestCase):
                 item for item in payload["history"]
                 if item.get("schema") == "validated_profile_v1"
             ]
-            self.assertEqual(len(validated), 2)
+            # Les observations isolées ne créent plus deux faux profils
+            # validés le même jour.
+            self.assertEqual(len(validated), 1)
             self.assertEqual(
                 [item["activity_id"] for item in validated],
-                ["run-1", "run-2"],
+                ["run-1"],
             )
             self.assertEqual(
                 [item["timestamp"] for item in validated],
                 [
                     "2026-09-02T07:00:00+00:00",
-                    "2026-09-02T18:00:00+00:00",
                 ],
             )
 
@@ -176,7 +177,7 @@ class PostSyncOrchestratorTests(unittest.TestCase):
         self.assertEqual(profile["sv1"]["speed_kmh"], 10.5)
         self.assertEqual(profile["sv2"]["speed_kmh"], 12.9)
 
-    def test_auto_applies_bounded_threshold_signal_once(self):
+    def test_keeps_single_session_threshold_as_pending_evidence(self):
         previous = {
             "vo2_max": 51,
             "vma_kmh": 14.57,
@@ -204,15 +205,136 @@ class PostSyncOrchestratorTests(unittest.TestCase):
         profile, applied = PostSyncOrchestrator._auto_apply_physiology(
             previous, estimate
         )
-        self.assertEqual(applied, ["sv2"])
-        self.assertEqual(profile["sv2"]["speed_kmh"], 12.85)
-        self.assertEqual(profile["sv2"]["heart_rate_bpm"], 155)
+        self.assertEqual(applied, [])
+        self.assertEqual(profile["sv2"]["speed_kmh"], 12.75)
+        self.assertEqual(profile["sv2"]["heart_rate_bpm"], 153)
+        self.assertEqual(
+            profile["pending_threshold_observations"]["activity_id"],
+            "health_connect:threshold-1",
+        )
 
         repeated, repeated_applied = PostSyncOrchestrator._auto_apply_physiology(
             profile, estimate
         )
         self.assertEqual(repeated_applied, [])
-        self.assertEqual(repeated["sv2"]["heart_rate_bpm"], 155)
+        self.assertEqual(repeated["sv2"]["heart_rate_bpm"], 153)
+
+    def test_validates_two_concordant_weekly_threshold_states(self):
+        profile = {
+            "maximum_heart_rate_bpm": 170,
+            "sv1": {"speed_kmh": 10.5, "heart_rate_bpm": 138},
+            "sv2": {"speed_kmh": 12.65, "heart_rate_bpm": 153},
+        }
+        prior = {
+            "week": "2026-S35",
+            "states": {
+                "sv2": {
+                    "usable": True,
+                    "direction": "progression",
+                    "confidence": 78,
+                }
+            },
+        }
+        current = {
+            "week": "2026-S36",
+            "as_of": "2026-09-04",
+            "states": {
+                "sv2": {
+                    "usable": True,
+                    "direction": "progression",
+                    "confidence": 84,
+                    "projection": {
+                        "speed_kmh": 12.87,
+                        "heart_rate_bpm": 155,
+                    },
+                }
+            },
+        }
+
+        updated, applied = PostSyncOrchestrator._apply_weekly_threshold_evolution(
+            profile, current, [prior]
+        )
+
+        self.assertEqual(applied, ["sv2"])
+        self.assertEqual(updated["sv2"]["speed_kmh"], 12.8)
+        self.assertEqual(updated["sv2"]["heart_rate_bpm"], 155)
+        self.assertEqual(updated["sv2"]["status"], "weekly_validated_threshold_v2")
+
+    def test_same_week_never_counts_as_a_second_confirmation(self):
+        profile = {"sv2": {"speed_kmh": 12.65, "heart_rate_bpm": 153}}
+        current = {
+            "week": "2026-S36",
+            "as_of": "2026-09-04",
+            "states": {"sv2": {
+                "usable": True, "direction": "progression", "confidence": 90,
+                "projection": {"speed_kmh": 12.9, "heart_rate_bpm": 155},
+            }},
+        }
+
+        updated, applied = PostSyncOrchestrator._apply_weekly_threshold_evolution(
+            profile, current, [current]
+        )
+
+        self.assertEqual(applied, [])
+        self.assertEqual(updated, profile)
+
+    def test_propagation_updates_snapshot_without_duplicating_workouts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            program = {
+                "athlete_snapshot": {
+                    "sv2": {"speed_kmh": 12.65, "heart_rate_bpm": 153},
+                },
+                "weeks": [{
+                    "week_number": 1,
+                    "workouts": [{
+                        "workout_id": "threshold-1",
+                        "workout_type": "threshold_sv2",
+                        "blocks": [{
+                            "block_type": "sv2",
+                            "target": {
+                                "speed_min_kmh": 12.4,
+                                "speed_max_kmh": 12.7,
+                                "heart_rate_min_bpm": 150,
+                                "heart_rate_max_bpm": 158,
+                            },
+                        }],
+                    }],
+                }],
+            }
+            (root / "training-program.json").write_text(
+                json.dumps(program), encoding="utf-8"
+            )
+            profile = {
+                "sv2": {
+                    "speed_kmh": 12.8,
+                    "heart_rate_bpm": 155,
+                    "status": "weekly_validated_threshold_v2",
+                }
+            }
+
+            orchestrator = PostSyncOrchestrator(root)
+            orchestrator._propagate_validated_physiology_to_program(
+                program["athlete_snapshot"], profile, ["sv2"]
+            )
+            orchestrator._propagate_validated_physiology_to_program(
+                profile, profile, ["sv2"]
+            )
+
+            updated = json.loads(
+                (root / "training-program.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(updated["athlete_snapshot"]["sv2"]["speed_kmh"], 12.8)
+            self.assertEqual(len(updated["weeks"][0]["workouts"]), 1)
+            target = updated["weeks"][0]["workouts"][0]["blocks"][0]["target"]
+            # Le second appel reçoit déjà le profil actualisé : il est
+            # idempotent et ne décale pas une deuxième fois la cible.
+            self.assertEqual(target["speed_min_kmh"], 12.5)
+            self.assertEqual(target["heart_rate_min_bpm"], 152)
+            self.assertEqual(
+                updated["automatic_physiology_revision"]["schema"],
+                "threshold_state_v2",
+            )
 
     def test_health_connect_activity_creates_detailed_execution(self):
         with tempfile.TemporaryDirectory() as directory:

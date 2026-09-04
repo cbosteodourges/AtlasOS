@@ -923,8 +923,21 @@
       validated_threshold_reference: "Référence de seuil validée",
       measured: "Mesure validée",
       session_adjusted_estimate: "Ajustement issu de la dernière séance",
+      weekly_validated_threshold_v2: "Validation Atlas sur 2 semaines",
       missing: "\u00c0 confirmer"
     }[status] || "Référence Atlas");
+
+    const thresholdNote = (key, threshold) => {
+      const state = snapshot.threshold_evolution?.states?.[key];
+      const base = `${threshold?.heart_rate_bpm ?? "—"} bpm · ${statusLabel(threshold?.status)}`;
+      const projection = state?.projection;
+      if (!state?.usable || projection?.speed_kmh == null) return base;
+      const speed = Number(projection.speed_kmh).toLocaleString("fr-FR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+      return `${base} · projection ${speed} km/h / ${projection.heart_rate_bpm ?? "—"} bpm`;
+    };
 
     const metric = ({
       label,
@@ -1124,9 +1137,7 @@
         label: "SV1",
         value: snapshot.sv1?.speed_kmh,
         unit: "km/h",
-        note:
-          `${snapshot.sv1?.heart_rate_bpm ?? "\u2014"} bpm \u00b7 ` +
-          statusLabel(snapshot.sv1?.status),
+        note: thresholdNote("sv1", snapshot.sv1),
         accent: "#48d99a",
         glow: "rgba(55,215,151,.10)"
       })}
@@ -1135,9 +1146,7 @@
         label: "SV2",
         value: snapshot.sv2?.speed_kmh,
         unit: "km/h",
-        note:
-          `${snapshot.sv2?.heart_rate_bpm ?? "\u2014"} bpm \u00b7 ` +
-          statusLabel(snapshot.sv2?.status),
+        note: thresholdNote("sv2", snapshot.sv2),
         accent: "#ff7558",
         glow: "rgba(255,100,70,.10)"
       })}

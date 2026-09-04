@@ -561,6 +561,9 @@ def load_authorized_training_program():
                     **(snapshot.get(threshold) or {}),
                     **current[threshold],
                 }
+        merged_snapshot["threshold_evolution"] = (
+            longitudinal.get("latest_threshold_evolution") or {}
+        )
         filtered["athlete_snapshot"] = merged_snapshot
     filtered["access_control"]["account_id"] = entitlement["account_id"]
     filtered["access_control"]["display_name"] = entitlement["display_name"]
@@ -1064,6 +1067,7 @@ def load_physiological_reference():
         {},
     )
     current = longitudinal.get("current") or {}
+    threshold_evolution = longitudinal.get("latest_threshold_evolution") or {}
     if isinstance(current, dict):
         snapshot = {**snapshot, **current}
     sv1 = snapshot.get("sv1") or {}
@@ -1091,6 +1095,7 @@ def load_physiological_reference():
         "sv2_speed_kmh": _wellness_number(sv2.get("speed_kmh")),
         "sv2_heart_rate_bpm": _wellness_number(sv2.get("heart_rate_bpm")),
         "sv2_status": sv2.get("status"),
+        "threshold_evolution": threshold_evolution,
     }
 
 
@@ -2120,6 +2125,7 @@ def _athlete_analysis(history):
         "energy_signature": energy_signature,
         "longitudinal_report": longitudinal_report,
         "physiology": physiology,
+        "threshold_evolution": physiology.get("threshold_evolution") or {},
         "physiology_history": load_physiology_history(),
         "benchmarks": {
             "hrv_28d": hrv_mean,
