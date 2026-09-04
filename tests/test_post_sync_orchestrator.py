@@ -321,6 +321,53 @@ class PostSyncOrchestratorTests(unittest.TestCase):
                 "health-rhr",
             )
 
+    def test_fit_enrichment_replaces_prior_health_execution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "training-program.json").write_text(
+                json.dumps({"athlete_snapshot": {"vma_kmh": 14}, "weeks": []}),
+                encoding="utf-8",
+            )
+            (root / "atlas-coach-executions.json").write_text(
+                json.dumps([{
+                    "activity_id": "health_connect:exercise-1",
+                    "provider": "health_connect",
+                    "external_id": "exercise-1",
+                    "atlas_workout_match": {"matched": True},
+                }]),
+                encoding="utf-8",
+            )
+            activity = SimpleNamespace(
+                atlas_id="garmin:fit-1",
+                provider="garmin",
+                external_id="fit-1",
+                source_ids={
+                    "health_connect": "exercise-1",
+                    "garmin": "fit-1",
+                },
+            )
+            record = {
+                "activity_id": "garmin:fit-1",
+                "provider": "garmin",
+                "external_id": "fit-1",
+                "source_ids": activity.source_ids,
+                "start_time": "2026-08-31T17:55:13+00:00",
+                "atlas_workout_match": {"matched": True},
+            }
+
+            with (
+                patch("scripts.sync_atlas_coach_pilot.build_record", return_value=record),
+                patch("scripts.sync_atlas_coach_pilot.confirm_matched_workouts"),
+            ):
+                count = PostSyncOrchestrator(root)._refresh_activity_executions([activity])
+
+            executions = json.loads(
+                (root / "atlas-coach-executions.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(count, 1)
+            self.assertEqual(len(executions), 1)
+            self.assertEqual(executions[0]["activity_id"], "garmin:fit-1")
+
     def test_creates_assessment_and_never_overwrites_active_program(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

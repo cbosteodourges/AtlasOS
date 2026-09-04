@@ -257,7 +257,18 @@ class PostSyncOrchestrator:
             for item in history
             if isinstance(item, dict)
         }
+        by_source = {
+            (str(provider), str(external_id)): item
+            for item in history
+            if isinstance(item, dict)
+            for provider, external_id in {
+                **dict(item.get("source_ids") or {}),
+                str(item.get("provider") or ""): str(item.get("external_id") or ""),
+            }.items()
+            if provider and external_id
+        }
         refreshed = []
+        refreshed_source_keys = set()
 
         for activity in activities:
             source_ids = getattr(activity, "source_ids", {}) or {}
@@ -268,7 +279,18 @@ class PostSyncOrchestrator:
             ):
                 continue
             activity_id = str(getattr(activity, "atlas_id", "") or "")
-            previous = by_activity.get(activity_id)
+            source_keys = {
+                (str(provider_name), str(external_id))
+                for provider_name, external_id in {
+                    **source_ids,
+                    provider: getattr(activity, "external_id", ""),
+                }.items()
+                if provider_name and external_id
+            }
+            previous = by_activity.get(activity_id) or next(
+                (by_source[key] for key in source_keys if key in by_source),
+                None,
+            )
             if (
                 isinstance(previous, dict)
                 and previous.get("atlas_workout_match") is not None
@@ -292,6 +314,7 @@ class PostSyncOrchestrator:
                 continue
             by_activity[activity_id] = record
             refreshed.append(record)
+            refreshed_source_keys.update(source_keys)
 
         if not refreshed:
             return 0
@@ -300,9 +323,12 @@ class PostSyncOrchestrator:
             item
             for item in history
             if str(item.get("activity_id") or "") not in {
-                str(record.get("activity_id") or "")
-                for record in refreshed
+                str(record.get("activity_id") or "") for record in refreshed
             }
+            and (
+                str(item.get("provider") or ""),
+                str(item.get("external_id") or ""),
+            ) not in refreshed_source_keys
         ]
         updated.extend(refreshed)
         updated.sort(key=lambda item: str(item.get("start_time") or ""))

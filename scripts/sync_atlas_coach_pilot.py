@@ -84,6 +84,11 @@ def parse_arguments() -> argparse.Namespace:
         help="Index privé des fichiers FIT déjà examinés.",
     )
     parser.add_argument(
+        "--activity-store",
+        default="atlas-data/private/activities-unified.json",
+        help="Stockage unifié partagé avec Health Connect.",
+    )
+    parser.add_argument(
         "--force",
         action="store_true",
         help="Recalcule aussi les activités déjà traitées.",
@@ -682,6 +687,9 @@ def build_record(
         "activity_id": longitudinal.atlas_id,
         "provider": normalized_activity.provider,
         "external_id": normalized_activity.external_id,
+        "canonical_id": normalized_activity.canonical_id,
+        "source_ids": dict(normalized_activity.source_ids),
+        "field_provenance": dict(normalized_activity.field_provenance),
         "start_time": longitudinal.start_time,
         "processed_at": datetime.now(timezone.utc),
         "fingerprint": asdict(fingerprint),
@@ -704,6 +712,44 @@ def build_record(
             else None
         ),
     }
+
+
+def merge_into_activity_store(activities, output_path):
+    """Fusionne le FIT avec Health Connect et retourne les activités touchées."""
+    from src.connectors import ActivityStore
+
+    activities = list(activities)
+    if not activities:
+        return []
+    incoming_keys = {
+        (str(item.provider), str(item.external_id))
+        for item in activities
+    }
+    merged = ActivityStore(output_path).ingest(activities)
+    return [
+        item for item in merged
+        if any(
+            (str(provider), str(external_id)) in incoming_keys
+            for provider, external_id in item.source_ids.items()
+        )
+    ]
+
+
+def same_execution_sources(record, activity) -> bool:
+    """Reconnaît les anciens rapports HC/FIT d'une activité désormais fusionnée."""
+    source_ids = dict(getattr(activity, "source_ids", {}) or {})
+    source_ids[str(activity.provider)] = str(activity.external_id)
+    record_provider = str(record.get("provider") or "")
+    record_external = str(record.get("external_id") or "")
+    if record_provider and record_external:
+        if source_ids.get(record_provider) == record_external:
+            return True
+    record_sources = dict(record.get("source_ids") or {})
+    return any(
+        str(record_sources.get(provider) or "") == str(external_id)
+        for provider, external_id in source_ids.items()
+        if external_id
+    )
 
 
 def main() -> None:
@@ -738,20 +784,14 @@ def main() -> None:
         if fit_paths
         else []
     )
+    activities = merge_into_activity_store(
+        activities,
+        arguments.activity_store,
+    )
 
-    known_ids = {
-        str(item.get("activity_id"))
-        for item in history
-    }
     new_records = []
 
     for activity in activities:
-        if (
-            not arguments.force
-            and activity.atlas_id in known_ids
-        ):
-            continue
-
         record = build_record(
             activity,
             workouts,
@@ -759,13 +799,10 @@ def main() -> None:
             profile,
         )
 
-        if arguments.force:
-            history = [
-                item
-                for item in history
-                if item.get("activity_id")
-                != activity.atlas_id
-            ]
+        history = [
+            item for item in history
+            if not same_execution_sources(item, activity)
+        ]
 
         history.append(record)
         new_records.append(record)

@@ -49,7 +49,7 @@ class ActivityIngestionTests(unittest.TestCase):
                 "exercise-1",
             )
 
-    def test_health_connect_is_primary_and_fit_enriches_samples(self):
+    def test_fit_replaces_approximate_health_connect_sport_metrics(self):
         health = activity(
             "health_connect",
             "exercise-1",
@@ -61,6 +61,7 @@ class ActivityIngestionTests(unittest.TestCase):
             ],
         )
         health.average_heart_rate_bpm = 130
+        health.distance_meters = 9900
         fit = activity(
             "garmin",
             "fit-1",
@@ -79,17 +80,47 @@ class ActivityIngestionTests(unittest.TestCase):
             },
         )
         fit.average_heart_rate_bpm = 151
+        fit.distance_meters = 10000
 
-        merged = merge_activities(fit, health)
+        merged = merge_activities(health, fit)
 
-        self.assertEqual(merged.provider, "health_connect")
-        self.assertEqual(merged.average_heart_rate_bpm, 130)
+        self.assertEqual(merged.provider, "garmin")
+        self.assertEqual(merged.distance_meters, 10000)
+        self.assertEqual(merged.average_heart_rate_bpm, 151)
         self.assertEqual(len(merged.samples), 10)
         self.assertEqual(
             merged.field_provenance["samples"],
             "garmin_fit",
         )
         self.assertEqual(merged.raw_metadata["laps"], [{"x": 1}])
+
+    def test_health_connect_then_fit_is_one_activity_despite_summary_rounding(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = ActivityStore(Path(directory) / "activities.json")
+            health = activity("health_connect", "exercise-1")
+            health.start_time = "2026-08-25T18:00:05Z"
+            health.duration_seconds = 3592
+            health.distance_meters = 9951
+            fit = activity(
+                "garmin",
+                "fit-1",
+                metadata={"source_file": "fit-1.fit", "laps": [{"lap": 1}]},
+            )
+            fit.start_time = "2026-08-25T18:00:42Z"
+            fit.duration_seconds = 3604
+            fit.distance_meters = 10020
+
+            store.ingest([health])
+            result = store.ingest([fit])
+
+            self.assertEqual(len(result), 1)
+            self.assertEqual(result[0].provider, "garmin")
+            self.assertEqual(result[0].distance_meters, 10020)
+            self.assertEqual(
+                result[0].source_ids,
+                {"health_connect": "exercise-1", "garmin": "fit-1"},
+            )
+            self.assertEqual(result[0].field_provenance["distance_meters"], "garmin_fit")
 
 
     def test_strava_enriches_health_connect_without_replacing_totals(self):

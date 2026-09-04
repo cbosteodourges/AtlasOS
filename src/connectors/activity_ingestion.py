@@ -22,21 +22,47 @@ def activity_fingerprint(activity: NormalizedActivity) -> str:
 
 
 def _quality(activity: NormalizedActivity) -> tuple[int, int]:
-    """Priorise le parcours sans friction, puis la richesse facultative."""
+    """Priorise la source sportive la plus précise, puis sa richesse."""
     is_fit = bool(activity.raw_metadata.get("source_file"))
     detail = (
         len(activity.samples)
         + len(activity.raw_metadata.get("laps", [])) * 10
     )
-    if activity.provider == "health_connect":
+    if is_fit:
+        priority = 500
+    elif activity.provider == "health_connect":
         priority = 400
-    elif is_fit:
-        priority = 300
     elif activity.provider == "strava":
         priority = 200
     else:
         priority = 100
     return priority, detail
+
+
+def _provenance_label(activity: NormalizedActivity) -> str:
+    return (
+        "garmin_fit"
+        if activity.raw_metadata.get("source_file")
+        else activity.provider
+    )
+
+
+def _same_session(left: NormalizedActivity, right: NormalizedActivity) -> bool:
+    """Tolère les petits écarts de résumé entre deux connecteurs."""
+    if left.activity_type.lower() != right.activity_type.lower():
+        return False
+    left_start = datetime.fromisoformat(left.start_time.replace("Z", "+00:00"))
+    right_start = datetime.fromisoformat(right.start_time.replace("Z", "+00:00"))
+    if abs((left_start - right_start).total_seconds()) > 120:
+        return False
+    duration_limit = max(90.0, max(left.duration_seconds, right.duration_seconds) * .03)
+    if abs(left.duration_seconds - right.duration_seconds) > duration_limit:
+        return False
+    if left.distance_meters and right.distance_meters:
+        distance_limit = max(500.0, max(left.distance_meters, right.distance_meters) * .05)
+        if abs(left.distance_meters - right.distance_meters) > distance_limit:
+            return False
+    return True
 
 
 def merge_activities(current: NormalizedActivity, incoming: NormalizedActivity) -> NormalizedActivity:
@@ -53,6 +79,8 @@ def merge_activities(current: NormalizedActivity, incoming: NormalizedActivity) 
                          **incoming.source_ids, incoming.provider: incoming.external_id}
     ignored = {"provider", "external_id", "source_ids", "field_provenance", "canonical_id",
                "raw_metadata", "samples", "imported_at"}
+    winner_source = _provenance_label(winner)
+    fallback_source = _provenance_label(fallback)
     provenance = {**fallback.field_provenance, **winner.field_provenance}
     for item in fields(NormalizedActivity):
         name = item.name
@@ -61,17 +89,16 @@ def merge_activities(current: NormalizedActivity, incoming: NormalizedActivity) 
         if getattr(merged, name) in (None, "", [], {}):
             setattr(merged, name, getattr(fallback, name))
             if getattr(merged, name) not in (None, "", [], {}):
-                provenance[name] = fallback.provider
+                provenance[name] = fallback_source
         elif name not in provenance:
-            provenance[name] = winner.provider
+            provenance[name] = winner_source
     merged.raw_metadata = {
         **fallback.raw_metadata,
         **winner.raw_metadata,
     }
 
-    # Health Connect reste la référence quotidienne, mais un FIT disponible
-    # peut enrichir l'analyse avec ses points 1 Hz, ses tours, son GPS et ses
-    # dynamiques sans remplacer les totaux issus du téléphone.
+    # Le FIT est la référence sportive fine. Health Connect conserve son
+    # identifiant et complète seulement les champs réellement absents.
     fallback_is_fit = bool(
         fallback.raw_metadata.get("source_file")
     )
@@ -90,7 +117,7 @@ def merge_activities(current: NormalizedActivity, incoming: NormalizedActivity) 
         merged.samples = list(fallback.samples)
         provenance["samples"] = enrichment_source
     else:
-        provenance.setdefault("samples", winner.provider)
+        provenance.setdefault("samples", winner_source)
 
     merged.field_provenance = provenance
     return merged
@@ -136,6 +163,15 @@ class ActivityStore:
                 ),
                 None,
             )
+            if existing_key is None:
+                existing_key = next(
+                    (
+                        candidate_key
+                        for candidate_key, candidate in indexed.items()
+                        if _same_session(candidate, activity)
+                    ),
+                    None,
+                )
             fingerprint_key = (
                 activity.canonical_id
                 or activity_fingerprint(activity)

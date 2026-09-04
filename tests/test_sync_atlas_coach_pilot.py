@@ -20,14 +20,45 @@ from scripts.sync_atlas_coach_pilot import (
     persist_restored_optional_workouts,
     fit_file_signature,
     load_fit_index,
+    merge_into_activity_store,
     save_fit_index,
+    same_execution_sources,
     select_fit_files,
 )
+from src.connectors import NormalizedActivity
 from src.performance import AthleteProfile, PhysiologicalReferences
 from src.training import TrainingProgramLoader
 
 
 class AutomaticWorkoutConfirmationTests(unittest.TestCase):
+
+    def test_fit_enriches_health_connect_in_unified_store(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "activities.json"
+            health = NormalizedActivity(
+                provider="health_connect", external_id="exercise-1",
+                activity_type="run", start_time="2026-09-03T18:00:00Z",
+                duration_seconds=3600, distance_meters=9900,
+            )
+            fit = NormalizedActivity(
+                provider="garmin", external_id="fit-1",
+                activity_type="run", start_time="2026-09-03T18:00:30Z",
+                duration_seconds=3605, distance_meters=10000,
+                raw_metadata={"source_file": "fit-1.fit"},
+            )
+            merge_into_activity_store([health], path)
+            touched = merge_into_activity_store([fit], path)
+
+            self.assertEqual(len(touched), 1)
+            self.assertEqual(touched[0].provider, "garmin")
+            self.assertEqual(touched[0].distance_meters, 10000)
+            self.assertEqual(
+                touched[0].source_ids,
+                {"health_connect": "exercise-1", "garmin": "fit-1"},
+            )
+            self.assertTrue(same_execution_sources({
+                "provider": "health_connect", "external_id": "exercise-1",
+            }, touched[0]))
 
     def test_incremental_fit_index_selects_only_new_files(self):
         with tempfile.TemporaryDirectory() as directory:
