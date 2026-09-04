@@ -36,11 +36,13 @@ class AtlasCockpitNutritionUiTests(unittest.TestCase):
             self.assertIn(f'body[data-atlas-canvas="{canvas}"]', self.cockpit_styles)
         self.assertIn("atlasAppearanceCanvas", self.cockpit_script)
         self.assertIn("localStorage.setItem(canvasKey", self.cockpit_script)
-        for sidebar in ("atlas", "ocean", "graphite", "forest", "violet", "copper", "ice", "pearl"):
+        for sidebar in ("atlas", "ocean", "graphite", "forest", "violet", "copper", "ice", "pearl", "white"):
             self.assertIn(f'value="{sidebar}"', self.page)
             self.assertIn(f'body[data-atlas-sidebar="{sidebar}"]', self.cockpit_styles)
         self.assertIn("atlasAppearanceSidebar", self.cockpit_script)
         self.assertIn("localStorage.setItem(sidebarKey", self.cockpit_script)
+        self.assertIn('body[data-atlas-canvas="white"] .atlas-home', self.cockpit_styles)
+        self.assertIn('body[data-atlas-sidebar="white"] .atlas-sidebar', self.cockpit_styles)
 
 
 if __name__ == "__main__":

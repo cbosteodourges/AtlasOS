@@ -725,7 +725,7 @@
   }));
   const sidebarKey = "atlasAppearanceSidebar";
   const applySidebar = sidebar => {
-    const supported = ["atlas", "ocean", "graphite", "forest", "violet", "copper", "ice", "pearl"];
+    const supported = ["atlas", "ocean", "graphite", "forest", "violet", "copper", "ice", "pearl", "white"];
     const selected = supported.includes(sidebar) ? sidebar : "atlas";
     document.body.dataset.atlasSidebar = selected;
     sidebarInputs.forEach(input => { input.checked = input.value === selected; });
