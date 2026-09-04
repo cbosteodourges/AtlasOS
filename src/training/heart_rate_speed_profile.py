@@ -166,7 +166,19 @@ def weekly_heart_rate_speed_profile(executions, physiology, as_of=None):
             trend = "en progression" if delta <= -2.5 else ("en retrait" if delta >= 2.5 else "stable")
         confidence = 0
         if comparisons:
-            confidence = round(min(95, 25 + min(30, total_weight * 5) + min(20, recent_sessions * 5) + min(20, baseline_sessions * 4)))
+            confidence = round(min(
+                92,
+                15
+                + min(25, total_weight * 4)
+                + min(20, recent_sessions * 5)
+                + min(15, baseline_sessions * 3)
+                + min(10, len(comparisons) * 5),
+            ))
+        recent_dates = [
+            block["date"]
+            for block in blocks
+            if block["domain"] == domain and recent_start <= block["date"] <= as_of
+        ]
         reference_speed, reference_hr, reference_name = references[domain]
         # La pente allure–FC personnelle convertit le changement cardiaque en
         # vitesse équivalente. Le déplacement hebdomadaire reste plafonné.
@@ -177,11 +189,12 @@ def weekly_heart_rate_speed_profile(executions, physiology, as_of=None):
             "trend": trend,
             "confidence": confidence,
             "matched_speed_count": len(comparisons),
-            "matched_speeds_kmh": [round(item["speed_kmh"], 1) for item in comparisons],
+            "matched_speeds_kmh": sorted(round(item["speed_kmh"], 1) for item in comparisons),
             "recent_block_count": recent_blocks,
             "baseline_block_count": baseline_blocks,
             "recent_session_count": recent_sessions,
             "baseline_session_count": baseline_sessions,
+            "latest_recent_date": max(recent_dates).isoformat() if recent_dates else None,
             "reference_name": reference_name,
             "reference_speed_kmh": reference_speed,
             "reference_heart_rate_bpm": reference_hr,

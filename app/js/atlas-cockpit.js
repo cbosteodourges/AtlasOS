@@ -353,8 +353,9 @@
           const projection = efficiency.projected_speed_kmh;
           const reference = efficiency.reference_speed_kmh;
           const matchedSpeeds = efficiency.matched_speeds_kmh || [];
-          const updated = domain.latest_session
-            ? new Date(`${domain.latest_session}T12:00:00`).toLocaleDateString("fr-FR")
+          const updatedDate = efficiency.latest_recent_date || domain.latest_session;
+          const updated = updatedDate
+            ? new Date(`${updatedDate}T12:00:00`).toLocaleDateString("fr-FR")
             : "—";
           const evidence = domain.evidence?.level || "faible";
           article.className = `energy-domain energy-domain-${domain.key}`;
