@@ -87,6 +87,110 @@ ACTIVITIES_PATH = ROOT / "atlas-data" / "private" / "activities-unified.json"
 NUTRITION_PATH = ROOT / "atlas-data" / "private" / "nutrition-hydration-manual.json"
 
 
+def recalculate_execution(activity_id, private_dir=None, fit_dir=None):
+    """Recalcule puis remplace un compte-rendu, sans créer de doublon."""
+
+    activity_id = str(activity_id or "").strip()
+    if not activity_id:
+        raise ValueError("activity_id est obligatoire.")
+
+    private_dir = Path(private_dir or ROOT / "atlas-data" / "private")
+    fit_dir = Path(fit_dir or ROOT / "atlas-data" / "garmin")
+    executions_path = private_dir / "atlas-coach-executions.json"
+    program_path = private_dir / "training-program.json"
+    if not executions_path.is_file():
+        raise ValueError("Historique des comptes-rendus introuvable.")
+    if not program_path.is_file():
+        raise ValueError("Programme Atlas introuvable.")
+
+    history = _read_private_json(executions_path, [])
+    if not isinstance(history, list):
+        raise ValueError("Historique des comptes-rendus invalide.")
+    previous = next(
+        (
+            item for item in history
+            if isinstance(item, dict)
+            and str(item.get("activity_id") or "") == activity_id
+        ),
+        None,
+    )
+    if previous is None:
+        raise ValueError("Compte-rendu demandé introuvable.")
+
+    from scripts.sync_atlas_coach_pilot import (
+        build_record,
+        confirm_matched_workouts,
+        load_analysis_profile,
+        load_optional_workouts,
+        persist_restored_optional_workouts,
+        synchronize_garmin,
+        write_json_atomic,
+    )
+
+    activity = next(
+        (
+            item for item in ActivityStore(
+                private_dir / "activities-unified.json"
+            ).load()
+            if str(item.atlas_id) == activity_id
+        ),
+        None,
+    )
+    if activity is None:
+        external_id = str(previous.get("external_id") or "").strip()
+        candidates = (
+            list(fit_dir.rglob(f"{external_id}.fit"))
+            if external_id and fit_dir.is_dir()
+            else []
+        )
+        if len(candidates) > 1:
+            raise ValueError("Plusieurs fichiers FIT correspondent à cette activité.")
+        if candidates:
+            decoded = synchronize_garmin(str(fit_dir), candidates)
+            activity = next(
+                (
+                    item for item in decoded
+                    if str(item.atlas_id) == activity_id
+                    or str(item.external_id) == external_id
+                ),
+                None,
+            )
+    if activity is None:
+        raise ValueError(
+            "Données sources introuvables : resynchronisez Health Connect "
+            "ou replacez le fichier FIT dans atlas-data/garmin."
+        )
+
+    loader = TrainingProgramLoader()
+    workouts = loader.load(program_path)
+    optional_path = private_dir / "atlas-coach-optional-workouts.json"
+    if optional_path.is_file():
+        workouts.extend(load_optional_workouts(optional_path, loader))
+    record = build_record(
+        activity,
+        workouts,
+        loader,
+        load_analysis_profile(program_path),
+    )
+    record["analysis_engine_version"] = 1
+    record["recalculated_at"] = datetime.now().astimezone().isoformat()
+
+    updated = [
+        item for item in history
+        if not isinstance(item, dict)
+        or str(item.get("activity_id") or "") != activity_id
+    ]
+    updated.append(record)
+    updated.sort(key=lambda item: str(item.get("start_time") or ""))
+    write_json_atomic(str(executions_path), updated)
+    persist_restored_optional_workouts([record], optional_path)
+    confirm_matched_workouts(
+        [record],
+        private_dir / "atlas-coach-workout-decisions.json",
+    )
+    return record
+
+
 def strava_service():
     return StravaOAuthService(ROOT / "atlas-data" / "private")
 
@@ -626,6 +730,7 @@ def execution_summary(item):
                     "physiological_load_score",
                     "biomechanical_load_score",
                     "reasons",
+                    "score_audit",
                 ),
             ),
             "execution": selected_fields(
@@ -3222,6 +3327,7 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             "/api/atlas-coach/daily-preparation",
             "/api/atlas-coach/reschedule-workout",
             "/api/atlas-coach/undo-reschedule",
+            "/api/atlas-coach/recalculate-execution",
             "/api/atlas/conversation",
             "/api/atlas-user/profile",
             "/api/atlas-user/objectives",
@@ -3296,6 +3402,17 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             if self.path == "/api/atlas-coach/undo-reschedule":
                 result = undo_reschedule_request(payload)
                 self.send_json(200, {"ok": True, **result})
+                return
+
+            if self.path == "/api/atlas-coach/recalculate-execution":
+                record = recalculate_execution(payload.get("activity_id"))
+                self.send_json(
+                    200,
+                    {
+                        "ok": True,
+                        "execution": execution_summary(record),
+                    },
+                )
                 return
 
             if self.path == "/api/atlas-coach/daily-preparation":

@@ -6025,6 +6025,17 @@ body[data-coach-section]
   font-weight: 800;
 }
 
+.score-audit-panel{margin:-8px 0 22px;padding:15px 18px;border:1px solid rgba(69,232,240,.2);border-radius:16px;background:rgba(5,23,35,.72)}
+.score-audit-panel>summary{cursor:pointer;color:#dff7ff;font-weight:800}
+.score-audit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+.score-audit-grid article{padding:13px;border:1px solid rgba(69,232,240,.13);border-radius:12px;background:#071824}
+.score-audit-grid strong{color:#fff}
+.score-audit-grid p{margin:6px 0 0;color:#9dbdce;font-size:.78rem;line-height:1.45}
+.recalculate-execution-button{margin-top:14px;padding:10px 14px;cursor:pointer;border:1px solid rgba(69,232,240,.35);border-radius:10px;background:rgba(28,130,255,.16);color:#eaf9ff;font-weight:800}
+.recalculate-execution-button:disabled{cursor:wait;opacity:.55}
+.score-audit-panel>[data-recalculate-status]{display:block;margin-top:7px;color:#89adbf}
+@media(max-width:760px){.score-audit-grid{grid-template-columns:1fr}}
+
 @media (max-width: 900px) {
   .execution-score-explanation {
     grid-template-columns: 1fr;

@@ -330,6 +330,16 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
 
         self.assertEqual(result.execution.recovery_compliance_score, 93)
         self.assertIsNone(result.execution.interval_details[-1]["recovery_seconds"])
+        self.assertEqual(result.score_audit["recovery"]["score"], 93)
+        self.assertEqual(
+            [item["planned_seconds"] for item in result.score_audit["recovery"]["recoveries"]],
+            [120, 105],
+        )
+        self.assertEqual(
+            [item["actual_seconds"] for item in result.score_audit["recovery"]["recoveries"]],
+            [120, 120],
+        )
+        self.assertEqual(result.score_audit["execution"]["score"], result.execution.execution_score)
 
     def test_hybrid_counts_only_repeated_work_blocks(self) -> None:
         planned = AdaptiveWorkout(

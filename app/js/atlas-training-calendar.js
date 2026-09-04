@@ -231,6 +231,23 @@
     return report;
   }
 
+  async function recalculateExecutionReport(activityId) {
+    const response = await fetch(
+      "/api/atlas-coach/recalculate-execution",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify({ activity_id: activityId })
+      }
+    );
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) {
+      throw new Error(payload.error || "Recalcul Atlas indisponible.");
+    }
+    executionReportCache.delete(`activity:${activityId}`);
+    return payload.execution;
+  }
+
   const workoutContextCache = new Map();
 
   async function loadWorkoutContext(workoutId) {
@@ -2525,6 +2542,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
 
     const match = report.workout_match || {};
     const execution = match.execution || {};
+    const scoreAudit = match.score_audit || {};
     const activity = report.activity || {};
     const drift = report.cardiac_drift || {};
     const analysis = report.analysis || {};
@@ -2922,6 +2940,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       const recoveryHeading = recoveryRole === "cool_down"
         ? "Retour au calme · "
         : "";
+      const plannedRecoverySeconds = Number(
+        plannedIntervalDefinitions[index]?.block?.recovery_minutes
+      ) * 60;
 
       return `
         <div class="interval-detail-row">
@@ -2942,6 +2963,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
               ${recoverySpeed > 0 ? `<small>${reportPace(3600 / recoverySpeed)} · ${reportNumber(recoverySpeed, 2)} km/h</small>` : ""}
               ${recoveryAverageHeartRate > 0 ? `<small>FC moy. ${reportNumber(recoveryAverageHeartRate, 0)} bpm</small>` : ""}
               ${recoveryEndingHeartRate > 0 ? `<small>FC fin ${reportNumber(recoveryEndingHeartRate, 0)} bpm${recoveryHeartRateDrop >= 0 ? ` · baisse ${reportNumber(recoveryHeartRateDrop, 0)} bpm` : ""}</small>` : ""}
+              ${recoveryRole === "recovery" && plannedRecoverySeconds > 0 ? `<small>Prévu : ${reportBlockTime(plannedRecoverySeconds)}</small>` : ""}
             ` : index === workBlocks.length - 1 ? "Retour au calme" : "Données non mesurées"}
           </span>
         </div>
@@ -3018,6 +3040,34 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             <div><dt>Durées de récupération</dt><dd>${Number.isFinite(Number(execution.recovery_compliance_score)) ? reportScore(execution.recovery_compliance_score) : "Non notées"}</dd></div>
           </dl>
         </section>
+
+        <details class="score-audit-panel">
+          <summary>Comprendre le calcul des quatre scores</summary>
+          <div class="score-audit-grid">
+            <article>
+              <strong>Score global · ${reportScore(execution.execution_score)}</strong>
+              <p>${escapeHtml(scoreAudit.execution?.method || "Moyenne pondérée des composantes disponibles.")}</p>
+            </article>
+            <article>
+              <strong>Durée globale · ${reportScore(match.duration_compliance_score)}</strong>
+              <p>${Number.isFinite(Number(scoreAudit.duration?.actual_minutes)) && Number.isFinite(Number(scoreAudit.duration?.planned_minutes))
+                ? `${reportNumber(scoreAudit.duration.actual_minutes, 1)} min réalisées pour ${reportNumber(scoreAudit.duration.planned_minutes, 1)} min prévues.`
+                : "Comparaison de la durée totale réalisée à la durée prescrite."}</p>
+            </article>
+            <article>
+              <strong>Cible spécifique · ${reportScore(match.target_compliance_score)}</strong>
+              <p>Chaque fraction est comparée à sa cible, puis pondérée par sa durée.</p>
+            </article>
+            <article>
+              <strong>Récupérations · ${Number.isFinite(Number(execution.recovery_compliance_score)) ? reportScore(execution.recovery_compliance_score) : "Non notées"}</strong>
+              <p>${Array.isArray(scoreAudit.recovery?.recoveries) && scoreAudit.recovery.recoveries.length
+                ? scoreAudit.recovery.recoveries.map(item => `Après F${item.after_fraction} : ${reportBlockTime(item.actual_seconds)} réalisé / ${reportBlockTime(item.planned_seconds)} prévu = ${reportScore(item.score)}`).join(" · ")
+                : "Notées uniquement lorsque les durées réelles sont mesurables."}</p>
+            </article>
+          </div>
+          <button class="recalculate-execution-button" type="button" data-recalculate-execution="${escapeHtml(report.activity_id || "")}">Recalculer ce compte-rendu</button>
+          <small data-recalculate-status>Le recalcul remplace cette analyse et ne crée aucune nouvelle séance.</small>
+        </details>
 
         ${timelineHtml(
           structuredReportTimelineSegments(
@@ -3992,6 +4042,27 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           content.querySelectorAll("[data-daily-selection]").forEach(
             item => { item.disabled = false; }
           );
+        }
+        return;
+      }
+
+      const recalculateButton = event.target.closest(
+        "[data-recalculate-execution]"
+      );
+      if (recalculateButton) {
+        const activityId = recalculateButton.dataset.recalculateExecution;
+        const statusElement = recalculateButton.parentElement?.querySelector(
+          "[data-recalculate-status]"
+        );
+        recalculateButton.disabled = true;
+        if (statusElement) statusElement.textContent = "Recalcul complet en cours…";
+        try {
+          const refreshed = await recalculateExecutionReport(activityId);
+          executionReportCache.delete(`workout:${workout.workout_id}`);
+          await displayExecutionReport(refreshed, loadedContext);
+        } catch (error) {
+          if (statusElement) statusElement.textContent = error.message;
+          recalculateButton.disabled = false;
         }
         return;
       }

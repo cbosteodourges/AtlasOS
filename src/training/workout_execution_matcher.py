@@ -39,6 +39,7 @@ class AtlasWorkoutExecutionMatch:
     physiological_load_score: int = 0
     biomechanical_load_score: int = 0
     reasons: list[str] = field(default_factory=list)
+    score_audit: dict[str, object] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, object]:
         """Convertit le résultat en dictionnaire sérialisable."""
@@ -96,6 +97,7 @@ class AtlasWorkoutExecutionMatcher:
             expected_types,
             activity=activity,
         )
+        target_audit: list[dict[str, object]] = []
         if aligned_intervals:
             aligned_target_scores: list[tuple[int, float]] = []
             for item in aligned_intervals:
@@ -105,6 +107,14 @@ class AtlasWorkoutExecutionMatcher:
                     planned_item["planned"], SimpleNamespace(**item)
                 )
                 aligned_target_scores.append((score, duration))
+                target_audit.append({
+                    "fraction": len(target_audit) + 1,
+                    "actual_speed_kmh": item.get("average_speed_kmh"),
+                    "target_speed_min_kmh": planned_item["planned"].target.speed_min_kmh,
+                    "target_speed_max_kmh": planned_item["planned"].target.speed_max_kmh,
+                    "score": score,
+                    "weight_seconds": duration,
+                })
             target_score = round(
                 sum(score * duration for score, duration in aligned_target_scores)
                 / sum(duration for _, duration in aligned_target_scores)
@@ -114,6 +124,7 @@ class AtlasWorkoutExecutionMatcher:
             for item in planned_intervals[:-1]
         )
         recovery_score = None
+        recovery_audit: list[dict[str, object]] = []
         if planned_recovery_minutes > 0:
             structured_recovery_score = (
                 analysis.workout_execution.recovery_compliance_score
@@ -126,6 +137,22 @@ class AtlasWorkoutExecutionMatcher:
                     float(item["recovery_seconds"]) / 60.0,
                     float(planned_intervals[index]["recovery_minutes"]),
                 )
+                for index, item in enumerate(aligned_intervals[:-1])
+                if item["recovery_seconds"] is not None
+                and float(planned_intervals[index]["recovery_minutes"] or 0) > 0
+            ]
+            recovery_audit = [
+                {
+                    "after_fraction": index + 1,
+                    "planned_seconds": round(float(
+                        planned_intervals[index]["recovery_minutes"]
+                    ) * 60),
+                    "actual_seconds": round(float(item["recovery_seconds"])),
+                    "score": self._ratio_score(
+                        float(item["recovery_seconds"]) / 60.0,
+                        float(planned_intervals[index]["recovery_minutes"]),
+                    ),
+                }
                 for index, item in enumerate(aligned_intervals[:-1])
                 if item["recovery_seconds"] is not None
                 and float(planned_intervals[index]["recovery_minutes"] or 0) > 0
@@ -177,6 +204,44 @@ class AtlasWorkoutExecutionMatcher:
         execution_score = self._weighted_score(
             execution_scores
         )
+        score_audit = {
+            "duration": {
+                "actual_minutes": activity.duration_minutes,
+                "planned_minutes": planned_workout.estimated_duration_minutes,
+                "score": duration_score,
+                "method": "100 moins l'écart absolu rapporté à la durée prévue",
+            },
+            "target": {
+                "score": target_score,
+                "method": "moyenne des fractions pondérée par leur durée",
+                "fractions": target_audit,
+            },
+            "recovery": {
+                "score": recovery_score,
+                "method": "moyenne des écarts à chaque récupération prescrite",
+                "recoveries": recovery_audit,
+            },
+            "execution": {
+                "score": execution_score,
+                "method": "moyenne pondérée des composantes disponibles",
+                "components": [
+                    {"name": name, "score": score, "weight": weight}
+                    for name, score, weight in (
+                        ("duration", duration_score, execution_scores[0][1]),
+                        ("target", target_score, execution_scores[1][1]),
+                        *(
+                            (("distance", distance_score, execution_scores[2][1]),)
+                            if distance_score is not None else ()
+                        ),
+                        *(
+                            (("recovery", recovery_score, execution_scores[-1][1]),)
+                            if recovery_score is not None else ()
+                        ),
+                    )
+                    if score is not None
+                ],
+            },
+        }
 
         planned_active_blocks = [
             block
@@ -305,6 +370,7 @@ class AtlasWorkoutExecutionMatcher:
                 analysis.biomechanical_load_score
             ),
             reasons=reasons,
+            score_audit=score_audit,
         )
 
     @staticmethod
