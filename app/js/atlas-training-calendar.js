@@ -2605,6 +2605,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                 average_cadence_spm: optionalMetric(item.recovery_average_cadence_spm)
               }
             : null;
+          const isDetectedCoolDown = index === alignedIntervalDetails.length - 1
+            && !storedRecovery
+            && detectedRecovery;
           return {
           block: item,
           sources: detectedIntervalGroups[index]?.sources || [],
@@ -2612,7 +2615,8 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             ? { ...detectedRecovery, ...Object.fromEntries(
                 Object.entries(storedRecovery).filter(([, value]) => value !== undefined)
               ) }
-            : detectedRecovery
+            : detectedRecovery,
+          recoveryRole: isDetectedCoolDown ? "cool_down" : "recovery"
           };
         })
       : detectedIntervalGroups;
@@ -2914,6 +2918,10 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       const recoveryAverageHeartRate = Number(recovery?.average_heart_rate_bpm);
       const recoveryEndingHeartRate = Number(recovery?.ending_heart_rate_bpm);
       const recoveryHeartRateDrop = Number(recovery?.heart_rate_drop_bpm);
+      const recoveryRole = intervalGroups[index]?.recoveryRole || "recovery";
+      const recoveryHeading = recoveryRole === "cool_down"
+        ? "Retour au calme · "
+        : "";
 
       return `
         <div class="interval-detail-row">
@@ -2930,7 +2938,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           ${hasIntervalCadence ? `<span>${reportMeasuredValue(block.average_cadence_spm, 0, "ppm")}</span>` : ""}
           <span class="interval-recovery-detail">
             ${recovery ? `
-              <b>${reportBlockTime(recovery.duration_seconds)}${Number(recovery.distance_meters) > 0 ? ` · ${reportNumber(recovery.distance_meters, 0)} m` : ""}</b>
+              <b>${recoveryHeading}${reportBlockTime(recovery.duration_seconds)}${Number(recovery.distance_meters) > 0 ? ` · ${reportNumber(recovery.distance_meters, 0)} m` : ""}</b>
               ${recoverySpeed > 0 ? `<small>${reportPace(3600 / recoverySpeed)} · ${reportNumber(recoverySpeed, 2)} km/h</small>` : ""}
               ${recoveryAverageHeartRate > 0 ? `<small>FC moy. ${reportNumber(recoveryAverageHeartRate, 0)} bpm</small>` : ""}
               ${recoveryEndingHeartRate > 0 ? `<small>FC fin ${reportNumber(recoveryEndingHeartRate, 0)} bpm${recoveryHeartRateDrop >= 0 ? ` · baisse ${reportNumber(recoveryHeartRateDrop, 0)} bpm` : ""}</small>` : ""}
@@ -3079,7 +3087,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           <details class="interval-details-section compact-interval-details" open>
             <summary>
               <span class="report-kicker">TABLEAU RÉCAPITULATIF</span>
-              <strong>Détail des ${workBlocks.length} fractions et de leurs récupérations</strong>
+              <strong>Fractions, récupérations et retour au calme</strong>
             </summary>
             <div class="interval-detail-table" style="--interval-grid:${intervalGrid}">
               <div class="interval-detail-row interval-detail-header">
@@ -3087,7 +3095,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                 <span>Allure</span><span>Vitesse</span><span>FC moy.</span>
                 ${hasIntervalPower ? "<span>Puissance</span>" : ""}
                 ${hasIntervalCadence ? "<span>Cadence</span>" : ""}
-                <span>Récupération</span>
+                <span>Après la fraction</span>
               </div>
               ${intervalRows}
             </div>

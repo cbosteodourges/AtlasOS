@@ -121,32 +121,30 @@ class AtlasWorkoutExecutionMatcher:
                 and analysis.workout_execution.planned_repetition_count > 0
                 else None
             )
-            if structured_recovery_score is not None:
-                # Le FIT connaît les limites exactes de chaque récupération,
-                # y compris après une répétition facultative. Sa comparaison
-                # étape par étape est plus juste qu'un ratio avec le volume
-                # minimal prévu dans le calendrier Atlas.
+            aligned_recovery_scores = [
+                self._ratio_score(
+                    float(item["recovery_seconds"]) / 60.0,
+                    float(planned_intervals[index]["recovery_minutes"]),
+                )
+                for index, item in enumerate(aligned_intervals[:-1])
+                if item["recovery_seconds"] is not None
+                and float(planned_intervals[index]["recovery_minutes"] or 0) > 0
+            ]
+            if aligned_recovery_scores:
+                # La note porte sur la prescription Atlas visible par le
+                # coureur. La structure FIT fournit les limites réellement
+                # exécutées, mais ne doit pas remplacer une durée Atlas
+                # différente (par exemple 2:00 réalisées pour 1:45 prévue).
+                recovery_score = round(sum(aligned_recovery_scores) / len(
+                    aligned_recovery_scores
+                ))
+            elif structured_recovery_score is not None:
                 recovery_score = structured_recovery_score
             else:
-                aligned_recoveries = [
-                    item["recovery_seconds"]
-                    for item in aligned_intervals[:-1]
-                    if item["recovery_seconds"] is not None
-                ]
-                if aligned_recoveries:
-                    recovery_score = round(sum(
-                        self._ratio_score(
-                            actual / 60.0,
-                            float(planned_intervals[index]["recovery_minutes"]),
-                        )
-                        for index, actual in enumerate(aligned_recoveries)
-                        if float(planned_intervals[index]["recovery_minutes"] or 0) > 0
-                    ) / len(aligned_recoveries))
-                else:
-                    recovery_score = self._ratio_score(
-                        analysis.recovery_duration_seconds / 60.0,
-                        planned_recovery_minutes,
-                    )
+                recovery_score = self._ratio_score(
+                    analysis.recovery_duration_seconds / 60.0,
+                    planned_recovery_minutes,
+                )
 
         matching_scores = [
             (date_score, 50),

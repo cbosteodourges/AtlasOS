@@ -282,6 +282,55 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
         self.assertLess(result.execution.recovery_compliance_score, 50)
         self.assertTrue(any("écourtées" in reason for reason in result.reasons))
 
+    def test_scores_aligned_recoveries_against_atlas_prescription(self) -> None:
+        target = IntensityTarget(zone=4, speed_min_kmh=12, speed_max_kmh=13)
+        planned = AdaptiveWorkout(
+            workout_id="descending-threshold",
+            workout_date=date(2026, 9, 3),
+            workout_type=WorkoutType.THRESHOLD_SV2,
+            title="SV2 descendant",
+            objective="Respecter les paliers et leurs récupérations",
+            blocks=[
+                TrainingBlock("2000 m", BlockType.WORK, 1, 9.5, recovery_minutes=2, target=target),
+                TrainingBlock("1600 m", BlockType.WORK, 1, 7.5, recovery_minutes=1.75, target=target),
+                TrainingBlock("1200 m", BlockType.WORK, 1, 5.5, target=target),
+            ],
+            planned_duration_minutes=45,
+        )
+        activity = LongitudinalActivity(
+            atlas_id="garmin-descending-threshold",
+            start_time=datetime(2026, 9, 3, 17, tzinfo=timezone.utc),
+            activity_type="running",
+            distance_km=8,
+            duration_minutes=45,
+            workout_steps=[{"intensity": "active"}],
+        )
+        blocks = [
+            SessionBlock(1, "sv2", 0, 570, 570, 2000, average_speed_kmh=12.63),
+            SessionBlock(2, "recovery", 570, 690, 120, 159),
+            SessionBlock(3, "sv2", 690, 1140, 450, 1600, average_speed_kmh=12.8),
+            SessionBlock(4, "recovery", 1140, 1260, 120, 162),
+            SessionBlock(5, "sv2", 1260, 1590, 330, 1200, average_speed_kmh=13.09),
+            SessionBlock(6, "recovery", 1590, 2190, 600, 1505),
+        ]
+        analysis = DetailedSessionAnalysis(
+            activity_id=activity.atlas_id,
+            blocks=blocks,
+            dominant_work_type="sv2",
+            session_type="threshold",
+            recovery_duration_seconds=840,
+            workout_execution=WorkoutExecutionSummary(
+                planned_repetition_count=3,
+                completed_repetition_count=3,
+                recovery_compliance_score=100,
+            ),
+        )
+
+        result = AtlasWorkoutExecutionMatcher().match(planned, activity, analysis)
+
+        self.assertEqual(result.execution.recovery_compliance_score, 93)
+        self.assertIsNone(result.execution.interval_details[-1]["recovery_seconds"])
+
     def test_hybrid_counts_only_repeated_work_blocks(self) -> None:
         planned = AdaptiveWorkout(
             workout_id="hybrid-3x6",
