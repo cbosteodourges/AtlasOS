@@ -333,7 +333,9 @@
         energyRoot.replaceChildren();
         (energy?.domains || []).forEach(domain => {
           const article = document.createElement("article");
-          const score = domain.score == null ? null : Math.max(0, Math.min(100, Number(domain.score)));
+          const efficiency = domain.cardiac_efficiency || {};
+          const deltaHr = efficiency.heart_rate_delta_bpm;
+          const confidence = Math.max(0, Math.min(100, Number(efficiency.confidence || 0)));
           const trendTone = domain.trend === "en progression"
             ? "up"
             : domain.trend === "stable"
@@ -348,7 +350,9 @@
               : domain.trend === "en retrait"
                 ? "Baisse"
                 : "À confirmer";
-          const support = domain.support_capacity?.median_minutes;
+          const projection = efficiency.projected_speed_kmh;
+          const reference = efficiency.reference_speed_kmh;
+          const matchedSpeeds = efficiency.matched_speeds_kmh || [];
           const updated = domain.latest_session
             ? new Date(`${domain.latest_session}T12:00:00`).toLocaleDateString("fr-FR")
             : "—";
@@ -357,14 +361,15 @@
           article.dataset.trend = trendTone;
           if (domain.key === energy?.dominant_domain) article.classList.add("is-dominant");
           article.innerHTML = `
-            <div><span>${domain.short}</span><b>${domain.label}</b>${domain.key === energy?.dominant_domain ? "<em>Indice le plus élevé</em>" : ""}</div>
-            <strong>${score == null ? "—" : Math.round(score)}<small>/100 · indice observé</small></strong>
-            <i><span style="width:${score || 0}%"></span></i>
-            <p>${domain.session_count ? `${domain.session_count} séance${domain.session_count > 1 ? "s" : ""} exploitable${domain.session_count > 1 ? "s" : ""} · preuve ${evidence}.` : "Données insuffisantes pour caractériser cette filière."}</p>
+            <div><span>${domain.short}</span><b>${domain.label}</b>${domain.key === energy?.dominant_domain ? "<em>Adaptation la plus nette</em>" : ""}</div>
+            <strong>${deltaHr == null ? "—" : `${deltaHr > 0 ? "+" : ""}${String(deltaHr).replace(".", ",")}`}<small>${deltaHr == null ? "" : " bpm · à allure identique"}</small></strong>
+            <i><span style="width:${confidence}%"></span></i>
+            <p>${efficiency.interpretation || "Données insuffisantes pour caractériser cette filière."} Confiance ${confidence}/100 · preuve ${evidence}.</p>
             <dl class="energy-domain-facts">
-              <div><dt>Soutien médian</dt><dd>${support == null ? "—" : `${String(support).replace(".", ",")} min`}</dd></div>
-              <div><dt>Régularité</dt><dd>${domain.regularity?.label || "à confirmer"}</dd></div>
-              <div><dt>Actualisé</dt><dd>${updated} · ${domain.validity?.status || "—"}</dd></div>
+              <div><dt>Blocs comparés</dt><dd>${efficiency.recent_block_count || 0} récents · ${efficiency.baseline_block_count || 0} référence</dd></div>
+              <div><dt>Allures rapprochées</dt><dd>${matchedSpeeds.length ? matchedSpeeds.map(value => String(value).replace(".", ",")).join(" · ") + " km/h" : "—"}</dd></div>
+              <div><dt>Projection ${efficiency.reference_name || ""}</dt><dd>${reference == null || projection == null ? "À confirmer" : `${String(reference).replace(".", ",")} → ${String(projection).replace(".", ",")} km/h`}</dd></div>
+              <div><dt>Actualisé</dt><dd>${updated} · semaine ${energy?.weekly_profile?.week || "—"}</dd></div>
             </dl>
             <span class="energy-trend" data-trend="${trendTone}">${trendLabel}</span>
           `;

@@ -32,6 +32,7 @@ from src.training.post_workout_context_analyzer import (
     PostWorkoutContextAnalyzer,
 )
 from src.training.user_workout_decision import UserWorkoutDecisionEngine
+from src.training.heart_rate_speed_profile import weekly_heart_rate_speed_profile
 from src.training.subscription_access import (
     filter_program_for_subscription,
     normalize_tier,
@@ -2241,6 +2242,7 @@ def _energy_signature():
 
     competitions = []
     execution_summaries = load_execution_summaries()
+    weekly_profile = weekly_heart_rate_speed_profile(execution_summaries, physiology)
     for item in execution_summaries:
         activity = item.get("activity") or {}
         if activity.get("sport") not in {"running", "run", "road_running", "trail"}:
@@ -2260,6 +2262,7 @@ def _energy_signature():
 
     available = []
     for key, domain in domains.items():
+        cardiac_efficiency = (weekly_profile.get("domains") or {}).get(key) or {}
         observations = sorted(domain.pop("observations"), key=lambda item: item["date"])
         scores = [item["score"] for item in observations]
         supports = [item["support_minutes"] for item in observations]
@@ -2267,7 +2270,7 @@ def _energy_signature():
         dates = [item["date"] for item in observations if item["date"]]
         count = len(scores)
         average = round(median(scores)) if count else None
-        trend = None
+        trend = cardiac_efficiency.get("trend")
         trend_delta = None
         date_span = 0
         if len(dates) >= 2:
@@ -2275,12 +2278,8 @@ def _energy_signature():
                 date_span = (date.fromisoformat(dates[-1]) - date.fromisoformat(dates[0])).days
             except ValueError:
                 date_span = 0
-        if count >= 6 and date_span >= 21:
-            split = count // 2
-            early = median(scores[:split])
-            late = median(scores[split:])
-            trend_delta = round(late - early, 1)
-            trend = "en progression" if trend_delta >= 3 else ("en retrait" if trend_delta <= -3 else "stable")
+        if cardiac_efficiency.get("heart_rate_delta_bpm") is not None:
+            trend_delta = cardiac_efficiency["heart_rate_delta_bpm"]
 
         variability = None
         regularity = "à confirmer"
@@ -2300,6 +2299,7 @@ def _energy_signature():
         quality_factor = (sum(qualities) / len(qualities) / 100.0) if qualities else 0.5
         freshness_factor = 1.0 if freshness_days is None else max(0.35, 1.0 - freshness_days / 180.0)
         confidence = round(min(95.0, 100.0 * count_factor * quality_factor * freshness_factor)) if count else 0
+        confidence = int(cardiac_efficiency.get("confidence") or 0)
         evidence = "forte" if confidence >= 75 else ("modérée" if confidence >= 50 else "faible")
         interpretation = (
             "Données insuffisantes pour caractériser cette filière."
@@ -2317,7 +2317,8 @@ def _energy_signature():
             "evidence": {"level": evidence, "quality_mean": round(sum(qualities) / len(qualities)) if qualities else None},
             "trend": trend,
             "trend_delta": trend_delta,
-            "trend_basis": "6 séances et 21 jours minimum" if trend is None else f"Écart entre moitiés chronologiques : {trend_delta:+.1f} points.",
+            "trend_basis": cardiac_efficiency.get("interpretation"),
+            "cardiac_efficiency": cardiac_efficiency,
             "support_capacity": {"median_minutes": round(median(supports), 1) if supports else None, "label": "durée spécifique médiane"},
             "regularity": {"label": regularity, "variability_points": variability},
             "interpretation": interpretation,
@@ -2327,24 +2328,26 @@ def _energy_signature():
         if count >= 3 and average is not None and confidence >= 30:
             available.append(domain)
 
-    ranked = sorted(available, key=lambda item: (item["score"], item["confidence"]), reverse=True)
+    comparable = [item for item in available if (item.get("cardiac_efficiency") or {}).get("heart_rate_delta_bpm") is not None]
+    ranked = sorted(comparable, key=lambda item: (item["cardiac_efficiency"]["heart_rate_delta_bpm"], -item["confidence"]))
     dominant = ranked[0] if ranked else None
     secondary = ranked[1] if len(ranked) > 1 else None
     overall_confidence = round(sum(item["confidence"] for item in available) / len(available)) if available else 0
     return {
         "status": "established" if len(available) >= 3 else "building",
         "headline": (
-            f"Indice observé le plus élevé : {dominant['label'].lower()}"
+            f"Adaptation la plus nette : {dominant['label'].lower()}"
             if dominant else "Signature énergétique en construction"
         ),
         "summary": (
-            f"L’indice relatif est actuellement le plus élevé en {dominant['label'].lower()}"
+            f"À allure comparable, la baisse de fréquence cardiaque est la plus marquée en {dominant['label'].lower()}"
             + (f", devant {secondary['label'].lower()}." if secondary else ".")
             if dominant else
             "Atlas attend davantage de séances classées pour identifier une dominante fiable."
         ),
         "dominant_domain": dominant["key"] if dominant else None,
         "confidence": overall_confidence,
+        "weekly_profile": weekly_profile,
         "domains": list(domains.values()),
         "competition": {
             "count": len(competitions),

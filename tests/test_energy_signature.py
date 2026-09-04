@@ -30,9 +30,23 @@ def execution(kind, index, *, speed=10, support=2400, execution_score=90, qualit
 
 class EnergySignatureTests(unittest.TestCase):
     def signature(self, sessions):
+        enough = len(sessions) >= 3
+        weekly = {
+            "week": "2026-S36",
+            "domains": {
+                key: {
+                    "trend": "en progression" if enough else None,
+                    "heart_rate_delta_bpm": -3 if enough else None,
+                    "confidence": 70 if enough else 0,
+                    "interpretation": "À allure comparable, la FC récente varie de -3,0 bpm." if enough else "Données insuffisantes.",
+                }
+                for key in ("endurance", "tempo", "threshold", "vo2")
+            },
+        }
         with (
             patch("tools.atlas_web_server.load_execution_summaries", return_value=sessions),
             patch("tools.atlas_web_server.load_physiological_reference", return_value=REFERENCES),
+            patch("tools.atlas_web_server.weekly_heart_rate_speed_profile", return_value=weekly),
         ):
             return _energy_signature()
 
@@ -64,18 +78,12 @@ class EnergySignatureTests(unittest.TestCase):
         high_tempo = next(item for item in high["domains"] if item["key"] == "tempo")
         self.assertEqual(low_tempo["score"], high_tempo["score"])
 
-    def test_requires_six_sessions_and_21_days_for_a_trend(self):
-        short = [execution("tempo", index, speed=11 + index * .1, support=1200)
-                 for index in range(1, 7)]
-        tempo = next(item for item in self.signature(short)["domains"] if item["key"] == "tempo")
-        self.assertIsNone(tempo["trend"])
-        self.assertIn("21 jours", tempo["trend_basis"])
-
-        long = [execution("tempo", index, day=1 + (index - 1) * 5,
-                          speed=10.8 + index * .18, support=1200)
-                for index in range(1, 7)]
-        tempo = next(item for item in self.signature(long)["domains"] if item["key"] == "tempo")
+    def test_uses_weekly_heart_rate_speed_trend(self):
+        sessions = [execution("tempo", index, speed=11.5, support=1200)
+                    for index in range(1, 7)]
+        tempo = next(item for item in self.signature(sessions)["domains"] if item["key"] == "tempo")
         self.assertEqual(tempo["trend"], "en progression")
+        self.assertEqual(tempo["trend_delta"], -3)
 
     def test_does_not_claim_a_dominant_domain_without_enough_sessions(self):
         result = self.signature([execution("z2", 1)])
