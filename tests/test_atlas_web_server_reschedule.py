@@ -86,7 +86,7 @@ class AtlasWebServerRescheduleTests(unittest.TestCase):
         self.assertIn('CHARGE ÉLEVÉE', calendar)
         self.assertIn('PRUDENCE ATLAS', calendar)
         self.assertIn('performance-running.css?v=83', page)
-        self.assertIn('atlas-training-calendar.js?v=103', page)
+        self.assertIn('atlas-training-calendar.js?v=104', page)
         self.assertIn('compact-interval-details" open', calendar)
         self.assertIn('interval-recovery-detail', calendar)
         self.assertIn('pas votre niveau de forme', calendar)
@@ -103,6 +103,9 @@ class AtlasWebServerRescheduleTests(unittest.TestCase):
         self.assertIn('Calcul des quatre scores', calendar)
         self.assertIn('non retenu pour l’analyse', calendar)
         self.assertIn('selectedSamplesSource === "garmin"', calendar)
+        self.assertIn('Source analysée ·', calendar)
+        self.assertIn('non utilisé pour ce calcul', calendar)
+        self.assertNotIn('Analyse détaillée fondée sur :', calendar)
 
 
 if __name__ == "__main__":
