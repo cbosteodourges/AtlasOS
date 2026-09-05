@@ -1660,22 +1660,20 @@ const target = compactTarget(workout, zone);
   }
 
   const DISPLAY_ZONE_COLORS = {
-    1: "#38a9ff",
-    2: "#49d17d",
+    1: "#49d17d",
+    2: "#38a9ff",
     3: "#f0cf4f",
     4: "#ff9f43",
     5: "#ff506c"
   };
 
-  // Invariant visuel Atlas : la couleur décrit le rôle du bloc dans la
-  // séance, pas uniquement sa zone physiologique. Une endurance Z2 placée
-  // avant ou entre les fractions reste donc bleue ; le vert est réservé au
-  // retour au calme.
+  // Invariant visuel Atlas : Z1 est vert et Z2 est bleu, quel que soit
+  // l'emplacement du bloc dans la séance.
   const ATLAS_TIMELINE_ROLE_COLORS = Object.freeze({
     preparation: DISPLAY_ZONE_COLORS[1],
-    easy: DISPLAY_ZONE_COLORS[1],
+    easy: DISPLAY_ZONE_COLORS[2],
     recovery: DISPLAY_ZONE_COLORS[1],
-    cool_down: DISPLAY_ZONE_COLORS[2],
+    cool_down: DISPLAY_ZONE_COLORS[1],
     specific_z3: DISPLAY_ZONE_COLORS[3],
     specific_z4: DISPLAY_ZONE_COLORS[4],
     specific_z5: DISPLAY_ZONE_COLORS[5]
@@ -1979,7 +1977,7 @@ const target = compactTarget(workout, zone);
       : reportedLastEnd;
     const coolDownSeconds = Math.max(0, sessionSeconds - lastEnd);
     if (coolDownSeconds > 5) {
-      segments.push({ zone: 2, duration: coolDownSeconds / 60, label: "Retour au calme" });
+      segments.push({ zone: 1, duration: coolDownSeconds / 60, label: "Retour au calme" });
     }
     return segments;
   }

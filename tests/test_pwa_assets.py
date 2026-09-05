@@ -93,7 +93,7 @@ class PwaAssetsTests(unittest.TestCase):
             calendar,
         )
         self.assertIn(
-            'zone: 2, duration: coolDownSeconds / 60, label: "Retour au calme"',
+            'zone: 1, duration: coolDownSeconds / 60, label: "Retour au calme"',
             calendar,
         )
         self.assertIn("const heightPercent = segment =>", calendar)
@@ -109,9 +109,11 @@ class PwaAssetsTests(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn("const ATLAS_TIMELINE_ROLE_COLORS = Object.freeze", calendar)
-        self.assertIn("easy: DISPLAY_ZONE_COLORS[1]", calendar)
+        self.assertIn("easy: DISPLAY_ZONE_COLORS[2]", calendar)
         self.assertIn("recovery: DISPLAY_ZONE_COLORS[1]", calendar)
-        self.assertIn("cool_down: DISPLAY_ZONE_COLORS[2]", calendar)
+        self.assertIn("cool_down: DISPLAY_ZONE_COLORS[1]", calendar)
+        self.assertIn('1: "#49d17d"', calendar)
+        self.assertIn('2: "#38a9ff"', calendar)
         self.assertIn('if (blockType === "cool_down")', calendar)
         self.assertIn("color: plannedTimelineColor(workout, block)", calendar)
         self.assertIn(
