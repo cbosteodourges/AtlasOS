@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 51491)
-Total output lines: 5509
-
 "use strict";
 
 /* GRILLE HEBDOMADAIRE PREMIUM ATLAS COACH */
@@ -2841,7 +2838,155 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       0
     ) || plannedWorkDurationSeconds * plannedRepetitions;
     if (optionalFractionCompleted && plannedIntervalDefinitions.length) {
-   …1491 tokens truncated…ples_source || activitySourceLabel
+      plannedSpecificDurationSeconds +=
+        plannedIntervalDefinitions[plannedIntervalDefinitions.length - 1]
+          .durationSeconds;
+    }
+    const specificCompletionPercent = plannedSpecificDurationSeconds > 0
+      ? Math.round(
+          totalSpecificDurationSeconds /
+          plannedSpecificDurationSeconds * 100
+        )
+      : Number.NaN;
+    const mergedWork = mergeReportBlocks(workBlocks);
+    const averageWorkSpeed = Number(mergedWork.average_speed_kmh);
+    const averageWorkHeartRate = Number(
+      mergedWork.average_heart_rate_bpm
+    );
+    const workMaximumHeartRates = workBlocks.map(
+      block => Number(block.maximum_heart_rate_bpm)
+    ).filter(Number.isFinite);
+    const maximumWorkHeartRate = workMaximumHeartRates.length
+      ? Math.max(...workMaximumHeartRates)
+      : Number.NaN;
+    const averageWorkPower = Number(mergedWork.average_power_watts);
+    const averageWorkCadence = Number(mergedWork.average_cadence_spm);
+    const workSpeeds = workBlocks.map(
+      block => Number(block.average_speed_kmh)
+    ).filter(speed => Number.isFinite(speed) && speed > 0);
+    const speedSpread = workSpeeds.length
+      ? Math.max(...workSpeeds) - Math.min(...workSpeeds)
+      : Number.NaN;
+    const workPaces = workSpeeds.map(speed => 3600 / speed);
+    const paceSpread = workPaces.length
+      ? Math.max(...workPaces) - Math.min(...workPaces)
+      : Number.NaN;
+    const isIntervalSession = plannedRepetitions > 1 &&
+      workBlocks.length > 1;
+    const firstWorkBlock = workBlocks[0] || {};
+    const lastWorkBlock = workBlocks[workBlocks.length - 1] || {};
+    const fastestWorkBlock = workBlocks.reduce(
+      (fastest, block) => (
+        Number(block.average_speed_kmh) >
+        Number(fastest?.average_speed_kmh ?? -Infinity)
+          ? block
+          : fastest
+      ),
+      null
+    );
+    const intervalHeartRateChange =
+      Number(lastWorkBlock.average_heart_rate_bpm) -
+      Number(firstWorkBlock.average_heart_rate_bpm);
+    const intervalSpeedChangePercent =
+      Number(firstWorkBlock.average_speed_kmh) > 0
+        ? (
+            Number(lastWorkBlock.average_speed_kmh) /
+            Number(firstWorkBlock.average_speed_kmh) - 1
+          ) * 100
+        : Number.NaN;
+    const first = drift.first_segment || {};
+    const second = drift.second_segment || {};
+    const plannedDuration = Number(workout.planned_duration_minutes);
+    const actualDuration = Number(activity.duration_minutes);
+    const directPlannedDistance = Number(workout.planned_distance_km);
+    const estimatedPlannedDistance = (workout.blocks || []).reduce(
+      (total, block) => {
+        const repetitions = Number(block.repetitions) || 1;
+
+        if (block.distance_meters != null) {
+          return total +
+            Number(block.distance_meters) * repetitions / 1000;
+        }
+
+        const duration = Number(block.duration_minutes) || 0;
+        const speedMinimum = Number(block.target?.speed_min_kmh);
+        const speedMaximum = Number(block.target?.speed_max_kmh);
+
+        if (
+          duration > 0 &&
+          Number.isFinite(speedMinimum) &&
+          Number.isFinite(speedMaximum)
+        ) {
+          return total +
+            duration *
+            repetitions *
+            ((speedMinimum + speedMaximum) / 2) /
+            60;
+        }
+
+        return total;
+      },
+      0
+    );
+    const plannedDistanceRaw = directPlannedDistance > 0
+      ? directPlannedDistance
+      : estimatedPlannedDistance || Number.NaN;
+    const plannedDistance = Number.isFinite(plannedDistanceRaw)
+      ? Math.round(plannedDistanceRaw * 10) / 10
+      : Number.NaN;
+    const actualDistance = isIntervalSession
+      ? workDistanceKm
+      : Number(activity.distance_km);
+    const actualComparisonSpeed = isIntervalSession
+      ? averageWorkSpeed
+      : Number(activity.average_speed_kmh);
+    const actualComparisonHeartRate = isIntervalSession
+      ? averageWorkHeartRate
+      : Number(activity.average_heart_rate_bpm);
+    const actualComparisonMaximumHeartRate = isIntervalSession
+      ? maximumWorkHeartRate
+      : Number(activity.maximum_heart_rate_bpm);
+    const isHybridThresholdSession =
+      String(workout.workout_type || "") === "long_run" &&
+      isIntervalSession &&
+      /(?:sous|au)\s+SV2/i.test(String(workout.title || ""));
+    const analyzedSessionLabel = isHybridThresholdSession
+      ? "Travail structuré sous SV2"
+      : ({
+          threshold_sv2: "Travail structuré sous SV2",
+          vma_short: "Intervalles VO₂max",
+          vma_long: "Intervalles VO₂max",
+          mixed_threshold_vo2: "Séance mixte seuil et VO₂max",
+          triangular_vo2: "Séance VO₂max triangulaire",
+          long_run: "Sortie longue"
+        }[String(workout.workout_type || "")] || ({
+      vma: "Intervalles VO₂max",
+      sv2: "Travail au seuil",
+      z3: "Tempo",
+      z2: "Endurance fondamentale",
+      z1: "Récupération",
+      sprint: "Sprints",
+      acceleration: "Accélérations"
+    }[dominantType] || sessionTypeLabel(activity.session_type)));
+    const activityProvider = String(
+      report.provider || activity.provider || ""
+    ).toLowerCase();
+    const activitySourceLabel = activityProvider === "health_connect"
+      ? "données Santé Connect issues de Garmin"
+      : activityProvider.includes("fit") || activityProvider === "garmin"
+        ? "fichier FIT Garmin"
+        : "données d’activité";
+    const dataSources = report.data_sources || {};
+    const healthCoverage = dataSources.health_connect_coverage || {};
+    const healthConnectKnown = Object.prototype.hasOwnProperty.call(
+      dataSources,
+      "health_connect_present"
+    );
+    const healthConnectPresent = dataSources.health_connect_present === true;
+    const fitPresent = dataSources.garmin_fit_present === true ||
+      activityProvider.includes("fit") || activityProvider === "garmin";
+    const selectedSamplesSource = String(
+      dataSources.selected_samples_source || activitySourceLabel
     );
     const selectedSamplesLabel = (
       selectedSamplesSource === "garmin_fit" ||
