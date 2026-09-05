@@ -2,10 +2,35 @@ import unittest
 from datetime import datetime, timedelta, timezone
 
 from src.connectors.activity_schema import NormalizedActivity
-from src.physiology.atlas_recovery_index import AtlasRecoveryIndex
+from src.physiology.atlas_recovery_index import (
+    AtlasRecoveryIndex,
+    apply_intraday_rest_adjustments,
+)
 
 
 class AtlasRecoveryIndexHealthTests(unittest.TestCase):
+    def test_applies_and_preserves_intraday_nap_adjustment(self):
+        recovery = {
+            "history": [{
+                "day": "2026-09-05",
+                "atlas_recovery_index": 64,
+                "atlas_index": 64,
+                "components": [],
+            }]
+        }
+        periods = [{
+            "day": "2026-09-05",
+            "kind": "nap",
+            "duration_minutes": 29,
+        }]
+
+        result = apply_intraday_rest_adjustments(recovery, periods)
+        result = apply_intraday_rest_adjustments(result, periods)
+
+        self.assertEqual(result["latest"]["atlas_recovery_index"], 67)
+        self.assertEqual(result["latest"]["atlas_recovery_index_before_rest"], 64)
+        self.assertEqual(result["latest"]["intraday_rest_adjustment"], 3)
+
     def test_builds_transparent_score_without_inventing_hrv(self):
         end = datetime(2026, 8, 27, 6, tzinfo=timezone.utc)
         start = end - timedelta(hours=8)
