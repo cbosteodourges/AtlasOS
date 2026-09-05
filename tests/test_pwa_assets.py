@@ -76,7 +76,7 @@ class PwaAssetsTests(unittest.TestCase):
     def test_styles_and_scripts_are_network_first(self):
         worker = (APP_ROOT / "service-worker.js").read_text(encoding="utf-8")
         pwa = (APP_ROOT / "js" / "atlas-pwa.js").read_text(encoding="utf-8")
-        self.assertIn('CACHE_NAME = "atlas-shell-v57"', worker)
+        self.assertIn('CACHE_NAME = "atlas-shell-v58"', worker)
         self.assertIn('["style", "script"]', worker)
         self.assertIn('fetch(event.request, { cache: "no-store" })', worker)
         self.assertIn('service-worker.js?v=4', pwa)
@@ -94,7 +94,7 @@ class PwaAssetsTests(unittest.TestCase):
             legacy,
         )
         self.assertIn('performance-running.js?v=22', page)
-        self.assertIn('atlas-training-calendar.js?v=106', page)
+        self.assertIn('atlas-training-calendar.js?v=107', page)
 
     def test_legacy_execution_timeline_is_rebased_on_planned_warmup(self):
         calendar = (APP_ROOT / "js" / "atlas-training-calendar.js").read_text(
@@ -133,6 +133,12 @@ class PwaAssetsTests(unittest.TestCase):
         self.assertIn('3: "#f0cf4f"', calendar)
         self.assertIn('4: "#ff8247"', calendar)
         self.assertIn('5: "#ff4d5e"', calendar)
+        self.assertIn('6: "#cf3cff"', calendar)
+        self.assertIn('anaerobic: DISPLAY_ZONE_COLORS[6]', calendar)
+        self.assertIn('representativeSpeed > anaerobicSpeedThreshold', calendar)
+        self.assertIn('anaerobic_speed_threshold_kmh', calendar)
+        self.assertIn('Math.max(...blockSpeeds)', calendar)
+        self.assertIn('<b>Z6</b> Anaérobie', calendar)
         self.assertIn('["sv2", "threshold", "seuil", "z4"]', calendar)
         self.assertIn('["vma", "vo2", "vo2max"]', calendar)
         self.assertIn('phase-zone-${phaseZone}', calendar)
