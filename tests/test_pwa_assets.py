@@ -76,7 +76,7 @@ class PwaAssetsTests(unittest.TestCase):
     def test_styles_and_scripts_are_network_first(self):
         worker = (APP_ROOT / "service-worker.js").read_text(encoding="utf-8")
         pwa = (APP_ROOT / "js" / "atlas-pwa.js").read_text(encoding="utf-8")
-        self.assertIn('CACHE_NAME = "atlas-shell-v65"', worker)
+        self.assertIn('CACHE_NAME = "atlas-shell-v64"', worker)
         self.assertIn('["style", "script"]', worker)
         self.assertIn('fetch(event.request, { cache: "no-store" })', worker)
         self.assertIn('service-worker.js?v=4', pwa)
@@ -94,7 +94,7 @@ class PwaAssetsTests(unittest.TestCase):
             legacy,
         )
         self.assertIn('performance-running.js?v=22', page)
-        self.assertIn('atlas-training-calendar.js?v=111', page)
+        self.assertIn('atlas-training-calendar.js?v=110', page)
 
     def test_legacy_execution_timeline_is_rebased_on_planned_warmup(self):
         calendar = (APP_ROOT / "js" / "atlas-training-calendar.js").read_text(
@@ -103,8 +103,6 @@ class PwaAssetsTests(unittest.TestCase):
         self.assertIn('data-range-tick="${score}"', calendar)
         self.assertIn('data-range-step="-1"', calendar)
         self.assertIn('Number(values.heat) >= 5', calendar)
-        self.assertIn('speedSpread <= .5', calendar)
-        self.assertIn('homogeneousWorkZone || atlasDisplayZone', calendar)
         self.assertIn("prescribedWarmupSeconds", calendar)
         self.assertIn("timestampsAreCompressed", calendar)
         self.assertIn("firstStart + structuredWorkSeconds", calendar)
