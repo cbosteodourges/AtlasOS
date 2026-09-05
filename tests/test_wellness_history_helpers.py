@@ -36,6 +36,7 @@ class WellnessHistoryHelpersTests(unittest.TestCase):
                     "start_time": "2026-09-05T06:01:00+02:00",
                     "local_day": "2026-09-05",
                     "value": 70,
+                    "source_device": "com.garmin.android.apps.connectmobile",
                 },
                 {
                     "type": "resting_heart_rate",
@@ -54,6 +55,10 @@ class WellnessHistoryHelpersTests(unittest.TestCase):
 
             self.assertEqual(result["sleep_duration_minutes"], 540)
             self.assertEqual(result["hrv_last_night_ms"], 70)
+            self.assertEqual(
+                result["hrv_last_night_ms_source_devices"],
+                ["com.garmin.android.apps.connectmobile"],
+            )
             self.assertEqual(result["resting_heart_rate_bpm"], 39)
             self.assertEqual(result["hrv_last_night_ms_source"], "health_connect")
             self.assertEqual(

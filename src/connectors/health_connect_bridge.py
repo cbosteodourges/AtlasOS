@@ -78,6 +78,7 @@ class HealthConnectBridge:
             "received_at": int(time.time()),
             "sync_schema_version": payload.get("sync_schema_version"),
             "backfill_performed": bool(payload.get("backfill_performed", False)),
+            "recovery_backfill_days": payload.get("recovery_backfill_days"),
             "record_types": [item for item in payload.get("record_inventory", []) if isinstance(item, dict)],
             "skipped_record_types": [item for item in payload.get("skipped_record_types", []) if isinstance(item, dict)],
         }

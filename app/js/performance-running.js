@@ -1715,8 +1715,10 @@
             <option value="all">Tout l’historique disponible</option>
           </select>
         </label>
-        <p>Dans la version locale actuelle, Atlas analyse les fichiers Garmin déjà
-        importés sur cet appareil. Aucune connexion en ligne n’est simulée.</p>
+        <p>Atlas utilise les fichiers Garmin FIT déjà importés et les archives
+        Wellness disponibles. Atlas Connect complète automatiquement avec les
+        mesures publiées par Garmin dans Santé Connect ; selon Garmin, la VFC
+        peut ne pas y être transmise.</p>
         <button type="submit">Analyser les données disponibles</button>
       </form>
     `;

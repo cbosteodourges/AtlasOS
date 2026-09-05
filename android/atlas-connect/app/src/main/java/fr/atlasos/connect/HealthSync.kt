@@ -14,7 +14,8 @@ import java.time.temporal.ChronoUnit
 
 class HealthSync(private val context: Context) {
     companion object {
-        private const val SYNC_SCHEMA_VERSION = 5
+        private const val SYNC_SCHEMA_VERSION = 6
+        private const val RECOVERY_BACKFILL_DAYS = 3650L
     }
     private suspend inline fun <reified T : Record> HealthConnectClient.records(range: TimeRangeFilter): List<T> {
         val result = mutableListOf<T>()
@@ -56,8 +57,10 @@ class HealthSync(private val context: Context) {
         val last = prefs.getLong("last_sync", 0L)
         val previousSchema = prefs.getInt("sync_schema_version", 0)
         val backfillPerformed = previousSchema < SYNC_SCHEMA_VERSION
-        // Chaque nouvelle version du schéma relit dix ans d'historique afin que
-        // les types ajoutés ne restent pas vides derrière l'ancien filigrane.
+        // Le flux volumineux (FC détaillée, vitesse, activités) reste borné à
+        // 30 jours lors d'un changement de schéma. Les indicateurs de
+        // récupération, beaucoup plus légers, disposent de leur propre fenêtre
+        // de dix ans afin de retrouver une VFC Garmin publiée tardivement.
         val start = if (last > 0 && !backfillPerformed) {
             Instant.ofEpochMilli(last).minus(1, ChronoUnit.DAYS)
         } else {
@@ -65,6 +68,12 @@ class HealthSync(private val context: Context) {
         }
         val end = Instant.now()
         val range = TimeRangeFilter.between(start, end)
+        val recoveryStart = if (backfillPerformed) {
+            Instant.now().minus(RECOVERY_BACKFILL_DAYS, ChronoUnit.DAYS)
+        } else {
+            start
+        }
+        val recoveryRange = TimeRangeFilter.between(recoveryStart, end)
         val exercises = client.availableRecords<ExerciseSessionRecord>(range, granted, skipped)
         val heartRates = client.availableRecords<HeartRateRecord>(range, granted, skipped)
         val distances = client.availableRecords<DistanceRecord>(range, granted, skipped)
@@ -80,9 +89,9 @@ class HealthSync(private val context: Context) {
         val leanBodyMassRecords = client.availableRecords<LeanBodyMassRecord>(range, granted, skipped)
         val bodyWaterMassRecords = client.availableRecords<BodyWaterMassRecord>(range, granted, skipped)
         val boneMassRecords = client.availableRecords<BoneMassRecord>(range, granted, skipped)
-        val sleepRecords = client.availableRecords<SleepSessionRecord>(range, granted, skipped)
-        val restingHeartRates = client.availableRecords<RestingHeartRateRecord>(range, granted, skipped)
-        val hrvRecords = client.availableRecords<HeartRateVariabilityRmssdRecord>(range, granted, skipped)
+        val sleepRecords = client.availableRecords<SleepSessionRecord>(recoveryRange, granted, skipped)
+        val restingHeartRates = client.availableRecords<RestingHeartRateRecord>(recoveryRange, granted, skipped)
+        val hrvRecords = client.availableRecords<HeartRateVariabilityRmssdRecord>(recoveryRange, granted, skipped)
         val weightRecords = client.availableRecords<WeightRecord>(range, granted, skipped)
         val bodyFatRecords = client.availableRecords<BodyFatRecord>(range, granted, skipped)
         val oxygenRecords = client.availableRecords<OxygenSaturationRecord>(range, granted, skipped)
@@ -192,8 +201,8 @@ class HealthSync(private val context: Context) {
                 .put("duration_seconds", actualSleepSeconds)
                 .put("stages", stages))
         }
-        restingHeartRates.forEach { wellness.put(instant(it.metadata.id, "resting_heart_rate", it.time, it.beatsPerMinute)) }
-        hrvRecords.forEach { wellness.put(instant(it.metadata.id, "hrv_rmssd", it.time, it.heartRateVariabilityMillis)) }
+        restingHeartRates.forEach { wellness.put(instant(it.metadata.id, "resting_heart_rate", it.time, it.beatsPerMinute, it.metadata.dataOrigin.packageName)) }
+        hrvRecords.forEach { wellness.put(instant(it.metadata.id, "hrv_rmssd", it.time, it.heartRateVariabilityMillis, it.metadata.dataOrigin.packageName)) }
         weightRecords.forEach { wellness.put(instant(it.metadata.id, "weight", it.time, it.weight.inKilograms)) }
         bodyFatRecords.forEach { wellness.put(instant(it.metadata.id, "body_fat", it.time, it.percentage.value, it.metadata.dataOrigin.packageName)) }
         heightRecords.forEach { wellness.put(instant(it.metadata.id, "height", it.time, it.height.inMeters, it.metadata.dataOrigin.packageName)) }
@@ -337,6 +346,7 @@ class HealthSync(private val context: Context) {
                     .put("skipped_record_types", skipped)
                     .put("sync_schema_version", SYNC_SCHEMA_VERSION)
                     .put("backfill_performed", backfillPerformed)
+                    .put("recovery_backfill_days", if (backfillPerformed) RECOVERY_BACKFILL_DAYS else 1L)
                     .put("sync_complete", index == batches.lastIndex)
             )
             val completed = index + 1

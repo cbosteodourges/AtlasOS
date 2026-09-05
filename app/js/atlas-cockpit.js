@@ -220,6 +220,10 @@
       .find(item => item.record_type === "HeartRateVariabilityRmssdRecord");
     const hrvSkipped = (payload.health_connect_inventory?.skipped_record_types || [])
       .find(item => item.record_type === "HeartRateVariabilityRmssdRecord");
+    const hrvSources = latestHrv.hrv_last_night_ms_source_devices || [];
+    const hrvViaGarmin = hrvSources.some(source =>
+      String(source).toLowerCase().includes("garmin")
+    );
     const partial = Boolean(
       payload.latest_unavailable?.partial &&
       latest.sleep_duration_source === "health_connect"
@@ -302,7 +306,7 @@
     setText(
       "[data-hrv-detail]",
       latestHrv.hrv_last_night_ms_source === "health_connect"
-        ? `Mesure du ${hrvDayLabel} · Atlas Connect`
+        ? `Mesure du ${hrvDayLabel} · ${hrvViaGarmin ? "Garmin via Atlas Connect" : "Atlas Connect"}`
         : hrvSkipped?.reason === "permission_absent"
           ? `Dernière mesure du ${hrvDayLabel} · autorisation VFC Atlas Connect absente`
           : Number(hrvInventory?.count || 0) === 0

@@ -1577,6 +1577,11 @@ def _health_connect_wellness_by_day():
             continue
         heart_values.setdefault((raw_day, field), []).append(value)
         day_item[f"{field}_source"] = "health_connect"
+        source_device = str(item.get("source_device") or "").strip()
+        if source_device:
+            day_item.setdefault(f"{field}_source_devices", [])
+            if source_device not in day_item[f"{field}_source_devices"]:
+                day_item[f"{field}_source_devices"].append(source_device)
 
     for (day, field), values in heart_values.items():
         by_day[day][field] = round(sum(values) / len(values), 1)

@@ -39,3 +39,17 @@ ces données, mais le cadre VFC affichait encore la mesure Garmin du 3 septembre
 
 Le terme de recherche recommandé dans le dépôt est
 `_health_connect_wellness_by_day`.
+
+## Backfill VFC et provenance
+
+Depuis le schéma Atlas Connect 6, les données volumineuses restent relues sur
+30 jours lors d'une migration, tandis que sommeil, VFC RMSSD et fréquence
+cardiaque de repos disposent d'un backfill ciblé de dix ans. Cela évite de
+réexpédier toutes les séries cardiaques tout en récupérant une mesure Garmin
+Wellness publiée tardivement dans Santé Connect.
+
+Atlas conserve également le paquet Android d'origine de chaque VFC. L'interface
+peut ainsi distinguer « Garmin via Atlas Connect » d'une autre application. Si
+Garmin Connect ne publie aucune `HeartRateVariabilityRmssdRecord`, Atlas le dit
+explicitement et complète uniquement à partir des archives Garmin Wellness ;
+il ne fabrique jamais une valeur.
