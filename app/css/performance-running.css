@@ -2239,11 +2239,12 @@ select option:checked {
   color: var(--zone-color);
 }
 
-.calendar-zone-legend .zone-1 { --zone-color: #38a9ff; }
-.calendar-zone-legend .zone-2 { --zone-color: #49d17d; }
+.calendar-zone-legend .zone-1 { --zone-color: #49d17d; }
+.calendar-zone-legend .zone-2 { --zone-color: #38a9ff; }
 .calendar-zone-legend .zone-3 { --zone-color: #f0cf4f; }
-.calendar-zone-legend .zone-4 { --zone-color: #ff9f43; }
-.calendar-zone-legend .zone-5 { --zone-color: #ff506c; }
+.calendar-zone-legend .zone-4 { --zone-color: #ff8247; }
+.calendar-zone-legend .zone-5 { --zone-color: #ff4d5e; }
+.calendar-zone-legend .zone-6 { --zone-color: #cf3cff; }
 /* États des séances Atlas Coach */
 .workout-status {
   display: inline-grid;
@@ -5977,6 +5978,7 @@ body[data-coach-section]
 .workout-timeline-bars .timeline-zone-3 { --timeline-zone: 3; }
 .workout-timeline-bars .timeline-zone-4 { --timeline-zone: 4; }
 .workout-timeline-bars .timeline-zone-5 { --timeline-zone: 5; }
+.workout-timeline-bars .timeline-zone-6 { --timeline-zone: 6; }
 
 .workout-timeline-legend {
   display: flex;
@@ -5998,11 +6000,12 @@ body[data-coach-section]
   background: currentColor;
 }
 
-.workout-timeline-legend .timeline-zone-1 { color: #38a9ff; }
-.workout-timeline-legend .timeline-zone-2 { color: #49d17d; }
+.workout-timeline-legend .timeline-zone-1 { color: #49d17d; }
+.workout-timeline-legend .timeline-zone-2 { color: #38a9ff; }
 .workout-timeline-legend .timeline-zone-3 { color: #f0cf4f; }
-.workout-timeline-legend .timeline-zone-4 { color: #ff9f43; }
-.workout-timeline-legend .timeline-zone-5 { color: #ff506c; }
+.workout-timeline-legend .timeline-zone-4 { color: #ff8247; }
+.workout-timeline-legend .timeline-zone-5 { color: #ff4d5e; }
+.workout-timeline-legend .timeline-zone-6 { color: #cf3cff; }
 
 .report-more {
   margin-top: 18px;
@@ -6384,6 +6387,10 @@ body[data-coach-section]
   height: 126px;
 }
 
+#atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-6 {
+  height: 132px;
+}
+
 .garmin-overview {
   margin-top: 0;
 }
@@ -6704,6 +6711,7 @@ body[data-coach-section]
   #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-3 { height: 88px; }
   #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-4 { height: 96px; }
   #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-5 { height: 102px; }
+  #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-6 { height: 106px; }
 
   .garmin-overview .session-overview-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6870,6 +6878,7 @@ body[data-coach-section]
 #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-3 { height: 76px; }
 #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-4 { height: 83px; }
 #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-5 { height: 88px; }
+#atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-6 { height: 92px; }
 
 .workout-timeline-bars {
   overflow: visible;
@@ -6961,6 +6970,7 @@ body[data-coach-section]
   #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-3 { height: 63px; }
   #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-4 { height: 69px; }
   #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-5 { height: 74px; }
+  #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars .timeline-zone-6 { height: 78px; }
 }
 
 /* Fiche séance resserrée et auto-évaluation tactile */
