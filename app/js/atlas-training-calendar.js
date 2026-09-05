@@ -1663,8 +1663,8 @@ const target = compactTarget(workout, zone);
     1: "#49d17d",
     2: "#38a9ff",
     3: "#f0cf4f",
-    4: "#ff9f43",
-    5: "#ff506c"
+    4: "#ff8247",
+    5: "#ff4d5e"
   };
 
   // Invariant visuel Atlas : Z1 est vert et Z2 est bleu, quel que soit
@@ -1715,35 +1715,26 @@ const target = compactTarget(workout, zone);
 
     if (["warm_up", "cool_down", "recovery", "rest", "z1"].includes(blockType)) return 1;
     if (blockType === "z2") return 2;
-    if (["z3", "tempo", "sv2"].includes(blockType)) return 3;
-    if (["vma", "vo2", "vo2max", "z4"].includes(blockType)) return 4;
+    if (["z3", "tempo"].includes(blockType)) return 3;
+    if (["sv2", "threshold", "seuil", "z4"].includes(blockType)) return 4;
+    if (["vma", "vo2", "vo2max"].includes(blockType)) return 5;
     if (["sprint", "acceleration", "z5"].includes(blockType)) return 5;
 
-    if (blockName.includes("seuil") || blockName.includes("sv2") || blockName.includes("tempo")) return 3;
+    if (blockName.includes("tempo")) return 3;
+    if (blockName.includes("seuil") || blockName.includes("sv2")) return 4;
     if (blockName.includes("sprint") || blockName.includes("anaérobie")) return 5;
-    if (blockName.includes("vo2") || blockName.includes("vo₂")) return 4;
+    if (blockName.includes("vo2") || blockName.includes("vo₂")) return 5;
     if (blockName.includes("vma")) {
-      const namedDistance = Number(block.distance_meters);
-      const namedDurationSeconds = Number(block.duration_seconds) ||
-        Number(block.duration_minutes) * 60;
-      return (namedDistance > 0 && namedDistance <= 200) ||
-        (namedDurationSeconds > 0 && namedDurationSeconds <= 45)
-        ? 5
-        : 4;
+      return 5;
     }
 
     if (workoutType.includes("sprint")) return 5;
     if (workoutType === "vma_short") {
-      const distance = Number(block.distance_meters);
-      const durationSeconds = Number(block.duration_seconds) ||
-        Number(block.duration_minutes) * 60;
-      return (distance > 0 && distance <= 200) ||
-        (durationSeconds > 0 && durationSeconds <= 45)
-        ? 5
-        : 4;
+      return 5;
     }
-    if (workoutType.includes("vo2") || workoutType === "vma_long") return 4;
-    if (workoutType.includes("threshold") || workoutType.includes("tempo")) return 3;
+    if (workoutType.includes("vo2") || workoutType.includes("vma")) return 5;
+    if (workoutType.includes("threshold")) return 4;
+    if (workoutType.includes("tempo")) return 3;
     if (workoutType.includes("endurance") || workoutType === "long_run") return 2;
 
     const targetZone = Number(block.target?.zone);
@@ -3104,6 +3095,14 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       const block = entry.block || {};
       const type = reportPhaseType(entry.type);
       const index = entry.index || "";
+      const phaseZone = type === "work" ? atlasDisplayZone(workout, block) : 1;
+      const phaseIntensityLabel = ({
+        1: "Z1",
+        2: "Z2",
+        3: "Z3",
+        4: "SV2",
+        5: "VO₂max"
+      })[phaseZone];
       const speed = Number(block.average_speed_kmh);
       const duration = Number(block.duration_seconds);
       const plannedSeconds = Number(entry.plannedSeconds);
@@ -3112,8 +3111,8 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         : Number.NaN;
 
       return `
-        <div class="interval-detail-row phase-detail-row phase-${type}" data-phase-type="${type}">
-          <strong><i></i><span>${reportPhaseLabel(type, index)}</span>${Number.isFinite(plannedSeconds) && plannedSeconds > 0 ? `<small>Prévu ${reportBlockTime(plannedSeconds)}${Math.abs(durationDeltaSeconds) >= 1 ? ` · ${durationDeltaSeconds > 0 ? "+" : "−"}${reportBlockTime(Math.abs(durationDeltaSeconds))}` : " · conforme"}</small>` : ""}</strong>
+        <div class="interval-detail-row phase-detail-row phase-${type} phase-zone-${phaseZone}" data-phase-type="${type}" style="--phase-color:${DISPLAY_ZONE_COLORS[phaseZone]}">
+          <strong><i></i><span>${reportPhaseLabel(type, index)} <b>${phaseIntensityLabel}</b></span>${Number.isFinite(plannedSeconds) && plannedSeconds > 0 ? `<small>Prévu ${reportBlockTime(plannedSeconds)}${Math.abs(durationDeltaSeconds) >= 1 ? ` · ${durationDeltaSeconds > 0 ? "+" : "−"}${reportBlockTime(Math.abs(durationDeltaSeconds))}` : " · conforme"}</small>` : ""}</strong>
           <span>${reportNumber(Number(block.distance_meters), 0)} m</span>
           <span>${reportBlockTime(duration)}</span>
           <span>${reportPace(3600 / speed)}</span>
