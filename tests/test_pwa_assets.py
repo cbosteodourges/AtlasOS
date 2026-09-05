@@ -94,7 +94,7 @@ class PwaAssetsTests(unittest.TestCase):
             legacy,
         )
         self.assertIn('performance-running.js?v=22', page)
-        self.assertIn('atlas-training-calendar.js?v=99', page)
+        self.assertIn('atlas-training-calendar.js?v=100', page)
 
     def test_legacy_execution_timeline_is_rebased_on_planned_warmup(self):
         calendar = (APP_ROOT / "js" / "atlas-training-calendar.js").read_text(
