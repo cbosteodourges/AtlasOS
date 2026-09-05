@@ -89,6 +89,17 @@
     return "Récupération nécessaire";
   };
 
+  const updateRecoveryTone = score => {
+    const label = document.querySelector("[data-recovery-label]");
+    if (!label || !Number.isFinite(Number(score))) return;
+    label.classList.remove("positive", "caution", "negative");
+    label.classList.add(Number(score) >= 70
+      ? "positive"
+      : Number(score) >= 55
+        ? "caution"
+        : "negative");
+  };
+
   const loadLabel = value => {
     if (value === null || value === undefined || value === "") return "Aucune donnée";
     if (!Number.isFinite(Number(value))) return "À synchroniser";
@@ -180,6 +191,7 @@
             || recoveryLabel(latest.atlas_recovery_index)
         );
         setText("[data-recovery-detail]", `${latest.atlas_recovery_index}/100 · confiance ${latest.confidence}/100`);
+        updateRecoveryTone(latest.atlas_recovery_index);
         updateRecoveryGauge(latest.atlas_recovery_index, latest.interpretation);
         if (latest.guidance) {
           setText("[data-readiness-summary]", latest.guidance);
@@ -208,6 +220,7 @@
 
     const latestComplete = payload.latest_complete || latest;
     const latestHrv = payload.latest_metrics?.hrv || latestComplete || latest;
+    const latestRestingHeartRate = payload.latest_metrics?.resting_heart_rate;
     const isCurrentDay = latest.day === todayKey;
     const latestDay = new Date(`${latest.day}T12:00:00`);
     const latestDayLabel = latestDay.toLocaleDateString("fr-FR");
@@ -254,11 +267,14 @@
       setText(
         "[data-recovery-detail]",
         latest.atlas_index != null && isCurrentDay
-          ? (latest.sleep_recovery_score != null
+          ? (latestRestingHeartRate?.resting_heart_rate_bpm != null
+            ? `FC repos ${Math.round(latestRestingHeartRate.resting_heart_rate_bpm)} bpm · Indice Atlas du jour`
+            : latest.sleep_recovery_score != null
             ? `Sommeil récupérateur ${latest.sleep_recovery_score}/100`
             : "Indice Atlas du jour")
           : `${indexSource.atlas_index ?? "—"}/100 · données du ${indexDayLabel}`
       );
+      updateRecoveryTone(indexSource.atlas_index);
       updateRecoveryGauge(indexSource.atlas_index);
     }
     setText(

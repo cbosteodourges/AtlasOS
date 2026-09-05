@@ -11,6 +11,9 @@ def test_recovery_gauge_markup_and_script_are_present():
     assert "data-recovery-gauge" in html
     assert "data-recovery-gauge-marker" in html
     assert "data-recovery-zone" in html
+    assert 'class="positive" data-recovery-label' not in html
+    assert "updateRecoveryTone" in script
+    assert "FC repos" in script
     assert "updateRecoveryGauge" in script
     assert 'gauge.setAttribute("aria-valuenow"' in script
 
