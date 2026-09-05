@@ -76,10 +76,25 @@ class PwaAssetsTests(unittest.TestCase):
     def test_styles_and_scripts_are_network_first(self):
         worker = (APP_ROOT / "service-worker.js").read_text(encoding="utf-8")
         pwa = (APP_ROOT / "js" / "atlas-pwa.js").read_text(encoding="utf-8")
-        self.assertIn('CACHE_NAME = "atlas-shell-v49"', worker)
+        self.assertIn('CACHE_NAME = "atlas-shell-v50"', worker)
         self.assertIn('["style", "script"]', worker)
         self.assertIn('fetch(event.request, { cache: "no-store" })', worker)
         self.assertIn('service-worker.js?v=4', pwa)
+
+    def test_training_page_has_one_calendar_renderer(self):
+        page = (APP_ROOT / "performance-running.html").read_text(
+            encoding="utf-8"
+        )
+        legacy = (APP_ROOT / "js" / "performance-running.js").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('data-calendar-renderer="premium"', page)
+        self.assertIn(
+            'planPanel.dataset.calendarRenderer !== "premium"',
+            legacy,
+        )
+        self.assertIn('performance-running.js?v=22', page)
+        self.assertIn('atlas-training-calendar.js?v=99', page)
 
     def test_legacy_execution_timeline_is_rebased_on_planned_warmup(self):
         calendar = (APP_ROOT / "js" / "atlas-training-calendar.js").read_text(
