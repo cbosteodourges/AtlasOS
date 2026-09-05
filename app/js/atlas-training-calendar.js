@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 50257)
-Total output lines: 5387
-
 "use strict";
 
 /* GRILLE HEBDOMADAIRE PREMIUM ATLAS COACH */
@@ -2837,7 +2834,34 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const workSpeeds = workBlocks.map(
       block => Number(block.average_speed_kmh)
     ).filter(speed => Number.isFinite(speed) && speed > 0);
-    const speedSpread = workSpeeds.len…257 tokens truncated…ock.average_speed_kmh) - 1
+    const speedSpread = workSpeeds.length
+      ? Math.max(...workSpeeds) - Math.min(...workSpeeds)
+      : Number.NaN;
+    const workPaces = workSpeeds.map(speed => 3600 / speed);
+    const paceSpread = workPaces.length
+      ? Math.max(...workPaces) - Math.min(...workPaces)
+      : Number.NaN;
+    const isIntervalSession = plannedRepetitions > 1 &&
+      workBlocks.length > 1;
+    const firstWorkBlock = workBlocks[0] || {};
+    const lastWorkBlock = workBlocks[workBlocks.length - 1] || {};
+    const fastestWorkBlock = workBlocks.reduce(
+      (fastest, block) => (
+        Number(block.average_speed_kmh) >
+        Number(fastest?.average_speed_kmh ?? -Infinity)
+          ? block
+          : fastest
+      ),
+      null
+    );
+    const intervalHeartRateChange =
+      Number(lastWorkBlock.average_heart_rate_bpm) -
+      Number(firstWorkBlock.average_heart_rate_bpm);
+    const intervalSpeedChangePercent =
+      Number(firstWorkBlock.average_speed_kmh) > 0
+        ? (
+            Number(lastWorkBlock.average_speed_kmh) /
+            Number(firstWorkBlock.average_speed_kmh) - 1
           ) * 100
         : Number.NaN;
     const first = drift.first_segment || {};
