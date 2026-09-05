@@ -118,7 +118,14 @@ class HealthConnectBridge:
             raw_metadata={"health_connect": True, "health_connect_exercise_type": raw_type,
                           "health_connect_local_day": item.get("local_day"),
                           "lap_count": item.get("lap_count", 0),
-                          "segment_count": item.get("segment_count", 0)})
+                          "segment_count": item.get("segment_count", 0),
+                          "laps": [lap for lap in item.get("laps", []) if isinstance(lap, dict)],
+                          "health_connect_segments": [segment for segment in item.get("segments", []) if isinstance(segment, dict)],
+                          "health_connect_data_coverage": item.get("data_coverage", {}),
+                          "average_cadence": item.get("average_cadence_spm"),
+                          "maximum_cadence": item.get("maximum_cadence_spm"),
+                          "average_power": item.get("average_power_watts"),
+                          "maximum_power": item.get("maximum_power_watts")})
 
     def _normalize_stored_activity_types(self) -> None:
         store = ActivityStore(self.activities_path)

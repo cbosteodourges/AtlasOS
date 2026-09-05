@@ -66,6 +66,45 @@ class HealthConnectBridgeTests(unittest.TestCase):
                     code,
                 )
 
+    def test_activity_keeps_health_connect_laps_segments_and_coverage(self):
+        activity = HealthConnectBridge._activity({
+            "source_id": "exercise-detailed",
+            "type": "56",
+            "start_time": "2026-09-05T08:00:00Z",
+            "duration_seconds": 1800,
+            "average_cadence_spm": 171.5,
+            "maximum_cadence_spm": 184,
+            "average_power_watts": 302.4,
+            "maximum_power_watts": 421,
+            "laps": [{
+                "start_time": "2026-09-05T08:00:00Z",
+                "end_time": "2026-09-05T08:05:00Z",
+                "total_timer_time": 300,
+                "lap_trigger": "health_connect",
+            }],
+            "segments": [{
+                "duration_seconds": 300,
+                "segment_type": 56,
+                "repetitions": 1,
+            }],
+            "data_coverage": {
+                "heart_rate_samples": 120,
+                "speed_samples": 100,
+            },
+        })
+
+        self.assertEqual(len(activity.raw_metadata["laps"]), 1)
+        self.assertEqual(
+            activity.raw_metadata["health_connect_segments"][0]["duration_seconds"],
+            300,
+        )
+        self.assertEqual(
+            activity.raw_metadata["health_connect_data_coverage"]["speed_samples"],
+            100,
+        )
+        self.assertEqual(activity.raw_metadata["average_cadence"], 171.5)
+        self.assertEqual(activity.raw_metadata["maximum_power"], 421)
+
 
 if __name__ == "__main__":
     unittest.main()

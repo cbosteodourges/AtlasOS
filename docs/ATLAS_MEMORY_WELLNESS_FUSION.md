@@ -63,3 +63,13 @@ refuse les archives sans fichier FIT, conserve la journée dans
 mesures réellement décodées. Cette voie complète Santé Connect lorsque Garmin
 n'y publie pas la VFC ; elle ne remplace jamais une mesure Health Connect
 présente pour le même champ et la même journée.
+
+## Enrichissement des activités Santé Connect
+
+Depuis le schéma Atlas Connect 7, les séries de fréquence cardiaque, vitesse,
+cadence et puissance sont rattachées en priorité à une séance provenant de la
+même application. Atlas transmet également le détail disponible des tours et
+des segments, ainsi qu'un inventaire de couverture par activité. Cette
+couverture permet au moteur de distinguer une analyse reconstruite riche d'un
+simple résumé et d'expliquer les limites sans fabriquer les données que Garmin
+n'a pas publiées dans Santé Connect.

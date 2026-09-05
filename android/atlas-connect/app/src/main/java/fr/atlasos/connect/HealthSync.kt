@@ -14,7 +14,7 @@ import java.time.temporal.ChronoUnit
 
 class HealthSync(private val context: Context) {
     companion object {
-        private const val SYNC_SCHEMA_VERSION = 6
+        private const val SYNC_SCHEMA_VERSION = 7
         private const val RECOVERY_BACKFILL_DAYS = 3650L
     }
     private suspend inline fun <reified T : Record> HealthConnectClient.records(range: TimeRangeFilter): List<T> {
@@ -103,35 +103,35 @@ class HealthSync(private val context: Context) {
         val stepRecords = client.availableRecords<StepsRecord>(range, granted, skipped)
         val floorRecords = client.availableRecords<FloorsClimbedRecord>(range, granted, skipped)
 
-        val heartRateSamples = heartRates.asSequence()
-            .flatMap { it.samples.asSequence() }
-            .filter { !it.time.isBefore(start) && it.time.isBefore(end) }
-            .toList()
-        val speedSamples = speeds.asSequence()
-            .flatMap { it.samples.asSequence() }
-            .filter { !it.time.isBefore(start) && it.time.isBefore(end) }
-            .toList()
-        val cadenceSamples = cadences.asSequence()
-            .flatMap { it.samples.asSequence() }
-            .filter { !it.time.isBefore(start) && it.time.isBefore(end) }
-            .toList()
-        val powerSamples = powers.asSequence()
-            .flatMap { it.samples.asSequence() }
-            .filter { !it.time.isBefore(start) && it.time.isBefore(end) }
-            .toList()
-
         onProgress(35, "Préparation des activités")
         val activities = JSONArray()
         exercises.forEach { exercise ->
-            val hr = heartRateSamples.filter { it.time in exercise.startTime..exercise.endTime }
-            val speed = speedSamples.filter { it.time in exercise.startTime..exercise.endTime }
-            val cadence = cadenceSamples.filter { it.time in exercise.startTime..exercise.endTime }
-            val power = powerSamples.filter { it.time in exercise.startTime..exercise.endTime }
+            val hr = samplesForExercise(exercise, heartRates) { it.samples }
+            val speed = samplesForExercise(exercise, speeds) { it.samples }
+            val cadence = samplesForExercise(exercise, cadences) { it.samples }
+            val power = samplesForExercise(exercise, powers) { it.samples }
             val samples = JSONArray()
             hr.forEach { samples.put(JSONObject().put("timestamp", it.time).put("heart_rate_bpm", it.beatsPerMinute)) }
             speed.forEach { samples.put(JSONObject().put("timestamp", it.time).put("speed_mps", it.speed.inMetersPerSecond)) }
             cadence.forEach { samples.put(JSONObject().put("timestamp", it.time).put("cadence_spm", it.rate)) }
             power.forEach { samples.put(JSONObject().put("timestamp", it.time).put("power_watts", it.power.inWatts)) }
+            val laps = JSONArray(exercise.laps.map { lap ->
+                JSONObject()
+                    .put("timestamp", lap.startTime)
+                    .put("start_time", lap.startTime)
+                    .put("end_time", lap.endTime)
+                    .put("total_timer_time", lap.endTime.epochSecond - lap.startTime.epochSecond)
+                    .putNullable("total_distance", lap.length?.inMeters)
+                    .put("lap_trigger", "health_connect")
+            })
+            val segments = JSONArray(exercise.segments.map { segment ->
+                JSONObject()
+                    .put("start_time", segment.startTime)
+                    .put("end_time", segment.endTime)
+                    .put("duration_seconds", segment.endTime.epochSecond - segment.startTime.epochSecond)
+                    .put("segment_type", segment.segmentType)
+                    .put("repetitions", segment.repetitionsCount)
+            })
             val distance = activityDistance(
                 exercise,
                 distances,
@@ -143,6 +143,15 @@ class HealthSync(private val context: Context) {
                 .filter { overlaps(it.startTime, it.endTime, exercise) }
                 .sumOf { it.energy.inKilocalories }
             val ascent = elevations.filter { overlaps(it.startTime, it.endTime, exercise) }.sumOf { it.elevation.inMeters }
+            val coverage = JSONObject()
+                .put("heart_rate_samples", hr.size)
+                .put("speed_samples", speed.size)
+                .put("cadence_samples", cadence.size)
+                .put("power_samples", power.size)
+                .put("laps", exercise.laps.size)
+                .put("segments", exercise.segments.size)
+                .put("distance", distance > 0.0)
+                .put("elevation", ascent > 0.0)
             activities.put(JSONObject().put("source_id", exercise.metadata.id).put("type", exercise.exerciseType)
                 .put("start_time", exercise.startTime).put("local_day", localDay(exercise.startTime))
                 .put("duration_seconds", exercise.endTime.epochSecond - exercise.startTime.epochSecond)
@@ -151,7 +160,13 @@ class HealthSync(private val context: Context) {
                 .putNullable("average_heart_rate_bpm", hr.map { it.beatsPerMinute.toDouble() }.averageOrNull())
                 .putNullable("maximum_heart_rate_bpm", hr.maxOfOrNull { it.beatsPerMinute })
                 .putNullable("average_speed_mps", speed.map { it.speed.inMetersPerSecond }.averageOrNull())
-                .put("samples", samples).put("source_device", exercise.metadata.dataOrigin.packageName))
+                .putNullable("average_cadence_spm", cadence.map { it.rate }.averageOrNull())
+                .putNullable("maximum_cadence_spm", cadence.maxOfOrNull { it.rate })
+                .putNullable("average_power_watts", power.map { it.power.inWatts }.averageOrNull())
+                .putNullable("maximum_power_watts", power.maxOfOrNull { it.power.inWatts })
+                .put("samples", samples).put("laps", laps).put("segments", segments)
+                .put("data_coverage", coverage)
+                .put("source_device", exercise.metadata.dataOrigin.packageName))
         }
         val wellness = JSONArray()
         calories.forEach { wellness.put(JSONObject().put("source_id", it.metadata.id)
@@ -279,6 +294,11 @@ class HealthSync(private val context: Context) {
             inventoryEntry("ExerciseSessionRecord", exercises),
             inventoryEntry("SleepSessionRecord", sleepRecords),
             inventoryEntry("HeartRateRecord", heartRates),
+            inventoryEntry("DistanceRecord", distances),
+            inventoryEntry("SpeedRecord", speeds),
+            inventoryEntry("ElevationGainedRecord", elevations),
+            inventoryEntry("StepsCadenceRecord", cadences),
+            inventoryEntry("PowerRecord", powers),
             inventoryEntry("RestingHeartRateRecord", restingHeartRates),
             inventoryEntry("HeartRateVariabilityRmssdRecord", hrvRecords),
             inventoryEntry("Vo2MaxRecord", vo2MaxRecords),
@@ -391,6 +411,21 @@ class HealthSync(private val context: Context) {
             reported / reconstructed in 0.80..1.20 -> reported
             else -> reconstructed
         }
+    }
+
+    private fun <R : IntervalRecord, S> samplesForExercise(
+        exercise: ExerciseSessionRecord,
+        records: List<R>,
+        samples: (R) -> List<S>,
+    ): List<S> {
+        val overlapping = records.filter {
+            overlaps(it.startTime, it.endTime, exercise)
+        }
+        val sameSource = overlapping.filter {
+            it.metadata.dataOrigin.packageName ==
+                exercise.metadata.dataOrigin.packageName
+        }
+        return (sameSource.ifEmpty { overlapping }).flatMap(samples)
     }
 
     private fun distanceFromSpeed(
