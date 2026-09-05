@@ -153,6 +153,7 @@
 
   const updateRecoveryGauge = (value, interpretation = null) => {
     const gauge = document.querySelector("[data-recovery-gauge]");
+    const scoreRing = document.querySelector(".readiness-score");
     const zoneLabel = document.querySelector("[data-recovery-zone]");
     const score = Number(value);
     if (!gauge || !Number.isFinite(score)) return;
@@ -168,6 +169,7 @@
 
     gauge.style.setProperty("--recovery-position", `${bounded}%`);
     gauge.dataset.zone = zone.key;
+    if (scoreRing) scoreRing.dataset.zone = zone.key;
     gauge.dataset.ready = "true";
     gauge.setAttribute("aria-busy", "false");
     gauge.setAttribute("aria-valuenow", String(Math.round(bounded)));

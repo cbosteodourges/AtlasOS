@@ -14,6 +14,7 @@ def test_recovery_gauge_markup_and_script_are_present():
     assert 'class="positive" data-recovery-label' not in html
     assert "updateRecoveryTone" in script
     assert "FC repos" in script
+    assert "scoreRing.dataset.zone = zone.key" in script
     assert "updateRecoveryGauge" in script
     assert 'gauge.setAttribute("aria-valuenow"' in script
 
@@ -26,3 +27,4 @@ def test_recovery_gauge_uses_four_decision_zones():
     assert "#ff922f 55%" in css
     assert "#f6d54a 70%" in css
     assert "#45dfa6 100%" in css
+    assert '.readiness-score[data-zone="yellow"]' in css
