@@ -393,7 +393,7 @@ class HealthSync(private val context: Context) {
         }
         prefs.edit().putLong("last_sync", System.currentTimeMillis())
             .putInt("sync_schema_version", SYNC_SCHEMA_VERSION).apply()
-        onProgress(100, "Synchronisation terminée")
+        onProgress(100, "Séance transmise · analyse Atlas lancée sur le PC")
         return activities.length() + wellness.length()
     }
 
