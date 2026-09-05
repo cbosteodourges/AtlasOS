@@ -54,6 +54,75 @@ def _calibrate_partial_score(
     return round(max(0, min(100, calibrated)))
 
 
+def apply_intraday_rest_adjustments(
+    recovery: dict[str, Any],
+    rest_periods: Iterable[dict[str, Any]],
+) -> dict[str, Any]:
+    """Ajoute un ajustement prudent après une sieste ou un repos déclaré."""
+    records_by_day: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for record in rest_periods:
+        if not isinstance(record, dict):
+            continue
+        day = str(record.get("day") or "")[:10]
+        minutes = _number(record.get("duration_minutes"))
+        if day and minutes is not None and minutes >= 5:
+            records_by_day[day].append(record)
+
+    history = recovery.get("history") if isinstance(recovery, dict) else None
+    if not isinstance(history, list):
+        return recovery
+
+    for item in history:
+        if not isinstance(item, dict):
+            continue
+        periods = records_by_day.get(str(item.get("day") or "")[:10], [])
+        if not periods:
+            continue
+        bonus = 0
+        total_minutes = 0
+        for period in periods:
+            minutes = round(_number(period.get("duration_minutes")) or 0)
+            total_minutes += minutes
+            if str(period.get("kind") or "nap") == "nap":
+                bonus += 1 if minutes < 20 else 3 if minutes <= 40 else 2 if minutes <= 60 else 1
+            else:
+                bonus += 1 if minutes >= 15 else 0
+        bonus = min(5, bonus)
+        current = _number(item.get("atlas_recovery_index"))
+        if current is None:
+            continue
+        base = _number(item.get("atlas_recovery_index_before_rest"))
+        base = current if base is None else base
+        adjusted = round(min(100, base + bonus))
+        item["atlas_recovery_index_before_rest"] = round(base)
+        item["atlas_recovery_index"] = adjusted
+        item["atlas_index"] = adjusted
+        item["intraday_rest_adjustment"] = bonus
+        item["intraday_rest_minutes"] = total_minutes
+        item["intraday_rest_periods"] = len(periods)
+        components = [
+            component for component in item.get("components", [])
+            if component.get("key") != "intraday_rest"
+        ]
+        components.append({
+            "key": "intraday_rest",
+            "label": "Sieste ou période de repos",
+            "score": adjusted,
+            "weight": 0,
+            "duration_minutes": total_minutes,
+            "adjustment_points": bonus,
+        })
+        item["components"] = components
+        item["guidance"] = (
+            f"Repos intrajournalier enregistré : {total_minutes} min "
+            f"et ajustement prudent de +{bonus} point(s)."
+        )
+
+    if history:
+        recovery["latest"] = history[-1]
+    return recovery
+
+
 def _baseline(values: list[float], fallback: float | None = None) -> float | None:
     return mean(values[-28:]) if len(values) >= 3 else fallback
 
