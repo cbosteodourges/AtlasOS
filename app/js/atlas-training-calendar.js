@@ -1664,7 +1664,8 @@ const target = compactTarget(workout, zone);
     2: "#38a9ff",
     3: "#f0cf4f",
     4: "#ff8247",
-    5: "#ff4d5e"
+    5: "#ff4d5e",
+    6: "#cf3cff"
   };
 
   // Invariant visuel Atlas : Z1 est vert et Z2 est bleu, quel que soit
@@ -1676,7 +1677,8 @@ const target = compactTarget(workout, zone);
     cool_down: DISPLAY_ZONE_COLORS[1],
     specific_z3: DISPLAY_ZONE_COLORS[3],
     specific_z4: DISPLAY_ZONE_COLORS[4],
-    specific_z5: DISPLAY_ZONE_COLORS[5]
+    specific_z5: DISPLAY_ZONE_COLORS[5],
+    anaerobic: DISPLAY_ZONE_COLORS[6]
   });
 
   function canonicalBlockType(block = {}) {
@@ -1712,22 +1714,59 @@ const target = compactTarget(workout, zone);
     const blockType = canonicalBlockType(block);
     const workoutType = String(workout?.workout_type || "").toLowerCase();
     const blockName = String(block.name || "").toLowerCase();
+    const personalVma = Number(
+      synchronizedPhysiology?.vma_training_reference_kmh ||
+      synchronizedPhysiology?.vma_kmh ||
+      workout?.athlete_snapshot?.vma_kmh
+    );
+    const configuredAnaerobicThreshold = Number(
+      synchronizedPhysiology?.anaerobic_speed_threshold_kmh ||
+      workout?.athlete_snapshot?.anaerobic_speed_threshold_kmh
+    );
+    const anaerobicSpeedThreshold = configuredAnaerobicThreshold > 0
+      ? configuredAnaerobicThreshold
+      : personalVma > 0
+        ? Math.max(personalVma, 15)
+        : 15;
+    const blockSpeeds = [
+      block.target?.speed_min_kmh,
+      block.target?.speed_max_kmh,
+      block.average_speed_kmh
+    ].map(Number).filter(speed => speed > 0);
+    const representativeSpeed = blockSpeeds.length
+      ? Math.max(...blockSpeeds)
+      : Number.NaN;
 
     if (["warm_up", "cool_down", "recovery", "rest", "z1"].includes(blockType)) return 1;
     if (blockType === "z2") return 2;
     if (["z3", "tempo"].includes(blockType)) return 3;
     if (["sv2", "threshold", "seuil", "z4"].includes(blockType)) return 4;
+    if (["anaerobic", "anaerobie", "anaérobie", "z6"].includes(blockType)) return 6;
+    if (
+      ["vma", "vo2", "vo2max", "sprint", "acceleration", "z5"].includes(blockType) &&
+      representativeSpeed > anaerobicSpeedThreshold
+    ) return 6;
     if (["vma", "vo2", "vo2max"].includes(blockType)) return 5;
     if (["sprint", "acceleration", "z5"].includes(blockType)) return 5;
 
     if (blockName.includes("tempo")) return 3;
     if (blockName.includes("seuil") || blockName.includes("sv2")) return 4;
-    if (blockName.includes("sprint") || blockName.includes("anaérobie")) return 5;
+    if (blockName.includes("anaérobie") || blockName.includes("anaerobie")) return 6;
+    if (blockName.includes("sprint") && representativeSpeed > anaerobicSpeedThreshold) return 6;
+    if (
+      (blockName.includes("vma") || blockName.includes("vo2") || blockName.includes("vo₂")) &&
+      representativeSpeed > anaerobicSpeedThreshold
+    ) return 6;
+    if (blockName.includes("sprint")) return 5;
     if (blockName.includes("vo2") || blockName.includes("vo₂")) return 5;
     if (blockName.includes("vma")) {
       return 5;
     }
 
+    if (
+      (workoutType.includes("sprint") || workoutType.includes("vo2") || workoutType.includes("vma")) &&
+      representativeSpeed > anaerobicSpeedThreshold
+    ) return 6;
     if (workoutType.includes("sprint")) return 5;
     if (workoutType === "vma_short") {
       return 5;
@@ -1991,7 +2030,7 @@ const target = compactTarget(workout, zone);
       );
     });
     const heightPercent = segment => {
-      const base = ({ 1: 42, 2: 57, 3: 78, 4: 90, 5: 98 })[segment.zone] || 42;
+      const base = ({ 1: 42, 2: 57, 3: 76, 4: 86, 5: 94, 6: 100 })[segment.zone] || 42;
       const speed = Number(segment.speed);
       const reference = zoneSpeedAverages.get(segment.zone);
       const speedAdjustment = speed > 0 && reference > 0
@@ -3101,7 +3140,8 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         2: "Z2",
         3: "Z3",
         4: "SV2",
-        5: "VO₂max"
+        5: "VO₂max",
+        6: "Anaérobie"
       })[phaseZone];
       const speed = Number(block.average_speed_kmh);
       const duration = Number(block.duration_seconds);
@@ -5121,8 +5161,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         <span class="zone-1"><i></i><b>Z1</b> Récupération</span>
         <span class="zone-2"><i></i><b>Z2</b> Endurance</span>
         <span class="zone-3"><i></i><b>Z3</b> Active</span>
-        <span class="zone-4"><i></i><b>Z4</b> Seuil</span>
+        <span class="zone-4"><i></i><b>SV2</b> Seuil</span>
         <span class="zone-5"><i></i><b>Z5</b> VO₂max</span>
+        <span class="zone-6"><i></i><b>Z6</b> Anaérobie</span>
       </div>
     `;
   }
@@ -5131,11 +5172,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       1: "Récupération",
       2: "Endurance fondamentale",
       3: "Endurance active",
-      4: "Seuil",
-      5: "VO₂max"
+      4: "Seuil SV2",
+      5: "VO₂max",
+      6: "Anaérobie"
     };
     const collected = new Map(
-      [1, 2, 3, 4, 5].map(zone => [
+      [1, 2, 3, 4, 5, 6].map(zone => [
         zone,
         { speeds: [], heartRates: [], observations: 0 }
       ])
