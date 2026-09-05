@@ -59,14 +59,14 @@ class HealthConnectBridge:
         self.pairing_path.unlink(missing_ok=True)
         return token
 
-    def ingest(self, token: str, payload: dict[str, Any]) -> dict[str, int]:
+    def ingest(self, token: str, payload: dict[str, Any]) -> dict[str, Any]:
         devices = self._read(self.devices_path, [])
         token_hash = self._hash(token)
         device = next((item for item in devices if secrets.compare_digest(
             str(item.get("token_hash", "")), token_hash)), None)
         if device is None:
             raise PermissionError("Téléphone Santé Connect non associé.")
-        sync_complete = bool(payload.get("sync_complete", True))
+        sync_complete = bool(payload.get("sync_complete", False))
         self._normalize_stored_activity_types()
         normalized = [self._activity(item) for item in payload.get("activities", [])]
         total = len(ActivityStore(self.activities_path).ingest(normalized)) if normalized else len(ActivityStore(self.activities_path).load())
@@ -86,16 +86,16 @@ class HealthConnectBridge:
         device["last_sync_at"] = int(time.time())
         device["last_sync_schema_version"] = payload.get("sync_schema_version")
         self._write(self.devices_path, devices)
-        assessment = {}
+        analysis = {"status": "waiting_for_batches", "pending": False}
         if sync_complete:
-            from src.training.post_sync_orchestrator import PostSyncOrchestrator
-            assessment = PostSyncOrchestrator(self.private_dir).run("health_connect")
+            from src.training.post_sync_scheduler import schedule_post_sync
+            analysis = schedule_post_sync(self.private_dir, "health_connect")
         return {"activities_received": len(normalized), "activities_total": total,
                 "wellness_received": len(payload.get("wellness", [])), "wellness_total": len(unique),
                 "record_types_available": sum(1 for item in inventory["record_types"] if int(item.get("count", 0) or 0) > 0),
                 "record_types_skipped": len(inventory["skipped_record_types"]),
-                "recovery_index": (assessment.get("recovery") or {}).get("atlas_recovery_index"),
-                "program_proposal_available": assessment.get("program_proposal_available", False)}
+                "analysis_status": analysis.get("status"),
+                "analysis_pending": bool(analysis.get("pending", False))}
 
     @classmethod
     def _activity(cls, item: dict[str, Any]) -> NormalizedActivity:
