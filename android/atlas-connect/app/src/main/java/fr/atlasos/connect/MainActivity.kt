@@ -195,7 +195,11 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-            showStatus("Synchronisation terminée · 100 % · $count éléments transmis", true)
+            showStatus(
+                "Transmission terminée · $count éléments transmis · " +
+                    "le compte-rendu Atlas se calcule sur le PC",
+                true
+            )
         } catch (error: Exception) {
             showStatus(error.message ?: "Échec de la synchronisation")
         } finally {
