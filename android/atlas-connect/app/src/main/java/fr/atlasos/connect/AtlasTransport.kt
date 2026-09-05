@@ -12,7 +12,10 @@ import java.net.UnknownHostException
 
 object AtlasTransport {
     private const val CONNECT_TIMEOUT_MS = 8_000
-    private const val READ_TIMEOUT_MS = 45_000
+    // Le dernier lot déclenche la fusion Wellness et le recalcul physiologique
+    // sur le PC. Sur un historique important, la réponse peut légitimement
+    // dépasser 45 secondes alors que la transmission est déjà terminée.
+    private const val READ_TIMEOUT_MS = 180_000
 
     internal fun normalizeServer(server: String): String {
         val trimmed = server.trim().trimEnd('/')
@@ -141,7 +144,8 @@ object AtlasTransport {
             throw IllegalStateException(
                 "Délai dépassé vers " +
                     "${destination.host}:${destination.portOrDefault()}. " +
-                    "Le téléphone ne parvient pas à joindre le PC.",
+                    "Atlas OS traite peut-être encore le dernier lot sur le PC. " +
+                    "Attendez avant de relancer la synchronisation.",
                 error
             )
         }

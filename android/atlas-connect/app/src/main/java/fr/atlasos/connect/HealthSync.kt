@@ -425,7 +425,7 @@ class HealthSync(private val context: Context) {
     private fun List<Double>.averageOrNull(): Double? = if (isEmpty()) null else average()
     private fun JSONObject.putNullable(key: String, value: Number?): JSONObject = if (value == null) this else put(key, value)
     private fun localDay(time: Instant): String = time.atZone(ZoneId.systemDefault()).toLocalDate().toString()
-    private fun inventoryEntry(type: String, records: List<out Record>): JSONObject {
+    private fun inventoryEntry(type: String, records: List<Record>): JSONObject {
         val sources = records.map { it.metadata.dataOrigin.packageName }.filter { it.isNotBlank() }.distinct().sorted()
         return JSONObject().put("record_type", type).put("count", records.size).put("sources", JSONArray(sources))
     }
