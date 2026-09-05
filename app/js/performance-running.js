@@ -1435,6 +1435,51 @@
     setSensorOnboardingComplete(true);
   }
 
+  async function verifyAtlasConnect() {
+    syncStatus.textContent = "Atlas Connect · vérification des données reçues…";
+    try {
+      const response = await fetch(
+        `/api/atlas/wellness-history?v=${Date.now()}`,
+        { cache: "no-store" }
+      );
+      if (!response.ok) throw new Error("données indisponibles");
+      const payload = await response.json();
+      const inventory = payload.health_connect_inventory || {};
+      const latest = payload.latest_observation || payload.latest;
+      const availableTypes = (inventory.record_types || [])
+        .filter(item => Number(item.count || 0) > 0).length;
+      connectionWizard.hidden = true;
+      connectionSummary.hidden = false;
+      connectionSummary.innerHTML = `
+        <header><div><span>ATLAS CONNECT · ANDROID</span>
+        <h3>${latest ? "Données reçues par Atlas" : "Première synchronisation attendue"}</h3></div>
+        <strong>${latest ? "✓ Source active" : "À synchroniser"}</strong></header>
+        <div class="sensor-summary-grid">
+          <article><span>Journées disponibles</span><strong>${payload.count || 0}</strong></article>
+          <article><span>Types de données</span><strong>${availableTypes || "—"}</strong></article>
+          <article><span>Dernière journée</span><strong>${latest?.day || "—"}</strong></article>
+          <article><span>VFC transmise</span><strong>${payload.latest_metrics?.hrv?.hrv_last_night_ms != null ? "Oui" : "Non"}</strong></article>
+        </div>
+        <footer><span>Atlas indique uniquement les données réellement publiées dans Santé Connect.</span>
+        <button type="button" data-atlas-connect-manage>Vérifier à nouveau</button></footer>
+      `;
+      syncStatus.textContent = latest
+        ? `Atlas Connect actif · données disponibles jusqu’au ${latest.day}.`
+        : "Ouvrez Atlas Connect sur Android et lancez la première synchronisation.";
+      if (latest) {
+        document.querySelector('[data-provider="health-connect"]')?.classList.add("connected");
+        localStorage.setItem(SENSOR_CONNECTION_KEY, JSON.stringify({
+          provider: "health-connect",
+          updated_at: new Date().toISOString()
+        }));
+        localStorage.setItem(SENSOR_SETUP_KEY, "true");
+        setSensorOnboardingComplete(true);
+      }
+    } catch (error) {
+      syncStatus.textContent = `Atlas Connect · ${error.message}.`;
+    }
+  }
+
   async function synchronizeGarmin(config) {
     syncStatus.textContent = "Analyse des données Garmin disponibles…";
     try {
@@ -1659,6 +1704,23 @@
       return;
     }
 
+    if (provider === "health-connect") {
+      connectionWizard.innerHTML = `
+        <div class="sensor-wizard-message">
+          <span>ATLAS CONNECT · ANDROID</span>
+          <h3>Synchroniser mes données en trois étapes</h3>
+          <ol class="atlas-connect-steps">
+            <li><strong>Ouvrez Atlas Connect</strong><small>Associez le téléphone au serveur Atlas si nécessaire.</small></li>
+            <li><strong>Autorisez Santé Connect</strong><small>Choisissez les catégories que vous souhaitez transmettre.</small></li>
+            <li><strong>Lancez « Synchroniser Atlas »</strong><small>Revenez ensuite ici pour vérifier les données réellement reçues.</small></li>
+          </ol>
+          <button type="button" data-atlas-connect-check>Vérifier mes données</button>
+        </div>
+      `;
+      syncStatus.textContent = "Atlas Connect sélectionné · synchronisez depuis le téléphone Android.";
+      return;
+    }
+
     if (provider !== "garmin") {
       const connector = PROVIDER_CONNECTORS[provider];
       connectionWizard.innerHTML = `
@@ -1793,6 +1855,10 @@
       synchronizeStrava();
       return;
     }
+    if (event.target.closest("[data-atlas-connect-check]")) {
+      verifyAtlasConnect();
+      return;
+    }
     if (event.target.closest('[data-provider-retry="garmin"]')) {
       openProviderWizard(
         document.querySelector('[data-provider="garmin"]')
@@ -1812,6 +1878,9 @@
         document.querySelector('[data-provider="garmin"]')
       );
     }
+    if (event.target.closest("[data-atlas-connect-manage]")) {
+      verifyAtlasConnect();
+    }
   });
 
   try {
@@ -1825,6 +1894,8 @@
     );
     if (storedConnection?.provider === "garmin") {
       synchronizeGarmin(storedConnection);
+    } else if (storedConnection?.provider === "health-connect") {
+      verifyAtlasConnect();
     } else if (storedConnection?.provider === "manual") {
       renderManualConnectionSummary();
     }

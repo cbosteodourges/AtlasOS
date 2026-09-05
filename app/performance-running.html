@@ -155,41 +155,31 @@
       </span>
     </div>
 
-    <div class="sync-providers" id="syncProviders">
+    <div class="sync-providers sync-providers-primary" id="syncProviders">
       <button type="button" class="provider-button" data-provider="health-connect">
         <strong>Atlas Connect</strong>
-        <span>Android · Santé Connect · recommandé</span>
+        <span>Synchronisation Android automatique · recommandée</span>
       </button>
 
       <button type="button" class="provider-button" data-provider="garmin">
         <strong>Garmin</strong>
-        <span>Import FIT et Wellness</span>
-      </button>
-
-      <button type="button" class="provider-button" data-provider="polar">
-        <strong>Polar</strong>
-        <span>Polar Flow</span>
-      </button>
-
-      <button type="button" class="provider-button" data-provider="suunto">
-        <strong>Suunto</strong>
-        <span>Suunto App</span>
-      </button>
-
-      <button type="button" class="provider-button" data-provider="coros">
-        <strong>COROS</strong>
-        <span>COROS Training Hub</span>
-      </button>
-
-      <button type="button" class="provider-button" data-provider="strava">
-        <strong>Strava</strong>
-        <span>API réservée aux abonnés Strava</span>
+        <span>Importer mes fichiers FIT et Wellness</span>
       </button>
 
       <button type="button" class="provider-button provider-button-manual" data-provider="manual">
-        <strong>Je n’ai pas de montre connectée</strong>
-        <span>Saisie manuelle · profil Atlas</span>
+        <strong>Continuer sans montre</strong>
+        <span>Profil et programme à partir de mes informations</span>
       </button>
+
+      <details class="secondary-providers">
+        <summary>J’utilise une autre montre ou un autre service</summary>
+        <div class="sync-providers-secondary">
+          <button type="button" class="provider-button" data-provider="polar"><strong>Polar</strong><span>Polar Flow</span></button>
+          <button type="button" class="provider-button" data-provider="suunto"><strong>Suunto</strong><span>Suunto App</span></button>
+          <button type="button" class="provider-button" data-provider="coros"><strong>COROS</strong><span>COROS Training Hub</span></button>
+          <button type="button" class="provider-button" data-provider="strava"><strong>Strava</strong><span>Activités uniquement</span></button>
+        </div>
+      </details>
     </div>
 
     <section class="sensor-connection-wizard" id="sensorConnectionWizard" hidden aria-live="polite"></section>
@@ -465,7 +455,7 @@
 <script src="./js/atlas-conversation.js?v=9"></script>
 <script src="./js/atlas-pwa.js?v=3"></script>
 <script src="./js/atlas-global-nav.js?v=20"></script>
-<script src="./js/performance-running.js?v=20"></script>
+<script src="./js/performance-running.js?v=21"></script>
 <script src="./js/atlas-training-calendar.js?v=96"></script>
 <script src="./js/atlas-training-history.js?v=8"></script>
 </body>

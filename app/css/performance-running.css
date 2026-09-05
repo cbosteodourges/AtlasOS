@@ -615,6 +615,7 @@ select option:checked {
   gap: 12px;
   margin-top: 22px;
 }
+.secondary-providers{grid-column:1/-1;border-top:1px solid rgba(83,150,160,.25);padding-top:12px}.secondary-providers summary{width:fit-content;color:#8eb5cc;cursor:pointer;font-size:.82rem;font-weight:800}.sync-providers-secondary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}.sync-providers-secondary .provider-button{padding:14px}.atlas-connect-steps{display:grid;gap:10px;margin:16px 0;padding:0;list-style:none;counter-reset:atlas-connect}.atlas-connect-steps li{display:grid;grid-template-columns:32px 1fr;gap:2px 10px;padding:12px;border:1px solid #173f56;border-radius:12px;background:#081e2e;counter-increment:atlas-connect}.atlas-connect-steps li::before{content:counter(atlas-connect);grid-row:1/3;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#47d9f4;color:#03101a;font-weight:900}.atlas-connect-steps strong,.atlas-connect-steps small{grid-column:2}.atlas-connect-steps small{color:#83abc3}
 
 .provider-button {
   display: flex;
@@ -664,6 +665,7 @@ select option:checked {
   .sync-providers {
     grid-template-columns: 1fr;
   }
+  .sync-providers-secondary { grid-template-columns: 1fr 1fr; }
 }
 
 /* Fiche de la dernière activité Garmin */
@@ -7330,7 +7332,6 @@ body[data-coach-section]
 
 .provider-button-manual {
   border-color: rgba(241, 189, 67, .55);
-  grid-column: 1 / -1;
   text-align: center;
 }
 .provider-button-manual strong {
