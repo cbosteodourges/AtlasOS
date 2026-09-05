@@ -2963,6 +2963,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       : selectedSamplesSource === "health_connect"
         ? "données Santé Connect issues de Garmin"
         : selectedSamplesSource;
+    const fitSelected = selectedSamplesSource === "garmin_fit" ||
+      selectedSamplesLabel === "fichier FIT Garmin";
+    const healthConnectStatus = healthConnectPresent
+      ? "activité reçue"
+      : fitSelected
+        ? "non retenu pour l’analyse"
+        : healthConnectKnown ? "non reçue" : "non documentée";
     const coverageItems = [
       ["Fréquence cardiaque", healthCoverage.heart_rate_samples],
       ["Vitesse", healthCoverage.speed_samples],
@@ -2978,9 +2985,11 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             <dd>${Number(value) > 0 ? `${reportNumber(value, 0)} reçus` : "Non transmis"}</dd>
           </div>
         `).join("")
-      : `<p class="source-quality-empty">${healthConnectKnown
-          ? "Aucune activité correspondante reçue par Santé Connect."
-          : "Présence de Santé Connect non documentée dans cet ancien compte-rendu. Relancez son recalcul pour obtenir le détail de couverture."
+      : `<p class="source-quality-empty">${fitSelected
+          ? "Le fichier FIT Garmin, plus détaillé, a pris la priorité pour cette analyse. La couverture Santé Connect n’a pas été attachée à ce compte-rendu."
+          : healthConnectKnown
+            ? "Aucune activité correspondante reçue par Santé Connect."
+            : "Présence de Santé Connect non documentée dans cet ancien compte-rendu. Relancez son recalcul pour obtenir le détail de couverture."
         }</p>`;
     const durationDelta = actualDuration - plannedDuration;
     const distanceDelta = actualDistance - plannedDistance;
@@ -3134,13 +3143,11 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           </dl>
         </section>
 
-        <details class="source-quality-panel" open>
-          <summary>Qualité et provenance des données</summary>
+        <details class="source-quality-panel report-confidence-panel" open>
+          <summary>Fiabilité et calcul du compte-rendu</summary>
           <div class="source-quality-status">
             <span class="${healthConnectPresent ? "available" : "missing"}">
-              Santé Connect · ${healthConnectPresent
-                ? "activité reçue"
-                : healthConnectKnown ? "absent" : "non documenté"}
+              Santé Connect · ${healthConnectStatus}
             </span>
             <span class="${fitPresent ? "available" : "missing"}">
               Garmin FIT · ${fitPresent ? "présent" : "absent"}
@@ -3155,10 +3162,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             Les valeurs indiquent ce que Garmin a réellement publié dans Santé Connect.
             Une donnée non transmise n’est jamais reconstruite artificiellement.
           </p>
-        </details>
-
-        <details class="score-audit-panel">
-          <summary>Comprendre le calcul des quatre scores</summary>
+          <h4 class="score-audit-title">Calcul des quatre scores</h4>
           <div class="score-audit-grid">
             <article>
               <strong>Score global · ${reportScore(execution.execution_score)}</strong>
