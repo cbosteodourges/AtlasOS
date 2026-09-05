@@ -4003,7 +4003,6 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             </div>
 
             <div class="daily-preparation-input-grid">
-              <label><span>Sieste <small>minutes</small></span><input name="nap_duration_minutes" type="number" min="0" max="240" step="1" value="${escapeHtml(declared.nap_duration_minutes ?? "")}"></label>
               <label><span>Énergie <small>0 à 10</small></span><input name="energy_0_to_10" type="number" min="0" max="10" step="1" value="${escapeHtml(declared.energy_0_to_10 ?? "")}"></label>
               <label><span>Fatigue <small>0 à 10</small></span><input name="subjective_fatigue_0_to_10" type="number" min="0" max="10" step="1" value="${escapeHtml(declared.subjective_fatigue_0_to_10 ?? "")}"></label>
               <label><span>Douleur <small>0 à 10</small></span><input name="pain_0_to_10" type="number" min="0" max="10" step="1" value="${escapeHtml(declared.pain_0_to_10 ?? "")}"></label>
