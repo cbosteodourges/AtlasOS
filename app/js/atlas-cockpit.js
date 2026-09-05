@@ -284,6 +284,8 @@
       "[data-hrv-detail]",
       latestComplete.hrv_weekly_average_ms != null
         ? `Mesure du ${completeDayLabel} · moyenne 7 j : ${Math.round(latestComplete.hrv_weekly_average_ms)} ms`
+        : latestComplete.hrv_last_night_ms_source === "health_connect"
+          ? `Mesure du ${completeDayLabel} · Atlas Connect`
         : (latestComplete.hrv_status || "Référence en construction")
     );
 

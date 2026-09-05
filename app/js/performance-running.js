@@ -15,6 +15,9 @@
 
   const render = payload => {
     stageValue.textContent = `${payload.active_stage}/5`;
+    stageValue.nextElementSibling.textContent = payload.completed_stage_count >= 5
+      ? "Profil établi"
+      : "étape actuelle";
     sessions.textContent = String(payload.usable_session_count ?? 0);
     weeks.textContent = String(payload.covered_week_count ?? 0);
     nextStep.textContent = payload.next_step || "Atlas poursuit la calibration du profil.";

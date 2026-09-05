@@ -1,18 +1,66 @@
 """Tests des jours manquants, baselines et indice Wellness."""
 
+import json
+from pathlib import Path
+import tempfile
 import unittest
 from datetime import date
+from unittest.mock import patch
 
 from src.connectors.garmin_wellness import DailyRecoverySnapshot
 from tools.atlas_web_server import (
     _atlas_recovery_index,
     _complete_wellness_calendar,
+    _health_connect_wellness_by_day,
     _has_actionable_wellness,
     _personal_baseline,
 )
 
 
 class WellnessHistoryHelpersTests(unittest.TestCase):
+    def test_health_connect_exposes_fresh_hrv_and_resting_heart_rate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "health-connect-wellness.json"
+            path.write_text(json.dumps([
+                {
+                    "type": "sleep",
+                    "source_id": "sleep-1",
+                    "start_time": "2026-09-04T21:00:00+02:00",
+                    "end_time": "2026-09-05T06:00:00+02:00",
+                    "local_day": "2026-09-05",
+                    "duration_seconds": 32400,
+                },
+                {
+                    "type": "hrv_rmssd",
+                    "source_id": "hrv-1",
+                    "start_time": "2026-09-05T06:01:00+02:00",
+                    "local_day": "2026-09-05",
+                    "value": 70,
+                },
+                {
+                    "type": "resting_heart_rate",
+                    "source_id": "rhr-1",
+                    "start_time": "2026-09-05T06:02:00+02:00",
+                    "local_day": "2026-09-05",
+                    "value": 39,
+                },
+            ]), encoding="utf-8")
+
+            with patch(
+                "tools.atlas_web_server.HEALTH_CONNECT_WELLNESS_PATH",
+                path,
+            ):
+                result = _health_connect_wellness_by_day()["2026-09-05"]
+
+            self.assertEqual(result["sleep_duration_minutes"], 540)
+            self.assertEqual(result["hrv_last_night_ms"], 70)
+            self.assertEqual(result["resting_heart_rate_bpm"], 39)
+            self.assertEqual(result["hrv_last_night_ms_source"], "health_connect")
+            self.assertEqual(
+                result["resting_heart_rate_bpm_source"],
+                "health_connect",
+            )
+
     def test_keeps_missing_calendar_days_explicit(self):
         history = [
             {"day": "2026-08-01", "sleep_score": 80},

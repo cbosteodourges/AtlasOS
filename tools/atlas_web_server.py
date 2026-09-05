@@ -1486,7 +1486,10 @@ WELLNESS_CACHE_PATH = (
 HEALTH_CONNECT_WELLNESS_PATH = (
     ROOT / "atlas-data" / "private" / "health-connect-wellness.json"
 )
-_HEALTH_CONNECT_SLEEP_CACHE = {
+ATLAS_RECOVERY_INDEX_PATH = (
+    ROOT / "atlas-data" / "private" / "atlas-recovery-index.json"
+)
+_HEALTH_CONNECT_WELLNESS_CACHE = {
     "signature": None,
     "by_day": {},
 }
@@ -1499,46 +1502,94 @@ def _wellness_number(value):
         return None
 
 
-def _health_connect_sleep_by_day():
-    """Lit les nuits Santé Connect et conserve la plus longue par date de fin."""
+def _health_connect_wellness_by_day():
+    """Regroupe les mesures Santé Connect utiles par journée locale.
+
+    Le sommeil est rattaché au jour du réveil. La VFC RMSSD et la fréquence
+    cardiaque de repos sont agrégées sur la journée, comme dans le moteur de
+    récupération déclenché après synchronisation.
+    """
     if not HEALTH_CONNECT_WELLNESS_PATH.is_file():
         return {}
 
     stat = HEALTH_CONNECT_WELLNESS_PATH.stat()
-    signature = (stat.st_mtime_ns, stat.st_size)
-    if _HEALTH_CONNECT_SLEEP_CACHE["signature"] == signature:
-        return dict(_HEALTH_CONNECT_SLEEP_CACHE["by_day"])
+    signature = (
+        str(HEALTH_CONNECT_WELLNESS_PATH.resolve()),
+        stat.st_mtime_ns,
+        stat.st_size,
+    )
+    if _HEALTH_CONNECT_WELLNESS_CACHE["signature"] == signature:
+        return {
+            day: dict(values)
+            for day, values in _HEALTH_CONNECT_WELLNESS_CACHE["by_day"].items()
+        }
 
     records = _read_private_json(HEALTH_CONNECT_WELLNESS_PATH, [])
     by_day = {}
+    heart_values = {}
     for item in records if isinstance(records, list) else []:
-        if not isinstance(item, dict) or item.get("type") != "sleep":
+        if not isinstance(item, dict):
             continue
-        end_time = str(item.get("end_time") or "")
-        duration_seconds = _wellness_number(item.get("duration_seconds"))
-        if not end_time or duration_seconds is None:
-            continue
-        duration_minutes = round(duration_seconds / 60)
-        if duration_minutes <= 0 or duration_minutes > 1440:
-            continue
-        try:
-            end_at = datetime.fromisoformat(end_time.replace("Z", "+00:00"))
-        except ValueError:
-            continue
-        day = end_at.date().isoformat()
-        previous = by_day.get(day)
-        if previous is None or duration_minutes > previous["sleep_duration_minutes"]:
-            by_day[day] = {
-                "day": day,
-                "sleep_duration_minutes": duration_minutes,
-                "sleep_start_time": item.get("start_time"),
-                "sleep_end_time": item.get("end_time"),
-                "sleep_source_id": item.get("source_id"),
-            }
 
-    _HEALTH_CONNECT_SLEEP_CACHE["signature"] = signature
-    _HEALTH_CONNECT_SLEEP_CACHE["by_day"] = by_day
-    return dict(by_day)
+        kind = str(item.get("type") or "")
+        raw_day = str(item.get("local_day") or "")[:10]
+        stamp = str(
+            (item.get("end_time") if kind == "sleep" else item.get("start_time"))
+            or ""
+        )
+        if not raw_day and stamp:
+            try:
+                raw_day = datetime.fromisoformat(
+                    stamp.replace("Z", "+00:00")
+                ).date().isoformat()
+            except ValueError:
+                raw_day = ""
+        if not raw_day:
+            continue
+
+        day_item = by_day.setdefault(raw_day, {"day": raw_day})
+        if kind == "sleep":
+            duration_seconds = _wellness_number(item.get("duration_seconds"))
+            if duration_seconds is None:
+                continue
+            duration_minutes = round(duration_seconds / 60)
+            if duration_minutes <= 0 or duration_minutes > 1440:
+                continue
+            if duration_minutes > (day_item.get("sleep_duration_minutes") or 0):
+                day_item.update({
+                    "sleep_duration_minutes": duration_minutes,
+                    "sleep_start_time": item.get("start_time"),
+                    "sleep_end_time": item.get("end_time"),
+                    "sleep_source_id": item.get("source_id"),
+                    "sleep_duration_source": "health_connect",
+                })
+            continue
+
+        field = {
+            "hrv_rmssd": "hrv_last_night_ms",
+            "resting_heart_rate": "resting_heart_rate_bpm",
+        }.get(kind)
+        value = _wellness_number(item.get("value"))
+        if field is None or value is None:
+            continue
+        heart_values.setdefault((raw_day, field), []).append(value)
+        day_item[f"{field}_source"] = "health_connect"
+
+    for (day, field), values in heart_values.items():
+        by_day[day][field] = round(sum(values) / len(values), 1)
+
+    _HEALTH_CONNECT_WELLNESS_CACHE["signature"] = signature
+    _HEALTH_CONNECT_WELLNESS_CACHE["by_day"] = by_day
+    return {day: dict(values) for day, values in by_day.items()}
+
+
+def _health_connect_sleep_by_day():
+    """Compatibilité : retourne les seules nuits Santé Connect."""
+    return {
+        day: values
+        for day, values in _health_connect_wellness_by_day().items()
+        if values.get("sleep_duration_minutes") is not None
+    }
 
 
 def _sleep_duration_minutes(snapshot):
@@ -2677,11 +2728,11 @@ def load_wellness_history(refresh_latest=True):
         }
         history.append(item)
 
-    # Santé Connect peut recevoir le sommeil plusieurs jours avant la prochaine
-    # archive Garmin Wellness. Il devient alors l'observation la plus fraîche,
-    # sans fabriquer de score, de VFC ou de qualité absents de sa source.
+    # Santé Connect peut recevoir les mesures du matin plusieurs jours avant la
+    # prochaine archive Garmin Wellness. Chaque champ réellement présent devient
+    # prioritaire pour sa journée ; aucune valeur absente n'est fabriquée.
     history_by_day = {item["day"]: item for item in history}
-    for day, sleep in _health_connect_sleep_by_day().items():
+    for day, health in _health_connect_wellness_by_day().items():
         item = history_by_day.get(day)
         if item is None:
             item = {
@@ -2706,8 +2757,32 @@ def load_wellness_history(refresh_latest=True):
             }
             history.append(item)
             history_by_day[day] = item
-        item.update(sleep)
-        item["sleep_duration_source"] = "health_connect"
+        item.update(health)
+        item["source"] = "health_connect"
+
+    # Le recalcul post-synchronisation est la source canonique de l'indice du
+    # jour : il croise déjà sommeil, VFC, FC nocturne et charge disponibles.
+    recovery_payload = _read_private_json(ATLAS_RECOVERY_INDEX_PATH, {})
+    for recovery in (
+        recovery_payload.get("history", [])
+        if isinstance(recovery_payload, dict) else []
+    ):
+        if not isinstance(recovery, dict):
+            continue
+        day = str(recovery.get("day") or "")[:10]
+        item = history_by_day.get(day)
+        score = _wellness_number(
+            recovery.get("atlas_recovery_index")
+            if recovery.get("atlas_recovery_index") is not None
+            else recovery.get("atlas_index")
+        )
+        if item is None or score is None:
+            continue
+        item["atlas_index"] = round(score)
+        item["atlas_index_components"] = recovery.get("components") or []
+        item["atlas_index_source"] = "atlas_recovery_index"
+        item["atlas_index_confidence"] = recovery.get("confidence")
+        item["atlas_index_guidance"] = recovery.get("guidance")
 
     history.sort(key=lambda item: item["day"])
 
@@ -2734,13 +2809,17 @@ def load_wellness_history(refresh_latest=True):
             if lower is not None and upper is not None else
             _personal_baseline(history, index, "hrv_last_night_ms")
         )
-    actionable_days = {
-        snapshot.day.isoformat()
-        for snapshot in snapshots
-        if _has_actionable_wellness(snapshot)
-    }
     actionable_history = [
-        item for item in history if item.get("day") in actionable_days
+        item for item in history
+        if any(
+            _wellness_number(item.get(field)) is not None
+            for field in (
+                "atlas_index",
+                "sleep_score",
+                "hrv_last_night_ms",
+                "resting_heart_rate_bpm",
+            )
+        )
     ]
     latest_observation = history[-1] if history else None
     latest_complete = actionable_history[-1] if actionable_history else None
