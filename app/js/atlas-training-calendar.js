@@ -2984,18 +2984,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       ["Segments", healthCoverage.segments]
     ];
     const healthConnectDetail = healthConnectPresent
-      ? coverageItems.map(([label, value]) => `
+      ? `<dl class="source-quality-grid">${coverageItems.map(([label, value]) => `
           <div>
             <dt>${label}</dt>
             <dd>${Number(value) > 0 ? `${reportNumber(value, 0)} reçus` : "Non transmis"}</dd>
           </div>
-        `).join("")
-      : `<p class="source-quality-empty">${fitSelected
-          ? "Le fichier FIT Garmin, plus détaillé, a pris la priorité pour cette analyse. La couverture Santé Connect n’a pas été attachée à ce compte-rendu."
-          : healthConnectKnown
-            ? "Aucune activité correspondante reçue par Santé Connect."
-            : "Présence de Santé Connect non documentée dans cet ancien compte-rendu. Relancez son recalcul pour obtenir le détail de couverture."
-        }</p>`;
+        `).join("")}</dl>`
+      : "";
     const durationDelta = actualDuration - plannedDuration;
     const distanceDelta = actualDistance - plannedDistance;
     const executionScore = Number(execution.execution_score);
@@ -3138,26 +3133,18 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         <details class="source-quality-panel report-confidence-panel" open>
           <summary>Fiabilité et calcul du compte-rendu</summary>
           <p class="report-score-reading">
-            Ce score mesure le respect de la séance prescrite, pas votre niveau de forme.
-            Les portions faciles supplémentaires ne pénalisent pas la cible spécifique.
+            Le score mesure le respect de la séance prescrite, pas votre niveau de forme ;
+            les portions faciles supplémentaires ne pénalisent pas la cible spécifique.
           </p>
           <div class="source-quality-status">
-            <span class="${healthConnectPresent ? "available" : "missing"}">
-              Santé Connect · ${healthConnectStatus}
-            </span>
             <span class="${fitPresent ? "available" : "missing"}">
-              Garmin FIT · ${fitPresent ? "présent" : "absent"}
+              Source analysée · ${escapeHtml(selectedSamplesLabel)}
             </span>
-            <strong>
-              Analyse détaillée fondée sur :
-              ${escapeHtml(selectedSamplesLabel)}
-            </strong>
+            <span class="${healthConnectPresent ? "available" : "missing"}">
+              Santé Connect · ${healthConnectPresent ? "reçu" : fitSelected ? "non utilisé pour ce calcul" : healthConnectStatus}
+            </span>
           </div>
-          <dl class="source-quality-grid">${healthConnectDetail}</dl>
-          <p class="source-quality-note">
-            Les valeurs indiquent ce que Garmin a réellement publié dans Santé Connect.
-            Une donnée non transmise n’est jamais reconstruite artificiellement.
-          </p>
+          ${healthConnectDetail}
           <h4 class="score-audit-title">Calcul des quatre scores</h4>
           <div class="score-audit-grid">
             <article>
