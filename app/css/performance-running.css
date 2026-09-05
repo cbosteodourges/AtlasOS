@@ -7370,6 +7370,7 @@ body[data-coach-section]
   font-weight: 900;
   padding: 8px 12px;
 }
+.profile-data-link{display:inline-flex;margin-top:10px;color:#63dff5;font-size:.82rem;font-weight:850}
 .profile-subsection {
   background: rgba(4, 19, 32, .68);
   border: 1px solid rgba(40, 103, 137, .48);

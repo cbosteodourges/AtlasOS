@@ -1,8 +1,9 @@
 "use strict";
 
-const CACHE_NAME = "atlas-shell-v44";
+const CACHE_NAME = "atlas-shell-v45";
 const APP_SHELL = [
   "./atlas-cockpit.html",
+  "./atlas-connections.html",
   "./performance-running.html",
   "./atlas-hub.html",
   "./nutrition-hydration.html",
@@ -14,8 +15,10 @@ const APP_SHELL = [
   "./assets/anatomy/servier/foot-ankle-anterior.png",
   "./assets/anatomy/servier/foot-ankle-lateral-deep.png",
   "./css/atlas-responsive.css",
+  "./css/atlas-connections.css",
   "./css/nutrition-hydration.css",
   "./js/atlas-pwa.js",
+  "./js/atlas-connections.js",
   "./js/nutrition-hydration.js"
 ];
 

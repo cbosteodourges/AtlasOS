@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#020914">
+  <link rel="manifest" href="./manifest.webmanifest"><title>Atlas OS — Connexion & données</title>
+  <link rel="stylesheet" href="./css/atlas-global-nav.css?v=18"><link rel="stylesheet" href="./css/atlas-connections.css?v=1"><link rel="stylesheet" href="./css/atlas-responsive.css?v=7">
+</head>
+<body>
+  <main class="connections-page">
+    <header class="connections-hero"><div><span>CONNEXION & DONNÉES</span><h1>Relier vos données à Atlas</h1><p>Choisissez une seule méthode pour commencer. Vous pourrez ajouter ou modifier vos sources plus tard.</p></div><a href="./performance-running.html">Retour à l’entraînement →</a></header>
+    <section class="connection-progress" aria-label="Parcours de première connexion"><strong>1 · Choisir</strong><span>2 · Connecter ou importer</span><span>3 · Vérifier les données</span></section>
+    <section class="connection-choice" aria-labelledby="connectionChoiceTitle">
+      <div class="section-copy"><span>ÉTAPE 1</span><h2 id="connectionChoiceTitle">Comment souhaitez-vous commencer ?</h2></div>
+      <div class="connection-methods">
+        <button type="button" data-connection-method="atlas-connect"><b>Recommandé</b><strong>Atlas Connect</strong><span>Android · synchronisation automatique via Santé Connect</span></button>
+        <button type="button" data-connection-method="garmin"><strong>Importer Garmin</strong><span>Activités FIT et archives Wellness déjà téléchargées</span></button>
+        <button type="button" data-connection-method="manual"><strong>Continuer sans montre</strong><span>Créer un profil prudent à partir de vos informations</span></button>
+      </div>
+      <details class="other-connections"><summary>J’utilise une autre montre ou un autre service</summary><div><button type="button" data-connection-method="polar">Polar</button><button type="button" data-connection-method="suunto">Suunto</button><button type="button" data-connection-method="coros">COROS</button><button type="button" data-connection-method="strava">Strava</button></div></details>
+    </section>
+    <section class="connection-workspace" data-connection-workspace hidden aria-live="polite"></section>
+    <section class="connection-inventory" aria-labelledby="inventoryTitle"><div class="section-copy"><span>ÉTAT ACTUEL</span><h2 id="inventoryTitle">Ce qu’Atlas reçoit réellement</h2></div><div class="inventory-grid" data-connection-inventory><p>Vérification des données disponibles…</p></div><p class="inventory-note">Une donnée absente reste absente : Atlas ne fabrique jamais une VFC, une fréquence cardiaque ou un score manquant.</p></section>
+  </main>
+  <script src="./js/atlas-global-nav.js?v=21"></script><script src="./js/atlas-connections.js?v=1"></script><script src="./js/atlas-pwa.js?v=3"></script>
+</body>
+</html>

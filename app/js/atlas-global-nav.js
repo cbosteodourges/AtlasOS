@@ -16,7 +16,6 @@
 
   const coachSubnav = isCoach ? `
     <div class="atlas-context-subnav" data-context-title="ESPACE ENTRAÎNEMENT" aria-label="Sous-menu Entraînement">
-      <button type="button" data-coach-nav="sensors"><span class="atlas-context-icon">⌁</span><span>Montres et capteurs</span></button>
       <button type="button" data-coach-nav="profile"><span class="atlas-context-icon">◇</span><span>Profil et disponibilités</span></button>
       <button type="button" data-coach-nav="calibration"><span class="atlas-context-icon">◫</span><span>Calibration du profil</span></button>
       <button type="button" data-coach-nav="deadline"><span class="atlas-context-icon">◎</span><span>Objectifs et échéances</span></button>
@@ -61,10 +60,10 @@
       <span class="atlas-talk-copy"><strong>Adapter ma séance</strong><small>Ressenti et choix guidé</small></span>
     </button>`}
 
-    <div class="atlas-profile atlas-nav-user">
+    <a class="atlas-profile atlas-nav-user" href="./atlas-connections.html" aria-label="Gérer les connexions et les données">
       <span class="atlas-profile-avatar atlas-nav-avatar">CB</span>
       <span class="atlas-profile-copy"><strong>Christophe</strong><small>Jumeau synchronisé</small></span>
-    </div>
+    </a>
   `;
 
   fetch("/api/atlas/nutrition-hydration", { cache: "no-store" })
@@ -143,16 +142,14 @@
       localStorage.getItem("atlasCoachSensorSetupComplete") === "true";
     const rememberedSection =
       localStorage.getItem("atlasCoachActiveSection");
-    showCoachSection(
-      sensorSetupComplete
-        ? (rememberedSection || "plan")
-        : "sensors"
-    );
+    showCoachSection(sensorSetupComplete
+      ? (rememberedSection || "plan")
+      : "profile");
 
     const showPlanForConfiguredUser = () => {
       if (
         !sectionChosenByUser &&
-        document.body.dataset.coachSection === "sensors"
+        document.body.dataset.coachSection === "profile"
       ) {
         showCoachSection("plan");
       }

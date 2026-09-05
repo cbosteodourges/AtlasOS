@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#020713">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Atlas OS — Atlas Coach</title>
-  <link rel="stylesheet" href="./css/performance-running.css?v=77">
+  <link rel="stylesheet" href="./css/performance-running.css?v=78">
   <link rel="stylesheet" href="./css/atlas-training-history.css?v=1">
   <link rel="stylesheet" href="./css/atlas-global-nav.css?v=18"><link rel="stylesheet" href="./css/atlas-conversation.css?v=8"><link rel="stylesheet" href="./css/atlas-conversation-refinement.css?v=1"><link rel="stylesheet" href="./css/atlas-responsive.css?v=7">
   <style id="atlas-training-theme-guard">
@@ -122,6 +122,7 @@
       <div><span>Séances FIT exploitables</span><strong id="profileCalibrationSessions">—</strong></div>
       <div><span>Semaines couvertes</span><strong id="profileCalibrationWeeks">—</strong></div>
       <p id="profileCalibrationNextStep">Atlas vérifie les données disponibles.</p>
+      <a class="profile-data-link" href="./atlas-connections.html">Gérer mes connexions et mes données →</a>
     </div>
   </section>
 
@@ -131,7 +132,7 @@
   <section
     class="sensor-onboarding coach-section-panel"
     id="sensorOnboarding"
-    data-coach-section="sensors"
+    hidden
     aria-labelledby="sensorOnboardingTitle"
   >
     <div>
@@ -146,7 +147,7 @@
     </ol>
   </section>
 
-  <section class="panel sync-panel coach-section-panel" id="syncPanel" data-coach-section="sensors">
+  <section class="panel sync-panel coach-section-panel" id="syncPanel" hidden>
     <div class="section-title">
       <p>SYNCHRONISATION</p>
       <h2>Connecter mes montres et capteurs</h2>
@@ -454,7 +455,7 @@
 
 <script src="./js/atlas-conversation.js?v=9"></script>
 <script src="./js/atlas-pwa.js?v=3"></script>
-<script src="./js/atlas-global-nav.js?v=20"></script>
+<script src="./js/atlas-global-nav.js?v=21"></script>
 <script src="./js/performance-running.js?v=21"></script>
 <script src="./js/atlas-training-calendar.js?v=96"></script>
 <script src="./js/atlas-training-history.js?v=8"></script>
