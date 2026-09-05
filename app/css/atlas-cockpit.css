@@ -257,11 +257,11 @@ h1 { margin: 8px 0 5px; font-size: clamp(1.9rem, 3vw, 3rem); }
 .metrics strong.positive { color: var(--green); }
 .metrics strong.caution { color: #f3c94d; }
 .metrics strong.negative { color: #ff795f; }
-.rest-period-card { grid-column: 1/-1; grid-template-columns: minmax(210px,1fr) minmax(340px,1.2fr) minmax(210px,.8fr); align-items: center; }
+.rest-period-card { grid-column: 1/-1; grid-template-columns: minmax(210px,.7fr) minmax(0,1.6fr); align-items: center; }
 .rest-period-card > span { grid-column: 1; }
 .rest-period-card > strong { grid-column: 1; }
-.rest-period-card form { grid-column: 2; grid-row: 1/3; display: grid; grid-template-columns: minmax(120px,1fr) 92px minmax(110px,.8fr); gap: 8px; align-items:center; }
-.rest-period-card > small { grid-column: 3; grid-row: 1/3; line-height:1.45; }
+.rest-period-card form { grid-column: 2; grid-row: 1; display: grid; grid-template-columns: minmax(120px,1fr) 92px minmax(110px,.8fr); gap: 8px; align-items:center; }
+.rest-period-card > small { grid-column: 2; grid-row: 2; min-width:0; line-height:1.45; overflow-wrap:anywhere; }
 .rest-period-card select,
 .rest-period-card label { min-width: 0; height: 32px; color: var(--text); border: 1px solid var(--line); border-radius: 8px; background: rgba(2,15,27,.72); }
 .rest-period-card select { padding: 0 7px; }
@@ -413,8 +413,8 @@ body[data-avatar="female"] .twin-panel img { filter: hue-rotate(70deg) brightnes
   .home-grid { grid-template-columns: minmax(0,1fr) 300px; }
   .metrics { grid-template-columns: 1fr 1fr; }
   .rest-period-card { grid-template-columns: 1fr 1.4fr; }
-  .rest-period-card form { grid-column:2; }
-  .rest-period-card > small { grid-column:1/-1; grid-row:auto; }
+  .rest-period-card form,
+  .rest-period-card > small { grid-column:2; grid-row:auto; }
 }
 
 @media (max-width: 760px) {
