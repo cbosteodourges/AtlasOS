@@ -6174,6 +6174,7 @@ body[data-coach-section]
 .score-audit-panel>summary{cursor:pointer;color:#dff7ff;font-weight:800}
 .source-quality-panel{margin:-8px 0 22px;padding:15px 18px;border:1px solid rgba(69,232,240,.26);border-radius:16px;background:rgba(5,23,35,.82)}
 .source-quality-panel>summary{cursor:pointer;color:#dff7ff;font-weight:800}
+.report-score-reading{margin:14px 0;padding:11px 13px;border-left:3px solid #45e8f0;border-radius:8px;background:rgba(69,232,240,.06);color:#dcecf5;font-size:.86rem;line-height:1.5}
 .source-quality-status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:15px 0}
 .source-quality-status span{padding:6px 10px;border-radius:999px;font-size:.82rem;font-weight:800}
 .source-quality-status span.available{color:#69efb0;background:rgba(50,211,139,.12);border:1px solid rgba(50,211,139,.35)}
