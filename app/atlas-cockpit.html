@@ -80,6 +80,19 @@
             <a data-dashboard-metric="sleep" href="./atlas-metric-history.html?metric=sleep" aria-label="Voir l’évolution du sommeil"><span>Sommeil</span><strong data-sleep-value>—</strong><small data-sleep-detail>Chargement…</small></a>
             <a data-dashboard-metric="hrv" href="./atlas-metric-history.html?metric=hrv" aria-label="Voir l’évolution de la VFC"><span>VFC mesurée</span><strong data-hrv-value>—</strong><small data-hrv-detail>Jamais estimée artificiellement</small></a>
             <a data-dashboard-metric="load" href="./atlas-metric-history.html?metric=load" aria-label="Voir l’évolution de la charge"><span>Charge</span><strong data-load-value>—</strong><small data-load-detail>Chargement…</small></a>
+            <article class="rest-period-card" data-dashboard-metric="rest">
+              <span>Sieste ou période de repos</span>
+              <strong data-rest-value>Aucune aujourd’hui</strong>
+              <form data-rest-form>
+                <select name="kind" aria-label="Type de repos">
+                  <option value="nap">Sieste</option>
+                  <option value="quiet_rest">Repos calme</option>
+                </select>
+                <label><input name="duration_minutes" type="number" min="5" max="180" step="1" inputmode="numeric" placeholder="29"><span>min</span></label>
+                <button type="submit">Enregistrer</button>
+              </form>
+              <small data-rest-status>À renseigner après votre repos</small>
+            </article>
           </section>
 
           <article class="next-session" data-dashboard-metric="next-session">
@@ -266,11 +279,12 @@
     <label><input type="checkbox" value="sleep" checked> Sommeil</label>
     <label><input type="checkbox" value="hrv" checked> VFC mesurée</label>
     <label><input type="checkbox" value="load" checked> Charge</label>
+    <label><input type="checkbox" value="rest" checked> Sieste ou période de repos</label>
     <label><input type="checkbox" value="next-session" checked> Prochaine séance</label>
     <label><input type="checkbox" value="physiology" checked> VO₂max, VMA et seuils</label>
   </section>
   <script src="./js/atlas-conversation.js?v=9"></script>
-  <script src="./js/atlas-cockpit.js?v=50"></script>
+  <script src="./js/atlas-cockpit.js?v=51"></script>
   <script src="./js/atlas-pwa.js?v=3"></script>
 </body>
 </html>
