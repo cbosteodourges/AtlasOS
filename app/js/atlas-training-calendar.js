@@ -2958,12 +2958,17 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const selectedSamplesSource = String(
       dataSources.selected_samples_source || activitySourceLabel
     );
-    const selectedSamplesLabel = selectedSamplesSource === "garmin_fit"
+    const selectedSamplesLabel = (
+      selectedSamplesSource === "garmin_fit" ||
+      selectedSamplesSource === "garmin" ||
+      selectedSamplesSource.includes("fit")
+    )
       ? "fichier FIT Garmin"
       : selectedSamplesSource === "health_connect"
         ? "données Santé Connect issues de Garmin"
         : selectedSamplesSource;
-    const fitSelected = selectedSamplesSource === "garmin_fit" ||
+    const fitSelected = selectedSamplesSource === "garmin" ||
+      selectedSamplesSource.includes("fit") ||
       selectedSamplesLabel === "fichier FIT Garmin";
     const healthConnectStatus = healthConnectPresent
       ? "activité reçue"
