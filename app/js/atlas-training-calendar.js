@@ -1943,8 +1943,7 @@ const target = compactTarget(workout, zone);
     fallbackBlocks,
     dominantType,
     intervals,
-    activityDurationMinutes,
-    homogeneousWorkZone = null
+    activityDurationMinutes
   ) {
     if (!intervals.length || !Number.isFinite(Number(intervals[0].start_seconds))) {
       return reportTimelineSegments(workout, fallbackBlocks, dominantType);
@@ -1972,7 +1971,7 @@ const target = compactTarget(workout, zone);
       const speed = Number(interval.average_speed_kmh);
       const durationSeconds = Math.max(0, Number(interval.duration_seconds));
       segments.push({
-        zone: homogeneousWorkZone || atlasDisplayZone(workout, interval),
+        zone: atlasDisplayZone(workout, interval),
         duration: durationSeconds / 60,
         speed: Number.isFinite(speed) ? speed : undefined,
         label: `Fraction ${index + 1}${Number.isFinite(speed) ? ` · ${reportNumber(speed, 2)} km/h` : ""}`,
@@ -2876,14 +2875,6 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const paceSpread = workPaces.length
       ? Math.max(...workPaces) - Math.min(...workPaces)
       : Number.NaN;
-    const workDisplayZones = workBlocks.map(block => atlasDisplayZone(workout, block));
-    const homogeneousWorkZone = speedSpread <= .5 && workDisplayZones.length > 1
-      ? [...new Set(workDisplayZones)].sort((left, right) => {
-          const leftCount = workDisplayZones.filter(zone => zone === left).length;
-          const rightCount = workDisplayZones.filter(zone => zone === right).length;
-          return rightCount - leftCount || left - right;
-        })[0]
-      : null;
     const isIntervalSession = plannedRepetitions > 1 &&
       workBlocks.length > 1;
     const firstWorkBlock = workBlocks[0] || {};
@@ -3147,9 +3138,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       const block = entry.block || {};
       const type = reportPhaseType(entry.type);
       const index = entry.index || "";
-      const phaseZone = type === "work"
-        ? homogeneousWorkZone || atlasDisplayZone(workout, block)
-        : 1;
+      const phaseZone = type === "work" ? atlasDisplayZone(workout, block) : 1;
       const phaseIntensityLabel = ({
         1: "Z1",
         2: "Z2",
@@ -3288,8 +3277,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             timelineBlocks,
             dominantType,
             alignedIntervalDetails,
-            actualDuration,
-            homogeneousWorkZone
+            actualDuration
           ),
           "Organisation de la séance réalisée"
         )}
