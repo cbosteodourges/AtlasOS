@@ -15,8 +15,10 @@ def test_connections_page_separates_setup_from_training():
     assert "Continuer sans montre" in page
     assert 'data-coach-nav="sensors"' not in nav
     assert 'label: "Connexions & données", active: isConnections' in nav
-    assert nav.index('label: "Santé"') < nav.index('label: "Connexions & données"') < nav.index('label: "Nutrition"')
+    assert nav.index('label: "Santé"') < nav.index('label: "Connexions & données"')
+    assert 'label: "Nutrition"' not in nav
     assert '<div class="atlas-profile atlas-nav-user">' in nav
+    assert '<a href="./atlas-connections.html"><i>⇄</i><span>Connexions &amp; données</span></a>' in (ROOT / "app" / "atlas-cockpit.html").read_text(encoding="utf-8")
     assert 'id="syncPanel" hidden' in coach
     assert "Gérer mes connexions et mes données" in coach
     assert "Vos connexions et vos données" in script

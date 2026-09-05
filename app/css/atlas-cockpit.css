@@ -187,7 +187,6 @@ body[data-atlas-sidebar="white"] .atlas-talk-button{color:#111820!important;back
 .home-header { display: flex; justify-content: space-between; align-items: flex-start; max-width: 1440px; margin: 0 auto 28px; }
 .header-actions { display: flex; align-items: center; gap: 10px; }
 .dashboard-settings-button { padding: 10px 14px; cursor: pointer; color: var(--cyan); border: 1px solid var(--line); border-radius: 99px; background: var(--panel); }
-.dashboard-data-button{padding:10px 14px;color:var(--muted);border:1px solid var(--line);border-radius:99px;background:var(--panel);font-size:.82rem;font-weight:800}.dashboard-data-button:hover,.dashboard-data-button:focus-visible{color:var(--cyan);border-color:var(--cyan)}
 [data-dashboard-metric].is-dashboard-hidden { display: none !important; }
 .dashboard-settings { position: fixed; z-index: 60; inset: 50% auto auto 50%; display: grid; gap: 12px; width: min(460px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); padding: 26px; overflow-y: auto; border: 1px solid var(--line); border-radius: 20px; background: var(--panel-strong); box-shadow: 0 24px 80px rgba(0,0,0,.62); transform: translate(-50%,-50%); }
 .dashboard-settings[hidden] { display: none; }

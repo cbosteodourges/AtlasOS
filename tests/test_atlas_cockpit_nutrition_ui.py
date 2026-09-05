@@ -14,11 +14,11 @@ class AtlasCockpitNutritionUiTests(unittest.TestCase):
         self.cockpit_script = (ROOT / "app" / "js" / "atlas-cockpit.js").read_text(encoding="utf-8")
         self.cockpit_styles = (ROOT / "app" / "css" / "atlas-cockpit.css").read_text(encoding="utf-8")
 
-    def test_founder_pilot_has_visible_daily_tools(self):
+    def test_nutrition_module_is_preserved_but_removed_from_cockpit_navigation(self):
         for marker in ("Nutrition &amp; Hydratation", 'data-water="250"', 'data-water="500"',
                        "data-nutrition-form", "data-hydration-progress"):
             self.assertIn(marker, self.module)
-        self.assertIn("data-nutrition-nav", self.page)
+        self.assertNotIn("data-nutrition-nav", self.page)
 
     def test_module_uses_api_and_dashboard_preference(self):
         self.assertIn('/api/atlas/nutrition-hydration', self.script)

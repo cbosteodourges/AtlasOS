@@ -85,7 +85,7 @@ class AtlasWebServerRescheduleTests(unittest.TestCase):
         self.assertIn('CHOIX ÉQUILIBRÉ', calendar)
         self.assertIn('CHARGE ÉLEVÉE', calendar)
         self.assertIn('PRUDENCE ATLAS', calendar)
-        self.assertIn('performance-running.css?v=79', page)
+        self.assertIn('performance-running.css?v=80', page)
         self.assertIn('atlas-training-calendar.js?v=96', page)
         self.assertIn('compact-interval-details" open', calendar)
         self.assertIn('interval-recovery-detail', calendar)

@@ -4,7 +4,6 @@
   const page = location.pathname.split("/").pop() || "";
   const isHub = page === "atlas-hub.html";
   const isCoach = page === "performance-running.html";
-  const isNutrition = page === "nutrition-hydration.html";
   const isConnections = page === "atlas-connections.html";
 
   const primaryItem = ({ href, tab, icon, label, active = false, extra = "" }) => {
@@ -54,7 +53,6 @@
       ${primaryItem({ href: "./atlas-hub.html#injuries", tab: "injuries", icon: "♡", label: "Santé", active: isHub, extra: 'data-health-root="true"' })}
       ${healthSubnav}
       ${primaryItem({ href: "./atlas-connections.html", icon: "⇄", label: "Connexions & données", active: isConnections, extra: 'data-connections-root="true"' })}
-      ${primaryItem({ href: "./nutrition-hydration.html", icon: "◒", label: "Nutrition", active: isNutrition, extra: 'data-nutrition-root' })}
     </nav>
 
     ${isCoach ? "" : `<button class="atlas-talk-button" type="button" data-atlas-talk>
@@ -67,15 +65,6 @@
       <span class="atlas-profile-copy"><strong>Christophe</strong><small>Jumeau synchronisé</small></span>
     </div>
   `;
-
-  fetch("/api/atlas/nutrition-hydration", { cache: "no-store" })
-    .then(response => response.ok ? response.json() : null)
-    .then(payload => {
-      if (payload?.access?.enabled) {
-        nav.querySelector("[data-nutrition-root]")?.removeAttribute("hidden");
-      }
-    })
-    .catch(() => {});
 
   const app = document.querySelector(".app");
   if (isHub && app) {
