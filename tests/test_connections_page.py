@@ -14,7 +14,9 @@ def test_connections_page_separates_setup_from_training():
     assert "Atlas Connect" in page and "Importer Garmin" in page
     assert "Continuer sans montre" in page
     assert 'data-coach-nav="sensors"' not in nav
-    assert 'href="./atlas-connections.html" aria-label="Gérer les connexions et les données"' in nav
+    assert 'label: "Connexions & données", active: isConnections' in nav
+    assert nav.index('label: "Santé"') < nav.index('label: "Connexions & données"') < nav.index('label: "Nutrition"')
+    assert '<div class="atlas-profile atlas-nav-user">' in nav
     assert 'id="syncPanel" hidden' in coach
     assert "Gérer mes connexions et mes données" in coach
     assert "Vos connexions et vos données" in script

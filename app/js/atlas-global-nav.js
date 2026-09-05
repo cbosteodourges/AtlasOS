@@ -5,6 +5,7 @@
   const isHub = page === "atlas-hub.html";
   const isCoach = page === "performance-running.html";
   const isNutrition = page === "nutrition-hydration.html";
+  const isConnections = page === "atlas-connections.html";
 
   const primaryItem = ({ href, tab, icon, label, active = false, extra = "" }) => {
     const className = `atlas-nav-item ${active ? "active" : ""}`;
@@ -52,6 +53,7 @@
       ${coachSubnav}
       ${primaryItem({ href: "./atlas-hub.html#injuries", tab: "injuries", icon: "♡", label: "Santé", active: isHub, extra: 'data-health-root="true"' })}
       ${healthSubnav}
+      ${primaryItem({ href: "./atlas-connections.html", icon: "⇄", label: "Connexions & données", active: isConnections, extra: 'data-connections-root="true"' })}
       ${primaryItem({ href: "./nutrition-hydration.html", icon: "◒", label: "Nutrition", active: isNutrition, extra: 'data-nutrition-root' })}
     </nav>
 
@@ -60,10 +62,10 @@
       <span class="atlas-talk-copy"><strong>Adapter ma séance</strong><small>Ressenti et choix guidé</small></span>
     </button>`}
 
-    <a class="atlas-profile atlas-nav-user" href="./atlas-connections.html" aria-label="Gérer les connexions et les données">
+    <div class="atlas-profile atlas-nav-user">
       <span class="atlas-profile-avatar atlas-nav-avatar">CB</span>
       <span class="atlas-profile-copy"><strong>Christophe</strong><small>Jumeau synchronisé</small></span>
-    </a>
+    </div>
   `;
 
   fetch("/api/atlas/nutrition-hydration", { cache: "no-store" })
