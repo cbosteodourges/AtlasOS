@@ -225,6 +225,14 @@
       latest.sleep_duration_source === "health_connect"
     );
     const indexSource = latest.atlas_index != null ? latest : latestComplete;
+    const currentIndex = Number(indexSource?.atlas_index);
+    const readinessTitle = !Number.isFinite(currentIndex)
+      ? "Bilan de récupération incomplet"
+      : currentIndex >= 70
+        ? "Vous êtes prêt à vous entraîner"
+        : currentIndex >= 55
+          ? "Entraînement possible avec vigilance"
+          : "Récupération à privilégier";
     const indexDayLabel = new Date(
       `${indexSource.day}T12:00:00`
     ).toLocaleDateString("fr-FR");
@@ -253,7 +261,7 @@
       "[data-readiness-title]",
       partial
         ? "Sommeil reçu · bilan physiologique partiel"
-        : (isCurrentDay ? "Vous êtes prêt à vous entraîner" : "Données nocturnes indisponibles")
+        : (isCurrentDay ? readinessTitle : "Données nocturnes indisponibles")
     );
     setText(
       "[data-readiness-summary]",
@@ -262,7 +270,10 @@
           ? currentRecoveryInsight.guidance
           : `Santé Connect a transmis ${formatDuration(latest.sleep_duration_minutes)}. VFC et récupération complète restent datées du ${completeDayLabel}.`)
         : (isCurrentDay
-          ? "Récupération élevée, sommeil satisfaisant et charge bien maîtrisée."
+          ? (latest.atlas_index_guidance
+            || (currentIndex >= 70
+              ? "Les indicateurs disponibles sont favorables ; confirmez avec votre ressenti."
+              : "Les indicateurs invitent à conserver la séance prévue sans augmenter sa difficulté."))
           : `Montre non portée ou aucune nouvelle mesure reçue. Dernier bilan complet : ${completeDayLabel}.`)
     );
 

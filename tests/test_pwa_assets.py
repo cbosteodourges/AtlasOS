@@ -76,7 +76,7 @@ class PwaAssetsTests(unittest.TestCase):
     def test_styles_and_scripts_are_network_first(self):
         worker = (APP_ROOT / "service-worker.js").read_text(encoding="utf-8")
         pwa = (APP_ROOT / "js" / "atlas-pwa.js").read_text(encoding="utf-8")
-        self.assertIn('CACHE_NAME = "atlas-shell-v39"', worker)
+        self.assertIn('CACHE_NAME = "atlas-shell-v40"', worker)
         self.assertIn('["style", "script"]', worker)
         self.assertIn('fetch(event.request, { cache: "no-store" })', worker)
         self.assertIn('service-worker.js?v=4', pwa)
