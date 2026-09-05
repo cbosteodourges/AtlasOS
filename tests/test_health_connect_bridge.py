@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from src.connectors import HealthConnectBridge
 
@@ -44,6 +45,22 @@ class HealthConnectBridgeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             with self.assertRaises(PermissionError):
                 HealthConnectBridge(directory).ingest("bad", {})
+
+    @patch("src.training.post_sync_scheduler.schedule_post_sync")
+    def test_final_batch_queues_analysis_without_waiting(self, schedule):
+        schedule.return_value = {"status": "processing", "pending": False}
+        with tempfile.TemporaryDirectory() as directory:
+            bridge = HealthConnectBridge(directory)
+            token = bridge.pair(bridge.create_pairing_code(), {"model": "test"})
+            result = bridge.ingest(token, {
+                "activities": [],
+                "wellness": [],
+                "sync_complete": True,
+            })
+
+            schedule.assert_called_once_with(bridge.private_dir, "health_connect")
+            self.assertEqual(result["analysis_status"], "processing")
+            self.assertFalse(result["analysis_pending"])
 
     def test_android_exercise_codes_are_normalized(self):
         expected = {
