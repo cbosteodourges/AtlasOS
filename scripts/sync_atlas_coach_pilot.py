@@ -690,6 +690,26 @@ def build_record(
         "canonical_id": normalized_activity.canonical_id,
         "source_ids": dict(normalized_activity.source_ids),
         "field_provenance": dict(normalized_activity.field_provenance),
+        "data_sources": {
+            "health_connect_present": bool(
+                "health_connect" in normalized_activity.source_ids
+                or normalized_activity.raw_metadata.get("health_connect")
+            ),
+            "garmin_fit_present": bool(
+                normalized_activity.raw_metadata.get("source_file")
+            ),
+            "selected_activity_source": normalized_activity.provider,
+            "selected_samples_source": (
+                normalized_activity.field_provenance.get("samples")
+                or normalized_activity.provider
+            ),
+            "health_connect_coverage": dict(
+                normalized_activity.raw_metadata.get(
+                    "health_connect_data_coverage"
+                )
+                or {}
+            ),
+        },
         "start_time": longitudinal.start_time,
         "processed_at": datetime.now(timezone.utc),
         "fingerprint": asdict(fingerprint),

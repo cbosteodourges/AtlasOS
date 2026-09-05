@@ -718,6 +718,16 @@ def execution_summary(item):
     return {
         "activity_id": item.get("activity_id"),
         "provider": item.get("provider"),
+        "data_sources": selected_fields(
+            item.get("data_sources"),
+            (
+                "health_connect_present",
+                "garmin_fit_present",
+                "selected_activity_source",
+                "selected_samples_source",
+                "health_connect_coverage",
+            ),
+        ),
         "start_time": item.get("start_time"),
         "processed_at": item.get("processed_at"),
         "automatic_learning_allowed": item.get(

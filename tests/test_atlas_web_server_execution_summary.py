@@ -18,6 +18,16 @@ class AtlasWebServerExecutionSummaryTests(unittest.TestCase):
         }]
         private_execution = {
             "activity_id": "health-connect-2026-09-01",
+            "data_sources": {
+                "health_connect_present": True,
+                "garmin_fit_present": True,
+                "selected_samples_source": "garmin_fit",
+                "health_connect_coverage": {
+                    "heart_rate_samples": 120,
+                    "speed_samples": 90,
+                },
+                "private_path": "must-not-leak",
+            },
             "atlas_workout_match": {
                 "score_audit": {"execution": {"score": 95}},
                 "execution": {
@@ -36,6 +46,15 @@ class AtlasWebServerExecutionSummaryTests(unittest.TestCase):
         self.assertEqual(browser_execution["planned_repetition_count"], 5)
         self.assertEqual(browser_execution["completed_repetition_count"], 6)
         self.assertNotIn("private_debug_payload", browser_execution)
+        self.assertEqual(
+            summary["data_sources"]["selected_samples_source"],
+            "garmin_fit",
+        )
+        self.assertEqual(
+            summary["data_sources"]["health_connect_coverage"]["speed_samples"],
+            90,
+        )
+        self.assertNotIn("private_path", summary["data_sources"])
         self.assertEqual(
             summary["workout_match"]["score_audit"]["execution"]["score"],
             95,
