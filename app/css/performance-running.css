@@ -6608,6 +6608,86 @@ body[data-coach-section]
   margin: 16px;
 }
 
+/* Compte-rendu : déroulé réel complet, inspiré par la lisibilité Garmin. */
+.phase-filter-bar {
+  display: flex;
+  gap: 8px;
+  margin: 18px 0 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.phase-filter-bar button {
+  flex: 0 0 auto;
+  padding: 8px 13px;
+  cursor: pointer;
+  border: 1px solid rgba(132, 181, 205, .35);
+  border-radius: 999px;
+  background: rgba(5, 22, 34, .82);
+  color: #a9c2d1;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 800;
+}
+.phase-filter-bar button:hover,
+.phase-filter-bar button:focus-visible,
+.phase-filter-bar button.active {
+  border-color: #46e8ef;
+  background: rgba(70, 232, 239, .15);
+  color: #f4feff;
+}
+.phase-detail-row[hidden] { display: none !important; }
+.phase-detail-row > strong {
+  display: grid;
+  grid-template-columns: 9px 1fr;
+  gap: 1px 9px;
+  align-items: center;
+  color: #effaff;
+  text-align: left;
+}
+.phase-detail-row > strong i {
+  grid-row: 1 / span 2;
+  width: 7px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--phase-color, #35ccff);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--phase-color, #35ccff) 40%, transparent);
+}
+.phase-detail-row > strong span { font-size: .88rem; }
+.phase-detail-row > strong small {
+  grid-column: 2;
+  margin: 0;
+  font-size: .66rem;
+  font-weight: 600;
+}
+.phase-detail-row.phase-warmup,
+.phase-detail-row.phase-cooldown { --phase-color: #49d17d; }
+.phase-detail-row.phase-work { --phase-color: #f0cf4f; }
+.phase-detail-row.phase-recovery { --phase-color: #38a9ff; }
+.phase-detail-row.phase-warmup,
+.phase-detail-row.phase-cooldown { background: rgba(73, 209, 125, .035); }
+.phase-detail-row.phase-recovery { background: rgba(56, 169, 255, .035); }
+.phase-detail-row.phase-work { background: rgba(240, 207, 79, .035); }
+
+@media (max-width: 760px) {
+  .phase-filter-bar { margin-inline: -2px; padding-bottom: 5px; }
+  .interval-detail-row.phase-detail-row:not(.interval-detail-header) {
+    border-left-color: var(--phase-color);
+  }
+  .interval-detail-row.phase-detail-row:not(.interval-detail-header) > strong {
+    display: grid;
+    grid-template-columns: 9px 1fr;
+    width: auto;
+    height: auto;
+    place-items: initial;
+    border-radius: 0;
+    color: #effaff;
+    background: transparent;
+  }
+  .phase-detail-row > strong i { display: block; }
+  .phase-detail-row span:nth-child(7)::before { content: "Puissance / cadence"; }
+  .phase-detail-row span:nth-child(8)::before { content: "Cadence"; }
+}
+
 @media (max-width: 620px) {
   #atlasSessionDialog [data-session-panel="planned"] .workout-timeline-bars {
     gap: 4px;
