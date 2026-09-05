@@ -2658,7 +2658,12 @@
       </article>
     `;
 
-      if (!document.body.classList.contains("has-premium-training-calendar")) {
+    // atlas-training-calendar.js est l'unique propriétaire du calendrier
+    // moderne. L'ancien rendu ne doit servir que de solution de repli sur une
+    // page qui ne déclare pas explicitement ce moteur : sinon les deux appels
+    // asynchrones se disputent #trainingCalendar et le dernier arrivé remplace
+    // aléatoirement la grille de sept jours par les anciennes grandes cartes.
+    if (planPanel.dataset.calendarRenderer !== "premium") {
     calendar.innerHTML = `
       <div class="atlas-program-banner">
         <div>
@@ -2707,7 +2712,7 @@
         </details>
       `).join("")}
     `;
-      }
+    }
 
     const heading = planPanel.querySelector(
       ".section-title h1"
