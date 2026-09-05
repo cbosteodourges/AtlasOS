@@ -1489,6 +1489,9 @@ HEALTH_CONNECT_WELLNESS_PATH = (
 ATLAS_RECOVERY_INDEX_PATH = (
     ROOT / "atlas-data" / "private" / "atlas-recovery-index.json"
 )
+HEALTH_CONNECT_INVENTORY_PATH = (
+    ROOT / "atlas-data" / "private" / "health-connect-inventory.json"
+)
 _HEALTH_CONNECT_WELLNESS_CACHE = {
     "signature": None,
     "by_day": {},
@@ -2824,6 +2827,16 @@ def load_wellness_history(refresh_latest=True):
     latest_observation = history[-1] if history else None
     latest_complete = actionable_history[-1] if actionable_history else None
     latest = latest_observation or latest_complete
+
+    def latest_metric(field):
+        return next(
+            (
+                item for item in reversed(history)
+                if _wellness_number(item.get(field)) is not None
+            ),
+            None,
+        )
+
     latest_unavailable = (
         {
             "day": latest_observation.get("day"),
@@ -2858,6 +2871,14 @@ def load_wellness_history(refresh_latest=True):
         "latest_complete": latest_complete,
         "latest_observation": latest_observation,
         "latest_unavailable": latest_unavailable,
+        "latest_metrics": {
+            "hrv": latest_metric("hrv_last_night_ms"),
+            "resting_heart_rate": latest_metric("resting_heart_rate_bpm"),
+        },
+        "health_connect_inventory": _read_private_json(
+            HEALTH_CONNECT_INVENTORY_PATH,
+            {},
+        ),
         "history": complete_history,
         "program_progress": _program_progress(),
         "athlete_analysis": _athlete_analysis(actionable_history),

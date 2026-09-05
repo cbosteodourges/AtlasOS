@@ -207,11 +207,19 @@
     if (!latest) return;
 
     const latestComplete = payload.latest_complete || latest;
+    const latestHrv = payload.latest_metrics?.hrv || latestComplete || latest;
     const isCurrentDay = latest.day === todayKey;
     const latestDay = new Date(`${latest.day}T12:00:00`);
     const latestDayLabel = latestDay.toLocaleDateString("fr-FR");
     const completeDay = new Date(`${latestComplete.day}T12:00:00`);
     const completeDayLabel = completeDay.toLocaleDateString("fr-FR");
+    const hrvDayLabel = new Date(
+      `${latestHrv.day}T12:00:00`
+    ).toLocaleDateString("fr-FR");
+    const hrvInventory = (payload.health_connect_inventory?.record_types || [])
+      .find(item => item.record_type === "HeartRateVariabilityRmssdRecord");
+    const hrvSkipped = (payload.health_connect_inventory?.skipped_record_types || [])
+      .find(item => item.record_type === "HeartRateVariabilityRmssdRecord");
     const partial = Boolean(
       payload.latest_unavailable?.partial &&
       latest.sleep_duration_source === "health_connect"
@@ -276,17 +284,21 @@
 
     setText(
       "[data-hrv-value]",
-      latestComplete.hrv_last_night_ms != null
-        ? `${Math.round(latestComplete.hrv_last_night_ms)} ms`
+      latestHrv.hrv_last_night_ms != null
+        ? `${Math.round(latestHrv.hrv_last_night_ms)} ms`
         : "—"
     );
     setText(
       "[data-hrv-detail]",
-      latestComplete.hrv_weekly_average_ms != null
-        ? `Mesure du ${completeDayLabel} · moyenne 7 j : ${Math.round(latestComplete.hrv_weekly_average_ms)} ms`
-        : latestComplete.hrv_last_night_ms_source === "health_connect"
-          ? `Mesure du ${completeDayLabel} · Atlas Connect`
-        : (latestComplete.hrv_status || "Référence en construction")
+      latestHrv.hrv_last_night_ms_source === "health_connect"
+        ? `Mesure du ${hrvDayLabel} · Atlas Connect`
+        : hrvSkipped?.reason === "permission_absent"
+          ? `Dernière mesure du ${hrvDayLabel} · autorisation VFC Atlas Connect absente`
+          : Number(hrvInventory?.count || 0) === 0
+            ? `Dernière mesure du ${hrvDayLabel} · aucune VFC transmise par Santé Connect`
+            : latestHrv.hrv_weekly_average_ms != null
+              ? `Mesure du ${hrvDayLabel} · moyenne 7 j : ${Math.round(latestHrv.hrv_weekly_average_ms)} ms`
+              : (latestHrv.hrv_status || "Référence en construction")
     );
 
     setText("[data-load-value]", loadLabel(latest.training_load));
