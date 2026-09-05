@@ -1,23 +1,63 @@
 """Tests des jours manquants, baselines et indice Wellness."""
 
 import json
+from io import BytesIO
 from pathlib import Path
 import tempfile
 import unittest
 from datetime import date
 from unittest.mock import patch
+from zipfile import ZipFile
 
-from src.connectors.garmin_wellness import DailyRecoverySnapshot
+from src.connectors.garmin_wellness import (
+    DailyRecoverySnapshot,
+    GarminWellnessConnector,
+)
 from tools.atlas_web_server import (
     _atlas_recovery_index,
     _complete_wellness_calendar,
     _health_connect_wellness_by_day,
     _has_actionable_wellness,
+    import_garmin_wellness_archive,
     _personal_baseline,
 )
 
 
 class WellnessHistoryHelpersTests(unittest.TestCase):
+    def test_imports_a_dated_garmin_wellness_archive_and_refreshes_cache(self):
+        archive_bytes = BytesIO()
+        with ZipFile(archive_bytes, "w") as archive:
+            archive.writestr("HRV_STATUS.fit", b"fit-data")
+        snapshot = DailyRecoverySnapshot(
+            day=date(2026, 9, 5),
+            hrv_last_night_ms=70,
+            resting_heart_rate_bpm=39,
+            sleep_score=91,
+            data_quality_score=100,
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with (
+                patch("tools.atlas_web_server.WELLNESS_DIRECTORY", root / "archives"),
+                patch("tools.atlas_web_server.WELLNESS_CACHE_PATH", root / "cache.json"),
+                patch.object(GarminWellnessConnector, "import_archive", return_value=snapshot),
+                patch.object(GarminWellnessConnector, "import_all_cached", return_value=[snapshot]) as refresh,
+            ):
+                result = import_garmin_wellness_archive(
+                    "Garmin-Wellness-2026-09-05.zip",
+                    archive_bytes.getvalue(),
+                )
+
+            self.assertTrue((root / "archives" / "2026-09-05.zip").is_file())
+            self.assertEqual(result["hrv_last_night_ms"], 70)
+            self.assertEqual(result["resting_heart_rate_bpm"], 39)
+            self.assertEqual(result["fit_file_count"], 1)
+            refresh.assert_called_once()
+
+    def test_rejects_an_undated_wellness_archive(self):
+        with self.assertRaisesRegex(ValueError, "AAAA-MM-JJ"):
+            import_garmin_wellness_archive("wellness.zip", b"not-a-zip")
+
     def test_health_connect_exposes_fresh_hrv_and_resting_heart_rate(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "health-connect-wellness.json"

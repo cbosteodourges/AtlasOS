@@ -53,3 +53,13 @@ peut ainsi distinguer « Garmin via Atlas Connect » d'une autre application. Si
 Garmin Connect ne publie aucune `HeartRateVariabilityRmssdRecord`, Atlas le dit
 explicitement et complète uniquement à partir des archives Garmin Wellness ;
 il ne fabrique jamais une valeur.
+
+## Import quotidien de complément Garmin
+
+L'onglet « Connexions & données » accepte une archive Garmin Wellness ZIP dont
+le nom contient la journée au format `AAAA-MM-JJ`. Le serveur contrôle le ZIP,
+refuse les archives sans fichier FIT, conserve la journée dans
+`atlas-data/garmin/wellness-archives`, actualise le cache puis renvoie les
+mesures réellement décodées. Cette voie complète Santé Connect lorsque Garmin
+n'y publie pas la VFC ; elle ne remplace jamais une mesure Health Connect
+présente pour le même champ et la même journée.

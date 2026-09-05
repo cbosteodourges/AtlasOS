@@ -26,5 +26,7 @@ def test_connections_page_separates_setup_from_training():
     assert 'connection.provider === "health-connect" ? "atlas-connect"' in script
     assert "Garmin Wellness" in script
     assert "absente de Santé Connect" in script
+    assert "/api/atlas/garmin-wellness/import" in script
+    assert "Importer une archive Wellness ZIP" in script
     assert "margin-left:280px" not in (ROOT / "app" / "css" / "atlas-connections.css").read_text(encoding="utf-8")
     assert 'class="profile-calibration-next"' in coach

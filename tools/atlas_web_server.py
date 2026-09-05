@@ -6,12 +6,15 @@ from dataclasses import asdict, is_dataclass
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from io import BytesIO
 import json
 import os
 from pathlib import Path
+import re
 import socket
 import sys
 from urllib.parse import parse_qs, urlparse
+from zipfile import BadZipFile, ZipFile
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -1496,6 +1499,59 @@ _HEALTH_CONNECT_WELLNESS_CACHE = {
     "signature": None,
     "by_day": {},
 }
+
+
+def import_garmin_wellness_archive(filename, content):
+    """Valide, conserve et indexe une archive Wellness quotidienne."""
+    safe_name = Path(str(filename or "")).name
+    day_match = re.search(r"\d{4}-\d{2}-\d{2}", safe_name)
+    if not day_match or not safe_name.lower().endswith(".zip"):
+        raise ValueError(
+            "Le fichier Wellness doit être une archive ZIP dont le nom "
+            "contient une date AAAA-MM-JJ."
+        )
+    if not content:
+        raise ValueError("L’archive Garmin Wellness est vide.")
+    if len(content) > 100 * 1024 * 1024:
+        raise ValueError("L’archive Garmin Wellness dépasse 100 Mo.")
+
+    try:
+        with ZipFile(BytesIO(content)) as archive:
+            fit_count = sum(
+                1 for name in archive.namelist()
+                if name.lower().endswith(".fit") and not name.endswith("/")
+            )
+    except BadZipFile as error:
+        raise ValueError("L’archive Garmin Wellness est invalide.") from error
+    if fit_count == 0:
+        raise ValueError("Aucun fichier FIT Wellness n’a été trouvé dans l’archive.")
+
+    day = day_match.group(0)
+    date.fromisoformat(day)
+    WELLNESS_DIRECTORY.mkdir(parents=True, exist_ok=True)
+    destination = WELLNESS_DIRECTORY / f"{day}.zip"
+    previous = destination.read_bytes() if destination.is_file() else None
+    destination.write_bytes(content)
+    connector = GarminWellnessConnector(str(WELLNESS_DIRECTORY))
+    try:
+        snapshot = connector.import_archive(destination)
+        connector.import_all_cached(WELLNESS_CACHE_PATH)
+    except Exception:
+        if previous is None:
+            destination.unlink(missing_ok=True)
+        else:
+            destination.write_bytes(previous)
+        raise
+
+    return {
+        "filename": destination.name,
+        "day": snapshot.day.isoformat(),
+        "fit_file_count": fit_count,
+        "hrv_last_night_ms": snapshot.hrv_last_night_ms,
+        "resting_heart_rate_bpm": snapshot.resting_heart_rate_bpm,
+        "sleep_score": snapshot.sleep_score,
+        "data_quality_score": snapshot.data_quality_score,
+    }
 
 
 def _wellness_number(value):
@@ -3548,6 +3604,7 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             "/api/atlas/strava/sync",
             "/api/atlas/health-connect/pair",
             "/api/atlas/health-connect/ingest",
+            "/api/atlas/garmin-wellness/import",
             "/api/atlas/nutrition-hydration",
         }
 
@@ -3563,6 +3620,13 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
                 self.headers.get("Content-Length", "0")
             )
             raw_body = self.rfile.read(content_length)
+            if self.path == "/api/atlas/garmin-wellness/import":
+                result = import_garmin_wellness_archive(
+                    self.headers.get("X-Atlas-Filename", ""),
+                    raw_body,
+                )
+                self.send_json(200, {"ok": True, "archive": result})
+                return
             payload = json.loads(raw_body.decode("utf-8"))
 
             if self.path == "/api/atlas/health-connect/pair":

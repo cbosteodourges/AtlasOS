@@ -71,6 +71,36 @@
     }
   }
 
+  async function uploadGarminWellness(file) {
+    const status = workspace.querySelector("[data-garmin-upload-status]");
+    if (!file || !status) return;
+    status.textContent = `Import de ${file.name}…`;
+    try {
+      const response = await fetch("/api/atlas/garmin-wellness/import", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/zip",
+          "X-Atlas-Filename": file.name
+        },
+        body: file
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "Import impossible");
+      }
+      const archive = payload.archive || {};
+      const metrics = [
+        archive.hrv_last_night_ms != null ? `VFC ${Math.round(archive.hrv_last_night_ms)} ms` : null,
+        archive.resting_heart_rate_bpm != null ? `FC repos ${Math.round(archive.resting_heart_rate_bpm)} bpm` : null,
+        archive.sleep_score != null ? `sommeil ${archive.sleep_score}/100` : null
+      ].filter(Boolean);
+      status.textContent = `Archive du ${formatDay(archive.day)} importée${metrics.length ? ` · ${metrics.join(" · ")}` : ""}.`;
+      await loadInventory();
+    } catch (error) {
+      status.textContent = error.message || "Import Garmin Wellness impossible.";
+    }
+  }
+
   function choose(method) {
     buttons.forEach(button => button.classList.toggle("selected", button.dataset.connectionMethod === method));
     workspace.hidden = false;
@@ -79,7 +109,7 @@
       localStorage.setItem(stateKey, JSON.stringify({ provider: method, updated_at: new Date().toISOString() }));
       localStorage.setItem(setupKey, "true");
     } else if (method === "garmin") {
-      workspace.innerHTML = `<div class="section-copy"><span>ÉTAPE 2 · GARMIN</span><h2>Importer les fichiers Garmin disponibles</h2></div><p class="connection-status">Les fichiers FIT détaillent les activités. Les archives Wellness complètent notamment la VFC que Garmin peut ne pas publier dans Santé Connect.</p><a href="./physiologie.html">Ouvrir l’import Garmin →</a>`;
+      workspace.innerHTML = `<div class="section-copy"><span>ÉTAPE 2 · GARMIN</span><h2>Importer les données Garmin disponibles</h2></div><p class="connection-status">Les archives Wellness quotidiennes complètent notamment la VFC que Garmin peut ne pas publier dans Santé Connect.</p><div class="garmin-import-actions"><label class="garmin-wellness-picker">Importer une archive Wellness ZIP<input type="file" accept=".zip,application/zip" data-garmin-wellness-file hidden></label><a href="./physiologie.html">Importer les activités Garmin →</a></div><p class="connection-status" data-garmin-upload-status aria-live="polite">Le nom de l’archive doit contenir sa date au format AAAA-MM-JJ.</p>`;
     } else if (method === "manual") {
       workspace.innerHTML = `<div class="section-copy"><span>ÉTAPE 2 · SANS MONTRE</span><h2>Commencer avec un profil prudent</h2></div><p class="connection-status">Atlas utilisera votre expérience, vos chronos, vos disponibilités et vos repères connus. Une montre pourra être ajoutée plus tard.</p><a href="./performance-running.html#profile">Compléter mon profil →</a>`;
       localStorage.setItem(stateKey, JSON.stringify({ provider: method, updated_at: new Date().toISOString() }));
@@ -95,6 +125,11 @@
   buttons.forEach(button => button.addEventListener("click", () => choose(button.dataset.connectionMethod)));
   workspace.addEventListener("click", event => {
     if (event.target.closest("[data-refresh-inventory]")) loadInventory();
+  });
+  workspace.addEventListener("change", event => {
+    if (event.target.matches("[data-garmin-wellness-file]")) {
+      uploadGarminWellness(event.target.files?.[0]);
+    }
   });
   loadInventory();
 })();
