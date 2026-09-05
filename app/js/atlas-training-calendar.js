@@ -3019,55 +3019,111 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       : targetScore >= 65
         ? "Les cibles ont été partiellement respectées."
         : "Les cibles prévues ont été peu respectées.";
-    const hasIntervalPower = workBlocks.some(block =>
+    const prescribedWarmupSeconds = (workout.blocks || [])
+      .filter(block => ["warm_up", "warmup"].includes(String(block.block_type || "")))
+      .reduce((total, block) => total + Math.max(0, Number(block.duration_minutes) || 0) * 60 + Math.max(0, Number(block.duration_seconds) || 0), 0);
+    const reportPhaseType = type => ({
+      warmup: "warmup",
+      warm_up: "warmup",
+      work: "work",
+      interval: "work",
+      recovery: "recovery",
+      cool_down: "cooldown",
+      cooldown: "cooldown"
+    }[String(type || "")] || "work");
+    const reportPhaseLabel = (type, index) => ({
+      warmup: "Échauffement",
+      work: `Fraction ${index}`,
+      recovery: `Récupération ${index}`,
+      cooldown: "Retour au calme"
+    }[type]);
+    const blockIndex = block => detailedBlocks.indexOf(block);
+    const groupedSourceBlocks = intervalGroups.flatMap(group => [
+      ...(group.sources || []),
+      group.recovery
+    ]).filter(block => blockIndex(block) >= 0);
+    const firstStructuredIndex = groupedSourceBlocks.length
+      ? Math.min(...groupedSourceBlocks.map(blockIndex))
+      : -1;
+    const lastStructuredIndex = groupedSourceBlocks.length
+      ? Math.max(...groupedSourceBlocks.map(blockIndex))
+      : -1;
+    const leadingBlocks = firstStructuredIndex > 0
+      ? detailedBlocks.slice(0, firstStructuredIndex)
+      : detailedBlocks.filter(block => ["warm_up", "warmup"].includes(block.block_type));
+    const trailingBlocks = lastStructuredIndex >= 0
+      ? detailedBlocks.slice(lastStructuredIndex + 1)
+      : detailedBlocks.filter(block => ["cool_down", "cooldown"].includes(block.block_type));
+    const phaseEntries = [];
+    if (leadingBlocks.length) {
+      phaseEntries.push({ type: "warmup", block: mergeReportBlocks(leadingBlocks), plannedSeconds: prescribedWarmupSeconds });
+    }
+    intervalGroups.forEach((group, index) => {
+      phaseEntries.push({
+        type: "work",
+        index: index + 1,
+        block: group.block,
+        plannedSeconds: plannedIntervalDefinitions[index]?.durationSeconds
+      });
+      if (group.recovery && group.recoveryRole !== "cool_down") {
+        phaseEntries.push({
+          type: "recovery",
+          index: index + 1,
+          block: group.recovery,
+          plannedSeconds: Number(plannedIntervalDefinitions[index]?.block?.recovery_minutes) * 60
+        });
+      }
+      if (group.recovery && group.recoveryRole === "cool_down") {
+        phaseEntries.push({ type: "cooldown", block: group.recovery });
+      }
+    });
+    if (trailingBlocks.length) {
+      const trailing = mergeReportBlocks(trailingBlocks);
+      const existingCooldown = phaseEntries.find(entry => entry.type === "cooldown");
+      if (existingCooldown) existingCooldown.block = mergeReportBlocks([existingCooldown.block, trailing]);
+      else phaseEntries.push({ type: "cooldown", block: trailing });
+    }
+    const prescribedCooldownSeconds = (workout.blocks || [])
+      .filter(block => ["cool_down", "cooldown"].includes(String(block.block_type || "")))
+      .reduce((total, block) => total + Math.max(0, Number(block.duration_minutes) || 0) * 60 + Math.max(0, Number(block.duration_seconds) || 0), 0);
+    const cooldownEntry = phaseEntries.find(entry => entry.type === "cooldown");
+    if (cooldownEntry) cooldownEntry.plannedSeconds = prescribedCooldownSeconds;
+
+    const hasIntervalPower = phaseEntries.some(({ block }) =>
       Number.isFinite(Number(block.average_power_watts)) && Number(block.average_power_watts) > 0
     );
-    const hasIntervalCadence = workBlocks.some(block =>
+    const hasIntervalCadence = phaseEntries.some(({ block }) =>
       Number.isFinite(Number(block.average_cadence_spm)) && Number(block.average_cadence_spm) > 0
     );
     const intervalGrid = [
-      "48px", "90px", "90px", "105px", "115px", "115px",
+      "minmax(150px, 1.3fr)", "90px", "90px", "105px", "115px", "115px",
       ...(hasIntervalPower ? ["105px"] : []),
-      ...(hasIntervalCadence ? ["95px"] : []),
-      "minmax(210px, 1fr)"
+      ...(hasIntervalCadence ? ["95px"] : [])
     ].join(" ");
-    const intervalRows = workBlocks.map((block, index) => {
+    const intervalRows = phaseEntries.map(entry => {
+      const block = entry.block || {};
+      const type = reportPhaseType(entry.type);
+      const index = entry.index || "";
       const speed = Number(block.average_speed_kmh);
-      const recovery = intervalGroups[index]?.recovery || null;
-      const recoverySpeed = Number(recovery?.average_speed_kmh);
-      const recoveryAverageHeartRate = Number(recovery?.average_heart_rate_bpm);
-      const recoveryEndingHeartRate = Number(recovery?.ending_heart_rate_bpm);
-      const recoveryHeartRateDrop = Number(recovery?.heart_rate_drop_bpm);
-      const recoveryRole = intervalGroups[index]?.recoveryRole || "recovery";
-      const recoveryHeading = recoveryRole === "cool_down"
-        ? "Retour au calme · "
-        : "";
-      const plannedRecoverySeconds = Number(
-        plannedIntervalDefinitions[index]?.block?.recovery_minutes
-      ) * 60;
+      const duration = Number(block.duration_seconds);
+      const plannedSeconds = Number(entry.plannedSeconds);
+      const durationDeltaSeconds = Number.isFinite(plannedSeconds) && plannedSeconds > 0
+        ? duration - plannedSeconds
+        : Number.NaN;
 
       return `
-        <div class="interval-detail-row">
-          <strong>${index + 1}</strong>
+        <div class="interval-detail-row phase-detail-row phase-${type}" data-phase-type="${type}">
+          <strong><i></i><span>${reportPhaseLabel(type, index)}</span>${Number.isFinite(plannedSeconds) && plannedSeconds > 0 ? `<small>Prévu ${reportBlockTime(plannedSeconds)}${Math.abs(durationDeltaSeconds) >= 1 ? ` · ${durationDeltaSeconds > 0 ? "+" : "−"}${reportBlockTime(Math.abs(durationDeltaSeconds))}` : " · conforme"}</small>` : ""}</strong>
           <span>${reportNumber(Number(block.distance_meters), 0)} m</span>
-          <span>${reportBlockTime(block.duration_seconds)}</span>
+          <span>${reportBlockTime(duration)}</span>
           <span>${reportPace(3600 / speed)}</span>
           <span>${reportNumber(speed, 2)} km/h</span>
           <span>
-            ${reportNumber(block.average_heart_rate_bpm, 0)}
-            <small>max. ${reportNumber(block.maximum_heart_rate_bpm, 0)}</small>
+            ${reportMeasuredValue(block.average_heart_rate_bpm, 0, "bpm")}
+            ${Number(block.maximum_heart_rate_bpm) > 0 ? `<small>max. ${reportNumber(block.maximum_heart_rate_bpm, 0)} bpm</small>` : ""}
           </span>
           ${hasIntervalPower ? `<span>${reportMeasuredValue(block.average_power_watts, 0, "W")}</span>` : ""}
           ${hasIntervalCadence ? `<span>${reportMeasuredValue(block.average_cadence_spm, 0, "ppm")}</span>` : ""}
-          <span class="interval-recovery-detail">
-            ${recovery ? `
-              <b>${recoveryHeading}${reportBlockTime(recovery.duration_seconds)}${Number(recovery.distance_meters) > 0 ? ` · ${reportNumber(recovery.distance_meters, 0)} m` : ""}</b>
-              ${recoverySpeed > 0 ? `<small>${reportPace(3600 / recoverySpeed)} · ${reportNumber(recoverySpeed, 2)} km/h</small>` : ""}
-              ${recoveryAverageHeartRate > 0 ? `<small>FC moy. ${reportNumber(recoveryAverageHeartRate, 0)} bpm</small>` : ""}
-              ${recoveryEndingHeartRate > 0 ? `<small>FC fin ${reportNumber(recoveryEndingHeartRate, 0)} bpm${recoveryHeartRateDrop >= 0 ? ` · baisse ${reportNumber(recoveryHeartRateDrop, 0)} bpm` : ""}</small>` : ""}
-              ${recoveryRole === "recovery" && plannedRecoverySeconds > 0 ? `<small>Prévu : ${reportBlockTime(plannedRecoverySeconds)}</small>` : ""}
-            ` : index === workBlocks.length - 1 ? "Retour au calme" : "Données non mesurées"}
-          </span>
         </div>
       `;
     }).join("");
@@ -3240,15 +3296,21 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           <details class="interval-details-section compact-interval-details" open>
             <summary>
               <span class="report-kicker">TABLEAU RÉCAPITULATIF</span>
-              <strong>Fractions, récupérations et retour au calme</strong>
+              <strong>Déroulé complet · prévu et réalisé</strong>
             </summary>
+            <div class="phase-filter-bar" role="group" aria-label="Filtrer les phases de la séance">
+              <button type="button" class="active" data-phase-filter="all">Tout</button>
+              <button type="button" data-phase-filter="warmup">Échauffement</button>
+              <button type="button" data-phase-filter="work">Fractions</button>
+              <button type="button" data-phase-filter="recovery">Récupérations</button>
+              <button type="button" data-phase-filter="cooldown">Retour au calme</button>
+            </div>
             <div class="interval-detail-table" style="--interval-grid:${intervalGrid}">
               <div class="interval-detail-row interval-detail-header">
-                <span>N°</span><span>Distance</span><span>Temps</span>
+                <span>Phase</span><span>Distance</span><span>Temps</span>
                 <span>Allure</span><span>Vitesse</span><span>FC moy.</span>
                 ${hasIntervalPower ? "<span>Puissance</span>" : ""}
                 ${hasIntervalCadence ? "<span>Cadence</span>" : ""}
-                <span>Après la fraction</span>
               </div>
               ${intervalRows}
             </div>
@@ -4031,6 +4093,21 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     `;
 
     content.onclick = async event => {
+      const phaseFilter = event.target.closest("[data-phase-filter]");
+      if (phaseFilter) {
+        const panel = phaseFilter.closest(".interval-details-section");
+        const selected = phaseFilter.dataset.phaseFilter;
+        panel?.querySelectorAll("[data-phase-filter]").forEach(button => {
+          const active = button.dataset.phaseFilter === selected;
+          button.classList.toggle("active", active);
+          button.setAttribute("aria-pressed", String(active));
+        });
+        panel?.querySelectorAll("[data-phase-type]").forEach(row => {
+          row.hidden = selected !== "all" && row.dataset.phaseType !== selected;
+        });
+        return;
+      }
+
       const sensationButton = event.target.closest(
         "[data-sensation-score]"
       );
