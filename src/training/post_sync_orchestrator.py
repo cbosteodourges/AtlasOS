@@ -10,7 +10,10 @@ from pathlib import Path
 from typing import Any
 
 from src.connectors.activity_ingestion import ActivityStore
-from src.physiology.atlas_recovery_index import AtlasRecoveryIndex
+from src.physiology.atlas_recovery_index import (
+    AtlasRecoveryIndex,
+    apply_intraday_rest_adjustments,
+)
 from src.physiology.continuous_profile import ContinuousPhysiologyEstimator
 from src.physiology.nutrition_hydration import NutritionHydrationAnalyzer
 from src.training.response_followup_service import TrainingResponseFollowupService
@@ -43,6 +46,10 @@ class PostSyncOrchestrator:
             wellness,
             activities,
             outcomes=executions,
+        )
+        recovery = apply_intraday_rest_adjustments(
+            recovery,
+            self._read("atlas-recovery-rest-periods.json", []),
         )
         self._write("atlas-recovery-index.json", recovery)
 
