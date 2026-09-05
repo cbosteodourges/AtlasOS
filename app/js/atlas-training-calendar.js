@@ -2948,8 +2948,21 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         : "données d’activité";
     const dataSources = report.data_sources || {};
     const healthCoverage = dataSources.health_connect_coverage || {};
+    const healthConnectKnown = Object.prototype.hasOwnProperty.call(
+      dataSources,
+      "health_connect_present"
+    );
     const healthConnectPresent = dataSources.health_connect_present === true;
-    const fitPresent = dataSources.garmin_fit_present === true;
+    const fitPresent = dataSources.garmin_fit_present === true ||
+      activityProvider.includes("fit") || activityProvider === "garmin";
+    const selectedSamplesSource = String(
+      dataSources.selected_samples_source || activitySourceLabel
+    );
+    const selectedSamplesLabel = selectedSamplesSource === "garmin_fit"
+      ? "fichier FIT Garmin"
+      : selectedSamplesSource === "health_connect"
+        ? "données Santé Connect issues de Garmin"
+        : selectedSamplesSource;
     const coverageItems = [
       ["Fréquence cardiaque", healthCoverage.heart_rate_samples],
       ["Vitesse", healthCoverage.speed_samples],
@@ -2965,7 +2978,10 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             <dd>${Number(value) > 0 ? `${reportNumber(value, 0)} reçus` : "Non transmis"}</dd>
           </div>
         `).join("")
-      : '<p class="source-quality-empty">Aucune activité correspondante reçue par Santé Connect.</p>';
+      : `<p class="source-quality-empty">${healthConnectKnown
+          ? "Aucune activité correspondante reçue par Santé Connect."
+          : "Présence de Santé Connect non documentée dans cet ancien compte-rendu. Relancez son recalcul pour obtenir le détail de couverture."
+        }</p>`;
     const durationDelta = actualDuration - plannedDuration;
     const distanceDelta = actualDistance - plannedDistance;
     const executionScore = Number(execution.execution_score);
@@ -3122,14 +3138,16 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           <summary>Qualité et provenance des données</summary>
           <div class="source-quality-status">
             <span class="${healthConnectPresent ? "available" : "missing"}">
-              Santé Connect · ${healthConnectPresent ? "activité reçue" : "absent"}
+              Santé Connect · ${healthConnectPresent
+                ? "activité reçue"
+                : healthConnectKnown ? "absent" : "non documenté"}
             </span>
             <span class="${fitPresent ? "available" : "missing"}">
               Garmin FIT · ${fitPresent ? "présent" : "absent"}
             </span>
             <strong>
               Analyse détaillée fondée sur :
-              ${escapeHtml(String(dataSources.selected_samples_source || activitySourceLabel))}
+              ${escapeHtml(selectedSamplesLabel)}
             </strong>
           </div>
           <dl class="source-quality-grid">${healthConnectDetail}</dl>
