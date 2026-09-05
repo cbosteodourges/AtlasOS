@@ -3391,6 +3391,13 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             self.send_json(200, {"ok": True, "code": health_connect_bridge().create_pairing_code(),
                                  "expires_in_seconds": 600})
             return
+        if parsed.path == "/api/atlas/health-connect/status":
+            from src.training.post_sync_scheduler import post_sync_status
+            self.send_json(200, {
+                "ok": True,
+                **post_sync_status(ROOT / "atlas-data" / "private"),
+            })
+            return
         if parsed.path == "/api/atlas/strava/connect":
             try:
                 self.send_response(302)
