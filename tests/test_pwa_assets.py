@@ -76,7 +76,7 @@ class PwaAssetsTests(unittest.TestCase):
     def test_styles_and_scripts_are_network_first(self):
         worker = (APP_ROOT / "service-worker.js").read_text(encoding="utf-8")
         pwa = (APP_ROOT / "js" / "atlas-pwa.js").read_text(encoding="utf-8")
-        self.assertIn('CACHE_NAME = "atlas-shell-v56"', worker)
+        self.assertIn('CACHE_NAME = "atlas-shell-v57"', worker)
         self.assertIn('["style", "script"]', worker)
         self.assertIn('fetch(event.request, { cache: "no-store" })', worker)
         self.assertIn('service-worker.js?v=4', pwa)
@@ -94,7 +94,7 @@ class PwaAssetsTests(unittest.TestCase):
             legacy,
         )
         self.assertIn('performance-running.js?v=22', page)
-        self.assertIn('atlas-training-calendar.js?v=105', page)
+        self.assertIn('atlas-training-calendar.js?v=106', page)
 
     def test_legacy_execution_timeline_is_rebased_on_planned_warmup(self):
         calendar = (APP_ROOT / "js" / "atlas-training-calendar.js").read_text(
@@ -130,6 +130,12 @@ class PwaAssetsTests(unittest.TestCase):
         self.assertIn("cool_down: DISPLAY_ZONE_COLORS[1]", calendar)
         self.assertIn('1: "#49d17d"', calendar)
         self.assertIn('2: "#38a9ff"', calendar)
+        self.assertIn('3: "#f0cf4f"', calendar)
+        self.assertIn('4: "#ff8247"', calendar)
+        self.assertIn('5: "#ff4d5e"', calendar)
+        self.assertIn('["sv2", "threshold", "seuil", "z4"]', calendar)
+        self.assertIn('["vma", "vo2", "vo2max"]', calendar)
+        self.assertIn('phase-zone-${phaseZone}', calendar)
         self.assertIn('if (blockType === "cool_down")', calendar)
         self.assertIn("color: plannedTimelineColor(workout, block)", calendar)
         self.assertIn(
