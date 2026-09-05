@@ -302,8 +302,8 @@
         body: JSON.stringify({
           workout_id: workout.workout_id,
           activity_id: report?.activity_id || "",
-          heat: Number(values.heat) > 0,
-          relief: Number(values.relief) > 0,
+          heat: Number(values.heat) >= 5,
+          relief: Number(values.relief) >= 5,
           overall_sensation_0_to_10: Number(values.sensation),
           perceived_effort_0_to_10: Number(values.effort),
           heat_0_to_10: Number(values.heat),
@@ -2517,9 +2517,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     return `
       <label class="context-range-card">
         <span><b>${escapeHtml(label)}</b><output data-range-output>${currentValue}/10</output></span>
-        <input type="range" name="${escapeHtml(name)}" min="0" max="10" step="1" value="${currentValue}" aria-valuetext="${currentValue} sur 10" data-context-range>
+        <span class="context-range-control">
+          <button type="button" data-range-step="-1" aria-label="Diminuer ${escapeHtml(label)}">−</button>
+          <input type="range" name="${escapeHtml(name)}" min="0" max="10" step="1" value="${currentValue}" aria-valuetext="${currentValue} sur 10" data-context-range>
+          <button type="button" data-range-step="1" aria-label="Augmenter ${escapeHtml(label)}">+</button>
+        </span>
         <span class="context-range-ticks" aria-hidden="true">
-          ${Array.from({ length: 11 }, (_, score) => `<i>${score}</i>`).join("")}
+          ${Array.from({ length: 11 }, (_, score) => `<button type="button" class="${score === currentValue ? "active" : ""}" data-range-tick="${score}" tabindex="-1">${score}</button>`).join("")}
         </span>
         <small><span>${escapeHtml(lowLabel)}</span><span>${escapeHtml(highLabel)}</span></small>
       </label>
@@ -4131,6 +4135,20 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     `;
 
     content.onclick = async event => {
+      const rangeTick = event.target.closest("[data-range-tick]");
+      const rangeStep = event.target.closest("[data-range-step]");
+      if (rangeTick || rangeStep) {
+        const card = (rangeTick || rangeStep).closest(".context-range-card");
+        const range = card?.querySelector("[data-context-range]");
+        if (!range) return;
+        const nextValue = rangeTick
+          ? Number(rangeTick.dataset.rangeTick)
+          : Number(range.value) + Number(rangeStep.dataset.rangeStep);
+        range.value = String(Math.max(0, Math.min(10, nextValue)));
+        range.dispatchEvent(new Event("input", { bubbles: true }));
+        return;
+      }
+
       const phaseFilter = event.target.closest("[data-phase-filter]");
       if (phaseFilter) {
         const panel = phaseFilter.closest(".interval-details-section");
@@ -4382,6 +4400,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       if (cardOutput) cardOutput.textContent = `${range.value}/10`;
       if (summaryOutput) summaryOutput.textContent = `${range.value}/10`;
       range.setAttribute("aria-valuetext", `${range.value} sur 10`);
+      range.closest(".context-range-card")
+        ?.querySelectorAll("[data-range-tick]")
+        .forEach(button => button.classList.toggle(
+          "active",
+          Number(button.dataset.rangeTick) === Number(range.value)
+        ));
     };
 
     content.onsubmit = async event => {
