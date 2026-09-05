@@ -6659,14 +6659,15 @@ body[data-coach-section]
   font-size: .66rem;
   font-weight: 600;
 }
-.phase-detail-row.phase-warmup,
-.phase-detail-row.phase-cooldown { --phase-color: #49d17d; }
-.phase-detail-row.phase-work { --phase-color: #f0cf4f; }
-.phase-detail-row.phase-recovery { --phase-color: #38a9ff; }
-.phase-detail-row.phase-warmup,
-.phase-detail-row.phase-cooldown { background: rgba(73, 209, 125, .035); }
-.phase-detail-row.phase-recovery { background: rgba(56, 169, 255, .035); }
-.phase-detail-row.phase-work { background: rgba(240, 207, 79, .035); }
+.phase-detail-row {
+  background: color-mix(in srgb, var(--phase-color) 4%, transparent);
+}
+.phase-detail-row > strong span b {
+  margin-left: 5px;
+  color: var(--phase-color);
+  font-size: .68rem;
+  letter-spacing: .04em;
+}
 
 @media (max-width: 760px) {
   .phase-filter-bar { margin-inline: -2px; padding-bottom: 5px; }
