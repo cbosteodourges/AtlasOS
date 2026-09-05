@@ -42,6 +42,7 @@ from src.training.subscription_access import (
     normalize_tier,
 )
 from src.training.schedule_rescheduler import reschedule_workout
+from src.physiology.atlas_recovery_index import apply_intraday_rest_adjustments
 
 
 def calculate_age(birth_date):
@@ -90,6 +91,58 @@ USER_OBJECTIVES_PATH = (
 )
 ACTIVITIES_PATH = ROOT / "atlas-data" / "private" / "activities-unified.json"
 NUTRITION_PATH = ROOT / "atlas-data" / "private" / "nutrition-hydration-manual.json"
+REST_PERIODS_PATH = ROOT / "atlas-data" / "private" / "atlas-recovery-rest-periods.json"
+
+
+def load_recovery_rest(day=None):
+    selected_day = str(day or date.today().isoformat())[:10]
+    records = _read_private_json(REST_PERIODS_PATH, [])
+    periods = [
+        item for item in records if isinstance(item, dict)
+        and str(item.get("day") or "")[:10] == selected_day
+    ]
+    recovery = _read_private_json(ATLAS_RECOVERY_INDEX_PATH, {})
+    latest = recovery.get("latest") if isinstance(recovery, dict) else {}
+    return {
+        "day": selected_day,
+        "periods": periods,
+        "total_minutes": sum(round(number(item.get("duration_minutes"), 0)) for item in periods),
+        "adjustment_points": (
+            latest.get("intraday_rest_adjustment", 0)
+            if str(latest.get("day") or "")[:10] == selected_day else 0
+        ),
+        "atlas_index": (
+            latest.get("atlas_recovery_index")
+            if str(latest.get("day") or "")[:10] == selected_day else None
+        ),
+    }
+
+
+def record_recovery_rest(payload):
+    minutes = round(number(payload.get("duration_minutes"), 0))
+    if not 5 <= minutes <= 180:
+        raise ValueError("La période de repos doit durer entre 5 et 180 minutes.")
+    kind = str(payload.get("kind") or "nap").strip()
+    if kind not in {"nap", "quiet_rest"}:
+        raise ValueError("Type de repos invalide.")
+    day = str(payload.get("day") or date.today().isoformat())[:10]
+    date.fromisoformat(day)
+    records = _read_private_json(REST_PERIODS_PATH, [])
+    if not isinstance(records, list):
+        records = []
+    records.append({
+        "day": day,
+        "kind": kind,
+        "duration_minutes": minutes,
+        "recorded_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "source": "atlas_cockpit",
+    })
+    _write_private_json(REST_PERIODS_PATH, records)
+    recovery = _read_private_json(ATLAS_RECOVERY_INDEX_PATH, {})
+    if isinstance(recovery, dict):
+        recovery = apply_intraday_rest_adjustments(recovery, records)
+        _write_private_json(ATLAS_RECOVERY_INDEX_PATH, recovery)
+    return load_recovery_rest(day)
 
 
 def recalculate_execution(activity_id, private_dir=None, fit_dir=None):
@@ -3454,6 +3507,10 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             self.send_json(200, {"ok": True, **load_nutrition_hydration()})
             return
 
+        if parsed.path == "/api/atlas/recovery-rest":
+            self.send_json(200, {"ok": True, **load_recovery_rest()})
+            return
+
         if parsed.path == "/api/atlas-coach/workout-decisions":
             try:
                 self.send_json(
@@ -3616,6 +3673,7 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             "/api/atlas/health-connect/ingest",
             "/api/atlas/garmin-wellness/import",
             "/api/atlas/nutrition-hydration",
+            "/api/atlas/recovery-rest",
         }
 
         if self.path not in allowed_routes:
@@ -3653,6 +3711,10 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
 
             if self.path == "/api/atlas/nutrition-hydration":
                 self.send_json(200, {"ok": True, **record_nutrition_hydration(payload)})
+                return
+
+            if self.path == "/api/atlas/recovery-rest":
+                self.send_json(200, {"ok": True, **record_recovery_rest(payload)})
                 return
 
             if self.path == "/api/atlas/strava/sync":
