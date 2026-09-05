@@ -92,11 +92,37 @@ USER_OBJECTIVES_PATH = (
 ACTIVITIES_PATH = ROOT / "atlas-data" / "private" / "activities-unified.json"
 NUTRITION_PATH = ROOT / "atlas-data" / "private" / "nutrition-hydration-manual.json"
 REST_PERIODS_PATH = ROOT / "atlas-data" / "private" / "atlas-recovery-rest-periods.json"
+READINESS_CHECKPOINTS_PATH = ROOT / "atlas-data" / "private" / "atlas-coach-readiness-checkpoints.json"
 
 
 def load_recovery_rest(day=None):
     selected_day = str(day or date.today().isoformat())[:10]
     records = _read_private_json(REST_PERIODS_PATH, [])
+    records = records if isinstance(records, list) else []
+    if not any(str(item.get("day") or "")[:10] == selected_day for item in records if isinstance(item, dict)):
+        checkpoints = _read_private_json(READINESS_CHECKPOINTS_PATH, [])
+        legacy = next((
+            item for item in reversed(checkpoints if isinstance(checkpoints, list) else [])
+            if isinstance(item, dict)
+            and str(item.get("generated_at") or "")[:10] == selected_day
+            and number((item.get("declared_state") or {}).get("nap_duration_minutes"), 0) >= 5
+        ), None)
+        if legacy is not None:
+            minutes = round(number((legacy.get("declared_state") or {}).get("nap_duration_minutes"), 0))
+            records.append({
+                "day": selected_day,
+                "kind": "nap",
+                "duration_minutes": minutes,
+                "recorded_at": legacy.get("generated_at"),
+                "source": "readiness_checkpoint_migration",
+            })
+            _write_private_json(REST_PERIODS_PATH, records)
+            recovery = _read_private_json(ATLAS_RECOVERY_INDEX_PATH, {})
+            if isinstance(recovery, dict):
+                _write_private_json(
+                    ATLAS_RECOVERY_INDEX_PATH,
+                    apply_intraday_rest_adjustments(recovery, records),
+                )
     periods = [
         item for item in records if isinstance(item, dict)
         and str(item.get("day") or "")[:10] == selected_day
