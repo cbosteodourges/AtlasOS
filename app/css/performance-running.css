@@ -7122,6 +7122,31 @@ body[data-coach-section]
 .context-range-card output { color: #f7ca3d; font-weight: 850; }
 .context-range-card > small { color: #8298a8; font-size: .65rem; }
 
+.context-range-control {
+  display: grid !important;
+  grid-template-columns: 32px minmax(0, 1fr) 32px;
+  gap: 9px !important;
+}
+
+.context-range-control > button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(53, 204, 255, .35);
+  border-radius: 9px;
+  color: #edf8ff;
+  background: rgba(7, 31, 48, .95);
+  cursor: pointer;
+  font-size: 1.15rem;
+  font-weight: 850;
+}
+
+.context-range-control > button:hover,
+.context-range-control > button:focus-visible {
+  border-color: #35ccff;
+  background: rgba(53, 204, 255, .14);
+}
+
 .context-range-card input[type="range"] {
   width: 100%;
   height: 6px;
@@ -7149,22 +7174,38 @@ body[data-coach-section]
   color: #9eb3c1;
 }
 
-.context-range-ticks i {
+.context-range-ticks button {
   position: relative;
+  min-width: 22px;
+  padding: 3px 0 2px;
+  border: 0;
+  border-radius: 7px;
   color: inherit;
+  background: transparent;
+  cursor: pointer;
   font-size: .58rem;
-  font-style: normal;
   font-weight: 750;
   text-align: center;
 }
 
-.context-range-ticks i::before {
+.context-range-ticks button::before {
   display: block;
   width: 1px;
   height: 4px;
   margin: 0 auto 2px;
   content: "";
   background: rgba(226, 240, 248, .55);
+}
+
+.context-range-ticks button:hover,
+.context-range-ticks button:focus-visible,
+.context-range-ticks button.active {
+  color: #07131e;
+  background: #f7ca3d;
+}
+
+.context-range-ticks button.active::before {
+  background: #07131e;
 }
 
 .context-constraints {
@@ -7251,7 +7292,7 @@ body[data-coach-section]
   .report-main-score { min-width: 82px; }
   .report-main-score strong { font-size: 1.65rem; }
   .report-mini-avatar { width: 52px; height: 62px; }
-  .context-range-ticks i { font-size: .52rem; }
+  .context-range-ticks button { font-size: .52rem; }
 }
 
 @media (max-width: 720px) {
