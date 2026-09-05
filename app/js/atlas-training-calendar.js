@@ -3135,21 +3135,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           >
         </header>
 
-        <section class="execution-score-explanation">
-          <div>
-            <span class="report-kicker">LECTURE DU SCORE</span>
-            <strong>Ce score mesure le respect de la prescription, pas votre niveau de forme.</strong>
-            <p>Les portions faciles ajoutées avant ou après les fractions sont conservées dans la séance, mais ne diminuent plus le respect de la cible spécifique.</p>
-          </div>
-          <dl>
-            <div><dt>Durée globale</dt><dd>${reportScore(match.duration_compliance_score)}</dd></div>
-            <div><dt>Cible spécifique</dt><dd>${reportScore(match.target_compliance_score)}</dd></div>
-            <div><dt>Durées de récupération</dt><dd>${Number.isFinite(Number(execution.recovery_compliance_score)) ? reportScore(execution.recovery_compliance_score) : "Non notées"}</dd></div>
-          </dl>
-        </section>
-
         <details class="source-quality-panel report-confidence-panel" open>
           <summary>Fiabilité et calcul du compte-rendu</summary>
+          <p class="report-score-reading">
+            Ce score mesure le respect de la séance prescrite, pas votre niveau de forme.
+            Les portions faciles supplémentaires ne pénalisent pas la cible spécifique.
+          </p>
           <div class="source-quality-status">
             <span class="${healthConnectPresent ? "available" : "missing"}">
               Santé Connect · ${healthConnectStatus}
