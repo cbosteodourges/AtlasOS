@@ -109,6 +109,38 @@
     return "Élevée";
   };
 
+  const renderRestPeriod = payload => {
+    const card = document.querySelector(".rest-period-card");
+    if (!card || !payload) return;
+    const minutes = Number(payload.total_minutes) || 0;
+    const adjustment = Number(payload.adjustment_points) || 0;
+    card.classList.toggle("is-recorded", minutes > 0);
+    setText(
+      "[data-rest-value]",
+      minutes > 0 ? `${minutes} min enregistrées` : "Aucune aujourd’hui"
+    );
+    setText(
+      "[data-rest-status]",
+      minutes > 0
+        ? `Pris en compte dans l’indice · +${adjustment} point${adjustment > 1 ? "s" : ""}`
+        : "À renseigner après votre repos"
+    );
+    const score = Number(payload.atlas_index);
+    if (Number.isFinite(score)) {
+      setText("[data-atlas-index]", Math.round(score));
+      setText("[data-recovery-label]", recoveryLabel(score));
+      updateRecoveryTone(score);
+      updateRecoveryGauge(score);
+    }
+  };
+
+  const loadRestPeriod = () => fetch("/api/atlas/recovery-rest", { cache: "no-store" })
+    .then(response => response.ok ? response.json() : Promise.reject(new Error("Repos Atlas indisponible")))
+    .then(renderRestPeriod)
+    .catch(error => {
+      setText("[data-rest-status]", error.message);
+    });
+
   const physiologyStatusLabel = status => ({
     estimated: "Estimation Atlas",
     longitudinal: "Estimation longitudinale",
@@ -777,6 +809,43 @@
     .then(response => response.ok ? response.json() : null)
     .then(renderSyncInsights)
     .catch(error => console.warn("Atlas synchronisation :", error));
+
+  loadRestPeriod();
+
+  document.querySelector("[data-rest-form]")?.addEventListener("submit", async event => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector('button[type="submit"]');
+    const values = new FormData(form);
+    const minutes = Number(values.get("duration_minutes"));
+    if (!Number.isFinite(minutes) || minutes < 5 || minutes > 180) {
+      setText("[data-rest-status]", "Indiquez une durée entre 5 et 180 minutes.");
+      return;
+    }
+    button.disabled = true;
+    setText("[data-rest-status]", "Enregistrement et recalcul…");
+    try {
+      const response = await fetch("/api/atlas/recovery-rest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify({
+          day: todayKey,
+          kind: values.get("kind"),
+          duration_minutes: minutes
+        })
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "La période de repos n’a pas été enregistrée.");
+      }
+      form.reset();
+      renderRestPeriod(payload);
+    } catch (error) {
+      setText("[data-rest-status]", error.message);
+    } finally {
+      button.disabled = false;
+    }
+  });
 
   const dashboardPanel = document.querySelector("[data-dashboard-panel]");
   const dashboardKey = "atlasCockpitVisibleMetrics";
