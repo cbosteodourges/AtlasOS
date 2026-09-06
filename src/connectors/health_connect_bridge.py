@@ -1,48 +1,42 @@
 """Association et réception sécurisée du pont Android Santé Connect."""
-
-import hashlib
-import json
+import hashlib,json,secrets,threading,time
 from pathlib import Path
-import secrets
-import threading
-import time
 from typing import Any
-
-from .activity_ingestion import ActivityStore, activity_fingerprint
-from .activity_schema import ActivitySample, NormalizedActivity
-
-
+from .activity_ingestion import ActivityStore,activity_fingerprint
+from .activity_schema import ActivitySample,NormalizedActivity
 class HealthConnectBridge:
-    _ingest_lock = threading.RLock()
-    EXERCISE_TYPES = {
-        "0":"other","2":"badminton","4":"baseball","5":"basketball","8":"cycling","9":"cycling_indoor","10":"boot_camp","11":"boxing","13":"calisthenics","14":"cricket","16":"dance","25":"elliptical","26":"exercise_class","27":"fencing","28":"american_football","29":"australian_football","31":"frisbee","32":"golf","33":"guided_breathing","34":"gymnastics","35":"handball","36":"hiit","37":"hiking","38":"ice_hockey","39":"ice_skating","44":"martial_arts","46":"paddling","47":"paragliding","48":"pilates","50":"racquetball","51":"rock_climbing","52":"roller_hockey","53":"rowing","54":"rowing_machine","55":"rugby","56":"running","57":"running_treadmill","58":"sailing","59":"scuba_diving","60":"skating","61":"skiing","62":"snowboarding","63":"snowshoeing","64":"soccer","65":"softball","66":"squash","68":"stair_climbing","69":"stair_climbing_machine","70":"strength_training","71":"stretching","72":"surfing","73":"swimming_open_water","74":"swimming_pool","75":"table_tennis","76":"tennis","78":"volleyball","79":"walking","80":"water_polo","81":"weightlifting","82":"wheelchair","83":"yoga",
-    }
-    def __init__(self, private_dir: str | Path) -> None:
-        self.private_dir=Path(private_dir); self.pairing_path=self.private_dir/"health-connect-pairing.json"; self.devices_path=self.private_dir/"health-connect-devices.json"; self.wellness_path=self.private_dir/"health-connect-wellness.json"; self.inventory_path=self.private_dir/"health-connect-inventory.json"; self.activities_path=self.private_dir/"activities-unified.json"
+    _ingest_lock=threading.RLock()
+    EXERCISE_TYPES={"0":"other","2":"badminton","4":"baseball","5":"basketball","8":"cycling","9":"cycling_indoor","10":"boot_camp","11":"boxing","13":"calisthenics","14":"cricket","16":"dance","25":"elliptical","26":"exercise_class","27":"fencing","28":"american_football","29":"australian_football","31":"frisbee","32":"golf","33":"guided_breathing","34":"gymnastics","35":"handball","36":"hiit","37":"hiking","38":"ice_hockey","39":"ice_skating","44":"martial_arts","46":"paddling","47":"paragliding","48":"pilates","50":"racquetball","51":"rock_climbing","52":"roller_hockey","53":"rowing","54":"rowing_machine","55":"rugby","56":"running","57":"running_treadmill","58":"sailing","59":"scuba_diving","60":"skating","61":"skiing","62":"snowboarding","63":"snowshoeing","64":"soccer","65":"softball","66":"squash","68":"stair_climbing","69":"stair_climbing_machine","70":"strength_training","71":"stretching","72":"surfing","73":"swimming_open_water","74":"swimming_pool","75":"table_tennis","76":"tennis","78":"volleyball","79":"walking","80":"water_polo","81":"weightlifting","82":"wheelchair","83":"yoga"}
+    def __init__(self,private_dir:str|Path)->None:
+        self.private_dir=Path(private_dir);self.pairing_path=self.private_dir/"health-connect-pairing.json";self.devices_path=self.private_dir/"health-connect-devices.json";self.wellness_path=self.private_dir/"health-connect-wellness.json";self.inventory_path=self.private_dir/"health-connect-inventory.json";self.activities_path=self.private_dir/"activities-unified.json"
     def create_pairing_code(self)->str:
-        code=f"{secrets.randbelow(1_000_000):06d}"; self._write(self.pairing_path,{"code_hash":self._hash(code),"expires_at":int(time.time())+600}); return code
+        code=f"{secrets.randbelow(1_000_000):06d}";self._write(self.pairing_path,{"code_hash":self._hash(code),"expires_at":int(time.time())+600});return code
     def pair(self,code:str,device:dict[str,Any])->str:
         pairing=self._read(self.pairing_path,{})
-        if int(pairing.get("expires_at",0))<int(time.time()): raise ValueError("Le code d’association a expiré.")
-        if not secrets.compare_digest(str(pairing.get("code_hash","")),self._hash(code)): raise ValueError("Code d’association incorrect.")
+        if int(pairing.get("expires_at",0))<int(time.time()):raise ValueError("Le code d’association a expiré.")
+        if not secrets.compare_digest(str(pairing.get("code_hash","")),self._hash(code)):raise ValueError("Code d’association incorrect.")
         token=secrets.token_urlsafe(48);devices=self._read(self.devices_path,[]);devices.append({"token_hash":self._hash(token),"device":device,"paired_at":int(time.time()),"last_sync_at":None});self._write(self.devices_path,devices[-10:]);self.pairing_path.unlink(missing_ok=True);return token
     def ingest(self,token:str,payload:dict[str,Any])->dict[str,Any]:
-        # ThreadingHTTPServer may receive the foreground and WorkManager sync at
-        # the same time. Serialize the complete read/merge/write transaction.
-        with self._ingest_lock:
-            return self._ingest_locked(token,payload)
+        with self._ingest_lock:return self._ingest_locked(token,payload)
     def _ingest_locked(self,token:str,payload:dict[str,Any])->dict[str,Any]:
         devices=self._read(self.devices_path,[]);token_hash=self._hash(token);device=next((i for i in devices if secrets.compare_digest(str(i.get("token_hash","")),token_hash)),None)
-        if device is None: raise PermissionError("Téléphone Santé Connect non associé.")
-        sync_complete=bool(payload.get("sync_complete",False));self._normalize_stored_activity_types();normalized=[self._activity(i) for i in payload.get("activities",[])]
+        if device is None:raise PermissionError("Téléphone Santé Connect non associé.")
+        delta_sync=bool(payload.get("delta_sync",False));sync_complete=bool(payload.get("sync_complete",False));deleted={str(x) for x in payload.get("deleted_source_ids",[]) if x};self._normalize_stored_activity_types();normalized=[self._activity(i) for i in payload.get("activities",[])]
         total=len(ActivityStore(self.activities_path).ingest(normalized)) if normalized else len(ActivityStore(self.activities_path).load())
-        wellness=self._read(self.wellness_path,[]);wellness.extend(i for i in payload.get("wellness",[]) if isinstance(i,dict));unique={str(i.get("source_id") or f"{i.get('type')}:{i.get('start_time')}"):i for i in wellness};self._write(self.wellness_path,list(unique.values()))
-        inventory={"received_at":int(time.time()),"sync_schema_version":payload.get("sync_schema_version"),"backfill_performed":bool(payload.get("backfill_performed",False)),"recovery_backfill_days":payload.get("recovery_backfill_days"),"record_types":[i for i in payload.get("record_inventory",[]) if isinstance(i,dict)],"skipped_record_types":[i for i in payload.get("skipped_record_types",[]) if isinstance(i,dict)]};self._write(self.inventory_path,inventory)
-        device["last_sync_at"]=int(time.time());device["last_sync_schema_version"]=payload.get("sync_schema_version");self._write(self.devices_path,devices);analysis={"status":"waiting_for_batches","pending":False}
+        wellness=self._read(self.wellness_path,[])
+        if deleted:wellness=[i for i in wellness if not isinstance(i,dict) or str(i.get("source_id") or "") not in deleted]
+        wellness.extend(i for i in payload.get("wellness",[]) if isinstance(i,dict));unique={str(i.get("source_id") or f"{i.get('type')}:{i.get('start_time')}"):i for i in wellness};self._write(self.wellness_path,list(unique.values()))
+        if delta_sync:
+            inventory=self._read(self.inventory_path,{})
+            if not isinstance(inventory,dict):inventory={}
+            inventory["received_at"]=int(time.time());inventory["last_delta_received"]=len(payload.get("wellness",[]));inventory["last_delta_deleted"]=len(deleted);inventory["sync_schema_version"]=payload.get("sync_schema_version",inventory.get("sync_schema_version"))
+        else:
+            inventory={"received_at":int(time.time()),"sync_schema_version":payload.get("sync_schema_version"),"backfill_performed":bool(payload.get("backfill_performed",False)),"recovery_backfill_days":payload.get("recovery_backfill_days"),"record_types":[i for i in payload.get("record_inventory",[]) if isinstance(i,dict)],"skipped_record_types":[i for i in payload.get("skipped_record_types",[]) if isinstance(i,dict)]}
+        self._write(self.inventory_path,inventory);device["last_sync_at"]=int(time.time());device["last_sync_schema_version"]=payload.get("sync_schema_version");self._write(self.devices_path,devices);analysis={"status":"waiting_for_batches","pending":False}
         if sync_complete:
             from src.training.post_sync_scheduler import schedule_post_sync
             analysis=schedule_post_sync(self.private_dir,"health_connect")
-        return {"activities_received":len(normalized),"activities_total":total,"wellness_received":len(payload.get("wellness",[])),"wellness_total":len(unique),"record_types_available":sum(1 for i in inventory["record_types"] if int(i.get("count",0) or 0)>0),"record_types_skipped":len(inventory["skipped_record_types"]),"analysis_status":analysis.get("status"),"analysis_pending":bool(analysis.get("pending",False))}
+        return {"activities_received":len(normalized),"activities_total":total,"wellness_received":len(payload.get("wellness",[])),"wellness_deleted":len(deleted),"wellness_total":len(unique),"record_types_available":sum(1 for i in inventory.get("record_types",[]) if int(i.get("count",0) or 0)>0),"record_types_skipped":len(inventory.get("skipped_record_types",[])),"analysis_status":analysis.get("status"),"analysis_pending":bool(analysis.get("pending",False))}
     @classmethod
     def _activity(cls,item:dict[str,Any])->NormalizedActivity:
         samples=[ActivitySample(**s) for s in item.get("samples",[]) if isinstance(s,dict)];raw_type=str(item.get("type","unknown"));activity_type=cls.EXERCISE_TYPES.get(raw_type,raw_type)
@@ -50,27 +44,22 @@ class HealthConnectBridge:
     def _normalize_stored_activity_types(self)->None:
         store=ActivityStore(self.activities_path);activities=store.load();changed=False
         for activity in activities:
-            if "health_connect" not in activity.source_ids: continue
+            if "health_connect" not in activity.source_ids:continue
             normalized_type=self.EXERCISE_TYPES.get(str(activity.activity_type))
-            if not normalized_type: continue
+            if not normalized_type:continue
             activity.raw_metadata["health_connect_exercise_type"]=str(activity.activity_type);activity.activity_type=normalized_type;activity.field_provenance["activity_type"]="health_connect";activity.canonical_id=activity_fingerprint(activity);changed=True
         if changed:
             indexed={a.canonical_id:a for a in activities};self._write(self.activities_path,[a.to_dict() for a in sorted(indexed.values(),key=lambda x:x.start_time)])
     @staticmethod
-    def _hash(value:str)->str:return hashlib.sha256(value.encode("utf-8")).hexdigest()
+    def _hash(value:str)->str:return hashlib.sha256(value.encode()).hexdigest()
     @staticmethod
     def _read(path:Path,default:Any)->Any:
         if not path.is_file():return default
         return json.loads(path.read_text(encoding="utf-8"))
     @staticmethod
     def _write(path:Path,value:Any)->None:
-        path.parent.mkdir(parents=True,exist_ok=True);temporary=path.with_suffix(path.suffix+".tmp");data=json.dumps(value,ensure_ascii=False,indent=2)+"\n"
-        # OneDrive reparse points can briefly deny create/replace. Retry the
-        # atomic transaction rather than failing a valid phone sync.
-        last_error=None
+        path.parent.mkdir(parents=True,exist_ok=True);temporary=path.with_suffix(path.suffix+".tmp");data=json.dumps(value,ensure_ascii=False,indent=2)+"\n";last_error=None
         for attempt in range(6):
-            try:
-                temporary.write_text(data,encoding="utf-8");temporary.replace(path);return
-            except PermissionError as error:
-                last_error=error;time.sleep(0.15*(attempt+1))
+            try:temporary.write_text(data,encoding="utf-8");temporary.replace(path);return
+            except PermissionError as error:last_error=error;time.sleep(.15*(attempt+1))
         raise last_error
