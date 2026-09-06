@@ -6,18 +6,19 @@ import android.database.Cursor
 import android.net.Uri
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
 
-/**
- * Starts Atlas' Health Connect background pipeline as soon as the app process
- * is created. This deliberately lives outside MainActivity so automatic sync
- * does not depend on the user opening the Atlas Connect screen.
- */
+/** Central scheduler for the Health Connect -> Atlas pipeline. */
 object AtlasAutoSync {
-    const val UNIQUE_WORK = "atlas-health-sync"
+    // Deliberately different from the legacy name cancelled by MainActivity.
+    // This lets us test auto-sync without changing the stable manual path.
+    const val PERIODIC_WORK = "atlas-health-auto-sync-v2"
+    const val LAUNCH_WORK = "atlas-health-launch-sync-v2"
 
     fun schedule(context: android.content.Context) {
         val prefs = context.getSharedPreferences("atlas", android.content.Context.MODE_PRIVATE)
@@ -26,21 +27,34 @@ object AtlasAutoSync {
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
-        val request = PeriodicWorkRequestBuilder<AtlasSyncWorker>(1, TimeUnit.HOURS)
-            .setConstraints(constraints)
-            .build()
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            UNIQUE_WORK,
+        val manager = WorkManager.getInstance(context)
+
+        // Fast catch-up whenever Atlas Connect's process starts. This normally
+        // runs while the application is foregrounded, so ordinary HC read
+        // permission is sufficient.
+        manager.enqueueUniqueWork(
+            LAUNCH_WORK,
+            ExistingWorkPolicy.REPLACE,
+            OneTimeWorkRequestBuilder<AtlasSyncWorker>()
+                .setConstraints(constraints)
+                .build(),
+        )
+
+        // Background freshness between launches. Android's minimum practical
+        // cadence is used here; the worker itself is idempotent server-side.
+        manager.enqueueUniquePeriodicWork(
+            PERIODIC_WORK,
             ExistingPeriodicWorkPolicy.UPDATE,
-            request,
+            PeriodicWorkRequestBuilder<AtlasSyncWorker>(1, TimeUnit.HOURS)
+                .setConstraints(constraints)
+                .build(),
         )
     }
 }
 
 /**
- * Zero-UI initializer. Android instantiates this provider when Atlas Connect's
- * process starts, which is enough to restore the periodic job after an update
- * or a normal application launch.
+ * Zero-UI initializer. Android instantiates providers before MainActivity,
+ * making opening Atlas enough to trigger a catch-up without another button.
  */
 class AtlasAutoSyncInitializer : ContentProvider() {
     override fun onCreate(): Boolean {
