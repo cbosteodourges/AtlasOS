@@ -29,6 +29,7 @@
     <uses-permission android:name="android.permission.health.READ_HYDRATION" />
     <uses-permission android:name="android.permission.health.READ_NUTRITION" />
     <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_HISTORY" />
+    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
     <queries><package android:name="com.google.android.apps.healthdata" /></queries>
     <application
         android:theme="@style/AppTheme"
@@ -36,6 +37,10 @@
         android:icon="@drawable/atlas_logo"
         android:roundIcon="@drawable/atlas_logo"
         android:usesCleartextTraffic="true">
+        <provider
+            android:name=".AtlasAutoSyncInitializer"
+            android:authorities="fr.atlasos.connect.autosync"
+            android:exported="false" />
         <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
