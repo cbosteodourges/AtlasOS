@@ -49,9 +49,11 @@ from .research_workout_builder import (
 from .training_program_loader import (
     TrainingProgramLoader,
 )
+from .structured_workout_execution_matcher import (
+    AtlasWorkoutExecutionMatcher,
+)
 from .workout_execution_matcher import (
     AtlasWorkoutExecutionMatch,
-    AtlasWorkoutExecutionMatcher,
 )
 from .response_learning import (
     TrainingResponseLearning,
