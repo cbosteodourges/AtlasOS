@@ -157,17 +157,18 @@
         ));
         if (alreadyRepresented || !executionDate) return [];
 
-        const archivedWorkout = historicalWorkoutForExecution(
-          execution,
-          archived
-        );
+        const archivedWorkout = match.matched
+          ? historicalWorkoutForExecution(execution, archived)
+          : null;
         const activity = execution.activity || {};
         const syntheticId = `completed-${activityId || index}`;
         workoutDecisions[syntheticId] = {
           status: "completed",
           source: "historical_fit",
           activity_id: activityId,
-          execution_score: match.execution?.execution_score
+          execution_score: match.matched
+            ? match.execution?.execution_score
+            : null
         };
 
         return [{
@@ -175,7 +176,18 @@
           workout_id: syntheticId,
           report_activity_id: activityId,
           workout_date: executionDate,
-          title: archivedWorkout?.title || executionSessionLabel(execution),
+          title: archivedWorkout?.title ||
+            (
+              activity.sport === "running"
+                ? "Course \u00e0 pied"
+                : activity.sport === "hiking"
+                  ? "Randonn\u00e9e"
+                  : activity.sport === "walking"
+                    ? "Marche"
+                    : activity.sport === "cycling"
+                      ? "V\u00e9lo"
+                      : executionSessionLabel(execution)
+            ),
           sport: activity.sport || archivedWorkout?.sport || "running",
           planned_duration_minutes:
             Number(activity.duration_minutes) ||
@@ -183,10 +195,13 @@
           actual_duration_minutes: Number(activity.duration_minutes),
           distance_km: Number(activity.distance_km),
           average_heart_rate_bpm: Number(activity.average_heart_rate_bpm),
-          execution_score: Number(match.execution?.execution_score),
+          execution_score: match.matched
+            ? Number(match.execution?.execution_score)
+            : null,
           objective: archivedWorkout?.objective ||
             "Séance réellement effectuée, reconstruite depuis Garmin FIT.",
           planned_distance_km: Number(activity.distance_km),
+          free_activity: !match.matched,
           blocks: (execution.analysis?.blocks || []).map(block => ({
             block_type: block.block_type || "continuous",
             name: `Bloc réalisé · ${String(
@@ -1240,6 +1255,22 @@
   }
 
   function workoutZone(workout) {
+    if (workout.free_activity) {
+      const heartRate = Number(workout.average_heart_rate_bpm);
+
+      if (Number.isFinite(heartRate) && heartRate > 0) {
+        if (heartRate <= 120) return 1;
+        if (heartRate <= 135) return 2;
+        if (heartRate <= 150) return 3;
+        if (heartRate <= 165) return 4;
+        return 5;
+      }
+
+      if (workout.sport === "hiking" || workout.sport === "walking") {
+        return 1;
+      }
+    }
+
     const zones = (workout.blocks || [])
       .map(block => Number(block.target?.zone))
       .filter(zone => zone >= 1 && zone <= 5);
@@ -1257,6 +1288,8 @@
     }[workout.workout_type] || null;
   }
   function compactTarget(workout, zone) {
+    if (workout.free_activity) return zone ? `Z${zone}` : "";
+
     const blocks = (workout.blocks || []).filter(
       block => Number(block.target?.zone) === zone
     );
