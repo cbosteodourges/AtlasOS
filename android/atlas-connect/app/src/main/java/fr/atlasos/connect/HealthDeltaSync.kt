@@ -8,81 +8,26 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
-/** Sends Health Connect upserts directly when they are self-contained wellness
- * records. Exercise sessions and their component streams still use the proven
- * bounded importer until the rich activity delta path is migrated separately. */
+/** Direct Health Connect delta sender. Only an ExerciseSessionRecord itself
+ * requires the rich activity refresh. Component streams are self-contained and
+ * can be stored as wellness deltas without forcing the 1-day legacy reread. */
 class HealthDeltaSync(private val context: Context) {
-    fun requiresActivityRebuild(records: List<Record>): Boolean = records.any {
-        it is ExerciseSessionRecord || it is DistanceRecord || it is SpeedRecord ||
-            it is ElevationGainedRecord || it is StepsCadenceRecord || it is PowerRecord
-    }
+    fun requiresActivityRebuild(records: List<Record>): Boolean = records.any { it is ExerciseSessionRecord }
 
     suspend fun send(records: List<Record>, deletedIds: Set<String>, onProgress: (Int, String) -> Unit): Int {
-        val prefs = context.getSharedPreferences("atlas", Context.MODE_PRIVATE)
-        val server = prefs.getString("server", "").orEmpty()
-        val token = prefs.getString("token", "").orEmpty()
-        require(server.isNotBlank() && token.isNotBlank()) { "Téléphone Atlas non associé" }
-        val wellness = JSONArray()
-        records.forEach { record -> serialize(record)?.let(wellness::put) }
-        if (wellness.length() == 0 && deletedIds.isEmpty()) return 0
-        onProgress(45, "Préparation du delta Santé Connect")
-        AtlasTransport.ingest(server, token, JSONObject()
-            .put("activities", JSONArray())
-            .put("wellness", wellness)
-            .put("deleted_source_ids", JSONArray(deletedIds.toList()))
-            .put("record_inventory", JSONArray())
-            .put("skipped_record_types", JSONArray())
-            .put("sync_schema_version", 8)
-            .put("delta_sync", true)
-            .put("sync_complete", true))
-        onProgress(95, "Delta transmis à Atlas")
-        return wellness.length() + deletedIds.size
+        val prefs=context.getSharedPreferences("atlas",Context.MODE_PRIVATE);val server=prefs.getString("server","").orEmpty();val token=prefs.getString("token","").orEmpty();require(server.isNotBlank()&&token.isNotBlank()){"Téléphone Atlas non associé"}
+        val wellness=JSONArray();records.forEach{r->serialize(r)?.let(wellness::put)}
+        if(wellness.length()==0&&deletedIds.isEmpty())return 0
+        onProgress(45,"Préparation du delta Santé Connect")
+        AtlasTransport.ingest(server,token,JSONObject().put("activities",JSONArray()).put("wellness",wellness).put("deleted_source_ids",JSONArray(deletedIds.toList())).put("record_inventory",JSONArray()).put("skipped_record_types",JSONArray()).put("sync_schema_version",8).put("delta_sync",true).put("sync_complete",true))
+        onProgress(95,"Delta transmis à Atlas");return wellness.length()+deletedIds.size
     }
-
-    private fun serialize(record: Record): JSONObject? = when (record) {
-        is TotalCaloriesBurnedRecord -> interval(record.metadata.id,"total_calories_burned",record.startTime,record.endTime,record.energy.inKilocalories, "energy_kcal", source(record))
-        is ActiveCaloriesBurnedRecord -> interval(record.metadata.id,"active_calories_burned",record.startTime,record.endTime,record.energy.inKilocalories,"energy_kcal",source(record))
-        is BasalMetabolicRateRecord -> instant(record.metadata.id,"basal_metabolic_rate",record.time,record.basalMetabolicRate.inWatts*86400.0/4184.0,"basal_kcal_per_day",source(record))
-        is SleepSessionRecord -> sleep(record)
-        is RestingHeartRateRecord -> instant(record.metadata.id,"resting_heart_rate",record.time,record.beatsPerMinute,"value",source(record))
-        is HeartRateVariabilityRmssdRecord -> instant(record.metadata.id,"hrv_rmssd",record.time,record.heartRateVariabilityMillis,"value",source(record))
-        is WeightRecord -> instant(record.metadata.id,"weight",record.time,record.weight.inKilograms,"value",source(record))
-        is BodyFatRecord -> instant(record.metadata.id,"body_fat",record.time,record.percentage.value,"value",source(record))
-        is HeightRecord -> instant(record.metadata.id,"height",record.time,record.height.inMeters,"value",source(record))
-        is LeanBodyMassRecord -> instant(record.metadata.id,"lean_body_mass",record.time,record.mass.inKilograms,"value",source(record))
-        is BodyWaterMassRecord -> instant(record.metadata.id,"body_water_mass",record.time,record.mass.inKilograms,"value",source(record))
-        is BoneMassRecord -> instant(record.metadata.id,"bone_mass",record.time,record.mass.inKilograms,"value",source(record))
-        is Vo2MaxRecord -> instant(record.metadata.id,"vo2_max",record.time,record.vo2MillilitersPerMinuteKilogram,"value",source(record)).put("measurement_method",record.measurementMethod)
-        is OxygenSaturationRecord -> instant(record.metadata.id,"oxygen_saturation",record.time,record.percentage.value,"value",source(record))
-        is RespiratoryRateRecord -> instant(record.metadata.id,"respiratory_rate",record.time,record.rate,"value",source(record))
-        is BodyTemperatureRecord -> instant(record.metadata.id,"body_temperature",record.time,record.temperature.inCelsius,"value",source(record))
-        is BloodPressureRecord -> instant(record.metadata.id,"blood_pressure",record.time,record.systolic.inMillimetersOfMercury,"systolic_mmhg",source(record)).put("diastolic_mmhg",record.diastolic.inMillimetersOfMercury)
-        is HydrationRecord -> interval(record.metadata.id,"hydration",record.startTime,record.endTime,record.volume.inLiters*1000,"volume_ml",source(record))
-        is NutritionRecord -> nutrition(record)
-        is StepsRecord -> interval(record.metadata.id,"steps",record.startTime,record.endTime,record.count,"value",source(record))
-        is FloorsClimbedRecord -> interval(record.metadata.id,"floors",record.startTime,record.endTime,record.floors,"value",source(record))
-        is HeartRateRecord -> JSONObject().put("source_id",record.metadata.id).put("type","heart_rate_series")
-            .put("start_time",record.startTime).put("end_time",record.endTime).put("local_day",localDay(record.startTime)).put("source_device",source(record))
-            .put("samples",JSONArray(record.samples.map{JSONObject().put("timestamp",it.time).put("value",it.beatsPerMinute)}))
-        else -> null
-    }
-
-    private fun sleep(r: SleepSessionRecord): JSONObject {
-        val session=r.endTime.epochSecond-r.startTime.epochSecond
-        val awake=r.stages.filter{it.stage in setOf(1,3,7)}.sumOf{it.endTime.epochSecond-it.startTime.epochSecond}
-        val explicit=r.stages.filter{it.stage in setOf(2,4,5,6)}.sumOf{it.endTime.epochSecond-it.startTime.epochSecond}
-        return JSONObject().put("source_id",r.metadata.id).put("type","sleep").put("start_time",r.startTime).put("end_time",r.endTime)
-            .put("local_day",localDay(r.endTime.minus(1,ChronoUnit.SECONDS))).put("source_device",source(r)).put("session_duration_seconds",session)
-            .put("awake_duration_seconds",awake).put("duration_seconds",if(explicit>0)explicit else maxOf(0,session-awake))
-            .put("stages",JSONArray(r.stages.map{JSONObject().put("stage",it.stage).put("start_time",it.startTime).put("end_time",it.endTime)}))
-    }
-    private fun nutrition(r:NutritionRecord)=JSONObject().put("source_id",r.metadata.id).put("type","nutrition").put("start_time",r.startTime).put("end_time",r.endTime)
-        .putNullable("energy_kcal",r.energy?.inKilocalories).putNullable("protein_g",r.protein?.inGrams).putNullable("carbohydrate_g",r.totalCarbohydrate?.inGrams)
-        .putNullable("fat_g",r.totalFat?.inGrams).putNullable("fiber_g",r.dietaryFiber?.inGrams).putNullable("sugar_g",r.sugar?.inGrams)
-        .put("local_day",localDay(r.startTime)).put("meal_type",r.mealType).put("name",r.name).put("source_device",source(r))
-    private fun instant(id:String,type:String,time:Instant,value:Number,key:String,source:String)=JSONObject().put("source_id",id).put("type",type).put("start_time",time).put("local_day",localDay(time)).put(key,value).put("source_device",source)
-    private fun interval(id:String,type:String,start:Instant,end:Instant,value:Number,key:String,source:String)=JSONObject().put("source_id",id).put("type",type).put("start_time",start).put("end_time",end).put("local_day",localDay(start)).put(key,value).put("source_device",source)
-    private fun source(r:Record)=r.metadata.dataOrigin.packageName
-    private fun localDay(t:Instant)=t.atZone(ZoneId.systemDefault()).toLocalDate().toString()
-    private fun JSONObject.putNullable(key:String,value:Number?)=if(value==null)this else put(key,value)
+    private fun serialize(r:Record):JSONObject?=when(r){
+        is TotalCaloriesBurnedRecord->interval(r.metadata.id,"total_calories_burned",r.startTime,r.endTime,r.energy.inKilocalories,"energy_kcal",source(r));is ActiveCaloriesBurnedRecord->interval(r.metadata.id,"active_calories_burned",r.startTime,r.endTime,r.energy.inKilocalories,"energy_kcal",source(r));is BasalMetabolicRateRecord->instant(r.metadata.id,"basal_metabolic_rate",r.time,r.basalMetabolicRate.inWatts*86400.0/4184.0,"basal_kcal_per_day",source(r));is SleepSessionRecord->sleep(r);is RestingHeartRateRecord->instant(r.metadata.id,"resting_heart_rate",r.time,r.beatsPerMinute,"value",source(r));is HeartRateVariabilityRmssdRecord->instant(r.metadata.id,"hrv_rmssd",r.time,r.heartRateVariabilityMillis,"value",source(r));is WeightRecord->instant(r.metadata.id,"weight",r.time,r.weight.inKilograms,"value",source(r));is BodyFatRecord->instant(r.metadata.id,"body_fat",r.time,r.percentage.value,"value",source(r));is HeightRecord->instant(r.metadata.id,"height",r.time,r.height.inMeters,"value",source(r));is LeanBodyMassRecord->instant(r.metadata.id,"lean_body_mass",r.time,r.mass.inKilograms,"value",source(r));is BodyWaterMassRecord->instant(r.metadata.id,"body_water_mass",r.time,r.mass.inKilograms,"value",source(r));is BoneMassRecord->instant(r.metadata.id,"bone_mass",r.time,r.mass.inKilograms,"value",source(r));is Vo2MaxRecord->instant(r.metadata.id,"vo2_max",r.time,r.vo2MillilitersPerMinuteKilogram,"value",source(r)).put("measurement_method",r.measurementMethod);is OxygenSaturationRecord->instant(r.metadata.id,"oxygen_saturation",r.time,r.percentage.value,"value",source(r));is RespiratoryRateRecord->instant(r.metadata.id,"respiratory_rate",r.time,r.rate,"value",source(r));is BodyTemperatureRecord->instant(r.metadata.id,"body_temperature",r.time,r.temperature.inCelsius,"value",source(r));is BloodPressureRecord->instant(r.metadata.id,"blood_pressure",r.time,r.systolic.inMillimetersOfMercury,"systolic_mmhg",source(r)).put("diastolic_mmhg",r.diastolic.inMillimetersOfMercury);is HydrationRecord->interval(r.metadata.id,"hydration",r.startTime,r.endTime,r.volume.inLiters*1000,"volume_ml",source(r));is NutritionRecord->nutrition(r);is StepsRecord->interval(r.metadata.id,"steps",r.startTime,r.endTime,r.count,"value",source(r));is FloorsClimbedRecord->interval(r.metadata.id,"floors",r.startTime,r.endTime,r.floors,"value",source(r));is HeartRateRecord->series(r.metadata.id,"heart_rate_series",r.startTime,r.endTime,source(r),JSONArray(r.samples.map{JSONObject().put("timestamp",it.time).put("value",it.beatsPerMinute)}));is DistanceRecord->interval(r.metadata.id,"distance",r.startTime,r.endTime,r.distance.inMeters,"distance_meters",source(r));is ElevationGainedRecord->interval(r.metadata.id,"elevation_gained",r.startTime,r.endTime,r.elevation.inMeters,"elevation_meters",source(r));is SpeedRecord->series(r.metadata.id,"speed_series",r.startTime,r.endTime,source(r),JSONArray(r.samples.map{JSONObject().put("timestamp",it.time).put("value",it.speed.inMetersPerSecond)}));is StepsCadenceRecord->series(r.metadata.id,"cadence_series",r.startTime,r.endTime,source(r),JSONArray(r.samples.map{JSONObject().put("timestamp",it.time).put("value",it.rate)}));is PowerRecord->series(r.metadata.id,"power_series",r.startTime,r.endTime,source(r),JSONArray(r.samples.map{JSONObject().put("timestamp",it.time).put("value",it.power.inWatts)}));else->null}
+    private fun sleep(r:SleepSessionRecord):JSONObject{val session=r.endTime.epochSecond-r.startTime.epochSecond;val awake=r.stages.filter{it.stage in setOf(1,3,7)}.sumOf{it.endTime.epochSecond-it.startTime.epochSecond};val explicit=r.stages.filter{it.stage in setOf(2,4,5,6)}.sumOf{it.endTime.epochSecond-it.startTime.epochSecond};return JSONObject().put("source_id",r.metadata.id).put("type","sleep").put("start_time",r.startTime).put("end_time",r.endTime).put("local_day",localDay(r.endTime.minus(1,ChronoUnit.SECONDS))).put("source_device",source(r)).put("session_duration_seconds",session).put("awake_duration_seconds",awake).put("duration_seconds",if(explicit>0)explicit else maxOf(0,session-awake)).put("stages",JSONArray(r.stages.map{JSONObject().put("stage",it.stage).put("start_time",it.startTime).put("end_time",it.endTime)}))}
+    private fun nutrition(r:NutritionRecord)=JSONObject().put("source_id",r.metadata.id).put("type","nutrition").put("start_time",r.startTime).put("end_time",r.endTime).putNullable("energy_kcal",r.energy?.inKilocalories).putNullable("protein_g",r.protein?.inGrams).putNullable("carbohydrate_g",r.totalCarbohydrate?.inGrams).putNullable("fat_g",r.totalFat?.inGrams).putNullable("fiber_g",r.dietaryFiber?.inGrams).putNullable("sugar_g",r.sugar?.inGrams).put("local_day",localDay(r.startTime)).put("meal_type",r.mealType).put("name",r.name).put("source_device",source(r))
+    private fun instant(id:String,type:String,t:Instant,v:Number,key:String,s:String)=JSONObject().put("source_id",id).put("type",type).put("start_time",t).put("local_day",localDay(t)).put(key,v).put("source_device",s)
+    private fun interval(id:String,type:String,a:Instant,b:Instant,v:Number,key:String,s:String)=JSONObject().put("source_id",id).put("type",type).put("start_time",a).put("end_time",b).put("local_day",localDay(a)).put(key,v).put("source_device",s)
+    private fun series(id:String,type:String,a:Instant,b:Instant,s:String,samples:JSONArray)=JSONObject().put("source_id",id).put("type",type).put("start_time",a).put("end_time",b).put("local_day",localDay(a)).put("source_device",s).put("samples",samples)
+    private fun source(r:Record)=r.metadata.dataOrigin.packageName;private fun localDay(t:Instant)=t.atZone(ZoneId.systemDefault()).toLocalDate().toString();private fun JSONObject.putNullable(k:String,v:Number?)=if(v==null)this else put(k,v)
 }
