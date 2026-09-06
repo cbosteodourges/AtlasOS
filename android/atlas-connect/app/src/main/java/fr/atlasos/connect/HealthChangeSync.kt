@@ -65,13 +65,11 @@ class HealthChangeSync(private val context: Context) {
             return count
         }
 
-        var cursor = oldToken
+        var cursor: String = oldToken
         var changed = false
         while (true) {
             val response = client.getChanges(cursor)
             if (response.changesTokenExpired) {
-                // Safe fallback: do not risk a gap after >30 days or a platform
-                // reset. Re-import the bounded window and establish a new base.
                 onProgress(2, "Jeton expiré · rattrapage Santé Connect")
                 val count = HealthSync(context).run(onProgress)
                 val token = client.getChangesToken(ChangesTokenRequest(recordTypes = recordTypes))
@@ -79,13 +77,12 @@ class HealthChangeSync(private val context: Context) {
                 return count
             }
             if (response.changes.isNotEmpty()) changed = true
-            cursor = response.nextChangesToken
+            val nextCursor = response.nextChangesToken
+            if (nextCursor != null) cursor = nextCursor
             if (!response.hasMore) break
         }
 
         if (!changed) {
-            // Advancing an empty token keeps it alive and avoids expiry while
-            // ensuring the next run starts from the newest HC checkpoint.
             prefs.edit().putString(TOKEN_KEY, cursor).apply()
             onProgress(100, "Santé Connect déjà à jour")
             return 0
@@ -93,7 +90,6 @@ class HealthChangeSync(private val context: Context) {
 
         onProgress(10, "Nouvelles données Santé Connect détectées")
         val count = HealthSync(context).run(onProgress)
-        // Critical ordering: advance only after Atlas acknowledged the upload.
         prefs.edit().putString(TOKEN_KEY, cursor).apply()
         return count
     }
