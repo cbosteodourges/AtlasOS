@@ -13,6 +13,7 @@ from pathlib import Path
 import re
 import socket
 import sys
+import threading
 from urllib.parse import parse_qs, urlparse
 from zipfile import BadZipFile, ZipFile
 
@@ -735,37 +736,49 @@ OPTIONAL_WORKOUTS_PATH = (
     / "private"
     / "atlas-coach-optional-workouts.json"
 )
+OPTIONAL_WORKOUTS_LOCK = threading.Lock()
 
 
 def record_optional_workout(payload):
-    """Persiste une séance ajoutée dans l'interface pour le Watcher."""
+    """Persiste une s?ance ajout?e dans l'interface pour le Watcher."""
 
     workout_id = str(payload.get("workout_id") or "").strip()
     workout_date = str(payload.get("workout_date") or "").strip()
     deleting = bool(payload.get("delete"))
     if not workout_id or (not deleting and not workout_date):
-        raise ValueError("Séance facultative incomplète.")
+        raise ValueError("S?ance facultative incompl?te.")
 
     if not deleting:
         date.fromisoformat(workout_date)
-    history = []
-    if OPTIONAL_WORKOUTS_PATH.exists():
-        with OPTIONAL_WORKOUTS_PATH.open("r", encoding="utf-8") as source:
-            loaded = json.load(source)
-            if isinstance(loaded, list):
-                history = loaded
 
-    history = [
-        item for item in history
-        if str(item.get("workout_id") or "") != workout_id
-    ]
-    if not deleting:
-        history.append(payload)
-    OPTIONAL_WORKOUTS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    temporary = OPTIONAL_WORKOUTS_PATH.with_suffix(".json.tmp")
-    with temporary.open("w", encoding="utf-8", newline="\n") as output:
-        json.dump(history, output, ensure_ascii=False, indent=2)
-    temporary.replace(OPTIONAL_WORKOUTS_PATH)
+    with OPTIONAL_WORKOUTS_LOCK:
+        history = []
+        if OPTIONAL_WORKOUTS_PATH.exists():
+            with OPTIONAL_WORKOUTS_PATH.open("r", encoding="utf-8") as source:
+                loaded = json.load(source)
+                if isinstance(loaded, list):
+                    history = loaded
+
+        history = [
+            item for item in history
+            if str(item.get("workout_id") or "") != workout_id
+        ]
+        if not deleting:
+            history.append(payload)
+
+        OPTIONAL_WORKOUTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        temporary = OPTIONAL_WORKOUTS_PATH.with_name(
+            f"{OPTIONAL_WORKOUTS_PATH.name}.{threading.get_ident()}.tmp"
+        )
+        try:
+            with temporary.open("w", encoding="utf-8", newline="\n") as output:
+                json.dump(history, output, ensure_ascii=False, indent=2)
+                output.write("\n")
+            temporary.replace(OPTIONAL_WORKOUTS_PATH)
+        finally:
+            if temporary.exists():
+                temporary.unlink()
+
     return {"workout_id": workout_id, "deleted": deleting, **payload}
 
 def selected_fields(value, field_names):
