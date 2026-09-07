@@ -122,6 +122,20 @@ class HealthConnectBridgeTests(unittest.TestCase):
         self.assertEqual(activity.raw_metadata["average_cadence"], 171.5)
         self.assertEqual(activity.raw_metadata["maximum_power"], 421)
 
+    def test_missing_elevation_remains_unknown(self):
+        activity = HealthConnectBridge._activity({
+            "source_id": "exercise-without-elevation",
+            "type": "8",
+            "start_time": "2026-09-05T08:00:00Z",
+            "duration_seconds": 1800,
+            "data_coverage": {"elevation": False, "elevation_records": 0},
+        })
+
+        self.assertIsNone(activity.elevation_gain_m)
+        self.assertFalse(
+            activity.raw_metadata["health_connect_data_coverage"]["elevation"]
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

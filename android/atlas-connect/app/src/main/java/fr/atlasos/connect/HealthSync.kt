@@ -14,7 +14,7 @@ import java.time.temporal.ChronoUnit
 
 class HealthSync(private val context: Context) {
     companion object {
-        private const val SYNC_SCHEMA_VERSION = 7
+        private const val SYNC_SCHEMA_VERSION = 8
         private const val RECOVERY_BACKFILL_DAYS = 3650L
     }
     private suspend inline fun <reified T : Record> HealthConnectClient.records(range: TimeRangeFilter): List<T> {
@@ -157,7 +157,14 @@ class HealthSync(private val context: Context) {
             val kcal = if (activeKcal > 0) activeKcal else calories
                 .filter { overlaps(it.startTime, it.endTime, exercise) }
                 .sumOf { it.energy.inKilocalories }
-            val ascent = elevations.filter { overlaps(it.startTime, it.endTime, exercise) }.sumOf { it.elevation.inMeters }
+            val elevationRecords = recordsForExercise(
+                exercise, elevations,
+                { it.startTime }, { it.endTime },
+                { it.metadata.dataOrigin.packageName },
+            ).distinctBy { it.metadata.id }
+            val ascent = elevationRecords
+                .takeIf { it.isNotEmpty() }
+                ?.sumOf { it.elevation.inMeters }
             val coverage = JSONObject()
                 .put("heart_rate_samples", hr.size)
                 .put("speed_samples", speed.size)
@@ -166,12 +173,13 @@ class HealthSync(private val context: Context) {
                 .put("laps", exercise.laps.size)
                 .put("segments", exercise.segments.size)
                 .put("distance", distance > 0.0)
-                .put("elevation", ascent > 0.0)
+                .put("elevation_records", elevationRecords.size)
+                .put("elevation", ascent != null)
             activities.put(JSONObject().put("source_id", exercise.metadata.id).put("type", exercise.exerciseType)
                 .put("start_time", exercise.startTime).put("local_day", localDay(exercise.startTime))
                 .put("duration_seconds", exercise.endTime.epochSecond - exercise.startTime.epochSecond)
                 .put("lap_count", exercise.laps.size).put("segment_count", exercise.segments.size)
-                .put("distance_meters", distance).put("calories_kcal", kcal).put("elevation_gain_m", ascent)
+                .put("distance_meters", distance).put("calories_kcal", kcal).putNullable("elevation_gain_m", ascent)
                 .putNullable("average_heart_rate_bpm", hr.map { it.beatsPerMinute.toDouble() }.averageOrNull())
                 .putNullable("maximum_heart_rate_bpm", hr.maxOfOrNull { it.beatsPerMinute })
                 .putNullable("average_speed_mps", speed.map { it.speed.inMetersPerSecond }.averageOrNull())

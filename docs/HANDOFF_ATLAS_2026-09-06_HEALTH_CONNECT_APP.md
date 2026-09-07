@@ -43,6 +43,12 @@ Architecture cible : `Garmin / Foodvisor -> Santé Connect -> Atlas Android -> H
 - Validation automatisée : 53 tests ciblés passent ; 411/412 tests de la suite complète passent. L'unique échec préexistant concerne l'attente UTC du test Garmin CSV simplifié (`08:15Z` attendu, `06:15Z` obtenu), sans lien avec ce chantier. Syntaxe JS, compilation Python et `git diff --check` validés.
 - Validation terrain course familiale sur PC : compte-rendu libre correct, dominante Z1 verte, 36:24 / 4,89 km, FC globale 106/144 bpm, deux accélérations et variation Z2 conservées, température absente correctement signalée. Finitions suivantes poussées : suppression de l'onglet « Séance initiale » et formulation « Effort observé » pour les activités libres. Randonnée, vélo et rendu smartphone restent à contrôler.
 
+## 4 ter. Vélo Health Connect — chronologie cardiaque du 7 septembre 2026
+- Les tours automatiques restent neutralisés, mais le vélo n'est plus aplati en un unique bloc vert : Atlas reconstruit des segments Z1 à Z5 depuis la série de fréquence cardiaque Health Connect.
+- Calcul : réserve cardiaque individuelle lorsque FC repos + FC max sont connues, sinon pourcentage de FC max ; médiane temporelle sur ±15 s et absorption des changements de moins de 30 s. Vitesse, cadence et puissance enrichissent les métriques des blocs sans utiliser la VMA running.
+- Le dénivelé Android distingue désormais une vraie valeur nulle d'une donnée absente : aucun `ElevationGainedRecord` associé produit `null`/« Non disponible », plus `0 m`. Les enregistrements de la même source que la séance sont prioritaires pour éviter les doublons inter-applications.
+- Schéma de synchronisation Android porté à 8 afin de forcer un backfill d'activité après installation de la nouvelle APK. Santé Connect ne fournit pas ici d'altitude point par point ; Atlas ne peut afficher le dénivelé vélo que si Garmin publie un `ElevationGainedRecord`.
+
 ## 5. Stockage / performance
 - Avant compactage : **173249 records / 68,1 Mio**.
 - Après : **52457 records / 24,6 Mio**.
