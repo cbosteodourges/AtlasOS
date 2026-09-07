@@ -2804,6 +2804,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             </section>
           </main></div>
         </details>
+
+        <details class="source-quality-panel report-confidence-panel">
+          <summary>Fiabilité et recalcul</summary>
+          <p class="report-score-reading">La chronologie vélo est reconstruite depuis les séries Health Connect disponibles, sans utiliser les tours automatiques Garmin.</p>
+          <button class="recalculate-execution-button" type="button" data-recalculate-execution="${escapeHtml(report.activity_id || "")}">Recalculer ce compte-rendu</button>
+          <small data-recalculate-status>Le recalcul remplace cette analyse sans modifier la séance planifiée ni les données sources.</small>
+        </details>
       </section>
     `;
   }
