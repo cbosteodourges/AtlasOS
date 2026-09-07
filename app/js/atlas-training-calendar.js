@@ -2602,16 +2602,36 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             </p>
           </div>
           <div class="report-main-score">
-            <strong>${Number.isFinite(Number(execution.execution_score)) ? reportScore(execution.execution_score) : "—"}</strong>
-            <span>Score d’exécution</span>
+            <strong>${matchedWorkout ? reportScore(execution.execution_score) : "\u2014"}</strong>
+            <span>${matchedWorkout ? "Score d\u2019ex\u00e9cution" : "Activit\u00e9 libre"}</span>
           </div>
         </header>
 
-        ${timelineHtml([{
-          zone: 1,
-          duration: Math.max(duration || 1, 1),
-          label: "Sortie vélo continue"
-        }], "Sortie vélo réalisée")}
+        ${matchedWorkout
+          ? timelineHtml(
+              structuredReportTimelineSegments(
+                workout,
+                timelineBlocks,
+                dominantType,
+                alignedIntervalDetails,
+                actualDuration
+              ),
+              "Organisation de la s\u00e9ance r\u00e9alis\u00e9e"
+            )
+          : timelineHtml(
+              [{
+                zone: workoutZone({
+                  ...workout,
+                  free_activity: true,
+                  average_heart_rate_bpm: activity.average_heart_rate_bpm,
+                  sport: activity.sport
+                }) || 1,
+                duration: Math.max(Number(actualDuration) || 0, 0),
+                label: freeActivityTitle,
+                color: "#49d17d"
+              }],
+              "Effort continu observ\u00e9"
+            )}
 
         <section class="interval-result-summary">
           <div class="report-heading">
@@ -3060,9 +3080,19 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       : "";
     const durationDelta = actualDuration - plannedDuration;
     const distanceDelta = actualDistance - plannedDistance;
-    const executionScore = Number(execution.execution_score);
-    const targetScore = Number(match.target_compliance_score);
-    const temperature = Number(activity.temperature_c);
+    const matchedWorkout = match.matched === true;
+    const executionScore = matchedWorkout
+      ? Number(execution.execution_score)
+      : Number.NaN;
+    const targetScore = matchedWorkout
+      ? Number(match.target_compliance_score)
+      : Number.NaN;
+    const temperatureRaw = activity.temperature_c;
+    const temperature = temperatureRaw === null ||
+      temperatureRaw === undefined ||
+      temperatureRaw === ""
+        ? Number.NaN
+        : Number(temperatureRaw);
     const elevation = Number(activity.elevation_gain_m);
     const hillSamples = Number(drift.excluded_hill_sample_count);
     const learningAllowed =
@@ -3075,17 +3105,21 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       recovery_priority: "Récupération prioritaire"
     };
 
-    const executionConclusion = executionScore >= 80
-      ? "La séance est globalement bien exécutée."
-      : executionScore >= 60
-        ? "La séance est exploitable, avec quelques écarts à surveiller."
-        : "La séance présente des écarts importants par rapport au plan.";
+    const executionConclusion = !matchedWorkout
+      ? "Activit\u00e9 libre analys\u00e9e \u00e0 partir des donn\u00e9es r\u00e9ellement enregistr\u00e9es."
+      : executionScore >= 80
+        ? "La s\u00e9ance est globalement bien ex\u00e9cut\u00e9e."
+        : executionScore >= 60
+          ? "La s\u00e9ance est exploitable, avec quelques \u00e9carts \u00e0 surveiller."
+          : "La s\u00e9ance pr\u00e9sente des \u00e9carts importants par rapport au plan.";
 
-    const targetConclusion = targetScore >= 85
-      ? "Les cibles physiologiques ont été bien respectées."
-      : targetScore >= 65
-        ? "Les cibles ont été partiellement respectées."
-        : "Les cibles prévues ont été peu respectées.";
+    const targetConclusion = !matchedWorkout
+      ? "Aucune cible prescrite : Atlas d\u00e9crit uniquement l\u2019effort observ\u00e9."
+      : targetScore >= 85
+        ? "Les cibles physiologiques ont \u00e9t\u00e9 bien respect\u00e9es."
+        : targetScore >= 65
+          ? "Les cibles ont \u00e9t\u00e9 partiellement respect\u00e9es."
+          : "Les cibles pr\u00e9vues ont \u00e9t\u00e9 peu respect\u00e9es.";
     const prescribedWarmupSeconds = (workout.blocks || [])
       .filter(block => ["warm_up", "warmup"].includes(String(block.block_type || "")))
       .reduce((total, block) => total + Math.max(0, Number(block.duration_minutes) || 0) * 60 + Math.max(0, Number(block.duration_seconds) || 0), 0);
@@ -3239,12 +3273,26 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       ? "./assets/atlas-avatar-femme-clean-final.png?v=2"
       : "./assets/atlas-avatar-homme-clean-final.png?v=2";
 
+    const freeActivityTitle = activity.sport === "running"
+      ? "Course \u00e0 pied"
+      : activity.sport === "hiking"
+        ? "Randonn\u00e9e"
+        : activity.sport === "walking"
+          ? "Marche"
+          : activity.sport === "cycling"
+            ? "V\u00e9lo"
+            : "Activit\u00e9 libre";
+
     return `
       <section class="execution-report execution-report-narrative">
         <header class="report-cockpit-header">
           <div>
             <span>ANALYSE ATLAS · DONNÉES RÉELLES</span>
-            <h2>${escapeHtml(execution.workout_name || workout.title)}</h2>
+            <h2>${escapeHtml(
+              matchedWorkout
+                ? (execution.workout_name || workout.title)
+                : freeActivityTitle
+            )}</h2>
             <p>
               ${escapeHtml(analyzedSessionLabel)}
               · ${activitySourceLabel} reconnues avec une confiance de
@@ -3265,8 +3313,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         <details class="source-quality-panel report-confidence-panel" open>
           <summary>Fiabilité et calcul du compte-rendu</summary>
           <p class="report-score-reading">
-            Le score mesure le respect de la séance prescrite, pas votre niveau de forme ;
-            les portions faciles supplémentaires ne pénalisent pas la cible spécifique.
+            ${matchedWorkout
+              ? "Le score mesure le respect de la s\u00e9ance prescrite, pas votre niveau de forme ; les portions faciles suppl\u00e9mentaires ne p\u00e9nalisent pas la cible sp\u00e9cifique."
+              : "Cette activit\u00e9 n\u2019est associ\u00e9e \u00e0 aucune s\u00e9ance prescrite. Atlas l\u2019analyse donc sans score de conformit\u00e9."}
           </p>
           <div class="source-quality-status">
             <span class="${fitPresent ? "available" : "missing"}">
@@ -3277,6 +3326,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             </span>
           </div>
           ${healthConnectDetail}
+          ${matchedWorkout ? `
           <h4 class="score-audit-title">Calcul des quatre scores</h4>
           <div class="score-audit-grid">
             <article>
@@ -3300,6 +3350,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                 : "Notées uniquement lorsque les durées réelles sont mesurables."}</p>
             </article>
           </div>
+          ` : `
+          <div class="report-score-reading">
+            <strong>Activité libre · aucune séance Atlas associée</strong>
+            <p>Atlas analyse la durée, la distance, l’intensité, la fréquence cardiaque et les autres données disponibles sans attribuer de score d’exécution.</p>
+          </div>
+          `}
           <button class="recalculate-execution-button" type="button" data-recalculate-execution="${escapeHtml(report.activity_id || "")}">Recalculer ce compte-rendu</button>
           <small data-recalculate-status>Le recalcul remplace cette analyse et ne crée aucune nouvelle séance.</small>
         </details>

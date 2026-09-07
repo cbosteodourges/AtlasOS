@@ -2204,12 +2204,18 @@ class DetailedSessionAnalyzer:
             block_type = interval[0]
 
             if block_type in {
-                "acceleration",
                 "sv2",
                 "vma",
                 "sprint",
             }:
                 recovery_context = True
+
+            elif block_type == "acceleration":
+                # Une variation br?ve de vitesse ne suffit pas, ? elle seule,
+                # ? prouver un travail intense n?cessitant une r?cup?ration.
+                # L'acc?l?ration reste d?tect?e comme information biom?canique,
+                # mais n'ouvre pas automatiquement un contexte de r?cup?ration.
+                recovery_context = False
 
             elif (
                 block_type == "z1"
