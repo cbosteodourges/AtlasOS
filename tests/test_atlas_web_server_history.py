@@ -207,10 +207,12 @@ class AtlasWebServerHistoryTests(unittest.TestCase):
 
         self.assertEqual(len(restored), 1)
         self.assertEqual(restored[0]["workout_date"], "2026-08-18")
-        self.assertEqual(restored[0]["title"], "VO₂max")
+        self.assertEqual(restored[0]["title"], "Course à pied")
         self.assertEqual(restored[0]["planned_duration_minutes"], 47)
         self.assertEqual(restored[0]["planned_distance_km"], 8.09)
         self.assertEqual(restored[0]["blocks"][0]["block_type"], "vma")
+        self.assertTrue(restored[0]["free_activity"])
+        self.assertIsNone(restored[0]["execution_score"])
 
 
 if __name__ == "__main__":

@@ -2444,6 +2444,11 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     return {
       easy: "Endurance facile",
       recovery: "Récupération",
+      hiking: "Randonnée",
+      walking: "Marche",
+      cycling: "Vélo",
+      tempo: "Tempo",
+      vma: "VO₂max / VMA",
       threshold: "Travail au seuil",
       intervals: "Intervalles",
       long_run: "Sortie longue"
@@ -2563,6 +2568,138 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     `;
   }
 
+  function freeActivityTitle(sport) {
+    return {
+      running: "Course à pied",
+      hiking: "Randonnée",
+      walking: "Marche",
+      cycling: "Vélo"
+    }[String(sport || "").toLowerCase()] || "Activité libre";
+  }
+
+  function freeActivityTimelineSegments(report) {
+    const activity = report.activity || {};
+    const blocks = Array.isArray(report.analysis?.blocks)
+      ? report.analysis.blocks
+      : [];
+    const zoneByType = {
+      warm_up: 1, cool_down: 1, recovery: 1, z1: 1,
+      z2: 2, z3: 3, tempo: 3, sv2: 4,
+      vma: 5, vo2: 5, sprint: 6, acceleration: 6,
+      hiking: 1, walking: 1, cycling: 1
+    };
+    const labelByType = {
+      warm_up: "Début facile · Z1",
+      cool_down: "Course facile · Z1",
+      recovery: "Récupération · Z1",
+      z1: "Course facile · Z1",
+      z2: "Variation ponctuelle · Z2",
+      z3: "Variation ponctuelle · Z3",
+      tempo: "Variation tempo",
+      sv2: "Variation ponctuelle · SV2",
+      vma: "Accélération ponctuelle",
+      vo2: "Accélération ponctuelle",
+      sprint: "Accélération ponctuelle",
+      acceleration: "Accélération ponctuelle",
+      hiking: "Randonnée continue",
+      walking: "Marche continue",
+      cycling: "Sortie vélo continue"
+    };
+    const segments = blocks
+      .map(block => ({
+        zone: zoneByType[String(block.block_type || "")] || 1,
+        duration: Math.max(Number(block.duration_seconds) || 0, 0),
+        label: labelByType[String(block.block_type || "")] || "Effort observé"
+      }))
+      .filter(segment => segment.duration > 0);
+
+    if (segments.length) return segments;
+    return [{
+      zone: workoutZone({
+        free_activity: true,
+        average_heart_rate_bpm: activity.average_heart_rate_bpm,
+        sport: activity.sport
+      }) || 1,
+      duration: Math.max(Number(activity.duration_minutes) * 60 || 0, 1),
+      label: freeActivityTitle(activity.sport)
+    }];
+  }
+
+  function freeActivityExecutionReportHtml(report) {
+    const activity = report.activity || {};
+    const analysis = report.analysis || {};
+    const title = freeActivityTitle(activity.sport);
+    const durationSeconds = Number(activity.duration_minutes) * 60;
+    const speed = Number(activity.average_speed_kmh);
+    const temperature = activity.temperature_c == null || activity.temperature_c === ""
+      ? Number.NaN
+      : Number(activity.temperature_c);
+    const elevation = activity.elevation_gain_m == null || activity.elevation_gain_m === ""
+      ? Number.NaN
+      : Number(activity.elevation_gain_m);
+    const isRunning = activity.sport === "running";
+    const isCycling = activity.sport === "cycling";
+    const paceOrSpeed = isRunning
+      ? `<strong>${reportPace(3600 / speed)}</strong><small>${reportMeasuredValue(speed, 2, "km/h")}</small>`
+      : `<strong>${reportMeasuredValue(speed, 2, "km/h")}</strong><small>Vitesse moyenne globale</small>`;
+    const eventCount = (analysis.blocks || []).filter(block => [
+      "acceleration", "sprint", "vma", "sv2", "z2", "z3", "tempo"
+    ].includes(block.block_type) && Number(block.duration_seconds) < 60).length;
+
+    return `
+      <section class="execution-report execution-report-narrative free-activity-report">
+        <header class="report-cockpit-header">
+          <div>
+            <span>ANALYSE ATLAS · ACTIVITÉ LIBRE</span>
+            <h2>${escapeHtml(title)}</h2>
+            <p>${escapeHtml(sessionTypeLabel(analysis.session_type))} · aucune séance Atlas prescrite associée.</p>
+          </div>
+          <div class="report-main-score"><strong>—</strong><span>Activité libre</span></div>
+        </header>
+
+        ${timelineHtml(freeActivityTimelineSegments(report), "Chronologie de l’effort observé")}
+
+        <section class="interval-result-summary">
+          <div class="report-heading">
+            <span class="report-kicker">RÉSUMÉ GLOBAL</span>
+            <h3>${escapeHtml(
+              analysis.session_type === "recovery"
+                ? "Course très facile à dominante récupération / Z1"
+                : `${title} analysée selon son intensité globale`
+            )}</h3>
+            <p>Aucun score d’exécution ni aucune conformité à une cible prescrite ne sont calculés.</p>
+          </div>
+          <div class="interval-result-grid">
+            <article><span>Durée</span><strong>${reportBlockTime(durationSeconds)}</strong><small>${reportMeasuredValue(activity.distance_km, 2, "km")}</small></article>
+            <article><span>${isRunning ? "Allure moyenne" : "Vitesse moyenne"}</span>${paceOrSpeed}</article>
+            <article><span>Fréquence cardiaque globale</span><strong>${reportMeasuredValue(activity.average_heart_rate_bpm, 0, "bpm")}</strong><small>max. ${reportMeasuredValue(activity.maximum_heart_rate_bpm, 0, "bpm")}</small></article>
+            <article><span>Dénivelé positif</span><strong>${Number.isFinite(elevation) ? `${reportNumber(elevation, 0)} m` : "Non disponible"}</strong><small>Température · ${Number.isFinite(temperature) ? `${reportNumber(temperature)} °C` : "non disponible"}</small></article>
+          </div>
+        </section>
+
+        <details class="report-more" open>
+          <summary>Voir l’analyse descriptive</summary>
+          <div class="report-analysis-layout"><main>
+            <section class="narrative-analysis-section">
+              <div class="report-heading"><span class="report-kicker">LECTURE ATLAS</span><h3>Nature globale et événements ponctuels sont séparés</h3></div>
+              <p>${escapeHtml((analysis.interpretation || []).join(" ") || `${title} enregistrée et analysée.`)}</p>
+              ${eventCount > 0 ? `<p>${eventCount} variation${eventCount > 1 ? "s" : ""} très courte${eventCount > 1 ? "s" : ""} reste${eventCount > 1 ? "nt" : ""} visible${eventCount > 1 ? "s" : ""} dans la chronologie, sans devenir le travail spécifique représentatif de l’activité.</p>` : ""}
+              ${isCycling ? "<p>Les zones VMA et les allures de course à pied ne sont pas utilisées pour cette sortie vélo.</p>" : ""}
+              ${["hiking", "walking"].includes(activity.sport) ? "<p>Cette activité est traitée comme un effort continu propre à son sport, sans structure de séance running.</p>" : ""}
+            </section>
+          </main></div>
+        </details>
+
+        <details class="source-quality-panel report-confidence-panel">
+          <summary>Fiabilité et recalcul</summary>
+          <p class="report-score-reading">Les valeurs affichées ici proviennent des métriques globales de l’activité. Les micro-blocs servent uniquement à détailler la chronologie.</p>
+          <button class="recalculate-execution-button" type="button" data-recalculate-execution="${escapeHtml(report.activity_id || "")}">Recalculer ce compte-rendu</button>
+          <small data-recalculate-status>Le recalcul remplace cette analyse et ne crée aucune nouvelle séance.</small>
+        </details>
+      </section>
+    `;
+  }
+
   function cyclingExecutionReportHtml(report, workout) {
     const match = report.workout_match || {};
     const execution = match.execution || {};
@@ -2602,36 +2739,16 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             </p>
           </div>
           <div class="report-main-score">
-            <strong>${matchedWorkout ? reportScore(execution.execution_score) : "\u2014"}</strong>
-            <span>${matchedWorkout ? "Score d\u2019ex\u00e9cution" : "Activit\u00e9 libre"}</span>
+            <strong>${reportScore(execution.execution_score)}</strong>
+            <span>Score d’exécution</span>
           </div>
         </header>
 
-        ${matchedWorkout
-          ? timelineHtml(
-              structuredReportTimelineSegments(
-                workout,
-                timelineBlocks,
-                dominantType,
-                alignedIntervalDetails,
-                actualDuration
-              ),
-              "Organisation de la s\u00e9ance r\u00e9alis\u00e9e"
-            )
-          : timelineHtml(
-              [{
-                zone: workoutZone({
-                  ...workout,
-                  free_activity: true,
-                  average_heart_rate_bpm: activity.average_heart_rate_bpm,
-                  sport: activity.sport
-                }) || 1,
-                duration: Math.max(Number(actualDuration) || 0, 0),
-                label: freeActivityTitle,
-                color: "#49d17d"
-              }],
-              "Effort continu observ\u00e9"
-            )}
+        ${timelineHtml([{
+          zone: 1,
+          duration: Math.max(duration * 60 || 0, 1),
+          label: "Sortie vélo continue"
+        }], "Sortie vélo réalisée")}
 
         <section class="interval-result-summary">
           <div class="report-heading">
@@ -2693,6 +2810,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const detailedBlocks = Array.isArray(analysis.blocks)
       ? analysis.blocks
       : [];
+    if (match.matched !== true) {
+      return freeActivityExecutionReportHtml(report);
+    }
     const isCycling = String(activity.sport || workout.sport || "") === "cycling" ||
       String(analysis.session_type || "") === "cycling";
     if (isCycling) {
@@ -3273,26 +3393,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       ? "./assets/atlas-avatar-femme-clean-final.png?v=2"
       : "./assets/atlas-avatar-homme-clean-final.png?v=2";
 
-    const freeActivityTitle = activity.sport === "running"
-      ? "Course \u00e0 pied"
-      : activity.sport === "hiking"
-        ? "Randonn\u00e9e"
-        : activity.sport === "walking"
-          ? "Marche"
-          : activity.sport === "cycling"
-            ? "V\u00e9lo"
-            : "Activit\u00e9 libre";
-
     return `
       <section class="execution-report execution-report-narrative">
         <header class="report-cockpit-header">
           <div>
             <span>ANALYSE ATLAS · DONNÉES RÉELLES</span>
-            <h2>${escapeHtml(
-              matchedWorkout
-                ? (execution.workout_name || workout.title)
-                : freeActivityTitle
-            )}</h2>
+            <h2>${escapeHtml(execution.workout_name || workout.title)}</h2>
             <p>
               ${escapeHtml(analyzedSessionLabel)}
               · ${activitySourceLabel} reconnues avec une confiance de
@@ -3300,7 +3406,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             </p>
           </div>
           <div class="report-main-score">
-            <strong>${reportScore(execution.execution_score)}</strong>
+            <strong>${matchedWorkout ? reportScore(execution.execution_score) : "—"}</strong>
             <span>Score d’exécution</span>
           </div>
           <img

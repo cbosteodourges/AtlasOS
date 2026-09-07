@@ -805,7 +805,7 @@ def execution_summary(item):
     drift = item.get("cardiac_drift") or {}
     analysis = item.get("detailed_analysis") or {}
     integrity = analysis.get("data_integrity") or {}
-    fingerprint = item.get("fingerprint") or {}
+    fingerprint = item.get("activity") or item.get("fingerprint") or {}
 
     return {
         "activity_id": item.get("activity_id"),
@@ -1126,6 +1126,7 @@ def historical_completed_workouts_for_program(
         activity_id = str(execution.get("activity_id") or index)
         duration_minutes = number(activity.get("duration_minutes"), 0)
         distance_km = number(activity.get("distance_km"), 0)
+        matched = match.get("matched") is True
         execution_data = match.get("execution") or {}
 
         restored.append({
@@ -1133,7 +1134,16 @@ def historical_completed_workouts_for_program(
             "workout_id": f"completed-{activity_id}",
             "report_activity_id": activity_id,
             "workout_date": execution_date,
-            "title": archived.get("title") or _session_title(session_type),
+            "title": archived.get("title") or (
+                _session_title(session_type)
+                if matched
+                else {
+                    "running": "Course à pied",
+                    "hiking": "Randonnée",
+                    "walking": "Marche",
+                    "cycling": "Vélo",
+                }.get(sport, "Activité libre")
+            ),
             "objective": (
                 "Séance réellement effectuée et reconstruite à partir "
                 "des données Garmin FIT."
@@ -1146,7 +1156,10 @@ def historical_completed_workouts_for_program(
             "distance_km": distance_km,
             "average_heart_rate_bpm": activity.get("average_heart_rate_bpm"),
             "maximum_heart_rate_bpm": activity.get("maximum_heart_rate_bpm"),
-            "execution_score": execution_data.get("execution_score"),
+            "execution_score": (
+                execution_data.get("execution_score") if matched else None
+            ),
+            "free_activity": not matched,
             "blocks": _actual_blocks(analysis),
             "historical_execution": True,
             "analysis_available": True,

@@ -9,6 +9,33 @@ from tools.atlas_web_server import execution_summary, recalculate_execution
 
 
 class AtlasWebServerExecutionSummaryTests(unittest.TestCase):
+    def test_exposes_global_activity_metrics_instead_of_micro_block_metrics(self):
+        summary = execution_summary({
+            "activity_id": "health_connect:family-run",
+            "activity": {
+                "sport": "running",
+                "session_type": "recovery",
+                "duration_minutes": 36,
+                "distance_km": 4.89,
+                "average_heart_rate_bpm": 105,
+                "maximum_heart_rate_bpm": 144,
+                "temperature_c": None,
+            },
+            "detailed_analysis": {
+                "blocks": [{
+                    "block_type": "z2",
+                    "duration_seconds": 34,
+                    "average_heart_rate_bpm": 135,
+                }],
+            },
+            "atlas_workout_match": {"matched": False},
+        })
+
+        self.assertEqual(summary["activity"]["average_heart_rate_bpm"], 105)
+        self.assertEqual(summary["activity"]["maximum_heart_rate_bpm"], 144)
+        self.assertIsNone(summary["activity"]["temperature_c"])
+        self.assertEqual(summary["analysis"]["blocks"][0]["average_heart_rate_bpm"], 135)
+
     def test_exposes_reconstructed_interval_details_to_browser(self):
         intervals = [{
             "duration_seconds": 180,
