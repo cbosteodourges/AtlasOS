@@ -77,7 +77,7 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
         self.assertEqual(merged[0].heart_rate_bpm, 145)
         self.assertEqual(merged[0].speed_mps, 3.3)
 
-    def test_detects_z2_acceleration_and_recovery(
+    def test_acceleration_does_not_create_false_recovery(
         self,
     ) -> None:
         samples = [
@@ -118,7 +118,8 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
 
         self.assertIn("z2", block_types)
         self.assertIn("acceleration", block_types)
-        self.assertIn("recovery", block_types)
+        self.assertNotIn("recovery", block_types)
+        self.assertEqual(result.recovery_duration_seconds, 0)
         self.assertGreater(
             result.physiological_load_score,
             0,
@@ -131,6 +132,73 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
             "puissance" in text and "cadence" in text
             for text in result.interpretation
         ))
+
+    def test_true_high_intensity_still_creates_recovery(self) -> None:
+        intervals = [
+            ("vma", self._sample(0, 4.0, 0, 160), 0.0, 10.0, 0.0),
+            ("z1", self._sample(10, 2.0, 20, 135), 10.0, 20.0, 20.0),
+        ]
+
+        marked = self.analyzer._mark_recoveries(intervals)
+
+        self.assertEqual([item[0] for item in marked], ["vma", "recovery"])
+
+    def test_family_run_stays_recovery_with_real_short_events(self) -> None:
+        blocks = [
+            SessionBlock(1, "acceleration", 0, 9, 9, 35),
+            SessionBlock(2, "z1", 9, 1145, 1136, 2500),
+            SessionBlock(3, "acceleration", 1145, 1151, 6, 25),
+            SessionBlock(4, "z1", 1151, 1457, 306, 670),
+            SessionBlock(5, "z2", 1457, 1491, 34, 80),
+            SessionBlock(6, "cool_down", 1491, 2182, 691, 1580),
+        ]
+        activity = LongitudinalActivity(
+            atlas_id="health_connect:8fe6e3b4-d4be-3f4d-a08e-8b8c66afbf90",
+            start_time=self.start,
+            activity_type="running",
+            distance_km=4.89,
+            duration_minutes=36.37,
+            average_heart_rate_bpm=105,
+            maximum_heart_rate_bpm=144,
+        )
+        work_blocks = [block for block in blocks if block.block_type != "cool_down"]
+        dominant = self.analyzer._dominant_type(work_blocks)
+
+        session_type = self.analyzer._session_type(activity, work_blocks, dominant)
+
+        self.assertEqual(dominant, "z1")
+        self.assertEqual(session_type, "recovery")
+        self.assertEqual(
+            [block.duration_seconds for block in blocks if block.block_type == "acceleration"],
+            [9, 6],
+        )
+
+    def test_hiking_is_continuous_and_never_uses_running_zones(self) -> None:
+        activity = LongitudinalActivity(
+            atlas_id="health_connect:hiking-test",
+            start_time=self.start,
+            activity_type="hiking",
+            distance_km=5.2,
+            duration_minutes=74,
+            average_speed_kmh=4.22,
+            average_heart_rate_bpm=101,
+            maximum_heart_rate_bpm=132,
+            elevation_gain_m=180,
+            samples=[
+                self._sample(0, 1.1, 0, 92),
+                self._sample(4440, 1.2, 5200, 110),
+            ],
+            laps=[{"lap_trigger": "distance", "total_distance": 1000}],
+        )
+
+        result = self.analyzer.analyze(activity, self.profile)
+
+        self.assertEqual(result.session_type, "hiking")
+        self.assertEqual(result.dominant_work_type, "hiking")
+        self.assertEqual(len(result.blocks), 1)
+        self.assertEqual(result.blocks[0].block_type, "hiking")
+        self.assertFalse(result.threshold_observations)
+        self.assertEqual(result.recovery_duration_seconds, 0)
 
     def test_cycling_distance_laps_are_not_running_sprints(self) -> None:
         samples = [

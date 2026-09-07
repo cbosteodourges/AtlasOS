@@ -6,6 +6,7 @@ import tempfile
 import types
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 garmin_fit_sdk = types.ModuleType("garmin_fit_sdk")
 garmin_fit_sdk.Decoder = object
@@ -14,6 +15,7 @@ sys.modules.setdefault("garmin_fit_sdk", garmin_fit_sdk)
 
 from scripts.sync_atlas_coach_pilot import (
     confirm_matched_workouts,
+    build_record,
     detected_optional_threshold_workout,
     load_concatenated_json_lists,
     load_optional_workouts,
@@ -25,12 +27,74 @@ from scripts.sync_atlas_coach_pilot import (
     same_execution_sources,
     select_fit_files,
 )
-from src.connectors import NormalizedActivity
+from src.connectors import ActivitySample, NormalizedActivity
 from src.performance import AthleteProfile, PhysiologicalReferences
 from src.training import TrainingProgramLoader
 
 
 class AutomaticWorkoutConfirmationTests(unittest.TestCase):
+
+    def test_free_activity_record_keeps_global_metrics_and_removes_candidate_scores(self):
+        activity = NormalizedActivity(
+            provider="health_connect",
+            external_id="family-run",
+            activity_type="running",
+            start_time="2026-09-06T10:00:00+00:00",
+            duration_seconds=2182,
+            distance_meters=4890,
+            average_heart_rate_bpm=105,
+            maximum_heart_rate_bpm=144,
+            average_speed_mps=4890 / 2182,
+            samples=[
+                ActivitySample(
+                    timestamp="2026-09-06T10:00:00+00:00",
+                    speed_mps=2.2,
+                    heart_rate_bpm=98,
+                    distance_meters=0,
+                ),
+                ActivitySample(
+                    timestamp="2026-09-06T10:36:22+00:00",
+                    speed_mps=2.3,
+                    heart_rate_bpm=110,
+                    distance_meters=4890,
+                ),
+            ],
+        )
+        rejected = MagicMock()
+        rejected.matched = False
+        rejected.workout_id = "candidate-vo2"
+        rejected.to_dict.return_value = {
+            "workout_id": "candidate-vo2",
+            "matched": False,
+            "match_confidence_score": 55,
+            "target_compliance_score": 42,
+            "execution": {
+                "workout_name": "VO2 candidate",
+                "execution_score": 55,
+            },
+        }
+        loader = MagicMock()
+        loader.candidates_for_activity.return_value = [object()]
+
+        with (
+            patch("scripts.sync_atlas_coach_pilot.AtlasWorkoutExecutionMatcher") as matcher,
+            patch("scripts.sync_atlas_coach_pilot.detected_optional_threshold_workout", return_value=None),
+        ):
+            matcher.return_value.match.return_value = rejected
+            record = build_record(activity, [], loader, AthleteProfile(
+                athlete_id="test",
+                declared_level="test",
+                observed_level="test",
+                physiological=PhysiologicalReferences(vma_kmh=14),
+            ))
+
+        self.assertEqual(record["activity"]["average_heart_rate_bpm"], 105)
+        self.assertEqual(record["activity"]["maximum_heart_rate_bpm"], 144)
+        self.assertFalse(record["atlas_workout_match"]["matched"])
+        self.assertIsNone(record["atlas_workout_match"]["workout_id"])
+        self.assertIsNone(record["atlas_workout_match"]["match_confidence_score"])
+        self.assertIsNone(record["atlas_workout_match"]["execution"]["execution_score"])
+        self.assertFalse(record["automatic_learning_allowed"])
 
     def test_fit_enriches_health_connect_in_unified_store(self):
         with tempfile.TemporaryDirectory() as directory:

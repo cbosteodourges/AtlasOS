@@ -57,9 +57,12 @@ class DetailedSessionAnalyzer:
             profile
         )
         is_cycling = self._is_cycling(activity)
+        is_running = self._is_running(activity)
         analysis_laps = self._analysis_laps(activity)
         if is_cycling:
             blocks = self._cycling_blocks(activity, profile)
+        elif not is_running:
+            blocks = self._continuous_sport_blocks(activity)
         elif analysis_laps:
             blocks = self._blocks_from_laps(
                 activity,
@@ -139,7 +142,7 @@ class DetailedSessionAnalyzer:
             )
         )
         threshold_observations = (
-            [] if is_cycling
+            [] if not is_running
             else self._threshold_observations(blocks)
         )
 
@@ -307,6 +310,47 @@ class DetailedSessionAnalyzer:
                 "gravel_cycling",
             }
         )
+
+    @staticmethod
+    def _is_running(activity: LongitudinalActivity) -> bool:
+        activity_type = str(activity.activity_type or "").strip().lower()
+        return (
+            "running" in activity_type
+            or activity_type in {"ultrafond", "ultra_running"}
+        )
+
+    @classmethod
+    def _continuous_sport_blocks(
+        cls,
+        activity: LongitudinalActivity,
+    ) -> List[SessionBlock]:
+        """Décrit les sports non-running sans leur appliquer les zones VMA.
+
+        Une randonnée ou une marche reste un effort continu propre à son sport.
+        Ses variations de vitesse ne sont pas des fractions de course à pied.
+        """
+        duration_seconds = max(0.0, activity.duration_minutes * 60)
+        if duration_seconds <= 0:
+            return []
+
+        sport = str(activity.activity_type or "other").strip().lower() or "other"
+        return [SessionBlock(
+            block_index=1,
+            block_type=sport,
+            start_offset_seconds=0.0,
+            end_offset_seconds=duration_seconds,
+            duration_seconds=duration_seconds,
+            distance_meters=max(0.0, activity.distance_km * 1000),
+            average_speed_kmh=activity.average_speed_kmh,
+            average_heart_rate_bpm=activity.average_heart_rate_bpm,
+            maximum_heart_rate_bpm=activity.maximum_heart_rate_bpm,
+            physiological_load_score=min(100, round(activity.duration_minutes / 5)),
+            biomechanical_load_score=min(100, round(activity.duration_minutes / 8)),
+            confidence_score=max(60, min(95, activity.data_quality_score or 75)),
+            detection_reasons=[
+                f"Activité {sport} analysée comme un effort continu sans zones VMA running."
+            ],
+        )]
 
     @classmethod
     def _cycling_blocks(
@@ -2469,6 +2513,8 @@ class DetailedSessionAnalyzer:
         """Classe la nature globale sans déduire une intensité absente."""
         if DetailedSessionAnalyzer._is_cycling(activity):
             return "cycling"
+        if not DetailedSessionAnalyzer._is_running(activity):
+            return str(activity.activity_type or "other").strip().lower() or "other"
         types = {block.block_type for block in work_blocks}
         if not work_blocks or dominant_work_type == "unknown":
             return "unknown"
@@ -2520,6 +2566,8 @@ class DetailedSessionAnalyzer:
             "threshold": "travail au seuil",
             "vma": "travail VMA ou vitesse",
             "cycling": "sortie vélo",
+            "hiking": "randonnée",
+            "walking": "marche",
             "unknown": "nature non déterminée",
         }
         interpretation = [

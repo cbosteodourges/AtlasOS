@@ -683,6 +683,38 @@ def build_record(
             ):
                 best_match = restored_match
 
+    serialized_match = best_match.to_dict() if best_match is not None else None
+    if serialized_match is not None and not best_match.matched:
+        # Le matcher peut calculer plusieurs scores pour départager ses candidats.
+        # Ils restent un détail interne de sélection et ne décrivent pas
+        # l'exécution d'une prescription lorsque le candidat est rejeté.
+        serialized_match.update({
+            "workout_id": None,
+            "match_confidence_score": None,
+            "duration_compliance_score": None,
+            "distance_compliance_score": None,
+            "target_compliance_score": None,
+            "recovery_compliance_score": None,
+            "score_audit": {},
+            "execution": {
+                "workout_name": "",
+                "workout_origin": "free_activity",
+                "origin_confidence_score": None,
+                "origin_reasons": [],
+                "planned_step_count": 0,
+                "executed_block_count": len(analysis.blocks),
+                "planned_repetition_count": 0,
+                "completed_repetition_count": 0,
+                "target_compliance_score": None,
+                "recovery_compliance_score": None,
+                "execution_score": None,
+                "observations": [
+                    "Activité libre : aucune prescription Atlas associée."
+                ],
+                "interval_details": [],
+            },
+        })
+
     return {
         "activity_id": longitudinal.atlas_id,
         "provider": normalized_activity.provider,
@@ -713,13 +745,12 @@ def build_record(
         "start_time": longitudinal.start_time,
         "processed_at": datetime.now(timezone.utc),
         "fingerprint": asdict(fingerprint),
+        # Copie explicite des métriques globales pour les consommateurs qui ne
+        # connaissent pas encore le nom historique `fingerprint`.
+        "activity": asdict(fingerprint),
         "detailed_analysis": asdict(analysis),
         "cardiac_drift": asdict(cardiac_drift),
-        "atlas_workout_match": (
-            best_match.to_dict()
-            if best_match is not None
-            else None
-        ),
+        "atlas_workout_match": serialized_match,
         "automatic_learning_allowed": bool(
             best_match is not None
             and best_match.matched
