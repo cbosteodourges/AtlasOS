@@ -4,7 +4,9 @@
 **Statut : document directeur produit — à réévaluer avant toute diffusion publique**
 
 ## 1. Pourquoi ce document existe
-Ce document fixe la direction du module **Atlas Santé** afin que son développement reste cohérent avec la vocation première d’Atlas : entraînement, performance, prévention sportive et gestion prudente des contraintes ressenties par l’utilisateur.
+Ce document fixe la direction du module **Atlas Santé** afin que son développement reste cohérent avec la vocation première d’Atlas :
+
+> **Atlas = moteur intelligent d’entraînement, de performance, de prévention sportive, de biomécanique et de gestion prudente des contraintes.**
 
 Il doit servir de garde-fou pendant le développement : une nouvelle fonction Santé ne doit pas être ajoutée uniquement parce qu’elle est techniquement possible. Il faut d’abord vérifier qu’elle ne transforme pas involontairement Atlas en logiciel revendiquant une finalité médicale.
 
@@ -61,9 +63,13 @@ Prévoir des illustrations/animations/vidéos Atlas originales.
 ### 4.6 Signaux d’alerte et orientation
 Atlas doit pouvoir interrompre son conseil sportif lorsqu’une situation déclarée dépasse son cadre et recommander une évaluation par un professionnel de santé.
 
+**Formulation de référence à conserver dans l’interface Atlas :**
+
+> **Cette situation dépasse le cadre des conseils d'entraînement proposés par Atlas. Une évaluation par un professionnel de santé est recommandée avant la reprise de l'entraînement.**
+
 Objectif : **orienter sans diagnostiquer**.
 
-Les critères exacts et leur formulation devront être validés avant mise en production.
+Les critères exacts déclenchant ce message devront être validés avant mise en production.
 
 ## 5. Frontière fonctionnelle à préserver
 
