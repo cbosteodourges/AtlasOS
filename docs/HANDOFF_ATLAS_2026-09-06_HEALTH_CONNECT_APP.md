@@ -34,6 +34,15 @@ Architecture cible : `Garmin / Foodvisor -> Santé Connect -> Atlas Android -> H
 3. Activité Garmin : préserver FC, vitesse, distance, tours/segments, cadence, puissance, dénivelé.
 4. Mesurer le nombre réel d'éléments transmis et vérifier leur intégration Atlas.
 
+## 4 bis. Activités libres — stabilisation du 7 septembre 2026
+- Commits moteur/interface : `58637fb`, `0b73078`.
+- Une activité `matched:false` conserve désormais ses métriques globales dans `activity`, mais ne transporte plus les scores, le nom ni la conformité du candidat rejeté. `automatic_learning_allowed` reste faux.
+- Le compte-rendu libre utilise durée, distance, vitesse/allure et FC moyenne/max globales. Les micro-blocs servent uniquement à la chronologie ; une température absente reste « non disponible ».
+- Cas de référence `health_connect:8fe6e3b4-d4be-3f4d-a08e-8b8c66afbf90` : dominante attendue récupération/Z1, accélérations réelles de 9 s et 6 s conservées, variation Z2 de 34 s visible mais non structurante, récupération artificielle nulle.
+- Randonnée/marche : analyse continue propre au sport, sans zones VMA running ni seuils running. Vélo libre : même compte-rendu descriptif sans score ; le rendu vélo apparié ne référence plus de variables inexistantes.
+- Validation automatisée : 53 tests ciblés passent ; 411/412 tests de la suite complète passent. L'unique échec préexistant concerne l'attente UTC du test Garmin CSV simplifié (`08:15Z` attendu, `06:15Z` obtenu), sans lien avec ce chantier. Syntaxe JS, compilation Python et `git diff --check` validés.
+- Validation terrain encore nécessaire après pull/recalcul : ouvrir les comptes-rendus course familiale, randonnée et vélo sur PC puis smartphone et confirmer le rendu des chronologies et des métriques globales.
+
 ## 5. Stockage / performance
 - Avant compactage : **173249 records / 68,1 Mio**.
 - Après : **52457 records / 24,6 Mio**.
