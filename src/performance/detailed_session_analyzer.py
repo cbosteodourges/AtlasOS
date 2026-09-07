@@ -3,6 +3,7 @@ ATLAS OS
 Analyse détaillée des points, tours et zones d'une séance FIT.
 """
 
+from bisect import bisect_left, bisect_right
 from datetime import datetime
 from statistics import mean, median
 from typing import List, Optional, Tuple
@@ -79,7 +80,8 @@ class DetailedSessionAnalyzer:
             blocks = self._group_intervals(
                 intervals
             )
-        blocks = self._mark_session_boundaries(blocks)
+        if not is_cycling:
+            blocks = self._mark_session_boundaries(blocks)
         if not analysis_laps:
             blocks = self._consolidate_threshold_repetitions(
                 blocks
@@ -358,23 +360,59 @@ class DetailedSessionAnalyzer:
         activity: LongitudinalActivity,
         profile: Optional[AthleteProfile] = None,
     ) -> List[SessionBlock]:
-        """Conserve une sortie vélo continue sans interpréter les Auto Lap.
+        """Reconstruit l'intensité vélo depuis la FC, jamais depuis les tours.
 
-        Les tours distance Garmin servent à l'affichage des kilomètres, pas
-        à détecter des répétitions. Ils ne doivent donc jamais devenir des
-        sprints ou des zones de course à pied.
+        Les tours automatiques Health Connect/Garmin ne portent aucune
+        sémantique d'entraînement. La chronologie utilise donc la FC lissée et
+        les références individuelles. Vitesse, cadence et puissance restent
+        des mesures descriptives, sans appliquer la VMA running.
         """
         duration_seconds = max(0.0, activity.duration_minutes * 60)
         if duration_seconds <= 0:
             return []
-        physiological_load = min(100, round(activity.duration_minutes / 4))
-        biomechanical_load = min(100, round(activity.duration_minutes / 10))
         corrected_maximum, spike_filtered = cls._sustained_heart_rate_maximum(
             activity,
             profile,
         )
+        ordered_samples = cls._ordered_samples(activity.samples)
+        heart_rate_samples = [
+            sample for sample in ordered_samples
+            if sample.heart_rate_bpm is not None
+            and 30 <= float(sample.heart_rate_bpm) <= 240
+        ]
+        maximum_heart_rate = (
+            profile.physiological.maximum_heart_rate_bpm
+            if profile else None
+        )
+        if maximum_heart_rate and len(heart_rate_samples) >= 2:
+            blocks = cls._cycling_heart_rate_blocks(
+                activity,
+                heart_rate_samples,
+                ordered_samples,
+                float(maximum_heart_rate),
+                (
+                    profile.physiological.resting_heart_rate_bpm
+                    if profile else None
+                ),
+            )
+            if blocks:
+                if spike_filtered:
+                    for block in blocks:
+                        if (
+                            block.maximum_heart_rate_bpm is not None
+                            and corrected_maximum is not None
+                            and block.maximum_heart_rate_bpm > corrected_maximum
+                        ):
+                            block.maximum_heart_rate_bpm = corrected_maximum
+                        block.detection_reasons.append(
+                            "Pic cardiaque isolé neutralisé par le filtre médian."
+                        )
+                return blocks
+
+        physiological_load = min(100, round(activity.duration_minutes / 4))
+        biomechanical_load = min(100, round(activity.duration_minutes / 10))
         reasons = [
-            "Sortie vélo analysée comme un effort continu ; tours distance Garmin neutralisés."
+            "FC détaillée ou FC maximale individuelle insuffisante ; sortie vélo conservée continue."
         ]
         if spike_filtered:
             reasons.append(
@@ -404,6 +442,200 @@ class DetailedSessionAnalyzer:
             confidence_score=max(70, min(95, activity.data_quality_score or 85)),
             detection_reasons=reasons,
         )]
+
+    @classmethod
+    def _cycling_heart_rate_blocks(
+        cls,
+        activity: LongitudinalActivity,
+        samples: List[ActivitySample],
+        measurement_samples: List[ActivitySample],
+        maximum_heart_rate: float,
+        resting_heart_rate: Optional[float],
+    ) -> List[SessionBlock]:
+        """Produit des blocs Z1-Z5 stables à partir de la série cardiaque."""
+        start = activity.start_time
+        duration = max(0.0, activity.duration_minutes * 60)
+        offsets = [
+            min(
+                duration,
+                max(
+                    0.0,
+                    (cls._date(s.timestamp) - start).total_seconds(),
+                ),
+            )
+            for s in samples
+        ]
+        values = [float(s.heart_rate_bpm) for s in samples]
+        smoothed = []
+        for offset in offsets:
+            left = bisect_left(offsets, offset - 15)
+            right = bisect_right(offsets, offset + 15)
+            smoothed.append(median(values[left:right]))
+
+        def zone(value: float) -> str:
+            if (
+                resting_heart_rate is not None
+                and maximum_heart_rate > resting_heart_rate
+            ):
+                intensity = (value - float(resting_heart_rate)) / (
+                    maximum_heart_rate - float(resting_heart_rate)
+                ) * 100
+            else:
+                intensity = value / maximum_heart_rate * 100
+            if intensity < 60:
+                return "z1"
+            if intensity < 70:
+                return "z2"
+            if intensity < 80:
+                return "z3"
+            if intensity < 90:
+                return "z4"
+            return "z5"
+
+        intervals = []
+        for index in range(len(samples)):
+            interval_start = 0.0 if index == 0 else offsets[index]
+            interval_end = (
+                offsets[index + 1]
+                if index + 1 < len(samples)
+                else duration
+            )
+            if interval_end > interval_start:
+                intervals.append([
+                    zone(smoothed[index]),
+                    interval_start,
+                    interval_end,
+                ])
+        if not intervals:
+            return []
+
+        groups = []
+        for block_type, interval_start, interval_end in intervals:
+            if groups and groups[-1][0] == block_type:
+                groups[-1][2] = interval_end
+            else:
+                groups.append([block_type, interval_start, interval_end])
+
+        changed = True
+        while changed and len(groups) > 1:
+            changed = False
+            for index, group in enumerate(groups):
+                if group[2] - group[1] >= 30:
+                    continue
+                target = index - 1 if index == len(groups) - 1 else index + 1
+                if 0 < index < len(groups) - 1:
+                    before, after = groups[index - 1], groups[index + 1]
+                    target = index - 1 if (
+                        before[0] == after[0]
+                        or before[2] - before[1] >= after[2] - after[1]
+                    ) else index + 1
+                groups[target][1] = min(groups[target][1], group[1])
+                groups[target][2] = max(groups[target][2], group[2])
+                groups.pop(index)
+                groups.sort(key=lambda item: item[1])
+                merged = []
+                for item in groups:
+                    if merged and merged[-1][0] == item[0]:
+                        merged[-1][2] = item[2]
+                    else:
+                        merged.append(item)
+                groups = merged
+                changed = True
+                break
+
+        blocks = []
+        measurement_offsets = [
+            min(
+                duration,
+                max(
+                    0.0,
+                    (cls._date(sample.timestamp) - start).total_seconds(),
+                ),
+            )
+            for sample in measurement_samples
+        ]
+        for index, (block_type, block_start, block_end) in enumerate(
+            groups,
+            start=1,
+        ):
+            block_samples = [
+                sample
+                for sample, offset in zip(
+                    measurement_samples,
+                    measurement_offsets,
+                )
+                if block_start <= offset <= block_end
+            ]
+            seconds = block_end - block_start
+            speeds = [
+                float(s.speed_mps) * 3.6
+                for s in block_samples
+                if s.speed_mps is not None
+            ]
+            powers = [
+                float(s.power_watts)
+                for s in block_samples
+                if s.power_watts is not None
+            ]
+            cadences = [
+                float(s.cadence_spm)
+                for s in block_samples
+                if s.cadence_spm is not None
+            ]
+            heart_rates = [
+                float(s.heart_rate_bpm)
+                for s in block_samples
+                if s.heart_rate_bpm is not None
+            ]
+            blocks.append(SessionBlock(
+                block_index=index,
+                block_type=block_type,
+                start_offset_seconds=block_start,
+                end_offset_seconds=block_end,
+                duration_seconds=seconds,
+                distance_meters=seconds * (
+                    mean(speeds) / 3.6
+                    if speeds
+                    else (activity.average_speed_kmh or 0) / 3.6
+                ),
+                average_speed_kmh=(
+                    mean(speeds) if speeds else activity.average_speed_kmh
+                ),
+                maximum_speed_kmh=(
+                    max(speeds) if speeds else activity.average_speed_kmh
+                ),
+                average_heart_rate_bpm=mean(heart_rates) if heart_rates else None,
+                maximum_heart_rate_bpm=max(heart_rates) if heart_rates else None,
+                average_power_watts=mean(powers) if powers else None,
+                average_cadence_spm=mean(cadences) if cadences else None,
+                physiological_load_score=cls._physiological_load(
+                    block_type,
+                    seconds,
+                ),
+                biomechanical_load_score=cls._biomechanical_load(
+                    block_type,
+                    seconds,
+                    block_samples,
+                ),
+                confidence_score=cls._block_confidence(block_samples),
+                detection_reasons=[
+                    "Zone vélo reconstruite depuis la FC lissée ; "
+                    "tours automatiques ignorés.",
+                    (
+                        "Intensité calculée en réserve cardiaque."
+                        if resting_heart_rate is not None
+                        else "Intensité calculée en pourcentage de FC maximale."
+                    ),
+                ],
+            ))
+
+        measured_distance = sum(block.distance_meters for block in blocks)
+        target_distance = max(0.0, activity.distance_km * 1000)
+        if measured_distance > 0 and target_distance > 0:
+            factor = target_distance / measured_distance
+            for block in blocks:
+                block.distance_meters *= factor
+        return blocks
 
     @classmethod
     def _sustained_heart_rate_maximum(
@@ -2367,6 +2599,8 @@ class DetailedSessionAnalyzer:
             "z1": 0.7,
             "z2": 1.0,
             "z3": 1.5,
+            "z4": 2.2,
+            "z5": 3.0,
             "sv2": 2.2,
             "vma": 3.0,
             "acceleration": 3.2,
@@ -2390,6 +2624,8 @@ class DetailedSessionAnalyzer:
             "z1": 0.6,
             "z2": 0.8,
             "z3": 1.2,
+            "z4": 1.7,
+            "z5": 2.4,
             "sv2": 1.7,
             "vma": 2.4,
             "acceleration": 2.8,

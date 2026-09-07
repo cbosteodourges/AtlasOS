@@ -31,6 +31,7 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
             observed_level="intermediate",
             physiological=PhysiologicalReferences(
                 maximum_heart_rate_bpm=180,
+                resting_heart_rate_bpm=50,
                 threshold_heart_rate_bpm=160,
                 vma_kmh=14,
                 threshold_speed_kmh=12.8,
@@ -240,11 +241,66 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
         result = self.analyzer.analyze(activity, self.profile)
 
         self.assertEqual(result.session_type, "cycling")
-        self.assertEqual(result.dominant_work_type, "cycling")
+        self.assertEqual(result.dominant_work_type, "z1")
         self.assertEqual(len(result.blocks), 1)
-        self.assertEqual(result.blocks[0].block_type, "cycling")
+        self.assertEqual(result.blocks[0].block_type, "z1")
         self.assertAlmostEqual(result.work_distance_meters, 24250)
         self.assertFalse(result.threshold_observations)
+
+    def test_cycling_rebuilds_sustained_hills_from_heart_rate(self) -> None:
+        samples = []
+        for second in range(0, 1200):
+            heart_rate = 112
+            if 300 <= second < 390:
+                heart_rate = 145
+            elif 720 <= second < 840:
+                heart_rate = 158
+            samples.append(self._sample(second, 7.0, second * 7.0, heart_rate))
+        activity = LongitudinalActivity(
+            atlas_id="health_connect:cycling-hills",
+            start_time=self.start,
+            activity_type="cycling",
+            distance_km=8.4,
+            duration_minutes=20,
+            average_speed_kmh=25.2,
+            average_heart_rate_bpm=121,
+            maximum_heart_rate_bpm=158,
+            samples=samples,
+            laps=[{"lap_trigger": "health_connect", "total_distance": 5000}],
+        )
+
+        result = self.analyzer.analyze(activity, self.profile)
+
+        self.assertEqual(result.session_type, "cycling")
+        self.assertEqual(
+            [block.block_type for block in result.blocks],
+            ["z1", "z3", "z1", "z4", "z1"],
+        )
+        self.assertAlmostEqual(sum(block.distance_meters for block in result.blocks), 8400)
+        self.assertTrue(all(
+            "tours automatiques ignorés" in block.detection_reasons[0]
+            for block in result.blocks
+        ))
+
+    def test_cycling_ignores_a_brief_zone_change(self) -> None:
+        samples = [
+            self._sample(second, 7.0, second * 7.0, 155 if 120 <= second < 130 else 112)
+            for second in range(300)
+        ]
+        activity = LongitudinalActivity(
+            atlas_id="health_connect:cycling-brief-spike",
+            start_time=self.start,
+            activity_type="cycling",
+            distance_km=2.1,
+            duration_minutes=5,
+            average_heart_rate_bpm=114,
+            maximum_heart_rate_bpm=155,
+            samples=samples,
+        )
+
+        result = self.analyzer.analyze(activity, self.profile)
+
+        self.assertEqual([block.block_type for block in result.blocks], ["z1"])
 
     def test_cycling_isolated_heart_rate_spike_is_filtered(self) -> None:
         samples = [
