@@ -41,7 +41,7 @@ Architecture cible : `Garmin / Foodvisor -> Santé Connect -> Atlas Android -> H
 - Cas de référence `health_connect:8fe6e3b4-d4be-3f4d-a08e-8b8c66afbf90` : dominante attendue récupération/Z1, accélérations réelles de 9 s et 6 s conservées, variation Z2 de 34 s visible mais non structurante, récupération artificielle nulle.
 - Randonnée/marche : analyse continue propre au sport, sans zones VMA running ni seuils running. Vélo libre : même compte-rendu descriptif sans score ; le rendu vélo apparié ne référence plus de variables inexistantes.
 - Validation automatisée : 53 tests ciblés passent ; 411/412 tests de la suite complète passent. L'unique échec préexistant concerne l'attente UTC du test Garmin CSV simplifié (`08:15Z` attendu, `06:15Z` obtenu), sans lien avec ce chantier. Syntaxe JS, compilation Python et `git diff --check` validés.
-- Validation terrain encore nécessaire après pull/recalcul : ouvrir les comptes-rendus course familiale, randonnée et vélo sur PC puis smartphone et confirmer le rendu des chronologies et des métriques globales.
+- Validation terrain course familiale sur PC : compte-rendu libre correct, dominante Z1 verte, 36:24 / 4,89 km, FC globale 106/144 bpm, deux accélérations et variation Z2 conservées, température absente correctement signalée. Finitions suivantes poussées : suppression de l'onglet « Séance initiale » et formulation « Effort observé » pour les activités libres. Randonnée, vélo et rendu smartphone restent à contrôler.
 
 ## 5. Stockage / performance
 - Avant compactage : **173249 records / 68,1 Mio**.

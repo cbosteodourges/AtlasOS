@@ -3310,6 +3310,10 @@ body[data-coach-section]
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.session-dialog-tabs.free-activity-tabs {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .adapted-session-heading {
   margin-bottom: 18px;
   padding: 14px 16px;
@@ -4135,6 +4139,10 @@ body[data-coach-section]
   padding: 11px 82px 11px 24px;
   border-bottom: 1px solid rgba(53,204,255,.25);
   background: linear-gradient(90deg,#031522,#061f31 50%,#031522);
+}
+
+#atlasSessionDialog.atlas-session-dialog .session-dialog-tabs.free-activity-tabs {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 #atlasSessionDialog.atlas-session-dialog .session-dialog-tabs button {

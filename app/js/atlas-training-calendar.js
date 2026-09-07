@@ -2645,6 +2645,14 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const eventCount = (analysis.blocks || []).filter(block => [
       "acceleration", "sprint", "vma", "sv2", "z2", "z3", "tempo"
     ].includes(block.block_type) && Number(block.duration_seconds) < 60).length;
+    const descriptiveInterpretation = (analysis.interpretation || [])
+      .map(text => String(text)
+        .replace(/^Bloc\(s\) de travail — /, "Effort observé — ")
+        .replace(
+          "pour les blocs de travail",
+          "pour l’effort observé"
+        ))
+      .join(" ");
 
     return `
       <section class="execution-report execution-report-narrative free-activity-report">
@@ -2682,7 +2690,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           <div class="report-analysis-layout"><main>
             <section class="narrative-analysis-section">
               <div class="report-heading"><span class="report-kicker">LECTURE ATLAS</span><h3>Nature globale et événements ponctuels sont séparés</h3></div>
-              <p>${escapeHtml((analysis.interpretation || []).join(" ") || `${title} enregistrée et analysée.`)}</p>
+              <p>${escapeHtml(descriptiveInterpretation || `${title} enregistrée et analysée.`)}</p>
               ${eventCount > 0 ? `<p>${eventCount} variation${eventCount > 1 ? "s" : ""} très courte${eventCount > 1 ? "s" : ""} reste${eventCount > 1 ? "nt" : ""} visible${eventCount > 1 ? "s" : ""} dans la chronologie, sans devenir le travail spécifique représentatif de l’activité.</p>` : ""}
               ${isCycling ? "<p>Les zones VMA et les allures de course à pied ne sont pas utilisées pour cette sortie vélo.</p>" : ""}
               ${["hiking", "walking"].includes(activity.sport) ? "<p>Cette activité est traitée comme un effort continu propre à son sport, sans structure de séance running.</p>" : ""}
@@ -4254,11 +4262,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     dialog.dataset.workoutId = workout.workout_id;
     let loadedReport = null;
     let loadedContext = null;
+    const isFreeActivity = workout.free_activity === true;
     const cancelled = workoutDecision(workout).status === "skipped";
     const adaptedWorkout = cancelled
       ? workout
       : preparation?.adaptation?.adapted_workout || workout;
     const hasAdaptation = Boolean(
+      !isFreeActivity &&
       !cancelled &&
       preparation?.adaptation?.adapted_workout &&
       preparation?.decision?.action &&
@@ -4266,7 +4276,8 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     );
 
     content.innerHTML = `
-      <nav class="session-dialog-tabs${hasAdaptation ? " has-adaptation" : ""}" aria-label="Fiche de séance">
+      <nav class="session-dialog-tabs${hasAdaptation ? " has-adaptation" : ""}${isFreeActivity ? " free-activity-tabs" : ""}" aria-label="Fiche de séance">
+        ${isFreeActivity ? "" : `
         <button
           type="button"
           class="active"
@@ -4275,6 +4286,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         >
           Séance initiale
         </button>
+        `}
         ${hasAdaptation ? `
           <button
             type="button"
@@ -4287,21 +4299,22 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         <button
           type="button"
           data-session-tab="report"
-          aria-selected="false"
+          class="${isFreeActivity ? "active" : ""}"
+          aria-selected="${isFreeActivity ? "true" : "false"}"
         >
           Compte-rendu Atlas
           <i data-report-status>Chargement…</i>
         </button>
       </nav>
 
-      <section
+      ${isFreeActivity ? "" : `<section
         class="session-tab-panel active"
         data-session-panel="planned"
       >
           ${detailHtml(workout)}
           ${dailyPreparationDetailHtml(preparation, workout)}
           ${workoutActionsHtml(workout)}
-      </section>
+      </section>`}
 
       ${hasAdaptation ? `
         <section
@@ -4318,9 +4331,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       ` : ""}
 
       <section
-        class="session-tab-panel"
+        class="session-tab-panel${isFreeActivity ? " active" : ""}"
         data-session-panel="report"
-        hidden
+        ${isFreeActivity ? "" : "hidden"}
       >
         <div class="report-loading">
           <span></span>
