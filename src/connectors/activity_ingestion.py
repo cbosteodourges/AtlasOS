@@ -97,6 +97,22 @@ def merge_activities(current: NormalizedActivity, incoming: NormalizedActivity) 
         **winner.raw_metadata,
     }
 
+    # Un ancien schéma Android transformait une altitude absente en 0 m.
+    # Lors d'un réimport Health Connect, la couverture explicite du nouveau
+    # schéma doit pouvoir effacer ce faux zéro au lieu de le reprendre comme
+    # valeur de secours.
+    health_coverage = winner.raw_metadata.get(
+        "health_connect_data_coverage",
+        {},
+    )
+    if (
+        winner.provider == "health_connect"
+        and health_coverage.get("elevation") is False
+        and not fallback.raw_metadata.get("source_file")
+    ):
+        merged.elevation_gain_m = None
+        provenance.pop("elevation_gain_m", None)
+
     # Le FIT est la référence sportive fine. Health Connect conserve son
     # identifiant et complète seulement les champs réellement absents.
     fallback_is_fit = bool(

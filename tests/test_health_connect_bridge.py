@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import patch
 
 from src.connectors import HealthConnectBridge
+from src.connectors.activity_ingestion import merge_activities
 
 
 class HealthConnectBridgeTests(unittest.TestCase):
@@ -135,6 +136,27 @@ class HealthConnectBridgeTests(unittest.TestCase):
         self.assertFalse(
             activity.raw_metadata["health_connect_data_coverage"]["elevation"]
         )
+
+    def test_schema_backfill_removes_legacy_false_zero_elevation(self):
+        common = {
+            "source_id": "cycling-elevation-migration",
+            "type": "8",
+            "start_time": "2026-09-05T08:00:00Z",
+            "duration_seconds": 1800,
+        }
+        legacy = HealthConnectBridge._activity({
+            **common,
+            "elevation_gain_m": 0,
+            "data_coverage": {"elevation": False},
+        })
+        corrected = HealthConnectBridge._activity({
+            **common,
+            "data_coverage": {"elevation": False, "elevation_records": 0},
+        })
+
+        merged = merge_activities(legacy, corrected)
+
+        self.assertIsNone(merged.elevation_gain_m)
 
 
 if __name__ == "__main__":
