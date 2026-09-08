@@ -2722,7 +2722,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     `;
   }
 
-  function cyclingMetricChartHtml(title, points, unit, color) {
+  function cyclingMetricChartHtml(title, points, unit, color, statistics = {}) {
     const values = (Array.isArray(points) ? points : [])
       .map(point => ({ t: Number(point.t), v: Number(point.v) }))
       .filter(point => Number.isFinite(point.t) && Number.isFinite(point.v));
@@ -2738,6 +2738,11 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const maximumTime = Math.max(...values.map(point => point.t), 1);
     const rawMinimum = Math.min(...values.map(point => point.v));
     const rawMaximum = Math.max(...values.map(point => point.v));
+    const decimals = unit === "km/h" ? 1 : 0;
+    const suppliedAverage = Number(statistics.average);
+    const average = Number.isFinite(suppliedAverage)
+      ? suppliedAverage
+      : values.reduce((sum, point) => sum + point.v, 0) / values.length;
     const margin = Math.max((rawMaximum - rawMinimum) * 0.12, unit === "bpm" ? 3 : 1);
     const minimum = Math.max(0, rawMinimum - margin);
     const maximum = rawMaximum + margin;
@@ -2748,7 +2753,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const formatTime = seconds => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, "0")}`;
     return `
       <article class="cycling-data-chart">
-        <header><strong>${escapeHtml(title)}</strong><span>${reportNumber(rawMinimum, unit === "km/h" ? 1 : 0)}–${reportNumber(rawMaximum, unit === "km/h" ? 1 : 0)} ${escapeHtml(unit)}</span></header>
+        <header><strong>${escapeHtml(title)}</strong><span><b>Moy. ${reportNumber(average, decimals)} ${escapeHtml(unit)}</b><small>${reportNumber(rawMinimum, decimals)}–${reportNumber(rawMaximum, decimals)} ${escapeHtml(unit)}</small></span></header>
         <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Évolution de ${escapeHtml(title)}">
           <line class="cycling-chart-grid" x1="${padding.left}" y1="${y(rawMaximum)}" x2="${width - padding.right}" y2="${y(rawMaximum)}"></line>
           <line class="cycling-chart-grid" x1="${padding.left}" y1="${y(rawMinimum)}" x2="${width - padding.right}" y2="${y(rawMinimum)}"></line>
@@ -2782,13 +2787,14 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
   function cyclingChartsHtml(report) {
     const charts = report.activity_charts || {};
     const series = charts.series || {};
+    const statistics = charts.statistics || {};
     const analysis = report.analysis || {};
     const cards = [
-      cyclingMetricChartHtml("Fréquence cardiaque", series.heart_rate_bpm, "bpm", "#ff5b58"),
-      cyclingMetricChartHtml("Vitesse", series.speed_kmh, "km/h", "#38a8f4"),
-      cyclingMetricChartHtml("Cadence", series.cadence_rpm, "tr/min", "#ff8a32"),
-      cyclingMetricChartHtml("Puissance", series.power_watts, "W", "#c936f4"),
-      cyclingMetricChartHtml("Altitude", series.altitude_m, "m", "#49d17d"),
+      cyclingMetricChartHtml("Fréquence cardiaque", series.heart_rate_bpm, "bpm", "#ff5b58", statistics.heart_rate_bpm),
+      cyclingMetricChartHtml("Vitesse", series.speed_kmh, "km/h", "#38a8f4", statistics.speed_kmh),
+      cyclingMetricChartHtml("Cadence", series.cadence_rpm, "tr/min", "#ff8a32", statistics.cadence_rpm),
+      cyclingMetricChartHtml("Puissance", series.power_watts, "W", "#c936f4", statistics.power_watts),
+      cyclingMetricChartHtml("Altitude", series.altitude_m, "m", "#49d17d", statistics.altitude_m),
     ];
     return `
       <section class="cycling-data-section">
@@ -4510,6 +4516,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           const active = panel.dataset.sessionPanel === selected;
           panel.classList.toggle("active", active);
           panel.hidden = !active;
+          if (active) panel.scrollTop = 0;
         });
 
         return;
@@ -4870,6 +4877,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         workout,
         userContext
       );
+      panel.scrollTop = 0;
       status.textContent = report
         ? "Analyse disponible"
         : "En attente · analyse automatique en cours";

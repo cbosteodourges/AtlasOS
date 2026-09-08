@@ -804,6 +804,7 @@ def build_activity_charts(
         "altitude_m": "altitude_m",
     }
     series = {}
+    statistics = {}
     for output_name, attribute in fields.items():
         points = []
         for sample in samples:
@@ -817,6 +818,27 @@ def build_activity_charts(
             points.append({"t": round(offset, 1), "v": round(numeric, 2)})
         if not points:
             continue
+        sample_average = sum(point["v"] for point in points) / len(points)
+        activity_average = {
+            "heart_rate_bpm": getattr(activity, "average_heart_rate_bpm", None),
+            "speed_kmh": getattr(activity, "average_speed_kmh", None),
+            "cadence_rpm": getattr(
+                getattr(activity, "dynamics", None), "average_cadence_spm", None
+            ),
+            "power_watts": getattr(
+                getattr(activity, "dynamics", None), "average_power_watts", None
+            ),
+        }.get(output_name)
+        statistics[output_name] = {
+            "average": round(
+                float(activity_average)
+                if activity_average is not None
+                else sample_average,
+                2,
+            ),
+            "minimum": round(min(point["v"] for point in points), 2),
+            "maximum": round(max(point["v"] for point in points), 2),
+        }
         if len(points) > maximum_points:
             bucket_count = max(1, maximum_points // 2)
             bucket_size = len(points) / bucket_count
@@ -834,6 +856,7 @@ def build_activity_charts(
     return {
         "duration_seconds": round(activity.duration_minutes * 60, 1),
         "source": activity.source or "",
+        "statistics": statistics,
         "series": series,
     }
 

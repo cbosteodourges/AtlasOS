@@ -809,6 +809,9 @@ def execution_summary(item):
 
     charts = item.get("activity_charts") or {}
     chart_series = charts.get("series") if isinstance(charts, dict) else {}
+    chart_statistics = (
+        charts.get("statistics") if isinstance(charts, dict) else {}
+    )
     allowed_chart_names = {
         "heart_rate_bpm",
         "speed_kmh",
@@ -838,6 +841,11 @@ def execution_summary(item):
         "activity_charts": {
             "duration_seconds": charts.get("duration_seconds"),
             "source": charts.get("source"),
+            "statistics": {
+                name: selected_fields(values, ("average", "minimum", "maximum"))
+                for name, values in (chart_statistics or {}).items()
+                if name in allowed_chart_names and isinstance(values, dict)
+            },
             "series": {
                 name: points
                 for name, points in (chart_series or {}).items()

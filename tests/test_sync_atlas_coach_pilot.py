@@ -43,6 +43,12 @@ class AutomaticWorkoutConfirmationTests(unittest.TestCase):
             start_time=datetime.fromisoformat(start),
             duration_minutes=2,
             source="health_connect",
+            average_heart_rate_bpm=117,
+            average_speed_kmh=24.64,
+            dynamics=SimpleNamespace(
+                average_cadence_spm=76,
+                average_power_watts=None,
+            ),
             samples=[
                 ActivitySample(
                     timestamp=f"2026-09-07T08:00:{second:02d}+00:00",
@@ -67,6 +73,9 @@ class AutomaticWorkoutConfirmationTests(unittest.TestCase):
         )
         self.assertNotIn("power_watts", charts["series"])
         self.assertNotIn("altitude_m", charts["series"])
+        self.assertEqual(charts["statistics"]["heart_rate_bpm"]["average"], 117)
+        self.assertEqual(charts["statistics"]["speed_kmh"]["average"], 24.64)
+        self.assertEqual(charts["statistics"]["cadence_rpm"]["average"], 76)
 
     def test_free_activity_record_keeps_global_metrics_and_removes_candidate_scores(self):
         activity = NormalizedActivity(

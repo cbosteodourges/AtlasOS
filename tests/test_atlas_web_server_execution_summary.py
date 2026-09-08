@@ -15,6 +15,10 @@ class AtlasWebServerExecutionSummaryTests(unittest.TestCase):
             "activity_charts": {
                 "duration_seconds": 3600,
                 "source": "health_connect",
+                "statistics": {
+                    "heart_rate_bpm": {"average": 117, "minimum": 83, "maximum": 151},
+                    "private_location": {"average": 42},
+                },
                 "series": {
                     "heart_rate_bpm": [{"t": 0, "v": 101}],
                     "speed_kmh": [{"t": 0, "v": 21.2}],
@@ -29,6 +33,8 @@ class AtlasWebServerExecutionSummaryTests(unittest.TestCase):
         self.assertIn("heart_rate_bpm", charts["series"])
         self.assertIn("speed_kmh", charts["series"])
         self.assertNotIn("private_location", charts["series"])
+        self.assertEqual(charts["statistics"]["heart_rate_bpm"]["average"], 117)
+        self.assertNotIn("private_location", charts["statistics"])
 
     def test_exposes_global_activity_metrics_instead_of_micro_block_metrics(self):
         summary = execution_summary({

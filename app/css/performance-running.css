@@ -4400,6 +4400,7 @@ body[data-coach-section]
 }
 
 #atlasSessionDialog.atlas-session-dialog .session-dialog-shell {
+  box-sizing: border-box;
   overflow: hidden;
   border-radius: 21px;
 }
@@ -4413,8 +4414,19 @@ body[data-coach-section]
 }
 
 #atlasSessionDialog.atlas-session-dialog .session-tab-panel {
+  box-sizing: border-box;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 22px 28px 28px;
+  scroll-padding-block: 18px 48px;
   background: rgba(2,11,21,.76);
+}
+
+#atlasSessionDialog.atlas-session-dialog .session-tab-panel::after {
+  display: block;
+  height: 32px;
+  content: "";
 }
 
 #atlasSessionDialog.atlas-session-dialog .execution-report-narrative {
@@ -4447,7 +4459,11 @@ body[data-coach-section]
   }
 
   #atlasSessionDialog.atlas-session-dialog .session-tab-panel {
-    padding: 12px;
+    padding: 12px 12px 28px;
+  }
+
+  #atlasSessionDialog .cycling-data-chart header span {
+    justify-items: start;
   }
 }
 /* ATLAS COACH — CONTEXTE UTILISATEUR EXPLICABLE */
@@ -6882,6 +6898,23 @@ body[data-coach-section]
 #atlasSessionDialog .cycling-zone-distribution small {
   color: #8caabd;
   font-size: .76rem;
+}
+
+#atlasSessionDialog .cycling-data-chart header span {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+#atlasSessionDialog .cycling-data-chart header span b {
+  color: #dff7ff;
+  font-size: .78rem;
+}
+
+#atlasSessionDialog .cycling-data-chart header span small {
+  color: #8caabd;
+  font-size: .67rem;
 }
 
 #atlasSessionDialog .cycling-data-chart svg {
