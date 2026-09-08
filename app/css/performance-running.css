@@ -6844,6 +6844,109 @@ body[data-coach-section]
   max-width: 860px;
 }
 
+#atlasSessionDialog .cycling-data-section {
+  margin-top: 30px;
+  padding: 24px;
+  border: 1px solid rgba(56, 168, 244, .28);
+  border-radius: 20px;
+  background: rgba(2, 17, 29, .72);
+}
+
+#atlasSessionDialog .cycling-data-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+#atlasSessionDialog .cycling-data-chart,
+#atlasSessionDialog .cycling-zone-distribution {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid rgba(73, 177, 221, .2);
+  border-radius: 15px;
+  background: rgba(5, 26, 41, .82);
+}
+
+#atlasSessionDialog .cycling-data-chart header,
+#atlasSessionDialog .cycling-zone-distribution header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+#atlasSessionDialog .cycling-data-chart header span,
+#atlasSessionDialog .cycling-zone-distribution header span,
+#atlasSessionDialog .cycling-zone-distribution small {
+  color: #8caabd;
+  font-size: .76rem;
+}
+
+#atlasSessionDialog .cycling-data-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+#atlasSessionDialog .cycling-data-chart svg text {
+  fill: #86a5b7;
+  font-size: 12px;
+}
+
+#atlasSessionDialog .cycling-chart-grid {
+  stroke: rgba(141, 181, 202, .17);
+  stroke-width: 1;
+}
+
+#atlasSessionDialog .cycling-chart-line {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#atlasSessionDialog .cycling-data-chart.is-empty {
+  display: grid;
+  min-height: 92px;
+  align-items: center;
+}
+
+#atlasSessionDialog .cycling-zone-distribution {
+  margin-top: 14px;
+}
+
+#atlasSessionDialog .cycling-zone-distribution > div {
+  display: grid;
+  grid-template-columns: 34px minmax(90px, 1fr) 70px 44px;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+#atlasSessionDialog .cycling-zone-distribution i {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, .1);
+}
+
+#atlasSessionDialog .cycling-zone-distribution i span {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: inherit;
+}
+
+@media (max-width: 760px) {
+  #atlasSessionDialog .cycling-data-section { padding: 16px 12px; }
+  #atlasSessionDialog .cycling-data-grid { grid-template-columns: 1fr; }
+  #atlasSessionDialog .cycling-data-chart header,
+  #atlasSessionDialog .cycling-zone-distribution header { align-items: flex-start; flex-direction: column; }
+}
+
 #atlasSessionDialog [data-session-panel="planned"] .dialog-session-header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 86px;

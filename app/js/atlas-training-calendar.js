@@ -2722,6 +2722,84 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     `;
   }
 
+  function cyclingMetricChartHtml(title, points, unit, color) {
+    const values = (Array.isArray(points) ? points : [])
+      .map(point => ({ t: Number(point.t), v: Number(point.v) }))
+      .filter(point => Number.isFinite(point.t) && Number.isFinite(point.v));
+    if (values.length < 2) {
+      return `
+        <article class="cycling-data-chart is-empty">
+          <header><strong>${escapeHtml(title)}</strong><span>Donnée non disponible</span></header>
+        </article>`;
+    }
+    const width = 720;
+    const height = 190;
+    const padding = { left: 44, right: 16, top: 18, bottom: 28 };
+    const maximumTime = Math.max(...values.map(point => point.t), 1);
+    const rawMinimum = Math.min(...values.map(point => point.v));
+    const rawMaximum = Math.max(...values.map(point => point.v));
+    const margin = Math.max((rawMaximum - rawMinimum) * 0.12, unit === "bpm" ? 3 : 1);
+    const minimum = Math.max(0, rawMinimum - margin);
+    const maximum = rawMaximum + margin;
+    const x = time => padding.left + time / maximumTime * (width - padding.left - padding.right);
+    const y = value => padding.top + (maximum - value) / Math.max(1, maximum - minimum) * (height - padding.top - padding.bottom);
+    const line = values.map((point, index) => `${index ? "L" : "M"}${x(point.t).toFixed(1)},${y(point.v).toFixed(1)}`).join(" ");
+    const area = `${line} L${x(maximumTime).toFixed(1)},${height - padding.bottom} L${padding.left},${height - padding.bottom} Z`;
+    const formatTime = seconds => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, "0")}`;
+    return `
+      <article class="cycling-data-chart">
+        <header><strong>${escapeHtml(title)}</strong><span>${reportNumber(rawMinimum, unit === "km/h" ? 1 : 0)}–${reportNumber(rawMaximum, unit === "km/h" ? 1 : 0)} ${escapeHtml(unit)}</span></header>
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Évolution de ${escapeHtml(title)}">
+          <line class="cycling-chart-grid" x1="${padding.left}" y1="${y(rawMaximum)}" x2="${width - padding.right}" y2="${y(rawMaximum)}"></line>
+          <line class="cycling-chart-grid" x1="${padding.left}" y1="${y(rawMinimum)}" x2="${width - padding.right}" y2="${y(rawMinimum)}"></line>
+          <path class="cycling-chart-area" style="fill:${color}22" d="${area}"></path>
+          <path class="cycling-chart-line" style="stroke:${color}" d="${line}"></path>
+          <text x="4" y="${y(rawMaximum) + 4}">${reportNumber(rawMaximum, 0)}</text>
+          <text x="4" y="${y(rawMinimum) + 4}">${reportNumber(rawMinimum, 0)}</text>
+          <text x="${padding.left}" y="${height - 6}">0:00</text>
+          <text text-anchor="end" x="${width - padding.right}" y="${height - 6}">${formatTime(maximumTime)}</text>
+        </svg>
+      </article>`;
+  }
+
+  function cyclingZoneDistributionHtml(blocks) {
+    const durations = [1, 2, 3, 4, 5].map(zone => (blocks || [])
+      .filter(block => block.block_type === `z${zone}`)
+      .reduce((total, block) => total + Number(block.duration_seconds || 0), 0));
+    const total = durations.reduce((sum, duration) => sum + duration, 0);
+    if (!total) return "";
+    const colors = ["#49d17d", "#38a8f4", "#f3cf4b", "#ff8248", "#c936f4"];
+    return `
+      <article class="cycling-zone-distribution">
+        <header><strong>Temps dans les zones Atlas</strong><span>Calculé depuis la FC Health Connect</span></header>
+        ${durations.map((duration, index) => {
+          const percent = duration / total * 100;
+          return `<div><b>Z${index + 1}</b><i><span style="width:${percent.toFixed(1)}%;background:${colors[index]}"></span></i><strong>${reportBlockTime(duration)}</strong><small>${reportNumber(percent, 0)} %</small></div>`;
+        }).join("")}
+      </article>`;
+  }
+
+  function cyclingChartsHtml(report) {
+    const charts = report.activity_charts || {};
+    const series = charts.series || {};
+    const analysis = report.analysis || {};
+    const cards = [
+      cyclingMetricChartHtml("Fréquence cardiaque", series.heart_rate_bpm, "bpm", "#ff5b58"),
+      cyclingMetricChartHtml("Vitesse", series.speed_kmh, "km/h", "#38a8f4"),
+      cyclingMetricChartHtml("Cadence", series.cadence_rpm, "tr/min", "#ff8a32"),
+      cyclingMetricChartHtml("Puissance", series.power_watts, "W", "#c936f4"),
+      cyclingMetricChartHtml("Altitude", series.altitude_m, "m", "#49d17d"),
+    ];
+    return `
+      <section class="cycling-data-section">
+        <div class="report-heading"><span class="report-kicker">DONNÉES SANTÉ CONNECT</span><h3>Évolution pendant la sortie</h3>
+          <p>Courbes issues des mesures disponibles pour cette activité. Une donnée absente n’est pas estimée.</p>
+        </div>
+        <div class="cycling-data-grid">${cards.join("")}</div>
+        ${cyclingZoneDistributionHtml(analysis.blocks)}
+      </section>`;
+  }
+
   function cyclingExecutionReportHtml(report, workout) {
     const match = report.workout_match || {};
     const execution = match.execution || {};
@@ -2789,6 +2867,8 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             <article><span>Dénivelé positif</span><strong>${Number.isFinite(elevation) ? `${reportNumber(elevation, 0)} m` : "Non disponible"}</strong><small>Contrainte externe</small></article>
           </div>
         </section>
+
+        ${cyclingChartsHtml(report)}
 
         <details class="report-more">
           <summary>Voir l’analyse physiologique complète</summary>
