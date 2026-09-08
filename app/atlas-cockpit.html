@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#020914">
   <link rel="manifest" href="./manifest.webmanifest">
   <title>Atlas OS — Aujourd’hui</title>
-  <link rel="stylesheet" href="./css/atlas-cockpit.css?v=35">
+  <link rel="stylesheet" href="./css/atlas-cockpit.css?v=36">
   <link rel="stylesheet" href="./css/atlas-global-nav.css?v=18">
   <link rel="stylesheet" href="./css/atlas-conversation.css?v=8">
   <link rel="stylesheet" href="./css/atlas-conversation-refinement.css?v=1">
@@ -186,7 +186,7 @@
               <button type="button" data-physiology-period="1095">3 ans</button><button type="button" data-physiology-period="1825">5 ans</button>
               <button type="button" data-physiology-period="3650">10 ans</button><button type="button" data-physiology-period="0">Tout</button>
             </div>
-            <div class="physiology-chart" data-physiology-chart role="img" aria-label="Évolution physiologique">
+            <div class="physiology-chart" data-physiology-chart role="button" tabindex="0" aria-label="Agrandir l’évolution physiologique">
               <svg viewBox="0 0 960 300" preserveAspectRatio="none" aria-hidden="true"></svg>
               <p data-physiology-chart-message>Historique physiologique en construction.</p>
             </div>
@@ -284,7 +284,7 @@
     <label><input type="checkbox" value="physiology" checked> VO₂max, VMA et seuils</label>
   </section>
   <script src="./js/atlas-conversation.js?v=9"></script>
-  <script src="./js/atlas-cockpit.js?v=51"></script>
+  <script src="./js/atlas-cockpit.js?v=52"></script>
   <script src="./js/atlas-pwa.js?v=3"></script>
 </body>
 </html>

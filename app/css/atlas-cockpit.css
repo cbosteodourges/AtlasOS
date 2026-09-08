@@ -856,7 +856,7 @@ body[data-avatar="female"] .twin-panel img {
 .physiology-evolution>header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}.physiology-evolution h4{margin:4px 0 0;font-size:1.35rem}
 .physiology-metric-tabs,.physiology-period-tabs{display:flex;flex-wrap:wrap;gap:8px}.physiology-metric-tabs button,.physiology-period-tabs button{border:1px solid #24506a;border-radius:999px;background:#081b2d;color:#9db5c9;padding:7px 12px;font:inherit;cursor:pointer}.physiology-metric-tabs button.is-active,.physiology-period-tabs button.is-active{border-color:#38d7ff;background:#103d55;color:#fff;box-shadow:0 0 14px rgba(56,215,255,.18)}
 .physiology-period-tabs{margin:18px 0 10px}.physiology-period-tabs button{padding:5px 10px;font-size:.75rem}
-.physiology-chart{position:relative;min-height:300px;border-radius:16px;overflow:hidden;background:linear-gradient(180deg,rgba(36,117,150,.1),rgba(2,13,24,.18))}.physiology-chart svg{display:block;width:100%;height:300px}.physiology-chart p{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:#9db5c9}.physiology-chart:not(.is-empty) p{display:none}
+.physiology-chart{position:relative;min-height:300px;border-radius:16px;overflow:hidden;background:linear-gradient(180deg,rgba(36,117,150,.1),rgba(2,13,24,.18));cursor:zoom-in}.physiology-chart:focus-visible{outline:2px solid #38d7ff;outline-offset:3px}.physiology-chart svg{display:block;width:100%;height:300px}.physiology-chart p{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:#9db5c9}.physiology-chart:not(.is-empty) p{display:none}.physiology-chart.is-empty{cursor:default}
 .chart-axis-label{fill:#7897aa;font-size:12px}.chart-mean{stroke:#f3c94d;stroke-width:1.5;stroke-dasharray:7 7;opacity:.82}.chart-mean-label{fill:#f3c94d;font-size:12px;font-weight:800}
 .chart-grid{stroke:rgba(125,187,215,.16);stroke-width:1}.chart-area{fill:rgba(43,209,255,.12)}.chart-line{fill:none;stroke:#32d5ff;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 7px rgba(50,213,255,.45))}.chart-point{fill:#061727;stroke:#64e6ff;stroke-width:4}
 .physiology-evolution>footer{display:flex;justify-content:space-between;gap:20px;margin-top:8px}.physiology-evolution>footer small{color:#8ea8bc}
@@ -868,6 +868,14 @@ body[data-avatar="female"] .twin-panel img {
 .chart-date{fill:#88a6ba;font-size:12px;font-weight:700}
 
 .chart-point.is-validated{fill:#f4f8ff;stroke:#45e4a1;stroke-width:5;filter:drop-shadow(0 0 8px rgba(69,228,161,.8))}
+
+.physiology-chart-detail-overlay{position:fixed;z-index:10000;inset:0;display:grid;place-items:center;padding:24px;background:rgba(1,8,16,.88);backdrop-filter:blur(10px)}
+.physiology-chart-detail{width:min(1240px,100%);max-height:calc(100dvh - 48px);overflow:auto;padding:28px 30px 24px;border:1px solid rgba(244,200,74,.7);border-radius:24px;background:#061625;box-shadow:0 28px 80px rgba(0,0,0,.58)}
+.physiology-chart-detail>header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}.physiology-chart-detail>header span{color:#39d5ff;font-size:.72rem;font-weight:900;letter-spacing:.1em}.physiology-chart-detail>header h2{margin:7px 0 3px;font-size:1.7rem}.physiology-chart-detail>header p{margin:0;color:#9db5c9}.physiology-chart-detail>header button{display:grid;place-items:center;flex:0 0 50px;width:50px;height:50px;border:1px solid rgba(244,200,74,.7);border-radius:50%;background:#071a2a;color:#ffd15a;font-size:1.65rem;cursor:pointer}
+.physiology-chart-detail-reading{display:flex;align-items:baseline;gap:16px;margin:24px 0 8px}.physiology-chart-detail-reading strong{font-size:1.65rem}.physiology-chart-detail-reading span{color:#8fb5cc}
+.physiology-chart-detail svg{display:block;width:100%;height:auto;min-height:330px}.physiology-chart-cursor{stroke:#f5fbff;stroke-width:2}.physiology-chart-cursor-point{fill:#39d5ff;stroke:#fff;stroke-width:3;filter:drop-shadow(0 0 7px rgba(57,213,255,.65))}
+.physiology-chart-detail>label{display:grid;gap:8px;margin-top:10px;color:#f5fbff;font-size:.78rem;font-weight:800}.physiology-chart-detail input[type="range"]{width:100%;accent-color:#39d5ff}
+@media(max-width:700px){.physiology-chart-detail-overlay{padding:0}.physiology-chart-detail{width:100%;height:100dvh;max-height:none;padding:20px 14px;border:0;border-radius:0}.physiology-chart-detail>header h2{font-size:1.4rem}.physiology-chart-detail>header button{flex-basis:44px;width:44px;height:44px}.physiology-chart-detail-reading{align-items:flex-start;flex-direction:column;gap:3px;margin-top:18px}.physiology-chart-detail svg{min-height:260px}}
 
 
 /* PROFIL ATHLÈTE — lecture synthétique des appuis, alertes et leviers */

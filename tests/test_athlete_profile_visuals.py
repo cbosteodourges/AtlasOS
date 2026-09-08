@@ -26,6 +26,17 @@ def test_profile_chart_requires_two_real_measurements():
     assert "Une deuxième mesure distincte" in script
 
 
+def test_profile_chart_opens_an_interactive_detail_view():
+    html = (ROOT / "app" / "atlas-cockpit.html").read_text(encoding="utf-8")
+    script = (ROOT / "app" / "js" / "atlas-cockpit.js").read_text(encoding="utf-8")
+    styles = (ROOT / "app" / "css" / "atlas-cockpit.css").read_text(encoding="utf-8")
+
+    assert 'data-physiology-chart role="button" tabindex="0"' in html
+    assert "openPhysiologyChartDetail" in script
+    assert "data-physiology-detail-range" in script
+    assert ".physiology-chart-detail-overlay" in styles
+
+
 def test_only_validated_physiology_is_charted():
     server = (ROOT / "tools" / "atlas_web_server.py").read_text(encoding="utf-8")
     orchestrator = (ROOT / "src" / "training" / "post_sync_orchestrator.py").read_text(encoding="utf-8")

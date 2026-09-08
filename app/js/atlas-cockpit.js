@@ -546,13 +546,12 @@
         sv2_speed_kmh: ["SV2", "km/h"],
         maximum_heart_rate_bpm: ["FC maximale", "bpm"],
       };
-      const renderPhysiologyChart = () => {
-        if (!chartSvg) return;
+      const physiologyPoints = () => {
         const now = new Date();
         const cutoff = selectedPhysiologyPeriod
           ? new Date(now.getTime() - selectedPhysiologyPeriod * 86400000)
           : null;
-        const points = physiologyHistory
+        return physiologyHistory
           .filter(item => !cutoff || new Date(item.timestamp || item.day) >= cutoff)
           .map(item => ({
             day: item.day,
@@ -565,6 +564,10 @@
           }))
           .filter(item => Number.isFinite(item.value) && item.value > 0)
           .sort((a, b) => String(a.timestamp).localeCompare(String(b.timestamp)));
+      };
+      const renderPhysiologyChart = () => {
+        if (!chartSvg) return;
+        const points = physiologyPoints();
         chartSvg.replaceChildren();
         if (points.length < 2) {
           chartRoot?.classList.add("is-empty");
@@ -661,6 +664,87 @@
             : "Courbe fondée sur les références physiologiques validées.";
         if (chartMessage) chartMessage.textContent = "";
       };
+      const openPhysiologyChartDetail = () => {
+        const points = physiologyPoints();
+        if (points.length < 2) return;
+        const [label, unit] = metricMeta[selectedPhysiologyMetric];
+        const values = points.map(point => point.value);
+        const minimumValue = Math.min(...values);
+        const maximumValue = Math.max(...values);
+        const spread = Math.max(maximumValue - minimumValue, Math.abs(maximumValue || 1) * .04);
+        const axisMin = minimumValue - spread * .18;
+        const axisMax = maximumValue + spread * .18;
+        const width = 960;
+        const height = 390;
+        const plot = { left: 72, right: 930, top: 28, bottom: 330 };
+        const x = index => plot.left + index * ((plot.right - plot.left) / Math.max(1, points.length - 1));
+        const y = value => plot.bottom - ((value - axisMin) / (axisMax - axisMin)) * (plot.bottom - plot.top);
+        const coords = points.map((point, index) => ({ ...point, x: x(index), y: y(point.value) }));
+        const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+        const meanY = y(mean);
+        const line = coords.map((point, index) => `${index ? "L" : "M"}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
+        const decimals = unit === "bpm" ? 0 : 1;
+        const formatValue = value => Number(value).toLocaleString("fr-FR", {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals,
+        });
+        const formatDate = timestamp => new Date(timestamp).toLocaleDateString("fr-FR", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        });
+        const overlay = document.createElement("section");
+        overlay.className = "physiology-chart-detail-overlay";
+        overlay.setAttribute("role", "dialog");
+        overlay.setAttribute("aria-modal", "true");
+        overlay.setAttribute("aria-label", `Évolution détaillée de ${label}`);
+        overlay.innerHTML = `
+          <div class="physiology-chart-detail">
+            <header><div><span>ÉVOLUTION PERSONNELLE</span><h2>${label}</h2><p>Moyenne · ${formatValue(mean)} ${unit}</p></div><button type="button" data-physiology-detail-close aria-label="Fermer">×</button></header>
+            <div class="physiology-chart-detail-reading" aria-live="polite"><strong data-physiology-detail-value></strong><span data-physiology-detail-date></span></div>
+            <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Évolution détaillée de ${label}">
+              <line class="chart-grid" x1="${plot.left}" y1="${y(maximumValue)}" x2="${plot.right}" y2="${y(maximumValue)}"></line>
+              <line class="chart-grid" x1="${plot.left}" y1="${y(minimumValue)}" x2="${plot.right}" y2="${y(minimumValue)}"></line>
+              <line class="chart-mean" x1="${plot.left}" y1="${meanY}" x2="${plot.right}" y2="${meanY}"></line>
+              <path class="chart-line" d="${line}"></path>
+              <line class="physiology-chart-cursor" x1="${coords[0].x}" y1="${plot.top}" x2="${coords[0].x}" y2="${plot.bottom}"></line>
+              <circle class="physiology-chart-cursor-point" cx="${coords[0].x}" cy="${coords[0].y}" r="8"></circle>
+              <text class="chart-axis-label" x="${plot.left - 12}" y="${y(maximumValue) + 4}" text-anchor="end">${formatValue(maximumValue)}</text>
+              <text class="chart-axis-label" x="${plot.left - 12}" y="${y(minimumValue) + 4}" text-anchor="end">${formatValue(minimumValue)}</text>
+              <text class="chart-date" x="${plot.left}" y="370">${formatDate(points[0].timestamp)}</text>
+              <text class="chart-date" x="${plot.right}" y="370" text-anchor="end">${formatDate(points.at(-1).timestamp)}</text>
+            </svg>
+            <label><span>Déplacer le curseur dans l’historique</span><input type="range" min="0" max="${points.length - 1}" value="0" step="1" data-physiology-detail-range></label>
+          </div>`;
+        const range = overlay.querySelector("[data-physiology-detail-range]");
+        const cursor = overlay.querySelector(".physiology-chart-cursor");
+        const cursorPoint = overlay.querySelector(".physiology-chart-cursor-point");
+        const valueOutput = overlay.querySelector("[data-physiology-detail-value]");
+        const dateOutput = overlay.querySelector("[data-physiology-detail-date]");
+        const update = () => {
+          const selected = coords[Number(range.value)] || coords[0];
+          cursor.setAttribute("x1", selected.x);
+          cursor.setAttribute("x2", selected.x);
+          cursorPoint.setAttribute("cx", selected.x);
+          cursorPoint.setAttribute("cy", selected.y);
+          valueOutput.textContent = `${formatValue(selected.value)} ${unit}`;
+          dateOutput.textContent = formatDate(selected.timestamp);
+        };
+        const close = () => {
+          overlay.remove();
+          chartRoot?.focus();
+        };
+        range.addEventListener("input", update);
+        overlay.addEventListener("click", event => {
+          if (event.target === overlay || event.target.closest("[data-physiology-detail-close]")) close();
+        });
+        overlay.addEventListener("keydown", event => {
+          if (event.key === "Escape") close();
+        });
+        document.body.appendChild(overlay);
+        update();
+        range.focus();
+      };
       document.querySelectorAll("[data-physiology-metric]").forEach(button => button.addEventListener("click", () => {
         document.querySelectorAll("[data-physiology-metric]").forEach(item => item.classList.toggle("is-active", item === button));
         selectedPhysiologyMetric = button.dataset.physiologyMetric;
@@ -671,6 +755,13 @@
         selectedPhysiologyPeriod = Number(button.dataset.physiologyPeriod);
         renderPhysiologyChart();
       }));
+      chartRoot?.addEventListener("click", openPhysiologyChartDetail);
+      chartRoot?.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openPhysiologyChartDetail();
+        }
+      });
       renderPhysiologyChart();
 
       const fitCount = analysis.longitudinal_report?.activity_count || 0;
