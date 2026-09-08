@@ -546,6 +546,18 @@
         sv2_speed_kmh: ["SV2", "km/h", "#ff6a48"],
         maximum_heart_rate_bpm: ["FC maximale", "bpm", "#f4c84a"],
       };
+      const currentPhysiologyValue = () => {
+        const current = {
+          vo2_max: physiology.vo2_max,
+          vma_kmh: physiology.vma_kmh,
+          sv1_speed_kmh: physiology.sv1_speed_kmh,
+          sv2_speed_kmh: physiology.sv2_speed_kmh,
+          maximum_heart_rate_bpm: physiology.maximum_heart_rate_bpm,
+        }[selectedPhysiologyMetric];
+        return Number.isFinite(Number(current)) && Number(current) > 0
+          ? Number(current)
+          : null;
+      };
       const physiologyPoints = () => {
         const now = new Date();
         const cutoff = selectedPhysiologyPeriod
@@ -581,8 +593,10 @@
         }
         chartRoot?.classList.remove("is-empty");
         const values = points.map(point => point.value);
-        const min = Math.min(...values);
-        const max = Math.max(...values);
+        const currentValue = currentPhysiologyValue() ?? points.at(-1).value;
+        const displayValues = [...values, currentValue];
+        const min = Math.min(...displayValues);
+        const max = Math.max(...displayValues);
         const spread = Math.max(max - min, Math.abs(max || 1) * 0.04);
         const axisMin = min - spread * 0.22;
         const axisMax = max + spread * 0.22;
@@ -606,17 +620,16 @@
           tick.textContent = `${value.toLocaleString("fr-FR", { maximumFractionDigits: 1 })}`;
           chartSvg.appendChild(tick);
         });
-        const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
-        const meanY = plot.bottom - ((mean - axisMin) / (axisMax - axisMin)) * (plot.bottom - plot.top);
-        const meanLine = document.createElementNS(ns, "line");
-        meanLine.setAttribute("x1", String(plot.left)); meanLine.setAttribute("x2", String(plot.right));
-        meanLine.setAttribute("y1", String(meanY)); meanLine.setAttribute("y2", String(meanY));
-        meanLine.setAttribute("class", "chart-mean"); chartSvg.appendChild(meanLine);
-        const meanLabel = document.createElementNS(ns, "text");
-        meanLabel.setAttribute("x", String(plot.right - 5)); meanLabel.setAttribute("y", String(meanY - 7));
-        meanLabel.setAttribute("text-anchor", "end"); meanLabel.setAttribute("class", "chart-mean-label");
-        meanLabel.textContent = `Moyenne ${mean.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} ${chartUnit}`;
-        chartSvg.appendChild(meanLabel);
+        const currentY = plot.bottom - ((currentValue - axisMin) / (axisMax - axisMin)) * (plot.bottom - plot.top);
+        const currentLine = document.createElementNS(ns, "line");
+        currentLine.setAttribute("x1", String(plot.left)); currentLine.setAttribute("x2", String(plot.right));
+        currentLine.setAttribute("y1", String(currentY)); currentLine.setAttribute("y2", String(currentY));
+        currentLine.setAttribute("class", "chart-current"); chartSvg.appendChild(currentLine);
+        const currentLabel = document.createElementNS(ns, "text");
+        currentLabel.setAttribute("x", String(plot.right - 5)); currentLabel.setAttribute("y", String(currentY - 7));
+        currentLabel.setAttribute("text-anchor", "end"); currentLabel.setAttribute("class", "chart-current-label");
+        currentLabel.textContent = `Niveau actuel ${currentValue.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} ${chartUnit}`;
+        chartSvg.appendChild(currentLabel);
         const area = document.createElementNS(ns, "path");
         area.setAttribute("d", `M ${coords[0].x} ${plot.bottom} L ${coords.map(p => `${p.x} ${p.y}`).join(" L ")} L ${coords.at(-1).x} ${plot.bottom} Z`);
         area.setAttribute("class", "chart-area"); chartSvg.appendChild(area);
@@ -649,20 +662,23 @@
           label.textContent = new Date(point.day).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "2-digit" });
           chartSvg.appendChild(label);
         });
-        const delta = points.at(-1).value - points[0].value;
+        const delta = currentValue - points[0].value;
         const [label, unit] = metricMeta[selectedPhysiologyMetric];
         const deltaLabel = Math.abs(delta) < 0.05
           ? "stable sur la période"
           : `${delta >= 0 ? "+" : ""}${delta.toFixed(1).replace(".", ",")} sur la période`;
-        if (chartSummary) chartSummary.textContent = `${label} : ${points.at(-1).value.toLocaleString("fr-FR")} ${unit} · ${deltaLabel}`;
+        if (chartSummary) chartSummary.textContent = `${label} : ${currentValue.toLocaleString("fr-FR")} ${unit} · ${deltaLabel}`;
         const chartNote = document.querySelector("[data-physiology-chart-note]");
         const estimatedCount = points.filter(point => point.kind === "atlas_estimate").length;
         const adjustmentCount = points.filter(point => point.kind === "validated" && point.adjustedMetrics.length).length;
-        if (chartNote) chartNote.textContent = adjustmentCount
-          ? `${adjustmentCount} ajustement${adjustmentCount > 1 ? "s" : ""} issu${adjustmentCount > 1 ? "s" : ""} des séances · chaque modification validée est enregistrée automatiquement.`
-          : estimatedCount
-            ? `${estimatedCount} point${estimatedCount > 1 ? "s" : ""} rétrospectif${estimatedCount > 1 ? "s" : ""} Atlas, calculé${estimatedCount > 1 ? "s" : ""} depuis les séances disponibles.`
-            : "Courbe fondée sur les références physiologiques validées.";
+        if (chartNote) {
+          const evidence = [];
+          if (estimatedCount) evidence.push(`${estimatedCount} repère${estimatedCount > 1 ? "s" : ""} rétrospectif${estimatedCount > 1 ? "s" : ""} Atlas`);
+          if (adjustmentCount) evidence.push(`${adjustmentCount} ajustement${adjustmentCount > 1 ? "s" : ""} validé${adjustmentCount > 1 ? "s" : ""}`);
+          chartNote.textContent = evidence.length
+            ? `${evidence.join(" · ")} · la ligne de référence indique le niveau actuel, pas une moyenne.`
+            : "Courbe fondée sur les références physiologiques validées · la ligne indique le niveau actuel.";
+        }
         if (chartMessage) chartMessage.textContent = "";
       };
       const openPhysiologyChartDetail = () => {
@@ -670,8 +686,10 @@
         if (points.length < 2) return;
         const [label, unit, chartColor] = metricMeta[selectedPhysiologyMetric];
         const values = points.map(point => point.value);
-        const minimumValue = Math.min(...values);
-        const maximumValue = Math.max(...values);
+        const currentValue = currentPhysiologyValue() ?? points.at(-1).value;
+        const displayValues = [...values, currentValue];
+        const minimumValue = Math.min(...displayValues);
+        const maximumValue = Math.max(...displayValues);
         const spread = Math.max(maximumValue - minimumValue, Math.abs(maximumValue || 1) * .04);
         const axisMin = minimumValue - spread * .18;
         const axisMax = maximumValue + spread * .18;
@@ -681,8 +699,7 @@
         const x = index => plot.left + index * ((plot.right - plot.left) / Math.max(1, points.length - 1));
         const y = value => plot.bottom - ((value - axisMin) / (axisMax - axisMin)) * (plot.bottom - plot.top);
         const coords = points.map((point, index) => ({ ...point, x: x(index), y: y(point.value) }));
-        const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
-        const meanY = y(mean);
+        const currentY = y(currentValue);
         const line = coords.map((point, index) => `${index ? "L" : "M"}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
         const decimals = unit === "bpm" ? 0 : 1;
         const formatValue = value => Number(value).toLocaleString("fr-FR", {
@@ -702,12 +719,12 @@
         overlay.setAttribute("aria-label", `Évolution détaillée de ${label}`);
         overlay.innerHTML = `
           <div class="physiology-chart-detail">
-            <header><div><span>ÉVOLUTION PERSONNELLE</span><h2>${label}</h2><p>Moyenne · ${formatValue(mean)} ${unit}</p></div><button type="button" data-physiology-detail-close aria-label="Fermer">×</button></header>
+            <header><div><span>ÉVOLUTION PERSONNELLE</span><h2>${label}</h2><p>Niveau actuel · ${formatValue(currentValue)} ${unit}</p></div><button type="button" data-physiology-detail-close aria-label="Fermer">×</button></header>
             <div class="physiology-chart-detail-reading" aria-live="polite"><strong data-physiology-detail-value></strong><span data-physiology-detail-date></span></div>
             <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Évolution détaillée de ${label}">
               <line class="chart-grid" x1="${plot.left}" y1="${y(maximumValue)}" x2="${plot.right}" y2="${y(maximumValue)}"></line>
               <line class="chart-grid" x1="${plot.left}" y1="${y(minimumValue)}" x2="${plot.right}" y2="${y(minimumValue)}"></line>
-              <line class="chart-mean" x1="${plot.left}" y1="${meanY}" x2="${plot.right}" y2="${meanY}"></line>
+              <line class="chart-current" x1="${plot.left}" y1="${currentY}" x2="${plot.right}" y2="${currentY}"></line>
               <path class="chart-line" d="${line}"></path>
               <line class="physiology-chart-cursor" x1="${coords[0].x}" y1="${plot.top}" x2="${coords[0].x}" y2="${plot.bottom}"></line>
               <circle class="physiology-chart-cursor-point" cx="${coords[0].x}" cy="${coords[0].y}" r="8"></circle>
