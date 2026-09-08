@@ -540,11 +540,11 @@
       let selectedPhysiologyMetric = "vo2_max";
       let selectedPhysiologyPeriod = 90;
       const metricMeta = {
-        vo2_max: ["VO₂max", "ml/kg/min"],
-        vma_kmh: ["VMA", "km/h"],
-        sv1_speed_kmh: ["SV1", "km/h"],
-        sv2_speed_kmh: ["SV2", "km/h"],
-        maximum_heart_rate_bpm: ["FC maximale", "bpm"],
+        vo2_max: ["VO₂max", "ml/kg/min", "#9b62ff"],
+        vma_kmh: ["VMA", "km/h", "#2ec9ff"],
+        sv1_speed_kmh: ["SV1", "km/h", "#49e2a4"],
+        sv2_speed_kmh: ["SV2", "km/h", "#ff6a48"],
+        maximum_heart_rate_bpm: ["FC maximale", "bpm", "#f4c84a"],
       };
       const physiologyPoints = () => {
         const now = new Date();
@@ -568,6 +568,8 @@
       const renderPhysiologyChart = () => {
         if (!chartSvg) return;
         const points = physiologyPoints();
+        const [, chartUnit, chartColor] = metricMeta[selectedPhysiologyMetric];
+        chartRoot?.style.setProperty("--physiology-chart-color", chartColor);
         chartSvg.replaceChildren();
         if (points.length < 2) {
           chartRoot?.classList.add("is-empty");
@@ -591,7 +593,6 @@
           return { ...point, x, y };
         });
         const ns = "http://www.w3.org/2000/svg";
-        const [, chartUnit] = metricMeta[selectedPhysiologyMetric];
         Array.from({ length: 5 }, (_, index) => index).forEach(index => {
           const y = plot.top + index * ((plot.bottom - plot.top) / 4);
           const value = axisMax - index * ((axisMax - axisMin) / 4);
@@ -667,7 +668,7 @@
       const openPhysiologyChartDetail = () => {
         const points = physiologyPoints();
         if (points.length < 2) return;
-        const [label, unit] = metricMeta[selectedPhysiologyMetric];
+        const [label, unit, chartColor] = metricMeta[selectedPhysiologyMetric];
         const values = points.map(point => point.value);
         const minimumValue = Math.min(...values);
         const maximumValue = Math.max(...values);
@@ -695,6 +696,7 @@
         });
         const overlay = document.createElement("section");
         overlay.className = "physiology-chart-detail-overlay";
+        overlay.style.setProperty("--physiology-chart-color", chartColor);
         overlay.setAttribute("role", "dialog");
         overlay.setAttribute("aria-modal", "true");
         overlay.setAttribute("aria-label", `Évolution détaillée de ${label}`);

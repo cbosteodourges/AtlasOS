@@ -35,6 +35,8 @@ def test_profile_chart_opens_an_interactive_detail_view():
     assert "openPhysiologyChartDetail" in script
     assert "data-physiology-detail-range" in script
     assert ".physiology-chart-detail-overlay" in styles
+    assert 'vo2_max: ["VO₂max", "ml/kg/min", "#9b62ff"]' in script
+    assert "stroke-width:2.4" in styles
 
 
 def test_only_validated_physiology_is_charted():
