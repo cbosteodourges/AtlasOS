@@ -7994,6 +7994,165 @@ body[data-coach-section]
   margin-top: 7px;
 }
 
+/* Graphiques Santé Connect interactifs. */
+#atlasSessionDialog .cycling-data-chart[role="button"] {
+  color: inherit;
+  cursor: zoom-in;
+  font: inherit;
+  text-align: left;
+  transition: border-color .18s ease, transform .18s ease;
+}
+
+#atlasSessionDialog .cycling-data-chart[role="button"]:hover,
+#atlasSessionDialog .cycling-data-chart[role="button"]:focus-visible {
+  border-color: rgba(85, 221, 255, .72);
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.cycling-chart-detail-overlay {
+  position: absolute;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(0, 7, 15, .92);
+  backdrop-filter: blur(8px);
+}
+
+.cycling-chart-detail {
+  width: min(1120px, 100%);
+  max-height: 100%;
+  padding: 24px;
+  overflow: auto;
+  border: 1px solid rgba(225, 177, 78, .7);
+  border-radius: 20px;
+  background: #061522;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .72);
+}
+
+.cycling-chart-detail > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.cycling-chart-detail > header span {
+  color: #62ddff;
+  font-size: .68rem;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+
+.cycling-chart-detail > header h2 { margin: 5px 0 2px; }
+.cycling-chart-detail > header p { margin: 0; color: #9db7c7; }
+
+.cycling-chart-detail > header button {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  color: #f7d483;
+  cursor: pointer;
+  border: 1px solid rgba(225, 177, 78, .55);
+  border-radius: 50%;
+  background: #0b2135;
+  font-size: 1.35rem;
+}
+
+.cycling-chart-detail-reading {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin: 20px 0 4px;
+}
+
+.cycling-chart-detail-reading strong { color: #f4fbff; font-size: 1.6rem; }
+.cycling-chart-detail-reading span { color: #91aabd; }
+
+.cycling-chart-detail svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 260px;
+  margin-top: 4px;
+}
+
+.cycling-chart-detail svg text { fill: #86a5b7; font-size: 14px; }
+
+.cycling-chart-cursor {
+  stroke: #f5fbff;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.cycling-chart-cursor-point {
+  stroke: #f5fbff;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.cycling-chart-detail > label {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+  color: #b9d0dc;
+  font-weight: 800;
+}
+
+.cycling-chart-detail input[type="range"] {
+  width: 100%;
+  accent-color: #35ccff;
+  cursor: ew-resize;
+}
+
+/* Le cadrage mobile final annule les anciennes largeurs de bureau qui
+   coupaient le bord droit des cartes, textes et graphiques. */
+@media (max-width: 760px) {
+  #atlasSessionDialog.atlas-session-dialog {
+    inset: 5px !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+  }
+
+  #atlasSessionDialog.atlas-session-dialog .session-dialog-shell,
+  #atlasSessionDialog.atlas-session-dialog .dialog-content,
+  #atlasSessionDialog.atlas-session-dialog .session-tab-panel,
+  #atlasSessionDialog.atlas-session-dialog .execution-report,
+  #atlasSessionDialog.atlas-session-dialog .execution-report > *,
+  #atlasSessionDialog.atlas-session-dialog .cycling-data-section,
+  #atlasSessionDialog.atlas-session-dialog .cycling-data-grid,
+  #atlasSessionDialog.atlas-session-dialog .cycling-data-chart {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #atlasSessionDialog.atlas-session-dialog h2,
+  #atlasSessionDialog.atlas-session-dialog h3,
+  #atlasSessionDialog.atlas-session-dialog p,
+  #atlasSessionDialog.atlas-session-dialog span,
+  #atlasSessionDialog.atlas-session-dialog small,
+  #atlasSessionDialog.atlas-session-dialog strong {
+    overflow-wrap: anywhere;
+  }
+
+  .cycling-chart-detail-overlay { padding: 6px; }
+  .cycling-chart-detail {
+    width: 100%;
+    padding: 16px 12px 20px;
+    border-radius: 14px;
+  }
+  .cycling-chart-detail-reading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .cycling-chart-detail svg { min-height: 220px; }
+}
+
 button.history-session-card {
   color: inherit;
   cursor: pointer;

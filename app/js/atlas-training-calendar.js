@@ -2752,7 +2752,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const area = `${line} L${x(maximumTime).toFixed(1)},${height - padding.bottom} L${padding.left},${height - padding.bottom} Z`;
     const formatTime = seconds => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, "0")}`;
     return `
-      <article class="cycling-data-chart">
+      <article class="cycling-data-chart" role="button" tabindex="0" aria-label="Agrandir le graphique ${escapeHtml(title)}" data-cycling-chart data-chart-title="${escapeHtml(title)}" data-chart-unit="${escapeHtml(unit)}" data-chart-color="${escapeHtml(color)}" data-chart-average="${average}" data-chart-values="${escapeHtml(JSON.stringify(values))}">
         <header><strong>${escapeHtml(title)}</strong><span><b>Moy. ${reportNumber(average, decimals)} ${escapeHtml(unit)}</b><small>${reportNumber(rawMinimum, decimals)}–${reportNumber(rawMaximum, decimals)} ${escapeHtml(unit)}</small></span></header>
         <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Évolution de ${escapeHtml(title)}">
           <line class="cycling-chart-grid" x1="${padding.left}" y1="${y(rawMaximum)}" x2="${width - padding.right}" y2="${y(rawMaximum)}"></line>
@@ -2766,6 +2766,85 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           <text text-anchor="end" x="${width - padding.right}" y="${height - 6}">${formatTime(maximumTime)}</text>
         </svg>
       </article>`;
+  }
+
+  function openCyclingChartDetail(chart) {
+    let values;
+    try {
+      values = JSON.parse(chart.dataset.chartValues || "[]");
+    } catch (_) {
+      values = [];
+    }
+    if (values.length < 2) return;
+
+    const title = chart.dataset.chartTitle || "Mesure";
+    const unit = chart.dataset.chartUnit || "";
+    const color = chart.dataset.chartColor || "#38a8f4";
+    const average = Number(chart.dataset.chartAverage);
+    const width = 960;
+    const height = 390;
+    const padding = { left: 64, right: 24, top: 24, bottom: 42 };
+    const maximumTime = Math.max(...values.map(point => Number(point.t)), 1);
+    const rawMinimum = Math.min(...values.map(point => Number(point.v)));
+    const rawMaximum = Math.max(...values.map(point => Number(point.v)));
+    const margin = Math.max((rawMaximum - rawMinimum) * .1, unit === "bpm" ? 3 : 1);
+    const minimum = Math.max(0, rawMinimum - margin);
+    const maximum = rawMaximum + margin;
+    const x = time => padding.left + Number(time) / maximumTime * (width - padding.left - padding.right);
+    const y = value => padding.top + (maximum - Number(value)) / Math.max(1, maximum - minimum) * (height - padding.top - padding.bottom);
+    const line = values.map((point, index) => `${index ? "L" : "M"}${x(point.t).toFixed(1)},${y(point.v).toFixed(1)}`).join(" ");
+    const decimals = unit === "km/h" ? 1 : 0;
+    const formatTime = seconds => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, "0")}`;
+    const overlay = document.createElement("section");
+    overlay.className = "cycling-chart-detail-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-label", `Graphique détaillé ${title}`);
+    overlay.innerHTML = `
+      <div class="cycling-chart-detail">
+        <header><div><span>DONNÉE SANTÉ CONNECT</span><h2>${escapeHtml(title)}</h2><p>Moyenne · ${reportNumber(average, decimals)} ${escapeHtml(unit)}</p></div><button type="button" data-chart-detail-close aria-label="Fermer">×</button></header>
+        <div class="cycling-chart-detail-reading" aria-live="polite"><strong data-chart-detail-value></strong><span data-chart-detail-time></span></div>
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Évolution détaillée de ${escapeHtml(title)}">
+          <line class="cycling-chart-grid" x1="${padding.left}" y1="${y(rawMaximum)}" x2="${width - padding.right}" y2="${y(rawMaximum)}"></line>
+          <line class="cycling-chart-grid" x1="${padding.left}" y1="${y(rawMinimum)}" x2="${width - padding.right}" y2="${y(rawMinimum)}"></line>
+          <line class="cycling-chart-average" style="stroke:${color}" x1="${padding.left}" y1="${y(average)}" x2="${width - padding.right}" y2="${y(average)}"></line>
+          <path class="cycling-chart-line" style="stroke:${color}" d="${line}"></path>
+          <line class="cycling-chart-cursor" x1="${x(values[0].t)}" y1="${padding.top}" x2="${x(values[0].t)}" y2="${height - padding.bottom}"></line>
+          <circle class="cycling-chart-cursor-point" style="fill:${color}" cx="${x(values[0].t)}" cy="${y(values[0].v)}" r="7"></circle>
+          <text x="8" y="${y(rawMaximum) + 5}">${reportNumber(rawMaximum, decimals)}</text>
+          <text x="8" y="${y(rawMinimum) + 5}">${reportNumber(rawMinimum, decimals)}</text>
+          <text x="${padding.left}" y="${height - 8}">0:00</text>
+          <text text-anchor="end" x="${width - padding.right}" y="${height - 8}">${formatTime(maximumTime)}</text>
+        </svg>
+        <label><span>Déplacer le curseur dans la séance</span><input type="range" min="0" max="${values.length - 1}" value="0" step="1" data-chart-detail-range></label>
+      </div>`;
+
+    const range = overlay.querySelector("[data-chart-detail-range]");
+    const cursor = overlay.querySelector(".cycling-chart-cursor");
+    const point = overlay.querySelector(".cycling-chart-cursor-point");
+    const valueOutput = overlay.querySelector("[data-chart-detail-value]");
+    const timeOutput = overlay.querySelector("[data-chart-detail-time]");
+    const update = () => {
+      const selected = values[Number(range.value)] || values[0];
+      const selectedX = x(selected.t);
+      cursor.setAttribute("x1", selectedX);
+      cursor.setAttribute("x2", selectedX);
+      point.setAttribute("cx", selectedX);
+      point.setAttribute("cy", y(selected.v));
+      valueOutput.textContent = `${reportNumber(selected.v, decimals)} ${unit}`;
+      timeOutput.textContent = `Temps écoulé · ${formatTime(selected.t)}`;
+    };
+    range.addEventListener("input", update);
+    overlay.addEventListener("click", event => {
+      event.stopPropagation();
+      if (event.target === overlay || event.target.closest("[data-chart-detail-close]")) overlay.remove();
+    });
+    overlay.addEventListener("keydown", event => {
+      if (event.key === "Escape") overlay.remove();
+    });
+    document.getElementById("atlasSessionDialog")?.appendChild(overlay);
+    update();
+    range.focus();
   }
 
   function cyclingZoneDistributionHtml(blocks) {
@@ -4216,6 +4295,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         preview.insertAdjacentHTML("beforeend", `<p class="error">${escapeHtml(error.message)}</p>`);
       }
     };
+
   }
   function dailyPreparationDetailHtml(preparation, originalWorkout) {
     if (!preparation) return "";
@@ -4449,6 +4529,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     `;
 
     content.onclick = async event => {
+      const cyclingChart = event.target.closest("[data-cycling-chart]");
+      if (cyclingChart) {
+        openCyclingChartDetail(cyclingChart);
+        return;
+      }
+
       const rangeTick = event.target.closest("[data-range-tick]");
       const rangeStep = event.target.closest("[data-range-step]");
       if (rangeTick || rangeStep) {
@@ -4721,6 +4807,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           "active",
           Number(button.dataset.rangeTick) === Number(range.value)
         ));
+    };
+
+    content.onkeydown = event => {
+      const chart = event.target.closest("[data-cycling-chart]");
+      if (!chart || !["Enter", " "].includes(event.key)) return;
+      event.preventDefault();
+      openCyclingChartDetail(chart);
     };
 
     content.onsubmit = async event => {
