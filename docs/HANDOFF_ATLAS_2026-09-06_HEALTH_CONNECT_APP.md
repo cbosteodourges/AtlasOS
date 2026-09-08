@@ -47,7 +47,8 @@ Architecture cible : `Garmin / Foodvisor -> Santé Connect -> Atlas Android -> H
 - Les tours automatiques restent neutralisés, mais le vélo n'est plus aplati en un unique bloc vert : Atlas reconstruit des segments Z1 à Z5 depuis la série de fréquence cardiaque Health Connect.
 - Calcul : réserve cardiaque individuelle lorsque FC repos + FC max sont connues, sinon pourcentage de FC max ; médiane temporelle sur ±15 s et absorption des changements de moins de 30 s. Vitesse, cadence et puissance enrichissent les métriques des blocs sans utiliser la VMA running.
 - Le dénivelé Android distingue désormais une vraie valeur nulle d'une donnée absente : aucun `ElevationGainedRecord` associé produit `null`/« Non disponible », plus `0 m`. Les enregistrements de la même source que la séance sont prioritaires pour éviter les doublons inter-applications.
-- Schéma de synchronisation Android porté à 8 afin de forcer un backfill d'activité après installation de la nouvelle APK. Santé Connect ne fournit pas ici d'altitude point par point ; Atlas ne peut afficher le dénivelé vélo que si Garmin publie un `ElevationGainedRecord`.
+- Schéma de synchronisation Android porté à 8 afin de forcer un backfill d'activité après installation de la nouvelle APK. Santé Connect ne fournit pas ici d'altitude point par point ; Atlas ne peut afficher le dénivelé vélo que si une application publie un `ElevationGainedRecord` dans Santé Connect.
+- Validation terrain après recalcul : la sortie vélo de 81 min / 33,8 km est reconstruite depuis les seules données Health Connect, avec 192 m de dénivelé retrouvé et des passages Z1 à Z4 visibles. Une hystérésis de 3 points d'intensité stabilise désormais les oscillations autour des frontières de zones sans effacer les bosses soutenues. Aucun FIT ni import Garmin direct n'a été utilisé pour ce test.
 
 ## 5. Stockage / performance
 - Avant compactage : **173249 records / 68,1 Mio**.

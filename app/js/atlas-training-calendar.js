@@ -2758,7 +2758,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             <span>ANALYSE ATLAS · SORTIE VÉLO</span>
             <h2>${escapeHtml(workout.title || "Sortie vélo")}</h2>
             <p>
-              Effort continu · les tours automatiques Garmin ont été neutralisés.
+              Effort continu · les tours automatiques transmis par Health Connect ont été neutralisés.
               ${Number.isFinite(confidence) ? `Confiance d’association : ${reportScore(confidence)}.` : ""}
             </p>
           </div>
@@ -2807,7 +2807,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
 
         <details class="source-quality-panel report-confidence-panel">
           <summary>Fiabilité et recalcul</summary>
-          <p class="report-score-reading">La chronologie vélo est reconstruite depuis les séries Health Connect disponibles, sans utiliser les tours automatiques Garmin.</p>
+          <p class="report-score-reading">La chronologie vélo est reconstruite depuis les séries Health Connect disponibles, sans utiliser leurs tours automatiques.</p>
           <button class="recalculate-execution-button" type="button" data-recalculate-execution="${escapeHtml(report.activity_id || "")}">Recalculer ce compte-rendu</button>
           <small data-recalculate-status>Le recalcul remplace cette analyse sans modifier la séance planifiée ni les données sources.</small>
         </details>
