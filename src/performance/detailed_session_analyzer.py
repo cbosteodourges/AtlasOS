@@ -472,25 +472,49 @@ class DetailedSessionAnalyzer:
             right = bisect_right(offsets, offset + 15)
             smoothed.append(median(values[left:right]))
 
-        def zone(value: float) -> str:
+        def intensity_percent(value: float) -> float:
             if (
                 resting_heart_rate is not None
                 and maximum_heart_rate > resting_heart_rate
             ):
-                intensity = (value - float(resting_heart_rate)) / (
+                return (value - float(resting_heart_rate)) / (
                     maximum_heart_rate - float(resting_heart_rate)
                 ) * 100
-            else:
-                intensity = value / maximum_heart_rate * 100
+            return value / maximum_heart_rate * 100
+
+        def raw_zone(intensity: float) -> int:
             if intensity < 60:
-                return "z1"
+                return 1
             if intensity < 70:
-                return "z2"
+                return 2
             if intensity < 80:
-                return "z3"
+                return 3
             if intensity < 90:
-                return "z4"
-            return "z5"
+                return 4
+            return 5
+
+        # Une marge de 3 points de réserve cardiaque empêche les changements
+        # de couleur répétés lorsque la FC oscille autour d'une frontière.
+        # Un effort franc peut toujours franchir plusieurs zones d'un coup.
+        zone_boundaries = (60.0, 70.0, 80.0, 90.0)
+        stable_zones = []
+        current_zone = None
+        for value in smoothed:
+            intensity = intensity_percent(value)
+            if current_zone is None:
+                current_zone = raw_zone(intensity)
+            else:
+                while (
+                    current_zone < 5
+                    and intensity >= zone_boundaries[current_zone - 1] + 3
+                ):
+                    current_zone += 1
+                while (
+                    current_zone > 1
+                    and intensity < zone_boundaries[current_zone - 2] - 3
+                ):
+                    current_zone -= 1
+            stable_zones.append(f"z{current_zone}")
 
         intervals = []
         for index in range(len(samples)):
@@ -502,7 +526,7 @@ class DetailedSessionAnalyzer:
             )
             if interval_end > interval_start:
                 intervals.append([
-                    zone(smoothed[index]),
+                    stable_zones[index],
                     interval_start,
                     interval_end,
                 ])

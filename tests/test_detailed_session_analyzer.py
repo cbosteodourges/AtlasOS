@@ -302,6 +302,31 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
 
         self.assertEqual([block.block_type for block in result.blocks], ["z1"])
 
+    def test_cycling_hysteresis_stabilizes_a_zone_boundary(self) -> None:
+        heart_rates = [138] * 60 + [139, 143] * 60 + [147] * 90
+        samples = [
+            self._sample(second, 7.0, second * 7.0, heart_rate)
+            for second, heart_rate in enumerate(heart_rates)
+        ]
+        activity = LongitudinalActivity(
+            atlas_id="health_connect:cycling-zone-boundary",
+            start_time=self.start,
+            activity_type="cycling",
+            distance_km=len(samples) * 7 / 1000,
+            duration_minutes=len(samples) / 60,
+            average_heart_rate_bpm=142,
+            maximum_heart_rate_bpm=147,
+            samples=samples,
+        )
+
+        result = self.analyzer.analyze(activity, self.profile)
+
+        self.assertEqual(
+            [block.block_type for block in result.blocks],
+            ["z2", "z3"],
+        )
+        self.assertGreater(result.blocks[0].duration_seconds, 150)
+
     def test_cycling_isolated_heart_rate_spike_is_filtered(self) -> None:
         samples = [
             self._sample(second, 7.3, second * 7.3, heart_rate)
