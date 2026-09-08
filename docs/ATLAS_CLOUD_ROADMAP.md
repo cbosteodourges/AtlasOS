@@ -39,7 +39,7 @@ Commencer petit pour le prototype Cloud et dimensionner après mesure réelle. L
 ## État au 6 septembre 2026
 - Ouverture Atlas Connect -> vérification automatique Health Connect : validée.
 - Contrôle manuel différentiel : validé.
-- 28 catégories Health Connect autorisées sur le téléphone de test.
+- 29 catégories Health Connect prises en charge, cadence de pédalage comprise ; la nouvelle permission reste à valider sur le téléphone de test.
 - Aucun changement -> aucune retransmission : validé.
 - Delta direct pour de nombreux records Wellness/Nutrition et flux autonomes : implémenté, validation terrain en cours.
 - Worker Android en arrière-plan : installé ; exécution exacte laissée à Android.

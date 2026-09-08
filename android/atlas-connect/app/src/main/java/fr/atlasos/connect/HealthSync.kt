@@ -14,7 +14,7 @@ import java.time.temporal.ChronoUnit
 
 class HealthSync(private val context: Context) {
     companion object {
-        private const val SYNC_SCHEMA_VERSION = 8
+        private const val SYNC_SCHEMA_VERSION = 9
         private const val RECOVERY_BACKFILL_DAYS = 3650L
     }
     private suspend inline fun <reified T : Record> HealthConnectClient.records(range: TimeRangeFilter): List<T> {
@@ -82,7 +82,8 @@ class HealthSync(private val context: Context) {
         val calories = client.availableRecords<TotalCaloriesBurnedRecord>(range, granted, skipped)
         val activeCalories = client.availableRecords<ActiveCaloriesBurnedRecord>(range, granted, skipped)
         val basalRates = client.availableRecords<BasalMetabolicRateRecord>(range, granted, skipped)
-        val cadences = client.availableRecords<StepsCadenceRecord>(range, granted, skipped)
+        val stepCadences = client.availableRecords<StepsCadenceRecord>(range, granted, skipped)
+        val cyclingCadences = client.availableRecords<CyclingPedalingCadenceRecord>(range, granted, skipped)
         val powers = client.availableRecords<PowerRecord>(range, granted, skipped)
         val vo2MaxRecords = client.availableRecords<Vo2MaxRecord>(range, granted, skipped)
         val heightRecords = client.availableRecords<HeightRecord>(range, granted, skipped)
@@ -116,11 +117,20 @@ class HealthSync(private val context: Context) {
                 { it.startTime }, { it.endTime },
                 { it.metadata.dataOrigin.packageName },
             ).flatMap { it.samples }
-            val cadence = recordsForExercise(
-                exercise, cadences,
+            val stepCadence = recordsForExercise(
+                exercise, stepCadences,
                 { it.startTime }, { it.endTime },
                 { it.metadata.dataOrigin.packageName },
             ).flatMap { it.samples }
+            val cyclingCadence = recordsForExercise(
+                exercise, cyclingCadences,
+                { it.startTime }, { it.endTime },
+                { it.metadata.dataOrigin.packageName },
+            ).flatMap { it.samples }
+            val cadenceValues = (
+                stepCadence.map { it.time to it.rate } +
+                    cyclingCadence.map { it.time to it.revolutionsPerMinute }
+            ).distinctBy { it.first }.sortedBy { it.first }
             val power = recordsForExercise(
                 exercise, powers,
                 { it.startTime }, { it.endTime },
@@ -129,7 +139,9 @@ class HealthSync(private val context: Context) {
             val samples = JSONArray()
             hr.forEach { samples.put(JSONObject().put("timestamp", it.time).put("heart_rate_bpm", it.beatsPerMinute)) }
             speed.forEach { samples.put(JSONObject().put("timestamp", it.time).put("speed_mps", it.speed.inMetersPerSecond)) }
-            cadence.forEach { samples.put(JSONObject().put("timestamp", it.time).put("cadence_spm", it.rate)) }
+            cadenceValues.forEach { (time, value) ->
+                samples.put(JSONObject().put("timestamp", time).put("cadence_spm", value))
+            }
             power.forEach { samples.put(JSONObject().put("timestamp", it.time).put("power_watts", it.power.inWatts)) }
             val laps = JSONArray(exercise.laps.map { lap ->
                 JSONObject()
@@ -168,7 +180,7 @@ class HealthSync(private val context: Context) {
             val coverage = JSONObject()
                 .put("heart_rate_samples", hr.size)
                 .put("speed_samples", speed.size)
-                .put("cadence_samples", cadence.size)
+                .put("cadence_samples", cadenceValues.size)
                 .put("power_samples", power.size)
                 .put("laps", exercise.laps.size)
                 .put("segments", exercise.segments.size)
@@ -183,8 +195,8 @@ class HealthSync(private val context: Context) {
                 .putNullable("average_heart_rate_bpm", hr.map { it.beatsPerMinute.toDouble() }.averageOrNull())
                 .putNullable("maximum_heart_rate_bpm", hr.maxOfOrNull { it.beatsPerMinute })
                 .putNullable("average_speed_mps", speed.map { it.speed.inMetersPerSecond }.averageOrNull())
-                .putNullable("average_cadence_spm", cadence.map { it.rate }.averageOrNull())
-                .putNullable("maximum_cadence_spm", cadence.maxOfOrNull { it.rate })
+                .putNullable("average_cadence_spm", cadenceValues.map { it.second }.averageOrNull())
+                .putNullable("maximum_cadence_spm", cadenceValues.maxOfOrNull { it.second })
                 .putNullable("average_power_watts", power.map { it.power.inWatts }.averageOrNull())
                 .putNullable("maximum_power_watts", power.maxOfOrNull { it.power.inWatts })
                 .put("samples", samples).put("laps", laps).put("segments", segments)
@@ -320,7 +332,8 @@ class HealthSync(private val context: Context) {
             inventoryEntry("DistanceRecord", distances),
             inventoryEntry("SpeedRecord", speeds),
             inventoryEntry("ElevationGainedRecord", elevations),
-            inventoryEntry("StepsCadenceRecord", cadences),
+            inventoryEntry("StepsCadenceRecord", stepCadences),
+            inventoryEntry("CyclingPedalingCadenceRecord", cyclingCadences),
             inventoryEntry("PowerRecord", powers),
             inventoryEntry("RestingHeartRateRecord", restingHeartRates),
             inventoryEntry("HeartRateVariabilityRmssdRecord", hrvRecords),

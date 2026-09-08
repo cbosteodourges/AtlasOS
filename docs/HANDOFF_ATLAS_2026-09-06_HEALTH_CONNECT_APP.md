@@ -18,7 +18,7 @@ Architecture locale : `Garmin / Foodvisor -> Santé Connect -> Atlas Android -> 
 Architecture cible : `Garmin / Foodvisor -> Santé Connect -> Atlas Android -> HTTPS -> Atlas Cloud 24/7`.
 
 ## 3. Health Connect / delta — acquis
-- 28 catégories Health Connect autorisées, dénivelé inclus (`READ_ELEVATION_GAINED`).
+- 29 catégories Health Connect autorisées, dénivelé et cadence de pédalage inclus (`READ_ELEVATION_GAINED`, `READ_CYCLING_PEDALING_CADENCE`).
 - Une permission optionnelle absente ne bloque plus toute la synchro.
 - Ouverture Atlas -> vérification automatique ; bouton Synchroniser -> même chemin différentiel.
 - Aucun changement -> `Atlas à jour · aucune nouvelle donnée` validé.
@@ -50,6 +50,7 @@ Architecture cible : `Garmin / Foodvisor -> Santé Connect -> Atlas Android -> H
 - Schéma de synchronisation Android porté à 8 afin de forcer un backfill d'activité après installation de la nouvelle APK. Santé Connect ne fournit pas ici d'altitude point par point ; Atlas ne peut afficher le dénivelé vélo que si une application publie un `ElevationGainedRecord` dans Santé Connect.
 - Validation terrain après recalcul : la sortie vélo de 81 min / 33,8 km est reconstruite depuis les seules données Health Connect, avec 192 m de dénivelé retrouvé et des passages Z1 à Z4 visibles. Une hystérésis de 3 points d'intensité stabilise désormais les oscillations autour des frontières de zones sans effacer les bosses soutenues. Aucun FIT ni import Garmin direct n'a été utilisé pour ce test.
 - Le compte-rendu vélo transporte désormais des séries graphiques compactes issues des échantillons réellement disponibles : FC, vitesse, cadence, puissance et altitude. La réduction conserve les minima/maxima par fenêtre afin de préserver les bosses et pointes brèves, sans recopier les longues séries brutes. Une mesure absente est signalée comme indisponible ; le dénivelé total n'est jamais transformé artificiellement en profil d'altitude. Le rapport présente aussi le temps reconstruit dans chaque zone Atlas.
+- La cadence vélo utilise désormais le type Health Connect dédié `CyclingPedalingCadenceRecord` en plus de `StepsCadenceRecord`. Le schéma de synchronisation 9 déclenche un nouveau backfill après installation de l'APK ; la courbe restera indisponible si l'application source ne publie pas ce record dans Santé Connect.
 
 ## 5. Stockage / performance
 - Avant compactage : **173249 records / 68,1 Mio**.
