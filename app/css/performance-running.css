@@ -8489,3 +8489,74 @@ button.history-session-card:focus-visible {
     -webkit-line-clamp: unset !important;
   }
 }
+
+/* Consultation d'activité plein écran : la navigation supérieure remplace
+   le cadre de modale et rend toute la largeur utile au compte-rendu. */
+#atlasSessionDialog.atlas-session-dialog {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  max-width: none !important;
+  height: 100dvh !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #020b15 !important;
+  box-shadow: none !important;
+}
+
+#atlasSessionDialog.atlas-session-dialog::backdrop {
+  background: #020b15;
+  backdrop-filter: none;
+}
+
+#atlasSessionDialog.atlas-session-dialog .session-dialog-shell {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0 !important;
+}
+
+#atlasSessionDialog.atlas-session-dialog .session-dialog-tabs {
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+}
+
+#atlasSessionDialog.atlas-session-dialog .session-tab-panel {
+  padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+}
+
+#atlasSessionDialog .cycling-chart-detail-overlay {
+  padding: 0;
+}
+
+#atlasSessionDialog .cycling-chart-detail {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (max-width: 760px) {
+  #atlasSessionDialog.atlas-session-dialog {
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+  }
+
+  #atlasSessionDialog.atlas-session-dialog .session-dialog-tabs {
+    padding-top: calc(8px + env(safe-area-inset-top, 0px)) !important;
+  }
+
+  #atlasSessionDialog.atlas-session-dialog .session-tab-panel {
+    padding-inline: 10px;
+  }
+
+  #atlasSessionDialog .cycling-chart-detail {
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 12px
+      calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+}
