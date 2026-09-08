@@ -17,6 +17,29 @@ from tools.atlas_web_server import (
 
 
 class AtlasWebServerHistoryTests(unittest.TestCase):
+    def test_retrospective_estimates_do_not_become_vo2_or_vma_history(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            private = root / "atlas-data" / "private"
+            private.mkdir(parents=True)
+            (private / "physiology-longitudinal.json").write_text(json.dumps({
+                "history": [{
+                    "day": "2026-06-11",
+                    "schema": "atlas_retrospective_v1",
+                    "vo2_max": 57.4,
+                    "vma_kmh": 16.4,
+                    "sv1_speed_kmh": 10.2,
+                }]
+            }), encoding="utf-8")
+
+            with patch("tools.atlas_web_server.ROOT", root):
+                history = load_physiology_history()
+
+            self.assertEqual(len(history), 1)
+            self.assertIsNone(history[0]["vo2_max"])
+            self.assertIsNone(history[0]["vma_kmh"])
+            self.assertEqual(history[0]["sv1_speed_kmh"], 10.2)
+
     def test_physiology_history_keeps_multiple_adjustments_on_same_day(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

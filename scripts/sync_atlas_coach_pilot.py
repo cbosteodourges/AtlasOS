@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from time import perf_counter
 from dataclasses import asdict
 from datetime import date, datetime, timezone
 from enum import Enum
@@ -901,6 +902,7 @@ def same_execution_sources(record, activity) -> bool:
 
 def main() -> None:
     """Lance une synchronisation pilote complète."""
+    synchronization_started = perf_counter()
     arguments = parse_arguments()
     loader = TrainingProgramLoader()
     workouts = loader.load(arguments.program)
@@ -926,11 +928,13 @@ def main() -> None:
         f"{total_fit_files}.",
         flush=True,
     )
+    decoding_started = perf_counter()
     activities = (
         synchronize_garmin(arguments.input, fit_paths)
         if fit_paths
         else []
     )
+    decoding_elapsed = perf_counter() - decoding_started
     activities = merge_into_activity_store(
         activities,
         arguments.activity_store,
@@ -987,6 +991,15 @@ def main() -> None:
     print(
         f"Synchronisation Atlas Coach terminée : "
         f"{len(new_records)} nouvelle(s) activité(s)."
+    )
+    if fit_paths:
+        print(
+            f"Décodage FIT : {decoding_elapsed:.2f} s · "
+            f"{len(fit_paths) / max(decoding_elapsed, .001):.1f} fichier(s)/s."
+        )
+    print(
+        f"Temps total import + analyse + fusion : "
+        f"{perf_counter() - synchronization_started:.2f} s."
     )
     print(
         f"Correspondances Atlas fiables : "

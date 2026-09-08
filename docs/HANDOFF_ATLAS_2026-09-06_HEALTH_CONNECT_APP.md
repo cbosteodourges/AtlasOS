@@ -1,6 +1,6 @@
 # ATLAS OS — Rapport de passation
 ## Santé Connect, application Atlas unifiée, identité visuelle et trajectoire Cloud
-**Mise à jour : 7 septembre 2026**
+**Mise à jour : 8 septembre 2026**
 
 ## 1. Point de reprise
 - Dépôt : `cbosteodourges/AtlasOS`
@@ -51,6 +51,13 @@ Architecture cible : `Garmin / Foodvisor -> Santé Connect -> Atlas Android -> H
 - Validation terrain après recalcul : la sortie vélo de 81 min / 33,8 km est reconstruite depuis les seules données Health Connect, avec 192 m de dénivelé retrouvé et des passages Z1 à Z4 visibles. Une hystérésis de 3 points d'intensité stabilise désormais les oscillations autour des frontières de zones sans effacer les bosses soutenues. Aucun FIT ni import Garmin direct n'a été utilisé pour ce test.
 - Le compte-rendu vélo transporte désormais des séries graphiques compactes issues des échantillons réellement disponibles : FC, vitesse, cadence, puissance et altitude. La réduction conserve les minima/maxima par fenêtre afin de préserver les bosses et pointes brèves, sans recopier les longues séries brutes. Une mesure absente est signalée comme indisponible ; le dénivelé total n'est jamais transformé artificiellement en profil d'altitude. Le rapport présente aussi le temps reconstruit dans chaque zone Atlas.
 - La cadence vélo utilise désormais le type Health Connect dédié `CyclingPedalingCadenceRecord` en plus de `StepsCadenceRecord`. Le schéma de synchronisation 9 déclenche un nouveau backfill après installation de l'APK ; la courbe restera indisponible si l'application source ne publie pas ce record dans Santé Connect.
+
+## 4 quater. Historique physiologique et audit FIT — 8 septembre 2026
+- Les reconstructions `atlas_retrospective_v1` fondées sur allure/FC ne sont plus exposées comme des mesures historiques de VO₂max ou de VMA. Le faux repère VO₂max à 57,4 du 11 juin 2026 disparaît donc de ces courbes sans modifier les données sources ni le profil actif.
+- Les courbes VO₂max/VMA conservent uniquement les décisions de profil explicitement validées. Les reconstructions restent disponibles pour les tendances SV1/SV2 auxquelles elles sont adaptées.
+- `scripts/audit_fit_archive.py` parcourt récursivement une archive privée `.FIT`, chronomètre le décodage, inventorie dates, sports et types de messages, et recherche les champs physiologiques réellement présents sans modifier les FIT.
+- `scripts/sync_atlas_coach_pilot.py` affiche désormais séparément le temps de décodage FIT et le temps total import + analyse + fusion. Atlas Connect reste le transport Santé Connect ; l'archive FIT est importée localement sur le PC.
+- Rapport local exclu de Git : `atlas-data/private/fit-archive-audit.json`.
 
 ## 5. Stockage / performance
 - Avant compactage : **173249 records / 68,1 Mio**.
