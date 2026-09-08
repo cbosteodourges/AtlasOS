@@ -23,6 +23,79 @@ from src.training import (
 class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
     """Valide le pont entre calendrier et activité Garmin."""
 
+    def test_detects_six_homogeneous_optional_three_minute_intervals(self) -> None:
+        target = IntensityTarget(
+            zone=5,
+            speed_min_kmh=13.3,
+            speed_max_kmh=14.3,
+        )
+        planned = AdaptiveWorkout(
+            workout_id="vo2-six-by-three",
+            workout_date=date(2026, 9, 8),
+            workout_type=WorkoutType.VMA_LONG,
+            title="Temps de soutien VO₂max · 4 à 6 × 3 min",
+            objective="Développer le temps de soutien.",
+            blocks=[TrainingBlock(
+                "4 à 6 × 3 min",
+                BlockType.WORK,
+                4,
+                3,
+                recovery_minutes=2,
+                target=target,
+                instructions="Commencer par 4; plafond 6 si la dernière fraction reste propre.",
+            )],
+            planned_duration_minutes=54,
+        )
+        start = datetime(2026, 9, 8, 18, tzinfo=timezone.utc)
+        samples = []
+        for offset in range(0, 15 * 60, 10):
+            samples.append(ActivitySample(
+                timestamp=start + timedelta(seconds=offset),
+                speed_mps=10 / 3.6,
+            ))
+        cursor = 15 * 60
+        for repetition in range(6):
+            for offset in range(0, 181, 10):
+                samples.append(ActivitySample(
+                    timestamp=start + timedelta(seconds=cursor + offset),
+                    speed_mps=(13.45 + repetition * .12) / 3.6,
+                    heart_rate_bpm=145 + repetition * 2,
+                ))
+            cursor += 180
+            if repetition < 5:
+                for offset in range(10, 121, 10):
+                    samples.append(ActivitySample(
+                        timestamp=start + timedelta(seconds=cursor + offset),
+                        speed_mps=6.5 / 3.6,
+                        heart_rate_bpm=138,
+                    ))
+                cursor += 120
+        activity = LongitudinalActivity(
+            atlas_id="health-connect-six-by-three",
+            start_time=start,
+            activity_type="running",
+            distance_km=8.7,
+            duration_minutes=50,
+            average_speed_kmh=10.4,
+            samples=samples,
+        )
+        planned_intervals = AtlasWorkoutExecutionMatcher._planned_intervals(planned)
+        groups = AtlasWorkoutExecutionMatcher._raw_speed_interval_groups(
+            planned_intervals,
+            activity,
+        )
+
+        self.assertEqual(len(planned_intervals), 6)
+        self.assertEqual(
+            [bool(item.get("optional")) for item in planned_intervals],
+            [False, False, False, False, True, True],
+        )
+        self.assertEqual(len(groups), 6)
+        self.assertEqual(
+            [round(item["raw_recovery_seconds"]) for item in groups[:-1]],
+            [120, 120, 120, 120, 120],
+        )
+
     def test_aligns_heterogeneous_vo2_pyramid_and_ignores_false_fragment(self) -> None:
         target = IntensityTarget(
             zone=4,
@@ -519,11 +592,16 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
                 (item["start_seconds"], item["end_seconds"])
                 for item in result.execution.interval_details
             ],
-            [(0.0, 280.0), (385.0, 665.0), (770.0, 1050.0)],
+            [
+                (0.0, 280.0),
+                (385.0, 665.0),
+                (770.0, 1050.0),
+                (1155.0, 1435.0),
+            ],
         )
         self.assertEqual(
             [item["recovery_seconds"] for item in result.execution.interval_details[:-1]],
-            [105.0, 105.0],
+            [105.0, 105.0, 105.0],
         )
         self.assertEqual(
             result.execution.recovery_compliance_score,

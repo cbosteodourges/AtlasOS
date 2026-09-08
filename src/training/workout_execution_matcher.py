@@ -6,6 +6,7 @@ Rapproche une séance planifiée Atlas et une activité réellement exécutée.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+import re
 from types import SimpleNamespace
 from typing import Optional
 
@@ -398,6 +399,31 @@ class AtlasWorkoutExecutionMatcher:
                 f"{block.name} {block.instructions} "
                 f"{planned_workout.title if block_index == len(work_blocks) - 1 else ''}"
             ).lower()
+            flexible_repetitions = re.search(
+                r"(\d+)\s*(?:à|a|-)\s*(\d+)\s*[x×]",
+                optional_text,
+            )
+            if flexible_repetitions:
+                maximum = max(
+                    int(flexible_repetitions.group(1)),
+                    int(flexible_repetitions.group(2)),
+                )
+                optional_count = max(
+                    0,
+                    maximum - max(1, int(block.repetitions or 1)),
+                )
+                for _ in range(optional_count):
+                    intervals.append({
+                        "duration_seconds": (
+                            float(block.duration_minutes) * 60
+                            if block.duration_minutes is not None else None
+                        ),
+                        "distance_meters": block.distance_meters,
+                        "recovery_minutes": block.recovery_minutes or 0.0,
+                        "planned": block,
+                        "optional": True,
+                    })
+                continue
             if (
                 "facultative" in optional_text
                 and ("seconde" in optional_text or "1 à 2" in optional_text)
@@ -608,7 +634,7 @@ class AtlasWorkoutExecutionMatcher:
             for item in planned
             if item["duration_seconds"]
         }
-        if len(durations) < 2:
+        if not durations:
             return []
         minimum_targets = [
             float(item["planned"].target.speed_min_kmh)
