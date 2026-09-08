@@ -151,6 +151,10 @@ class AutomaticWorkoutConfirmationTests(unittest.TestCase):
                 provider="garmin", external_id="fit-1",
                 activity_type="run", start_time="2026-09-03T18:00:30Z",
                 duration_seconds=3605, distance_meters=10000,
+                samples=[ActivitySample(
+                    timestamp="2026-09-03T18:00:30Z",
+                    heart_rate_bpm=142,
+                )],
                 raw_metadata={"source_file": "fit-1.fit"},
             )
             merge_into_activity_store([health], path)
@@ -163,6 +167,8 @@ class AutomaticWorkoutConfirmationTests(unittest.TestCase):
                 touched[0].source_ids,
                 {"health_connect": "exercise-1", "garmin": "fit-1"},
             )
+            self.assertIsInstance(touched[0].samples[0], ActivitySample)
+            self.assertEqual(touched[0].samples[0].heart_rate_bpm, 142)
             self.assertTrue(same_execution_sources({
                 "provider": "health_connect", "external_id": "exercise-1",
             }, touched[0]))

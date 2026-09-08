@@ -73,7 +73,15 @@ def merge_activities(current: NormalizedActivity, incoming: NormalizedActivity) 
         if _quality(incoming) >= _quality(current)
         else (current, incoming)
     )
-    merged = NormalizedActivity(**winner.to_dict())
+    winner_payload = winner.to_dict()
+    winner_payload["samples"] = [
+        sample
+        if isinstance(sample, ActivitySample)
+        else ActivitySample(**sample)
+        for sample in winner_payload.get("samples", [])
+        if isinstance(sample, (dict, ActivitySample))
+    ]
+    merged = NormalizedActivity(**winner_payload)
     merged.canonical_id = current.canonical_id or incoming.canonical_id or activity_fingerprint(winner)
     merged.source_ids = {**current.source_ids, current.provider: current.external_id,
                          **incoming.source_ids, incoming.provider: incoming.external_id}
