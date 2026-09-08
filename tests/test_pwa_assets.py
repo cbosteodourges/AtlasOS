@@ -76,7 +76,7 @@ class PwaAssetsTests(unittest.TestCase):
     def test_styles_and_scripts_are_network_first(self):
         worker = (APP_ROOT / "service-worker.js").read_text(encoding="utf-8")
         pwa = (APP_ROOT / "js" / "atlas-pwa.js").read_text(encoding="utf-8")
-        self.assertIn('CACHE_NAME = "atlas-shell-v68"', worker)
+        self.assertIn('CACHE_NAME = "atlas-shell-v69"', worker)
         self.assertIn('["style", "script"]', worker)
         self.assertIn('fetch(event.request, { cache: "no-store" })', worker)
         self.assertIn('service-worker.js?v=4', pwa)
@@ -159,6 +159,8 @@ class PwaAssetsTests(unittest.TestCase):
         styles = (APP_ROOT / "css" / "performance-running.css").read_text(
             encoding="utf-8"
         )
+        self.assertIn("#atlasSessionDialog .workout-timeline-bars", styles)
+        self.assertIn("min-width: 3px", styles)
         self.assertIn("const HEADER_CONTENT_GAP_PX = 20", calendar)
         self.assertIn("new ResizeObserver(syncTrainingHeaderOffset)", calendar)
         self.assertIn('"--atlas-training-header-offset"', calendar)

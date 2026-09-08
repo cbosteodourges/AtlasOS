@@ -8258,11 +8258,16 @@ button.history-session-card:focus-visible {
 }
 #atlasSessionDialog .workout-timeline-bars {
   align-items: end;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 92px;
   gap: 5px;
+  overflow: hidden;
 }
 #atlasSessionDialog .workout-timeline-bars i {
   position: relative;
+  flex-basis: 0;
   min-width: 13px;
   border-radius: 9px 9px 3px 3px;
   box-shadow: 0 8px 20px color-mix(in srgb, var(--segment-color) 20%, transparent);
@@ -8340,6 +8345,13 @@ button.history-session-card:focus-visible {
   }
   #atlasSessionDialog .workout-timeline-bars {
     min-height: 72px;
+    gap: 2px;
+  }
+  #atlasSessionDialog .workout-timeline-bars i {
+    min-width: 3px;
+  }
+  #atlasSessionDialog .workout-timeline-bars i::after {
+    display: none;
   }
 }
 
