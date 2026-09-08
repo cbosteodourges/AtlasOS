@@ -3018,6 +3018,18 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       block => ["work", "interval"].includes(block.block_type)
     );
     const plannedMainBlock = plannedWorkBlocks[0];
+    const flexibleRepetitionText = `${plannedMainBlock?.name || ""} ${
+      plannedMainBlock?.instructions || ""
+    } ${workout.title || ""}`;
+    const flexibleRepetitionMatch = flexibleRepetitionText.match(
+      /(\d+)\s*(?:à|a|-)\s*(\d+)\s*[×x]/i
+    );
+    const flexibleRepetitionRange = flexibleRepetitionMatch
+      ? {
+          minimum: Number(flexibleRepetitionMatch[1]),
+          maximum: Number(flexibleRepetitionMatch[2])
+        }
+      : null;
     const plannedIntervalDefinitions = plannedWorkBlocks.flatMap(block =>
       Array.from({ length: Number(block.repetitions) || 1 }, () => ({
         block,
@@ -3572,7 +3584,14 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             0
           )} min`
         : `${validatedRepetitions} répétitions`;
-    const intervalCompletionSummary = optionalFractionCompleted
+    const completedWithinFlexibleRange = flexibleRepetitionRange &&
+      validatedRepetitions >= flexibleRepetitionRange.minimum &&
+      validatedRepetitions <= flexibleRepetitionRange.maximum;
+    const intervalCompletionSummary = completedWithinFlexibleRange
+      ? `${completedIntervalLabel} réalisés · plage ${
+          flexibleRepetitionRange.minimum
+        } à ${flexibleRepetitionRange.maximum} respectée`
+      : optionalFractionCompleted
       ? `${validatedRepetitions} fractions réalisées · noyau complet + fraction facultative`
       : heterogeneousIntervals
       ? `${validatedRepetitions} fractions réalisées sur ${plannedRepetitions} prévues`
