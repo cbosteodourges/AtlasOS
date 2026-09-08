@@ -750,6 +750,7 @@ def build_record(
         "activity": asdict(fingerprint),
         "detailed_analysis": asdict(analysis),
         "cardiac_drift": asdict(cardiac_drift),
+        "activity_charts": build_activity_charts(longitudinal),
         "atlas_workout_match": serialized_match,
         "automatic_learning_allowed": bool(
             best_match is not None
@@ -762,6 +763,78 @@ def build_record(
             and best_match.workout_id == restored.workout_id
             else None
         ),
+    }
+
+
+def build_activity_charts(
+    activity,
+    *,
+    maximum_points: int = 240,
+) -> dict[str, Any]:
+    """Prépare des séries légères sans altérer les mesures sources.
+
+    Les comptes-rendus ne doivent pas recopier les longues séries Health
+    Connect. Un échantillonnage par fenêtres conserve les minima et maxima de
+    chaque mesure, donc aussi les bosses et les pointes brèves, tout en
+    limitant durablement le poids du JSON envoyé au navigateur.
+    """
+
+    samples = sorted(
+        (
+            sample for sample in (activity.samples or [])
+            if getattr(sample, "timestamp", None)
+        ),
+        key=lambda sample: str(sample.timestamp),
+    )
+    if not samples:
+        return {"duration_seconds": activity.duration_minutes * 60, "series": {}}
+
+    start = activity.start_time
+
+    def timestamp(value):
+        if isinstance(value, datetime):
+            return value
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+
+    fields = {
+        "heart_rate_bpm": "heart_rate_bpm",
+        "speed_kmh": "speed_mps",
+        "cadence_rpm": "cadence_spm",
+        "power_watts": "power_watts",
+        "altitude_m": "altitude_m",
+    }
+    series = {}
+    for output_name, attribute in fields.items():
+        points = []
+        for sample in samples:
+            value = getattr(sample, attribute, None)
+            if value is None:
+                continue
+            numeric = float(value)
+            if output_name == "speed_kmh":
+                numeric *= 3.6
+            offset = max(0.0, (timestamp(sample.timestamp) - start).total_seconds())
+            points.append({"t": round(offset, 1), "v": round(numeric, 2)})
+        if not points:
+            continue
+        if len(points) > maximum_points:
+            bucket_count = max(1, maximum_points // 2)
+            bucket_size = len(points) / bucket_count
+            reduced = []
+            for bucket in range(bucket_count):
+                left = int(bucket * bucket_size)
+                right = max(left + 1, int((bucket + 1) * bucket_size))
+                group = points[left:right]
+                low = min(group, key=lambda point: point["v"])
+                high = max(group, key=lambda point: point["v"])
+                reduced.extend(sorted({low["t"]: low, high["t"]: high}.values(), key=lambda point: point["t"]))
+            points = reduced[:maximum_points]
+        series[output_name] = points
+
+    return {
+        "duration_seconds": round(activity.duration_minutes * 60, 1),
+        "source": activity.source or "",
+        "series": series,
     }
 
 

@@ -5,7 +5,9 @@ import sys
 import tempfile
 import types
 import unittest
+from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 garmin_fit_sdk = types.ModuleType("garmin_fit_sdk")
@@ -14,6 +16,7 @@ garmin_fit_sdk.Stream = object
 sys.modules.setdefault("garmin_fit_sdk", garmin_fit_sdk)
 
 from scripts.sync_atlas_coach_pilot import (
+    build_activity_charts,
     confirm_matched_workouts,
     build_record,
     detected_optional_threshold_workout,
@@ -33,6 +36,37 @@ from src.training import TrainingProgramLoader
 
 
 class AutomaticWorkoutConfirmationTests(unittest.TestCase):
+
+    def test_activity_charts_keep_health_connect_extremes_and_missing_series(self):
+        start = "2026-09-07T08:00:00+00:00"
+        activity = SimpleNamespace(
+            start_time=datetime.fromisoformat(start),
+            duration_minutes=2,
+            source="health_connect",
+            samples=[
+                ActivitySample(
+                    timestamp=f"2026-09-07T08:00:{second:02d}+00:00",
+                    heart_rate_bpm=100 + second,
+                    speed_mps=5 + second / 10,
+                    cadence_spm=70 + second,
+                )
+                for second in range(60)
+            ],
+        )
+
+        charts = build_activity_charts(activity, maximum_points=12)
+
+        self.assertLessEqual(len(charts["series"]["heart_rate_bpm"]), 12)
+        self.assertEqual(
+            max(point["v"] for point in charts["series"]["heart_rate_bpm"]),
+            159,
+        )
+        self.assertAlmostEqual(
+            max(point["v"] for point in charts["series"]["speed_kmh"]),
+            39.24,
+        )
+        self.assertNotIn("power_watts", charts["series"])
+        self.assertNotIn("altitude_m", charts["series"])
 
     def test_free_activity_record_keeps_global_metrics_and_removes_candidate_scores(self):
         activity = NormalizedActivity(

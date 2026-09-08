@@ -807,6 +807,16 @@ def execution_summary(item):
     integrity = analysis.get("data_integrity") or {}
     fingerprint = item.get("activity") or item.get("fingerprint") or {}
 
+    charts = item.get("activity_charts") or {}
+    chart_series = charts.get("series") if isinstance(charts, dict) else {}
+    allowed_chart_names = {
+        "heart_rate_bpm",
+        "speed_kmh",
+        "cadence_rpm",
+        "power_watts",
+        "altitude_m",
+    }
+
     return {
         "activity_id": item.get("activity_id"),
         "provider": item.get("provider"),
@@ -825,6 +835,15 @@ def execution_summary(item):
         "automatic_learning_allowed": item.get(
             "automatic_learning_allowed"
         ),
+        "activity_charts": {
+            "duration_seconds": charts.get("duration_seconds"),
+            "source": charts.get("source"),
+            "series": {
+                name: points
+                for name, points in (chart_series or {}).items()
+                if name in allowed_chart_names and isinstance(points, list)
+            },
+        },
         "workout_match": {
             **selected_fields(
                 match,

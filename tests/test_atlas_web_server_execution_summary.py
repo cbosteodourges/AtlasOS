@@ -9,6 +9,27 @@ from tools.atlas_web_server import execution_summary, recalculate_execution
 
 
 class AtlasWebServerExecutionSummaryTests(unittest.TestCase):
+    def test_exposes_only_supported_activity_chart_series(self):
+        summary = execution_summary({
+            "activity_id": "health_connect:bike",
+            "activity_charts": {
+                "duration_seconds": 3600,
+                "source": "health_connect",
+                "series": {
+                    "heart_rate_bpm": [{"t": 0, "v": 101}],
+                    "speed_kmh": [{"t": 0, "v": 21.2}],
+                    "private_location": [{"lat": 1, "lon": 2}],
+                },
+            },
+        })
+
+        charts = summary["activity_charts"]
+        self.assertEqual(charts["source"], "health_connect")
+        self.assertEqual(charts["duration_seconds"], 3600)
+        self.assertIn("heart_rate_bpm", charts["series"])
+        self.assertIn("speed_kmh", charts["series"])
+        self.assertNotIn("private_location", charts["series"])
+
     def test_exposes_global_activity_metrics_instead_of_micro_block_metrics(self):
         summary = execution_summary({
             "activity_id": "health_connect:family-run",
