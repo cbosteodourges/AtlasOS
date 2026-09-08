@@ -6934,6 +6934,13 @@ body[data-coach-section]
   stroke-width: 1;
 }
 
+#atlasSessionDialog .cycling-chart-average {
+  opacity: .82;
+  stroke-dasharray: 10 7;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
 #atlasSessionDialog .cycling-chart-line {
   fill: none;
   stroke-width: 3;

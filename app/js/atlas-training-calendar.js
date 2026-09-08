@@ -2757,6 +2757,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Évolution de ${escapeHtml(title)}">
           <line class="cycling-chart-grid" x1="${padding.left}" y1="${y(rawMaximum)}" x2="${width - padding.right}" y2="${y(rawMaximum)}"></line>
           <line class="cycling-chart-grid" x1="${padding.left}" y1="${y(rawMinimum)}" x2="${width - padding.right}" y2="${y(rawMinimum)}"></line>
+          <line class="cycling-chart-average" style="stroke:${color}" x1="${padding.left}" y1="${y(average)}" x2="${width - padding.right}" y2="${y(average)}"></line>
           <path class="cycling-chart-area" style="fill:${color}22" d="${area}"></path>
           <path class="cycling-chart-line" style="stroke:${color}" d="${line}"></path>
           <text x="4" y="${y(rawMaximum) + 4}">${reportNumber(rawMaximum, 0)}</text>
