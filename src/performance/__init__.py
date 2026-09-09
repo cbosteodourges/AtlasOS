@@ -91,6 +91,9 @@ from src.performance.session_fingerprint import (
 from src.performance.session_fingerprint_builder import (
     SessionFingerprintBuilder,
 )
+from src.performance.similar_session_comparator import (
+    compare_with_similar_sessions,
+)
 from src.performance.threshold_evolution_analyzer import (
     ThresholdEvolutionAnalyzer,
 )
@@ -157,4 +160,5 @@ __all__ = [
     "display_history_analysis",
     "display_training_plan",
     "format_pace",
+    "compare_with_similar_sessions",
 ]

@@ -67,6 +67,29 @@ class HeartRateSpeedProfileTests(unittest.TestCase):
         result = weekly_heart_rate_speed_profile([item], PHYSIOLOGY, as_of=date(2026, 9, 4))
         self.assertEqual(result["domains"]["threshold"]["recent_block_count"], 0)
 
+    def test_never_uses_cycling_to_update_running_thresholds(self):
+        as_of = date(2026, 9, 4)
+        cycling = []
+        for offset, heart_rate in ((100, 160), (90, 159), (10, 145), (4, 144)):
+            item = session(
+                as_of - timedelta(days=offset),
+                heart_rate,
+                speed=12.6,
+                index=offset,
+            )
+            item["activity"]["sport"] = "cycling"
+            cycling.append(item)
+
+        result = weekly_heart_rate_speed_profile(
+            cycling,
+            PHYSIOLOGY,
+            as_of=as_of,
+        )
+
+        self.assertIsNone(result["domains"]["threshold"]["trend"])
+        self.assertEqual(result["domains"]["threshold"]["recent_block_count"], 0)
+        self.assertEqual(result["domains"]["threshold"]["baseline_block_count"], 0)
+
     def test_projects_speed_and_hr_as_a_threshold_pair(self):
         as_of = date(2026, 9, 4)
         executions = []

@@ -94,7 +94,7 @@ class PwaAssetsTests(unittest.TestCase):
             legacy,
         )
         self.assertIn('performance-running.js?v=22', page)
-        self.assertIn('atlas-training-calendar.js?v=116', page)
+        self.assertIn('atlas-training-calendar.js?v=117', page)
 
     def test_legacy_execution_timeline_is_rebased_on_planned_warmup(self):
         calendar = (APP_ROOT / "js" / "atlas-training-calendar.js").read_text(
@@ -129,6 +129,13 @@ class PwaAssetsTests(unittest.TestCase):
         self.assertIn("optional: false", calendar)
         self.assertIn("missingOptionalRepetitions", calendar)
         self.assertIn("facultative non réalisée", calendar)
+        self.assertIn("hasCompleteWorkSpeed", calendar)
+        self.assertIn("hasCompleteWorkHeartRate", calendar)
+        self.assertIn("hasMeasuredRecoveries", calendar)
+        self.assertIn(
+            "Atlas ne conclut pas sur l’efficacité des récupérations",
+            calendar,
+        )
 
     def test_planned_timeline_uses_stable_semantic_colors(self):
         calendar = (APP_ROOT / "js" / "atlas-training-calendar.js").read_text(

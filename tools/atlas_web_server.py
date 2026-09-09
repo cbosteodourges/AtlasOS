@@ -38,6 +38,9 @@ from src.training.post_workout_context_analyzer import (
 from src.training.user_workout_decision import UserWorkoutDecisionEngine
 from src.training.heart_rate_speed_profile import weekly_heart_rate_speed_profile
 from src.training.profile_calibration import profile_calibration_summary
+from src.performance.similar_session_comparator import (
+    compare_with_similar_sessions,
+)
 from src.training.subscription_access import (
     filter_program_for_subscription,
     normalize_tier,
@@ -1032,11 +1035,17 @@ def load_execution_summaries():
         )
         deduplicated[key] = summary
 
-    return sorted(
+    summaries = sorted(
         deduplicated.values(),
         key=lambda item: str(item.get("start_time") or ""),
         reverse=True,
     )
+    for summary in summaries:
+        summary["similar_session_comparison"] = compare_with_similar_sessions(
+            summary,
+            summaries,
+        )
+    return summaries
 
 
 def _session_title(session_type):

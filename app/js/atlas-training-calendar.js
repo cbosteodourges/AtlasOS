@@ -3302,6 +3302,18 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       : Number.NaN;
     const isIntervalSession = plannedRepetitions > 1 &&
       workBlocks.length > 1;
+    const workHeartRates = workBlocks.map(
+      block => Number(block.average_heart_rate_bpm)
+    ).filter(Number.isFinite);
+    const hasCompleteWorkSpeed = workBlocks.length > 1 &&
+      workSpeeds.length === workBlocks.length;
+    const hasCompleteWorkHeartRate = workBlocks.length > 1 &&
+      workHeartRates.length === workBlocks.length;
+    const hasMeasuredRecoveries = intervalGroups.length > 1 &&
+      intervalGroups.slice(0, -1).every(group =>
+        Number(group.recovery?.duration_seconds) > 0 ||
+        Number(group.block?.recovery_seconds) > 0
+      );
     const firstWorkBlock = workBlocks[0] || {};
     const lastWorkBlock = workBlocks[workBlocks.length - 1] || {};
     const fastestWorkBlock = workBlocks.reduce(
@@ -3896,18 +3908,25 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                 <section class="narrative-analysis-section interval-analysis-section">
                   <div class="report-heading">
                     <span class="report-kicker">LECTURE ATLAS</span>
-                    <h3>${heterogeneousIntervals
+                    <h3>${!hasCompleteWorkSpeed
+                      ? "Une série reconstruite avec les données disponibles"
+                      : heterogeneousIntervals
                       ? "Une pyramide complète avec progression sur les fractions courtes"
                       : "Une série régulière jusqu’au dernier bloc"}</h3>
                   </div>
-                  <p>
+                  ${hasCompleteWorkSpeed ? `<p>
                     Les blocs complets (${completedIntervalLabel})
                     ont été réalisés à ${reportPace(3600 / averageWorkSpeed)}
                     de moyenne. L’écart d’allure de ${reportNumber(paceSpread, 0)} s/km
                     ${heterogeneousIntervals
                       ? "reflète les durées différentes de la pyramide."
                       : "confirme une exécution homogène."}
-                  </p>
+                  </p>` : `<p>
+                    Atlas a reconnu ${completedIntervalLabel}, mais les données
+                    de vitesse ne couvrent pas toutes les fractions. L’allure
+                    moyenne, la régularité et leur évolution ne sont donc pas
+                    interprétées pour cette séance.
+                  </p>`}
                   ${incompleteRepetitions > 0 ? `
                     <p>
                       ${incompleteRepetitions} répétition${incompleteRepetitions > 1 ? "s" : ""}
@@ -3920,7 +3939,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                         ${reportBlockTime(plannedSpecificDurationSeconds)} prévus.` : ""}
                     </p>
                   ` : ""}
-                  <div class="drift-reading-line">
+                  ${hasCompleteWorkSpeed ? `<div class="drift-reading-line">
                     <div>
                       <span>Première</span>
                       <strong>${reportPace(3600 / Number(firstWorkBlock.average_speed_kmh))}</strong>
@@ -3938,13 +3957,19 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                       <strong>${reportPace(3600 / Number(lastWorkBlock.average_speed_kmh))}</strong>
                       <small>${reportNumber(lastWorkBlock.average_heart_rate_bpm, 0)} bpm</small>
                     </div>
-                  </div>
+                  </div>` : ""}
                   <p>
-                    Entre le premier et le dernier bloc, la vitesse évolue de
-                    ${reportSignedNumber(intervalSpeedChangePercent, 1, " %")}
-                    et la fréquence cardiaque de
-                    ${reportSignedNumber(intervalHeartRateChange, 0, " bpm")}.
-                    Les récupérations n’ont pas dégradé la qualité des ${intervalQualityLabel}.
+                    ${hasCompleteWorkSpeed
+                      ? `Entre le premier et le dernier bloc, la vitesse évolue de
+                        ${reportSignedNumber(intervalSpeedChangePercent, 1, " %")}.`
+                      : "L’évolution de vitesse entre les blocs n’est pas calculable."}
+                    ${hasCompleteWorkHeartRate
+                      ? `La fréquence cardiaque évolue de
+                        ${reportSignedNumber(intervalHeartRateChange, 0, " bpm")}.`
+                      : "La fréquence cardiaque n’a pas été transmise sur toutes les fractions."}
+                    ${hasMeasuredRecoveries
+                      ? `Les récupérations mesurées n’ont pas dégradé la qualité des ${intervalQualityLabel}.`
+                      : "Atlas ne conclut pas sur l’efficacité des récupérations, faute de données complètes."}
                   </p>
                 </section>
               ` : ""}
