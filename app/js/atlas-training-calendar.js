@@ -3040,11 +3040,29 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const activity = report.activity || {};
     const drift = report.cardiac_drift || {};
     const analysis = report.analysis || {};
+    const reportIntegrity = report.report_integrity || {};
     const detailedBlocks = Array.isArray(analysis.blocks)
       ? analysis.blocks
       : [];
     if (match.matched !== true) {
       return freeActivityExecutionReportHtml(report);
+    }
+    if (reportIntegrity.safe_for_interpretation === false) {
+      const integrityErrors = Array.isArray(reportIntegrity.errors)
+        ? reportIntegrity.errors
+        : [];
+      return `
+        <section class="execution-report-empty report-integrity-alert error">
+          <strong>Compte rendu suspendu par Atlas</strong>
+          <p>Une incohérence a été détectée avant l’affichage de l’analyse.</p>
+          <ul>${integrityErrors.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+          <button class="recalculate-execution-button" type="button"
+            data-recalculate-execution="${escapeHtml(report.activity_id || "")}">
+            Recalculer ce compte-rendu
+          </button>
+          <small data-recalculate-status>Les données sources restent inchangées.</small>
+        </section>
+      `;
     }
     const isCycling = String(activity.sport || workout.sport || "") === "cycling" ||
       String(analysis.session_type || "") === "cycling";
@@ -3305,11 +3323,16 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const workHeartRates = workBlocks.map(
       block => Number(block.average_heart_rate_bpm)
     ).filter(Number.isFinite);
-    const hasCompleteWorkSpeed = workBlocks.length > 1 &&
-      workSpeeds.length === workBlocks.length;
-    const hasCompleteWorkHeartRate = workBlocks.length > 1 &&
-      workHeartRates.length === workBlocks.length;
-    const hasMeasuredRecoveries = intervalGroups.length > 1 &&
+    const integrityCapabilities = reportIntegrity.capabilities || {};
+    const hasCompleteWorkSpeed =
+      integrityCapabilities.speed_regularity !== false &&
+      workBlocks.length > 1 && workSpeeds.length === workBlocks.length;
+    const hasCompleteWorkHeartRate =
+      integrityCapabilities.heart_rate_evolution !== false &&
+      workBlocks.length > 1 && workHeartRates.length === workBlocks.length;
+    const hasMeasuredRecoveries =
+      integrityCapabilities.recovery_interpretation !== false &&
+      intervalGroups.length > 1 &&
       intervalGroups.slice(0, -1).every(group =>
         Number(group.recovery?.duration_seconds) > 0 ||
         Number(group.block?.recovery_seconds) > 0
@@ -3736,6 +3759,15 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const reportAvatarSource = avatarIsFemale
       ? "./assets/atlas-avatar-femme-clean-final.png?v=2"
       : "./assets/atlas-avatar-homme-clean-final.png?v=2";
+    const integrityWarnings = Array.isArray(reportIntegrity.warnings)
+      ? reportIntegrity.warnings
+      : [];
+    const integrityNotice = integrityWarnings.length ? `
+      <aside class="report-integrity-alert warning" role="status">
+        <strong>Analyse affichée avec prudence</strong>
+        <ul>${integrityWarnings.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+      </aside>
+    ` : "";
 
     return `
       <section class="execution-report execution-report-narrative">
@@ -3759,6 +3791,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             alt="Votre jumeau numérique Atlas"
           >
         </header>
+        ${integrityNotice}
 
         <details class="source-quality-panel report-confidence-panel" open>
           <summary>Fiabilité et calcul du compte-rendu</summary>

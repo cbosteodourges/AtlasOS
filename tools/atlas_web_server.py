@@ -41,6 +41,9 @@ from src.training.profile_calibration import profile_calibration_summary
 from src.performance.similar_session_comparator import (
     compare_with_similar_sessions,
 )
+from src.performance.execution_report_validator import (
+    validate_execution_report,
+)
 from src.training.subscription_access import (
     filter_program_for_subscription,
     normalize_tier,
@@ -823,7 +826,7 @@ def execution_summary(item):
         "altitude_m",
     }
 
-    return {
+    summary = {
         "activity_id": item.get("activity_id"),
         "provider": item.get("provider"),
         "data_sources": selected_fields(
@@ -992,6 +995,8 @@ def execution_summary(item):
             ),
         ),
     }
+    summary["report_integrity"] = validate_execution_report(summary)
+    return summary
 
 
 def load_execution_summaries():

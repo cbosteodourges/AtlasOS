@@ -91,6 +91,9 @@ from src.performance.session_fingerprint import (
 from src.performance.session_fingerprint_builder import (
     SessionFingerprintBuilder,
 )
+from src.performance.execution_report_validator import (
+    validate_execution_report,
+)
 from src.performance.similar_session_comparator import (
     compare_with_similar_sessions,
 )
@@ -161,4 +164,5 @@ __all__ = [
     "display_training_plan",
     "format_pace",
     "compare_with_similar_sessions",
+    "validate_execution_report",
 ]
