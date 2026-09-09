@@ -3768,6 +3768,57 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         <ul>${integrityWarnings.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
       </aside>
     ` : "";
+    const similarComparison = report.similar_session_comparison || {};
+    const comparisonDeltas = similarComparison.deltas || {};
+    const comparisonMetric = (key, label, unit, decimals = 1) => {
+      const metric = comparisonDeltas[key];
+      if (!metric || !Number.isFinite(Number(metric.difference))) {
+        return `
+          <article class="unavailable">
+            <span>${label}</span><strong>Non comparable</strong>
+            <small>Donnée insuffisante</small>
+          </article>
+        `;
+      }
+      const difference = Number(metric.difference);
+      const sign = difference > 0 ? "+" : "";
+      return `
+        <article>
+          <span>${label}</span>
+          <strong>${sign}${reportNumber(difference, decimals)} ${unit}</strong>
+          <small>Actuel ${reportNumber(metric.current, decimals)} · référence ${reportNumber(metric.reference, decimals)}</small>
+        </article>
+      `;
+    };
+    const comparisonFamilyLabel = ({
+      vo2: "VO₂max",
+      threshold: "SV2",
+      tempo: "tempo",
+      endurance: "endurance",
+      long_run: "sortie longue"
+    })[similarComparison.family] || "même famille";
+    const similarComparisonHtml = similarComparison.status === "available" ? `
+      <section class="similar-session-comparison" aria-labelledby="similarSessionComparisonTitle">
+        <div class="report-heading">
+          <span class="report-kicker">ÉVOLUTION PERSONNELLE</span>
+          <h3 id="similarSessionComparisonTitle">Comparaison avec vos séances ${comparisonFamilyLabel}</h3>
+          <p>Référence médiane issue de ${reportNumber(similarComparison.comparison_count, 0)} séances de course comparables.</p>
+        </div>
+        <div class="similar-session-grid">
+          ${comparisonMetric("speed_kmh", "Vitesse des blocs", "km/h", 2)}
+          ${comparisonMetric("heart_rate_bpm", "Fréquence cardiaque", "bpm", 1)}
+          ${comparisonMetric("regularity_kmh", "Écart entre les blocs", "km/h", 2)}
+          ${comparisonMetric("recovery_score", "Score des récupérations", "points", 0)}
+        </div>
+        <small class="comparison-method">Même sport et même famille physiologique uniquement. Ces écarts décrivent la séance ; ils ne modifient pas seuls votre profil.</small>
+      </section>
+    ` : `
+      <section class="similar-session-comparison is-building">
+        <span class="report-kicker">ÉVOLUTION PERSONNELLE</span>
+        <h3>Comparaison en construction</h3>
+        <p>${escapeHtml(similarComparison.message || "Atlas attend au moins deux séances du même sport et de la même famille physiologique.")}</p>
+      </section>
+    `;
 
     return `
       <section class="execution-report execution-report-narrative">
@@ -3908,6 +3959,8 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             </article>
           </div>
         </section>
+
+        ${similarComparisonHtml}
 
         ${isIntervalSession ? `
           <details class="interval-details-section compact-interval-details" open>

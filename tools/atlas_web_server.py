@@ -3861,11 +3861,19 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
 
             if self.path == "/api/atlas-coach/recalculate-execution":
                 record = recalculate_execution(payload.get("activity_id"))
+                activity_id = str(record.get("activity_id") or "")
+                refreshed_summary = next(
+                    (
+                        item for item in load_execution_summaries()
+                        if str(item.get("activity_id") or "") == activity_id
+                    ),
+                    execution_summary(record),
+                )
                 self.send_json(
                     200,
                     {
                         "ok": True,
-                        "execution": execution_summary(record),
+                        "execution": refreshed_summary,
                     },
                 )
                 return
