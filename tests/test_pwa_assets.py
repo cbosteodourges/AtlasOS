@@ -126,6 +126,9 @@ class PwaAssetsTests(unittest.TestCase):
         self.assertIn("activitySeconds - displayedSeconds", calendar)
         self.assertIn("point.t > alignedLastEnd", calendar)
         self.assertIn('"blocs VO₂max"', calendar)
+        self.assertIn("optional: false", calendar)
+        self.assertIn("missingOptionalRepetitions", calendar)
+        self.assertIn("facultative non réalisée", calendar)
 
     def test_planned_timeline_uses_stable_semantic_colors(self):
         calendar = (APP_ROOT / "js" / "atlas-training-calendar.js").read_text(

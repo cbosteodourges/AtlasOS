@@ -2008,9 +2008,9 @@ const target = compactTarget(workout, zone);
         duration: durationSeconds / 60,
         speed: Number.isFinite(speed) ? speed : undefined,
         label: `Fraction ${index + 1}${Number.isFinite(speed) ? ` · ${reportNumber(speed, 2)} km/h` : ""}`,
-        optional: index >= (workout.blocks || []).filter(
-          block => ["work", "interval"].includes(block.block_type)
-        ).reduce((total, block) => total + (Number(block.repetitions) || 1), 0)
+        // Une fraction détectée appartient au réalisé : sa couleur traduit sa
+        // zone, même lorsqu'elle était facultative dans la prescription.
+        optional: false
       });
       const recoverySeconds = Math.max(0, Number(interval.recovery_seconds));
       if (recoverySeconds > 0) {
@@ -2021,6 +2021,46 @@ const target = compactTarget(workout, zone);
         });
       }
     });
+
+    const workBlocks = (workout.blocks || []).filter(
+      block => ["work", "interval"].includes(block.block_type)
+    );
+    const flexiblePattern = /(\d+)\s*(?:à|a|-)\s*(\d+)\s*[×x]/i;
+    const titleFlexibleMatch = String(workout.title || "").match(
+      flexiblePattern
+    );
+    const maximumRepetitions = titleFlexibleMatch
+      ? Math.max(Number(titleFlexibleMatch[1]), Number(titleFlexibleMatch[2]))
+      : workBlocks.reduce((total, block) => {
+          const match = `${block.name || ""} ${block.instructions || ""}`.match(
+            flexiblePattern
+          );
+          return total + (match
+            ? Math.max(Number(match[1]), Number(match[2]))
+            : Number(block.repetitions) || 1);
+        }, 0);
+    const missingOptionalRepetitions = Math.max(
+      0,
+      maximumRepetitions - intervals.length
+    );
+    const optionalWorkBlock = [...workBlocks].reverse().find(block =>
+      flexiblePattern.test(`${block.name || ""} ${block.instructions || ""}`)
+    ) || workBlocks[workBlocks.length - 1] || workBlocks[0];
+    const optionalDurationSeconds = Math.max(
+      0,
+      Number(optionalWorkBlock?.duration_minutes) * 60 ||
+        Number(optionalWorkBlock?.duration_seconds) ||
+        Number(intervals[0]?.duration_seconds) || 0
+    );
+    for (let missing = 0; missing < missingOptionalRepetitions; missing += 1) {
+      const fractionNumber = intervals.length + missing + 1;
+      segments.push({
+        zone: atlasDisplayZone(workout, optionalWorkBlock || intervals[0]),
+        duration: optionalDurationSeconds / 60,
+        label: `Fraction ${fractionNumber} facultative non réalisée`,
+        optional: true
+      });
+    }
 
     const last = intervals[intervals.length - 1];
     const reportedLastEnd = Number.isFinite(Number(last.end_seconds))
