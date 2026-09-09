@@ -96,6 +96,139 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
             [120, 120, 120, 120, 120],
         )
 
+    def test_detects_five_threshold_blocks_without_absorbing_easy_running(self) -> None:
+        target = IntensityTarget(
+            zone=4,
+            speed_min_kmh=12.2,
+            speed_max_kmh=13.0,
+        )
+        planned = AdaptiveWorkout(
+            workout_id="threshold-five-by-five",
+            workout_date=date(2026, 9, 10),
+            workout_type=WorkoutType.THRESHOLD_SV2,
+            title="Seuil SV2 · 5 × 5 min",
+            objective="Accumuler du temps au seuil.",
+            blocks=[TrainingBlock(
+                "5 × 5 min",
+                BlockType.WORK,
+                5,
+                5,
+                recovery_minutes=2,
+                target=target,
+            )],
+            planned_duration_minutes=65,
+        )
+        start = datetime(2026, 9, 10, 18, tzinfo=timezone.utc)
+        samples = []
+        for offset in range(0, 18 * 60, 10):
+            samples.append(ActivitySample(
+                timestamp=start + timedelta(seconds=offset),
+                speed_mps=10.8 / 3.6,
+            ))
+        cursor = 18 * 60
+        for repetition in range(5):
+            for offset in range(0, 301, 10):
+                samples.append(ActivitySample(
+                    timestamp=start + timedelta(seconds=cursor + offset),
+                    speed_mps=(12.35 + repetition * .1) / 3.6,
+                    heart_rate_bpm=148 + repetition * 2,
+                ))
+            cursor += 300
+            if repetition < 4:
+                for offset in range(10, 121, 10):
+                    samples.append(ActivitySample(
+                        timestamp=start + timedelta(seconds=cursor + offset),
+                        speed_mps=7.2 / 3.6,
+                    ))
+                cursor += 120
+        for offset in range(10, 13 * 60, 10):
+            samples.append(ActivitySample(
+                timestamp=start + timedelta(seconds=cursor + offset),
+                speed_mps=10.6 / 3.6,
+            ))
+        activity = LongitudinalActivity(
+            atlas_id="health-connect-five-by-five",
+            start_time=start,
+            activity_type="running",
+            distance_km=11.4,
+            duration_minutes=64,
+            average_speed_kmh=10.7,
+            samples=samples,
+        )
+
+        groups = AtlasWorkoutExecutionMatcher._raw_speed_interval_groups(
+            AtlasWorkoutExecutionMatcher._planned_intervals(planned),
+            activity,
+        )
+
+        self.assertEqual(len(groups), 5)
+        self.assertEqual(
+            [round(item["duration_seconds"]) for item in groups],
+            [300, 300, 300, 300, 300],
+        )
+        self.assertEqual(
+            [round(item["raw_recovery_seconds"]) for item in groups[:-1]],
+            [120, 120, 120, 120],
+        )
+
+    def test_detects_eight_three_minute_vo2_blocks(self) -> None:
+        target = IntensityTarget(zone=5, speed_min_kmh=13.5, speed_max_kmh=14.8)
+        planned = AdaptiveWorkout(
+            workout_id="vo2-eight-by-three",
+            workout_date=date(2026, 9, 12),
+            workout_type=WorkoutType.VMA_LONG,
+            title="VO₂max · 8 × 3 min",
+            objective="Développer le temps de soutien VO₂max.",
+            blocks=[TrainingBlock(
+                "8 × 3 min", BlockType.WORK, 8, 3,
+                recovery_minutes=1.5, target=target,
+            )],
+            planned_duration_minutes=58,
+        )
+        start = datetime(2026, 9, 12, 18, tzinfo=timezone.utc)
+        samples = [
+            ActivitySample(
+                timestamp=start + timedelta(seconds=offset),
+                speed_mps=9.8 / 3.6,
+            )
+            for offset in range(0, 12 * 60, 10)
+        ]
+        cursor = 12 * 60
+        for repetition in range(8):
+            for offset in range(0, 181, 10):
+                samples.append(ActivitySample(
+                    timestamp=start + timedelta(seconds=cursor + offset),
+                    speed_mps=(13.7 + (repetition % 3) * .18) / 3.6,
+                ))
+            cursor += 180
+            if repetition < 7:
+                for offset in range(10, 91, 10):
+                    samples.append(ActivitySample(
+                        timestamp=start + timedelta(seconds=cursor + offset),
+                        speed_mps=6.8 / 3.6,
+                    ))
+                cursor += 90
+        activity = LongitudinalActivity(
+            atlas_id="health-connect-eight-by-three",
+            start_time=start,
+            activity_type="running",
+            distance_km=10.2,
+            duration_minutes=56,
+            average_speed_kmh=10.9,
+            samples=samples,
+        )
+
+        groups = AtlasWorkoutExecutionMatcher._raw_speed_interval_groups(
+            AtlasWorkoutExecutionMatcher._planned_intervals(planned),
+            activity,
+        )
+
+        self.assertEqual(len(groups), 8)
+        self.assertEqual(
+            [round(item["raw_recovery_seconds"]) for item in groups[:-1]],
+            [90, 90, 90, 90, 90, 90, 90],
+        )
+
     def test_snaps_sparse_health_connect_recoveries_to_planned_boundary(self) -> None:
         planned = [{
             "duration_seconds": 180.0,
@@ -512,6 +645,70 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
 
         self.assertEqual(result.execution.planned_repetition_count, 3)
         self.assertEqual(result.execution.completed_repetition_count, 3)
+        self.assertEqual(result.target_compliance_score, 100)
+
+    def test_long_run_detects_late_specific_work_only(self) -> None:
+        planned = AdaptiveWorkout(
+            workout_id="long-run-late-specific-work",
+            workout_date=date(2026, 9, 13),
+            workout_type=WorkoutType.LONG_RUN,
+            title="Sortie longue · 3 × 5 min en fin de séance",
+            objective="Préserver la qualité sous fatigue.",
+            blocks=[
+                TrainingBlock(
+                    "Endurance",
+                    BlockType.CONTINUOUS,
+                    1,
+                    50,
+                    target=IntensityTarget(zone=2),
+                ),
+                TrainingBlock(
+                    "3 × 5 min sous SV2",
+                    BlockType.WORK,
+                    3,
+                    5,
+                    recovery_minutes=2,
+                    target=IntensityTarget(
+                        zone=3,
+                        speed_min_kmh=11.8,
+                        speed_max_kmh=12.6,
+                    ),
+                ),
+            ],
+            planned_duration_minutes=82,
+        )
+        activity = LongitudinalActivity(
+            atlas_id="health-connect-long-run-late-work",
+            start_time=datetime(2026, 9, 13, 8, tzinfo=timezone.utc),
+            activity_type="running",
+            distance_km=14.8,
+            duration_minutes=82,
+            average_speed_kmh=10.8,
+        )
+        analysis = DetailedSessionAnalysis(
+            activity_id=activity.atlas_id,
+            blocks=[
+                SessionBlock(1, "z2", 0, 3000, 3000, 8500, average_speed_kmh=10.2),
+                SessionBlock(2, "z3", 3000, 3300, 300, 1000, average_speed_kmh=12.0),
+                SessionBlock(3, "recovery", 3300, 3420, 120, 230),
+                SessionBlock(4, "z3", 3420, 3720, 300, 1010, average_speed_kmh=12.12),
+                SessionBlock(5, "recovery", 3720, 3840, 120, 225),
+                SessionBlock(6, "z3", 3840, 4140, 300, 1025, average_speed_kmh=12.3),
+                SessionBlock(7, "z1", 4140, 4920, 780, 2810, average_speed_kmh=9.7),
+            ],
+            dominant_work_type="z3",
+            session_type="long_run",
+            recovery_duration_seconds=240,
+        )
+
+        result = AtlasWorkoutExecutionMatcher().match(planned, activity, analysis)
+
+        self.assertEqual(result.execution.completed_repetition_count, 3)
+        self.assertEqual(
+            [item["start_seconds"] for item in result.execution.interval_details],
+            [3000.0, 3420.0, 3840.0],
+        )
+        self.assertEqual(result.execution.recovery_compliance_score, 100)
         self.assertEqual(result.target_compliance_score, 100)
 
     def test_easy_running_after_threshold_does_not_lower_target_score(self) -> None:

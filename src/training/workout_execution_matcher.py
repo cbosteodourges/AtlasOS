@@ -650,10 +650,13 @@ class AtlasWorkoutExecutionMatcher:
         }
         if not durations:
             return []
+        targeted_intervals = [
+            item for item in planned
+            if item["planned"].target.speed_min_kmh is not None
+        ]
         minimum_targets = [
             float(item["planned"].target.speed_min_kmh)
-            for item in planned
-            if item["planned"].target.speed_min_kmh is not None
+            for item in targeted_intervals
         ]
         def timestamp(value: object) -> float:
             if hasattr(value, "timestamp"):
@@ -674,7 +677,17 @@ class AtlasWorkoutExecutionMatcher:
         if len(speed_samples) < 2:
             return []
         if minimum_targets:
-            threshold_kmh = min(minimum_targets) * 0.85
+            target_zones = {
+                int(item["planned"].target.zone)
+                for item in targeted_intervals
+                if item["planned"].target.zone is not None
+            }
+            # Une allure d'endurance soutenue peut dépasser 85 % d'une cible
+            # SV2 et se trouver alors fusionnée avec la dernière fraction.
+            # Le seuil plus sélectif des séances Z4 sépare ce retour au calme,
+            # tout en conservant davantage de tolérance pour les blocs VO2.
+            detection_ratio = 0.90 if target_zones == {4} else 0.85
+            threshold_kmh = min(minimum_targets) * detection_ratio
         else:
             speeds = sorted(speed for _, speed in speed_samples if speed > 0)
             median_speed = speeds[len(speeds) // 2]
