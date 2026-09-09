@@ -9,6 +9,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
+from zoneinfo import ZoneInfo
 
 from .activity_schema import NormalizedActivity, RawActivity
 from .base import ActivityConnector
@@ -19,8 +20,17 @@ class GarminHistoryConnector(ActivityConnector):
 
     provider = "garmin"
 
-    def __init__(self, csv_path: str) -> None:
+    def __init__(
+        self,
+        csv_path: str,
+        source_timezone: str = "Europe/Paris",
+    ) -> None:
         self.csv_path = Path(csv_path)
+        # Les exports CSV Garmin ne portent aucun décalage UTC. Leur date est
+        # l'heure locale du compte au moment de l'activité, et non celle de la
+        # machine qui exécute Atlas. Le fuseau reste configurable pour les
+        # futurs utilisateurs hors de France.
+        self.source_timezone = ZoneInfo(source_timezone)
         self.connected = False
 
     def connect(self) -> None:
@@ -475,8 +485,7 @@ class GarminHistoryConnector(ActivityConnector):
 
         return distance * 1000
 
-    @staticmethod
-    def _parse_date(value: Any) -> str:
+    def _parse_date(self, value: Any) -> str:
         """Convertit une date Garmin au format ISO."""
         if not value:
             return ""
@@ -494,8 +503,10 @@ class GarminHistoryConnector(ActivityConnector):
                     date_value,
                     date_format,
                 )
-                # Normalisation stable, indépendante du fuseau de la machine.
-                return parsed_date.astimezone(timezone.utc).isoformat()
+                localized_date = parsed_date.replace(
+                    tzinfo=self.source_timezone
+                )
+                return localized_date.astimezone(timezone.utc).isoformat()
             except ValueError:
                 continue
 

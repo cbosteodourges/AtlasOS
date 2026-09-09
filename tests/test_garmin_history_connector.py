@@ -287,7 +287,7 @@ class GarminHistoryConnectorTests(unittest.TestCase):
 
         self.assertEqual(
             activity.start_time,
-            "2026-06-01T08:15:00+00:00",
+            "2026-06-01T06:15:00+00:00",
         )
         self.assertEqual(
             activity.duration_seconds,
@@ -310,6 +310,32 @@ class GarminHistoryConnectorTests(unittest.TestCase):
                 "average_cadence"
             ],
             164,
+        )
+
+    def test_garmin_local_time_uses_source_timezone_and_dst(self) -> None:
+        connector = GarminHistoryConnector(
+            str(self.csv_path),
+            source_timezone="Europe/Paris",
+        )
+
+        self.assertEqual(
+            connector._parse_date("01/06/2026 08:15"),
+            "2026-06-01T06:15:00+00:00",
+        )
+        self.assertEqual(
+            connector._parse_date("01/12/2026 08:15"),
+            "2026-12-01T07:15:00+00:00",
+        )
+
+    def test_garmin_source_timezone_is_configurable(self) -> None:
+        connector = GarminHistoryConnector(
+            str(self.csv_path),
+            source_timezone="America/New_York",
+        )
+
+        self.assertEqual(
+            connector._parse_date("01/06/2026 08:15"),
+            "2026-06-01T12:15:00+00:00",
         )
 
 
