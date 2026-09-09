@@ -122,6 +122,10 @@ class PwaAssetsTests(unittest.TestCase):
         self.assertIn('data-phase-filter="warmup"', calendar)
         self.assertIn('data-phase-filter="cooldown"', calendar)
         self.assertIn('<span>Phase</span><span>Distance</span>', calendar)
+        self.assertIn("Invariant de chronologie", calendar)
+        self.assertIn("activitySeconds - displayedSeconds", calendar)
+        self.assertIn("point.t > alignedLastEnd", calendar)
+        self.assertIn('"blocs VO₂max"', calendar)
 
     def test_planned_timeline_uses_stable_semantic_colors(self):
         calendar = (APP_ROOT / "js" / "atlas-training-calendar.js").read_text(

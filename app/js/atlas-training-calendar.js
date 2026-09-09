@@ -3525,7 +3525,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           v: Number(point?.v ?? point?.value ?? point?.y)
         }))
         .filter(point => Number.isFinite(point.t) && Number.isFinite(point.v) &&
-          point.t >= alignedLastEnd);
+          point.t > alignedLastEnd);
       const speedPoints = pointsAfter(chartSeries.speed_kmh);
       const heartPoints = pointsAfter(chartSeries.heart_rate_bpm);
       const cooldownSpeed = reportMean(speedPoints.map(point => point.v));
@@ -3555,6 +3555,38 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       .reduce((total, block) => total + Math.max(0, Number(block.duration_minutes) || 0) * 60 + Math.max(0, Number(block.duration_seconds) || 0), 0);
     const cooldownEntry = phaseEntries.find(entry => entry.type === "cooldown");
     if (cooldownEntry) cooldownEntry.plannedSeconds = prescribedCooldownSeconds;
+
+    // Invariant de chronologie : une phase ne peut être comptée deux fois et
+    // la somme affichée doit rester exactement égale à la durée de l'activité.
+    // Santé Connect ne fournit pas les limites de tours Garmin ; les quelques
+    // secondes d'écart produites par l'échantillonnage sont donc absorbées par
+    // l'échauffement, puis par le retour au calme si nécessaire.
+    if (alignedIntervalDetails.length && actualDuration > 0) {
+      const activitySeconds = actualDuration * 60;
+      const displayedSeconds = phaseEntries.reduce(
+        (total, entry) => total + Math.max(0, Number(entry.block?.duration_seconds) || 0),
+        0
+      );
+      let remainingDelta = activitySeconds - displayedSeconds;
+      const adjustableEntries = [
+        phaseEntries.find(entry => entry.type === "warmup"),
+        phaseEntries.find(entry => entry.type === "cooldown")
+      ].filter(Boolean);
+      adjustableEntries.forEach(entry => {
+        if (Math.abs(remainingDelta) < .05) return;
+        const previousDuration = Math.max(0, Number(entry.block.duration_seconds) || 0);
+        const appliedDelta = remainingDelta < 0
+          ? Math.max(remainingDelta, -previousDuration)
+          : remainingDelta;
+        const correctedDuration = previousDuration + appliedDelta;
+        const speed = Number(entry.block.average_speed_kmh);
+        entry.block.duration_seconds = correctedDuration;
+        if (Number.isFinite(speed)) {
+          entry.block.distance_meters = speed / 3.6 * correctedDuration;
+        }
+        remainingDelta -= appliedDelta;
+      });
+    }
 
     const hasIntervalPower = phaseEntries.some(({ block }) =>
       Number.isFinite(Number(block.average_power_watts)) && Number(block.average_power_watts) > 0
@@ -3639,6 +3671,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       : Number(plannedMainBlock?.duration_minutes) > 0
         ? `${completedIntervalLabel} réalisés sur ${plannedRepetitions} prévus`
         : `${completedIntervalLabel} réalisées sur ${plannedRepetitions} prévues`;
+    const intervalQualityLabel = [
+      "vma_short", "vma_long", "mixed_threshold_vo2", "triangular_vo2"
+    ].includes(String(workout.workout_type || "")) || dominantType === "vma"
+      ? "blocs VO₂max"
+      : dominantType === "sv2"
+        ? "blocs au seuil SV2"
+        : "blocs spécifiques";
     const avatarIsFemale = (
       localStorage.getItem("atlasPreselectedAvatar") || "male"
     ) === "female";
@@ -3865,7 +3904,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                     ${reportSignedNumber(intervalSpeedChangePercent, 1, " %")}
                     et la fréquence cardiaque de
                     ${reportSignedNumber(intervalHeartRateChange, 0, " bpm")}.
-                    Les récupérations n’ont pas dégradé la qualité des blocs sous SV2.
+                    Les récupérations n’ont pas dégradé la qualité des ${intervalQualityLabel}.
                   </p>
                 </section>
               ` : ""}
