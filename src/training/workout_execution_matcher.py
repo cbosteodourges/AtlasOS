@@ -590,6 +590,20 @@ class AtlasWorkoutExecutionMatcher:
                     for index in range(end_index + 1, next_start_index)
                     if str(blocks[index].block_type) == "recovery"
                 )
+            planned_recovery_seconds = float(
+                planned[planned_index]["recovery_minutes"] or 0
+            ) * 60
+            # Health Connect does not transmit Garmin lap boundaries.  The
+            # limits reconstructed from sparse speed samples can therefore be
+            # a few seconds early or late.  When the observed transition is
+            # already within one sample window of the prescription, retain
+            # the prescribed boundary instead of inventing a recovery error.
+            if (
+                recovery_seconds is not None
+                and planned_recovery_seconds > 0
+                and abs(recovery_seconds - planned_recovery_seconds) < 15
+            ):
+                recovery_seconds = planned_recovery_seconds
             details.append({
                 key: value for key, value in {
                     "planned_index": planned_index,

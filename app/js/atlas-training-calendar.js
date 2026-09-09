@@ -3172,7 +3172,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     // quand un tour automatique a fragmenté une étape chronométrée.
     const validatedRepetitions = workBlocks.length;
     const optionalFractionCompleted = validatedRepetitions > plannedRepetitions &&
-      (plannedWorkBlocks.some(block => /facultative/i.test(
+      ((flexibleRepetitionRange &&
+        validatedRepetitions <= flexibleRepetitionRange.maximum) ||
+      plannedWorkBlocks.some(block => /facultative/i.test(
         `${block.name || ""} ${block.instructions || ""}`
       )) || /1\s*à\s*2\s*[×x]/i.test(String(workout.title || "")));
     const authorizedRepetitions = optionalFractionCompleted
@@ -3219,8 +3221,13 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       (total, item) => total + item.durationSeconds,
       0
     ) || plannedWorkDurationSeconds * plannedRepetitions;
-    if (optionalFractionCompleted && plannedIntervalDefinitions.length) {
-      plannedSpecificDurationSeconds +=
+    if (flexibleRepetitionRange && plannedWorkDurationSeconds > 0) {
+      plannedSpecificDurationSeconds = Math.min(
+        flexibleRepetitionRange.maximum,
+        Math.max(flexibleRepetitionRange.minimum, validatedRepetitions)
+      ) * plannedWorkDurationSeconds;
+    } else if (optionalFractionCompleted && plannedIntervalDefinitions.length) {
+      plannedSpecificDurationSeconds = validatedRepetitions *
         plannedIntervalDefinitions[plannedIntervalDefinitions.length - 1]
           .durationSeconds;
     }
@@ -3503,7 +3510,41 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         phaseEntries.push({ type: "cooldown", block: group.recovery });
       }
     });
-    if (trailingBlocks.length) {
+    const lastAlignedInterval = alignedIntervalDetails[
+      alignedIntervalDetails.length - 1
+    ];
+    const alignedLastEnd = Number(lastAlignedInterval?.end_seconds);
+    const alignedCooldownSeconds = Number.isFinite(alignedLastEnd)
+      ? Math.max(0, actualDuration * 60 - alignedLastEnd)
+      : Number.NaN;
+    if (alignedIntervalDetails.length && alignedCooldownSeconds > 5) {
+      const chartSeries = report.activity_charts?.series || {};
+      const pointsAfter = values => (Array.isArray(values) ? values : [])
+        .map(point => ({
+          t: Number(point?.t ?? point?.time_seconds ?? point?.x),
+          v: Number(point?.v ?? point?.value ?? point?.y)
+        }))
+        .filter(point => Number.isFinite(point.t) && Number.isFinite(point.v) &&
+          point.t >= alignedLastEnd);
+      const speedPoints = pointsAfter(chartSeries.speed_kmh);
+      const heartPoints = pointsAfter(chartSeries.heart_rate_bpm);
+      const cooldownSpeed = reportMean(speedPoints.map(point => point.v));
+      const cooldownHeart = reportMean(heartPoints.map(point => point.v));
+      phaseEntries.push({
+        type: "cooldown",
+        block: {
+          duration_seconds: alignedCooldownSeconds,
+          distance_meters: Number.isFinite(cooldownSpeed)
+            ? cooldownSpeed / 3.6 * alignedCooldownSeconds
+            : Number.NaN,
+          average_speed_kmh: cooldownSpeed,
+          average_heart_rate_bpm: cooldownHeart,
+          maximum_heart_rate_bpm: heartPoints.length
+            ? Math.max(...heartPoints.map(point => point.v))
+            : Number.NaN
+        }
+      });
+    } else if (trailingBlocks.length) {
       const trailing = mergeReportBlocks(trailingBlocks);
       const existingCooldown = phaseEntries.find(entry => entry.type === "cooldown");
       if (existingCooldown) existingCooldown.block = mergeReportBlocks([existingCooldown.block, trailing]);
@@ -3720,7 +3761,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
               <strong>${reportBlockTime(totalSpecificDurationSeconds)}</strong>
               <small>
                 ${plannedSpecificDurationSeconds > 0
-                  ? `${reportBlockTime(plannedSpecificDurationSeconds)} prévus · ${reportNumber(specificCompletionPercent, 0)} %`
+                  ? flexibleRepetitionRange && plannedWorkDurationSeconds > 0
+                    ? `Plage ${reportBlockTime(flexibleRepetitionRange.minimum * plannedWorkDurationSeconds)}–${reportBlockTime(flexibleRepetitionRange.maximum * plannedWorkDurationSeconds)} · ${reportNumber(specificCompletionPercent, 0)} % du volume retenu`
+                    : `${reportBlockTime(plannedSpecificDurationSeconds)} prévus · ${reportNumber(specificCompletionPercent, 0)} %`
                   : `${reportNumber(workDistanceKm, 2)} km`}
               </small>
             </article>

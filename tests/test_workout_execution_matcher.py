@@ -96,6 +96,43 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
             [120, 120, 120, 120, 120],
         )
 
+    def test_snaps_sparse_health_connect_recoveries_to_planned_boundary(self) -> None:
+        planned = [{
+            "duration_seconds": 180.0,
+            "distance_meters": None,
+            "recovery_minutes": 2.0,
+            "planned": TrainingBlock(
+                "3 min", BlockType.WORK, 1, 3,
+                recovery_minutes=2,
+                target=IntensityTarget(zone=5, speed_min_kmh=13.3),
+            ),
+        }] * 2
+        groups = [
+            {
+                "start": 900.0, "end": 1080.0,
+                "timeline_seconds": True, "block_type": "vma",
+                "duration_seconds": 180.0, "distance_meters": 680.0,
+                "average_speed_kmh": 13.6,
+                "average_heart_rate_bpm": 148.0,
+                "maximum_heart_rate_bpm": 155.0,
+                "raw_recovery_seconds": 132.0,
+            },
+            {
+                "start": 1212.0, "end": 1392.0,
+                "timeline_seconds": True, "block_type": "vma",
+                "duration_seconds": 180.0, "distance_meters": 690.0,
+                "average_speed_kmh": 13.8,
+                "average_heart_rate_bpm": 151.0,
+                "maximum_heart_rate_bpm": 159.0,
+            },
+        ]
+
+        details = AtlasWorkoutExecutionMatcher._align_interval_groups(
+            planned, groups, blocks=[]
+        )
+
+        self.assertEqual(details[0]["recovery_seconds"], 120.0)
+
     def test_aligns_heterogeneous_vo2_pyramid_and_ignores_false_fragment(self) -> None:
         target = IntensityTarget(
             zone=4,
