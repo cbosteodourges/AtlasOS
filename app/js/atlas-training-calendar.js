@@ -3769,6 +3769,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       </aside>
     ` : "";
     const similarComparison = report.similar_session_comparison || {};
+    const intervalPhysiology = report.interval_physiology || {};
     const comparisonDeltas = similarComparison.deltas || {};
     const comparisonMetric = (key, label, unit, decimals = 1) => {
       const metric = comparisonDeltas[key];
@@ -3994,13 +3995,22 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                 <section class="narrative-analysis-section interval-analysis-section">
                   <div class="report-heading">
                     <span class="report-kicker">LECTURE ATLAS</span>
-                    <h3>${!hasCompleteWorkSpeed
+                    <h3>${intervalPhysiology.status === "available"
+                      ? escapeHtml(intervalPhysiology.title)
+                      : !hasCompleteWorkSpeed
                       ? "Une série reconstruite avec les données disponibles"
                       : heterogeneousIntervals
                       ? "Une pyramide complète avec progression sur les fractions courtes"
                       : "Une série régulière jusqu’au dernier bloc"}</h3>
                   </div>
-                  ${hasCompleteWorkSpeed ? `<p>
+                  ${intervalPhysiology.status === "available" ? `
+                    <div class="interval-physiology-reading">
+                      <span>Confiance ${reportScore(intervalPhysiology.confidence)}</span>
+                      <ul>${(intervalPhysiology.observations || []).map(
+                        item => `<li>${escapeHtml(item)}</li>`
+                      ).join("")}</ul>
+                    </div>
+                  ` : hasCompleteWorkSpeed ? `<p>
                     Les blocs complets (${completedIntervalLabel})
                     ont été réalisés à ${reportPace(3600 / averageWorkSpeed)}
                     de moyenne. L’écart d’allure de ${reportNumber(paceSpread, 0)} s/km
@@ -4045,15 +4055,19 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
                     </div>
                   </div>` : ""}
                   <p>
-                    ${hasCompleteWorkSpeed
+                    ${intervalPhysiology.status === "available"
+                      ? `${(intervalPhysiology.limitations || []).map(
+                          item => escapeHtml(item)
+                        ).join(" ")} ${escapeHtml(intervalPhysiology.guardrail || "")}`
+                      : hasCompleteWorkSpeed
                       ? `Entre le premier et le dernier bloc, la vitesse évolue de
                         ${reportSignedNumber(intervalSpeedChangePercent, 1, " %")}.`
                       : "L’évolution de vitesse entre les blocs n’est pas calculable."}
-                    ${hasCompleteWorkHeartRate
+                    ${intervalPhysiology.status === "available" ? "" : hasCompleteWorkHeartRate
                       ? `La fréquence cardiaque évolue de
                         ${reportSignedNumber(intervalHeartRateChange, 0, " bpm")}.`
                       : "La fréquence cardiaque n’a pas été transmise sur toutes les fractions."}
-                    ${hasMeasuredRecoveries
+                    ${intervalPhysiology.status === "available" ? "" : hasMeasuredRecoveries
                       ? `Les récupérations mesurées n’ont pas dégradé la qualité des ${intervalQualityLabel}.`
                       : "Atlas ne conclut pas sur l’efficacité des récupérations, faute de données complètes."}
                   </p>

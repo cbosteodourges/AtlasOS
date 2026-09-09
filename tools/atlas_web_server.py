@@ -44,6 +44,9 @@ from src.performance.similar_session_comparator import (
 from src.performance.execution_report_validator import (
     validate_execution_report,
 )
+from src.performance.interval_physiology_interpreter import (
+    interpret_interval_physiology,
+)
 from src.training.subscription_access import (
     filter_program_for_subscription,
     normalize_tier,
@@ -996,6 +999,7 @@ def execution_summary(item):
         ),
     }
     summary["report_integrity"] = validate_execution_report(summary)
+    summary["interval_physiology"] = interpret_interval_physiology(summary)
     return summary
 
 

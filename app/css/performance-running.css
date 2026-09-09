@@ -6218,6 +6218,9 @@ body[data-coach-section]
 .similar-session-comparison.is-building{padding:18px 22px}
 .similar-session-comparison.is-building h3{margin:6px 0}
 @media(max-width:720px){.similar-session-comparison{padding:18px 14px}.similar-session-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.similar-session-grid article:nth-child(2){border-right:0}.similar-session-grid article:nth-child(-n+2){border-bottom:1px solid rgba(155,98,255,.2)}.similar-session-grid strong{font-size:1.05rem}}
+.interval-physiology-reading{margin:14px 0;padding:14px 16px;border-left:3px solid #9b62ff;border-radius:10px;background:rgba(155,98,255,.08)}
+.interval-physiology-reading>span{display:block;margin-bottom:7px;color:#ba96ff;font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.interval-physiology-reading ul{margin:0;padding-left:20px;color:#e4edf3;line-height:1.55}
 .source-quality-status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:15px 0}
 .source-quality-status span{padding:6px 10px;border-radius:999px;font-size:.82rem;font-weight:800}
 .source-quality-status span.available{color:#69efb0;background:rgba(50,211,139,.12);border:1px solid rgba(50,211,139,.35)}

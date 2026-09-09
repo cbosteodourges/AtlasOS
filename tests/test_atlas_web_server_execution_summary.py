@@ -37,6 +37,7 @@ class AtlasWebServerExecutionSummaryTests(unittest.TestCase):
         self.assertNotIn("private_location", charts["statistics"])
         self.assertIn("report_integrity", summary)
         self.assertTrue(summary["report_integrity"]["safe_for_interpretation"])
+        self.assertIn("interval_physiology", summary)
 
     def test_exposes_global_activity_metrics_instead_of_micro_block_metrics(self):
         summary = execution_summary({
