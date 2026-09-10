@@ -61,3 +61,20 @@ Conserver dans la version complète les accès Profil et disponibilités, Histor
 8. Valider les sources scientifiques et les fonctions Santé avant tout conseil personnalisé ou activation de nouvelles règles ; vérifier les droits d’usage avant diffusion de nouveaux assets.
 
 Attentes explicitement prévues par le brief : sauvegarde privée avant opération susceptible de la modifier ; validation de la direction visuelle avant généralisation ; validation spécifique avant changements de calcul, de données ou de règles biomécaniques.
+
+## Retour visuel de Christophe — variante mixte
+
+La première proposition a trop atténué l’identité Atlas. La demande est de conserver la navigation simple tout en retrouvant l’avatar, les jauges colorées et le profil de l’athlète.
+
+Nouvel aperçu autonome : `prototype/atlas-audit-mixte-2026-09-10.html`. La première maquette reste inchangée pour comparaison ; référence avant ce lot : `601ccc00c43003721d2d347ebd769039a4bdf516`.
+
+- Aujourd’hui : avatar Atlas existant de corps entier, indice de récupération avec cadran et jauge colorée, prochaine séance, ressenti et quatre cadrans physiologiques.
+- Profil : accès direct dans la navigation, avatar, pratique de l’exemple, cinq repères (VO₂max, VMA, SV1, SV2, FC maximale), quatre filières colorées et historique VO₂max.
+- Cadrans cliquables : source, date, statut et explication dans une fenêtre refermable. Le contour des repères physiologiques ne représente pas une capacité normalisée inventée.
+- Filières Z2, tempo, SV2 et VO₂max : les barres décrivent des durées fictives classées, et les flèches leur évolution entre deux périodes de 28 jours ; elles ne prouvent pas une progression physiologique.
+- Navigation principale : Aujourd’hui / Profil / Plan / Santé. Le compte rendu s’ouvre depuis une séance et conserve le retour vers Aujourd’hui ou le plan.
+- Mobile : avatar visible dans une carte compacte, navigation avec libellés et cadrans sur deux colonnes. Tablette et PC conservent davantage de largeur.
+
+Vérifications effectuées : syntaxe JavaScript, structure HTML initiale et produite pour Aujourd’hui/Profil, identifiants uniques, avatar et quatre/cinq cadrans, quatre filières, conservation des scénarios du compte rendu (53 min pour 6 fractions, 43 min pour 4), absence d’appels réseau/stockage, premier prototype inchangé. Aucun navigateur ou appareil réel testé pendant ce lot ; les contrôles de largeur de l’aperçu ne constituent pas une validation de compatibilité.
+
+Ce lot ne corrige pas les défauts du moteur relevés dans l’audit. Il modifie uniquement la proposition visuelle isolée, sans toucher aux écrans actifs, calculs, données, seuils, plan ou synchronisations. La validation visuelle et les confirmations de sauvegarde prévues dans le brief restent distinctes.
