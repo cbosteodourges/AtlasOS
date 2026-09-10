@@ -1691,8 +1691,37 @@ const target = compactTarget(workout, zone);
     );
     dialog.addEventListener("close", () => {
       document.documentElement.classList.remove("atlas-session-open");
+      const closedFromHistory = dialog.dataset.closedFromHistory === "true";
+      delete dialog.dataset.closedFromHistory;
+      if (dialog.dataset.historyEntry === "true") {
+        delete dialog.dataset.historyEntry;
+        if (!closedFromHistory) window.history.back();
+      }
+    });
+    window.addEventListener("popstate", () => {
+      if (!dialog.open || dialog.dataset.historyEntry !== "true") return;
+      dialog.dataset.closedFromHistory = "true";
+      dialog.close();
     });
     return dialog;
+  }
+
+  function showSessionDialog(dialog) {
+    window.history.pushState(
+      { ...(window.history.state || {}), atlasSessionOpen: true },
+      "",
+      window.location.href
+    );
+    dialog.dataset.historyEntry = "true";
+    document.documentElement.classList.add("atlas-session-open");
+    try {
+      dialog.showModal();
+    } catch (error) {
+      delete dialog.dataset.historyEntry;
+      document.documentElement.classList.remove("atlas-session-open");
+      window.history.back();
+      throw error;
+    }
   }
 
   const DISPLAY_ZONE_COLORS = {
@@ -5216,8 +5245,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       }
     };
 
-    document.documentElement.classList.add("atlas-session-open");
-    dialog.showModal();
+    showSessionDialog(dialog);
     dialog.scrollTop = 0;
     content.scrollTop = 0;
     const dialogShell = dialog.querySelector(".session-dialog-shell");
@@ -5611,8 +5639,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         };
       }
     );
-    document.documentElement.classList.add("atlas-session-open");
-    dialog.showModal();
+    showSessionDialog(dialog);
     dialog.scrollTop = 0;
     content.scrollTop = 0;
     const dialogShell = dialog.querySelector(".session-dialog-shell");
@@ -6172,7 +6199,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
   });
 
   async function loadProgram() {
-    await syncWorkoutDecisions();
+    // Les décisions et le programme sont indépendants : les charger en
+    // parallèle évite d'additionner leurs temps réseau avant l'affichage.
+    const decisionsPromise = syncWorkoutDecisions();
     const sources = [
       window.ATLAS_TRAINING_PROGRAM_URL,
       "/api/atlas-coach/program"
@@ -6190,6 +6219,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         const program = await response.json();
 
         if (program?.weeks && program?.goal) {
+          await decisionsPromise;
           await render(program);
           return;
         }

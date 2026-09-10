@@ -8632,6 +8632,17 @@ html.atlas-session-open body {
   background-clip: padding-box;
 }
 
+#atlasSessionDialog.atlas-session-dialog .dialog-close {
+  z-index: 60 !important;
+  right: 32px !important;
+}
+
+@media (max-width: 760px) {
+  #atlasSessionDialog.atlas-session-dialog .dialog-close {
+    right: 14px !important;
+  }
+}
+
 #atlasSessionDialog.atlas-session-dialog .session-dialog-tabs {
   position: sticky;
   top: 0;

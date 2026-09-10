@@ -40,12 +40,13 @@ object AtlasAutoSync {
                 .build(),
         )
 
-        // Background freshness between launches. Android's minimum practical
-        // cadence is used here; the worker itself is idempotent server-side.
+        // Background freshness between launches. Fifteen minutes is the
+        // minimum cadence accepted by WorkManager. Android may defer an
+        // execution, while the differential sender keeps each attempt light.
         manager.enqueueUniquePeriodicWork(
             PERIODIC_WORK,
             ExistingPeriodicWorkPolicy.UPDATE,
-            PeriodicWorkRequestBuilder<AtlasSyncWorker>(1, TimeUnit.HOURS)
+            PeriodicWorkRequestBuilder<AtlasSyncWorker>(15, TimeUnit.MINUTES)
                 .setConstraints(constraints)
                 .build(),
         )

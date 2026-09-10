@@ -7,6 +7,16 @@ ANDROID = ROOT / "android" / "atlas-connect" / "app" / "src" / "main"
 
 
 class AndroidHealthConnectCyclingTests(unittest.TestCase):
+    def test_background_sync_uses_workmanager_minimum_period(self):
+        scheduler = (
+            ANDROID / "java" / "fr" / "atlasos" / "connect" / "AtlasAutoSync.kt"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn(
+            "PeriodicWorkRequestBuilder<AtlasSyncWorker>(15, TimeUnit.MINUTES)",
+            scheduler,
+        )
+
     def test_requests_and_serializes_cycling_cadence(self):
         manifest = (ANDROID / "AndroidManifest.xml").read_text(encoding="utf-8")
         sync = (

@@ -94,7 +94,7 @@ class PwaAssetsTests(unittest.TestCase):
             legacy,
         )
         self.assertIn('performance-running.js?v=22', page)
-        self.assertIn('atlas-training-calendar.js?v=122', page)
+        self.assertIn('atlas-training-calendar.js?v=123', page)
 
     def test_execution_report_has_a_grabbable_scrollbar_without_redundant_recovery_story(self):
         page = (APP_ROOT / "performance-running.html").read_text(encoding="utf-8")
@@ -105,13 +105,16 @@ class PwaAssetsTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn('performance-running.css?v=100', page)
+        self.assertIn('performance-running.css?v=101', page)
         self.assertIn('width: 16px', styles)
         self.assertIn('scrollbar-gutter: stable', styles)
         self.assertIn('html.atlas-session-open', styles)
         self.assertIn('.dialog-content::-webkit-scrollbar', styles)
         self.assertIn('classList.add("atlas-session-open")', calendar)
         self.assertIn('classList.remove("atlas-session-open")', calendar)
+        self.assertIn("function showSessionDialog(dialog)", calendar)
+        self.assertIn('window.addEventListener("popstate"', calendar)
+        self.assertIn("const decisionsPromise = syncWorkoutDecisions()", calendar)
         self.assertNotIn(
             "La récupération confirmera cette interprétation",
             calendar,
