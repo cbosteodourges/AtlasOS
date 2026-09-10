@@ -175,6 +175,10 @@ class GarminConnector(ActivityConnector):
                             "event_mesgs",
                             [],
                         ),
+                        "activity": messages.get(
+                            "activity_mesgs",
+                            [],
+                        ),
                         "source_file": fit_path.name,
                     },
                     samples=samples,
@@ -247,6 +251,10 @@ class GarminConnector(ActivityConnector):
                 ),
                 "events": self._serializable(
                     activity.payload.get("events", [])
+                ),
+                "garmin_local_day": self._local_day(
+                    session,
+                    activity.payload.get("activity", []),
                 ),
                 "average_cadence": self._session_cadence(session),
                 "maximum_cadence": self._session_cadence(session, maximum=True),
@@ -585,6 +593,34 @@ class GarminConnector(ActivityConnector):
             return value.astimezone(timezone.utc).isoformat()
 
         return str(value)
+
+    @staticmethod
+    def _local_day(
+        session: Dict[str, Any],
+        activity_messages: Any,
+    ) -> Optional[str]:
+        """Extrait le jour civil Garmin sans convertir son faux fuseau UTC."""
+        candidates = [
+            session.get("local_timestamp"),
+            session.get("start_time_local"),
+        ]
+        if isinstance(activity_messages, list):
+            candidates.extend(
+                item.get("local_timestamp")
+                for item in activity_messages
+                if isinstance(item, dict)
+            )
+        for value in candidates:
+            if isinstance(value, datetime):
+                return value.date().isoformat()
+            if value is not None:
+                try:
+                    return datetime.fromisoformat(
+                        str(value).replace("Z", "+00:00")
+                    ).date().isoformat()
+                except ValueError:
+                    continue
+        return None
 
     @staticmethod
     def _is_after(

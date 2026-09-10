@@ -16,6 +16,7 @@ garmin_fit_sdk.Stream = object
 sys.modules.setdefault("garmin_fit_sdk", garmin_fit_sdk)
 
 from scripts.sync_atlas_coach_pilot import (
+    activity_calendar_day,
     build_activity_charts,
     confirm_matched_workouts,
     build_record,
@@ -36,6 +37,32 @@ from src.training import TrainingProgramLoader
 
 
 class AutomaticWorkoutConfirmationTests(unittest.TestCase):
+
+    def test_activity_calendar_day_prefers_valid_health_connect_local_day(self):
+        normalized = SimpleNamespace(raw_metadata={
+            "health_connect_local_day": "2026-09-09",
+        })
+        longitudinal = SimpleNamespace(
+            start_time=datetime.fromisoformat("2026-09-08T22:30:00+00:00")
+        )
+
+        self.assertEqual(
+            activity_calendar_day(normalized, longitudinal).isoformat(),
+            "2026-09-09",
+        )
+
+    def test_activity_calendar_day_rejects_implausible_source_date(self):
+        normalized = SimpleNamespace(raw_metadata={
+            "garmin_local_day": "2026-09-15",
+        })
+        longitudinal = SimpleNamespace(
+            start_time=datetime.fromisoformat("2026-09-08T22:30:00+00:00")
+        )
+
+        self.assertEqual(
+            activity_calendar_day(normalized, longitudinal).isoformat(),
+            "2026-09-08",
+        )
 
     def test_activity_charts_keep_health_connect_extremes_and_missing_series(self):
         start = "2026-09-07T08:00:00+00:00"

@@ -229,6 +229,18 @@ class GarminConnectorTests(unittest.TestCase):
         self.assertEqual(samples[0].latitude, 90.0)
         self.assertEqual(samples[0].longitude, -90.0)
 
+    def test_extracts_garmin_civil_day_without_utc_conversion(self) -> None:
+        local_timestamp = datetime(
+            2026, 9, 9, 0, 30, tzinfo=timezone.utc
+        )
+
+        self.assertEqual(
+            GarminConnector._local_day(
+                {}, [{"local_timestamp": local_timestamp}]
+            ),
+            "2026-09-09",
+        )
+
 
     def test_duplicate_fit_content_is_imported_once(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

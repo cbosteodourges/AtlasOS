@@ -415,6 +415,7 @@ def detected_optional_threshold_workout(
     analysis,
     loader: TrainingProgramLoader,
     profile: AthleteProfile,
+    activity_day: date | None = None,
 ):
     """Restaure le 3 x 8 min UI si sa transmission locale a échoué."""
 
@@ -464,7 +465,7 @@ def detected_optional_threshold_workout(
             ),
         }
 
-    workout_day = longitudinal.start_time.date().isoformat()
+    workout_day = (activity_day or longitudinal.start_time.date()).isoformat()
     payload = {
         "workout_id": f"{workout_day}-optional-threshold_run",
         "workout_date": workout_day,
@@ -600,6 +601,22 @@ def persist_restored_optional_workouts(records, output_path: str | Path):
     write_json_atomic(str(destination), history)
     return len(restored_by_id)
 
+
+def activity_calendar_day(normalized_activity, longitudinal) -> date:
+    """Choisit le jour civil de la source sans altérer l'instant UTC."""
+    utc_day = longitudinal.start_time.date()
+    metadata = getattr(normalized_activity, "raw_metadata", {}) or {}
+    for field in ("health_connect_local_day", "garmin_local_day"):
+        try:
+            declared_day = date.fromisoformat(str(metadata.get(field) or ""))
+        except ValueError:
+            continue
+        # Un fuseau peut déplacer le jour civil d'une unité autour de minuit.
+        # Une différence supérieure signale plutôt une donnée corrompue.
+        if abs((declared_day - utc_day).days) <= 1:
+            return declared_day
+    return utc_day
+
 def build_record(
     normalized_activity,
     workouts,
@@ -617,6 +634,8 @@ def build_record(
         longitudinal,
         profile,
     )
+
+    activity_day = activity_calendar_day(normalized_activity, longitudinal)
 
     if not analysis.data_integrity.heart_rate_reliable:
         cardiac_drift = CardiacDriftAnalysis(
@@ -639,7 +658,7 @@ def build_record(
 
     candidates = loader.candidates_for_activity(
         workouts,
-        activity_date=longitudinal.start_time.date(),
+        activity_date=activity_day,
         sport=fingerprint.sport,
     )
 
@@ -670,6 +689,7 @@ def build_record(
             analysis,
             loader,
             profile,
+            activity_day=activity_day,
         )
         if restored is not None:
             restored_match = AtlasWorkoutExecutionMatcher().match(
