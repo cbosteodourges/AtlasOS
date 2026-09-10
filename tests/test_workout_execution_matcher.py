@@ -96,6 +96,137 @@ class AtlasWorkoutExecutionMatcherTests(unittest.TestCase):
             [120, 120, 120, 120, 120],
         )
 
+    def test_detects_sparse_health_connect_intervals_sampled_every_30_seconds(
+        self,
+    ) -> None:
+        target = IntensityTarget(zone=5, speed_min_kmh=13.3, speed_max_kmh=14.3)
+        planned = AdaptiveWorkout(
+            workout_id="sparse-four-by-three",
+            workout_date=date(2026, 9, 8),
+            workout_type=WorkoutType.VMA_LONG,
+            title="VO₂max · 4 × 3 min",
+            objective="Développer le temps de soutien.",
+            blocks=[TrainingBlock(
+                "4 × 3 min", BlockType.WORK, 4, 3,
+                recovery_minutes=2, target=target,
+            )],
+            planned_duration_minutes=40,
+        )
+        start = datetime(2026, 9, 8, 18, tzinfo=timezone.utc)
+        samples = []
+        cursor = 10 * 60
+        for repetition in range(4):
+            for offset in range(0, 181, 30):
+                samples.append(ActivitySample(
+                    timestamp=start + timedelta(seconds=cursor + offset),
+                    speed_mps=(13.5 + repetition * .1) / 3.6,
+                    heart_rate_bpm=146 + repetition * 2,
+                ))
+            cursor += 180
+            if repetition < 3:
+                for offset in range(30, 121, 30):
+                    samples.append(ActivitySample(
+                        timestamp=start + timedelta(seconds=cursor + offset),
+                        speed_mps=6.5 / 3.6,
+                    ))
+                cursor += 120
+
+        groups = AtlasWorkoutExecutionMatcher._raw_speed_interval_groups(
+            AtlasWorkoutExecutionMatcher._planned_intervals(planned),
+            LongitudinalActivity(
+                atlas_id="health-connect-sparse",
+                start_time=start,
+                activity_type="running",
+                distance_km=7.0,
+                duration_minutes=40,
+                average_speed_kmh=10.5,
+                samples=samples,
+            ),
+        )
+
+        self.assertEqual(len(groups), 4)
+        self.assertEqual([round(item["duration_seconds"]) for item in groups], [180] * 4)
+        self.assertEqual(
+            [round(item["raw_recovery_seconds"]) for item in groups[:-1]],
+            [120, 120, 120],
+        )
+
+    def test_deduplicates_health_connect_points_and_tolerates_missing_heart_rate(
+        self,
+    ) -> None:
+        planned = [{
+            "duration_seconds": 180.0,
+            "distance_meters": None,
+            "recovery_minutes": 0.0,
+            "planned": TrainingBlock(
+                "3 min", BlockType.WORK, 1, 3,
+                target=IntensityTarget(zone=5, speed_min_kmh=13.3),
+            ),
+        }]
+        start = datetime(2026, 9, 8, 18, tzinfo=timezone.utc)
+        samples = []
+        for offset in range(0, 181, 10):
+            point_time = start + timedelta(seconds=offset)
+            samples.extend([
+                ActivitySample(timestamp=point_time, speed_mps=13.8 / 3.6),
+                ActivitySample(
+                    timestamp=point_time,
+                    speed_mps=13.8 / 3.6,
+                    heart_rate_bpm=150 if offset in {0, 60, 120, 180} else None,
+                ),
+            ])
+
+        groups = AtlasWorkoutExecutionMatcher._raw_speed_interval_groups(
+            planned,
+            LongitudinalActivity(
+                atlas_id="health-connect-duplicates",
+                start_time=start,
+                activity_type="running",
+                distance_km=1.0,
+                duration_minutes=3,
+                average_speed_kmh=13.8,
+                samples=samples,
+            ),
+        )
+
+        self.assertEqual(len(groups), 1)
+        self.assertAlmostEqual(groups[0]["average_speed_kmh"], 13.8)
+        self.assertEqual(groups[0]["average_heart_rate_bpm"], 150)
+
+    def test_does_not_join_fast_samples_across_a_long_interruption(self) -> None:
+        planned = [{
+            "duration_seconds": 180.0,
+            "distance_meters": None,
+            "recovery_minutes": 0.0,
+            "planned": TrainingBlock(
+                "3 min", BlockType.WORK, 1, 3,
+                target=IntensityTarget(zone=5, speed_min_kmh=13.3),
+            ),
+        }]
+        start = datetime(2026, 9, 8, 18, tzinfo=timezone.utc)
+        samples = [
+            ActivitySample(
+                timestamp=start + timedelta(seconds=offset),
+                speed_mps=13.8 / 3.6,
+            )
+            for offset in (*range(0, 91, 10), *range(390, 481, 10))
+        ]
+
+        groups = AtlasWorkoutExecutionMatcher._raw_speed_interval_groups(
+            planned,
+            LongitudinalActivity(
+                atlas_id="health-connect-interrupted",
+                start_time=start,
+                activity_type="running",
+                distance_km=1.4,
+                duration_minutes=8,
+                average_speed_kmh=10.5,
+                samples=samples,
+            ),
+        )
+
+        self.assertEqual(groups, [])
+
     def test_detects_five_threshold_blocks_without_absorbing_easy_running(self) -> None:
         target = IntensityTarget(
             zone=4,

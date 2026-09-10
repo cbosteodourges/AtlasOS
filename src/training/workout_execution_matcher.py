@@ -666,16 +666,48 @@ class AtlasWorkoutExecutionMatcher:
                 str(value).replace("Z", "+00:00")
             ).timestamp()
 
-        speed_samples = sorted(
-            (
-                timestamp(sample.timestamp),
-                float(sample.speed_mps) * 3.6,
+        # Health Connect can deliver independent streams at the same instant
+        # (or repeat a point during a delta sync).  A duplicate must not give
+        # extra statistical weight to a speed or a heart-rate value.
+        samples_by_time: dict[float, dict[str, list[float]]] = {}
+        for sample in activity.samples:
+            sample_time = timestamp(sample.timestamp)
+            values = samples_by_time.setdefault(
+                sample_time, {"speed": [], "heart": [], "power": [], "cadence": []}
             )
-            for sample in activity.samples
-            if sample.speed_mps is not None
+            if sample.speed_mps is not None:
+                values["speed"].append(float(sample.speed_mps) * 3.6)
+            if sample.heart_rate_bpm is not None:
+                values["heart"].append(float(sample.heart_rate_bpm))
+            if sample.power_watts is not None:
+                values["power"].append(float(sample.power_watts))
+            if sample.cadence_spm is not None:
+                values["cadence"].append(float(sample.cadence_spm))
+
+        speed_samples = sorted(
+            # Aux frontières de phase, Santé Connect peut publier au même
+            # instant la dernière allure de récupération et la première
+            # allure de travail. Conserver la valeur la plus rapide préserve
+            # cette frontière; les fragments isolés restent filtrés ensuite.
+            (sample_time, max(values["speed"]))
+            for sample_time, values in samples_by_time.items()
+            if values["speed"]
         )
         if len(speed_samples) < 2:
             return []
+        positive_gaps = sorted(
+            right[0] - left[0]
+            for left, right in zip(speed_samples, speed_samples[1:])
+            if 0 < right[0] - left[0] <= 120
+        )
+        sample_cadence = (
+            positive_gaps[len(positive_gaps) // 2]
+            if positive_gaps else 10.0
+        )
+        # Jusqu'à 30 s entre deux points est courant sur certains téléphones.
+        # La borne haute empêche une interruption réelle d'être absorbée dans
+        # un seul bloc rapide.
+        continuity_gap_seconds = max(25.0, min(75.0, sample_cadence * 2.5))
         if minimum_targets:
             target_zones = {
                 int(item["planned"].target.zone)
@@ -698,7 +730,10 @@ class AtlasWorkoutExecutionMatcher:
         current: list[tuple[float, float]] = []
         for sample_time, speed in speed_samples:
             if speed >= threshold_kmh:
-                if current and sample_time - current[-1][0] > 25:
+                if (
+                    current
+                    and sample_time - current[-1][0] > continuity_gap_seconds
+                ):
                     runs.append(current)
                     current = []
                 current.append((sample_time, speed))
@@ -724,10 +759,9 @@ class AtlasWorkoutExecutionMatcher:
             average_speed = sum(speed for _, speed in run) / len(run)
             start_time, end_time = run[0][0], run[-1][0]
             heart_rates = [
-                float(sample.heart_rate_bpm)
-                for sample in activity.samples
-                if sample.heart_rate_bpm is not None
-                and start_time <= timestamp(sample.timestamp) <= end_time
+                sum(values["heart"]) / len(values["heart"])
+                for sample_time, values in sorted(samples_by_time.items())
+                if values["heart"] and start_time <= sample_time <= end_time
             ]
             groups.append({
                 "start": round(start_time - session_start),
@@ -753,29 +787,25 @@ class AtlasWorkoutExecutionMatcher:
             left["raw_recovery_seconds"] = recovery_seconds
             recovery_start = session_start + float(left["end"])
             recovery_end = session_start + float(right["start"])
-            recovery_samples = [
-                sample for sample in activity.samples
-                if recovery_start < timestamp(sample.timestamp) < recovery_end
+            recovery_values = [
+                values for sample_time, values in sorted(samples_by_time.items())
+                if recovery_start < sample_time < recovery_end
             ]
             recovery_speeds = [
-                float(sample.speed_mps) * 3.6
-                for sample in recovery_samples
-                if sample.speed_mps is not None
+                max(values["speed"])
+                for values in recovery_values if values["speed"]
             ]
             recovery_hearts = [
-                float(sample.heart_rate_bpm)
-                for sample in recovery_samples
-                if sample.heart_rate_bpm is not None
+                sum(values["heart"]) / len(values["heart"])
+                for values in recovery_values if values["heart"]
             ]
             recovery_powers = [
-                float(sample.power_watts)
-                for sample in recovery_samples
-                if sample.power_watts is not None
+                sum(values["power"]) / len(values["power"])
+                for values in recovery_values if values["power"]
             ]
             recovery_cadences = [
-                float(sample.cadence_spm)
-                for sample in recovery_samples
-                if sample.cadence_spm is not None
+                sum(values["cadence"]) / len(values["cadence"])
+                for values in recovery_values if values["cadence"]
             ]
             recovery_speed = (
                 sum(recovery_speeds) / len(recovery_speeds)
