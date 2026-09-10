@@ -78,3 +78,13 @@ Nouvel aperçu autonome : `prototype/atlas-audit-mixte-2026-09-10.html`. La prem
 Vérifications effectuées : syntaxe JavaScript, structure HTML initiale et produite pour Aujourd’hui/Profil, identifiants uniques, avatar et quatre/cinq cadrans, quatre filières, conservation des scénarios du compte rendu (53 min pour 6 fractions, 43 min pour 4), absence d’appels réseau/stockage, premier prototype inchangé. Aucun navigateur ou appareil réel testé pendant ce lot ; les contrôles de largeur de l’aperçu ne constituent pas une validation de compatibilité.
 
 Ce lot ne corrige pas les défauts du moteur relevés dans l’audit. Il modifie uniquement la proposition visuelle isolée, sans toucher aux écrans actifs, calculs, données, seuils, plan ou synchronisations. La validation visuelle et les confirmations de sauvegarde prévues dans le brief restent distinctes.
+
+## Direction validée pour le plan — présentation mobile commune
+
+Christophe souhaite utiliser la présentation mobile du plan comme référence sur tablette et PC également. Cette demande précise la direction de l’interface ; elle ne vaut pas validation des changements de calcul ou de stockage.
+
+Nouvel aperçu : `prototype/atlas-audit-plan-unifie-2026-09-10.html`, ouvert directement sur Plan. Il reprend la version mixte et présente les séances dans une seule colonne, avec le même ordre date/statut, titre, durée/contexte, action. La composition reste identique à toutes les largeurs ; la largeur de lecture s’adapte et reste bornée sur PC. Les règles du plan ne contiennent ni bascule vers une grille hebdomadaire ni colonnes propres aux grands écrans.
+
+Le compte rendu conserve le retour au plan et sa position de défilement. L’avatar, les cadrans colorés, le profil et Santé de l’aperçu mixte sont conservés. Les deux aperçus précédents restent inchangés. Référence avant ce lot : `ef48e18950777267482657e517d654d504c4b4f8`.
+
+Vérifications : syntaxe JavaScript, structure HTML, trois séances dans l’ordre chronologique, fonctions de navigation avec retour à la position mémorisée du plan, absence d’accès API/stockage et conservation des fichiers précédents. Aucun rendu navigateur ou test matériel supplémentaire réalisé. Il s’agit toujours d’un prototype autonome avec données fictives, sans modification de l’application active.
