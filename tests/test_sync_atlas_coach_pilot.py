@@ -28,6 +28,7 @@ from scripts.sync_atlas_coach_pilot import (
     load_fit_index,
     merge_into_activity_store,
     save_fit_index,
+    select_workout_match,
     same_execution_sources,
     select_fit_files,
 )
@@ -37,6 +38,41 @@ from src.training import TrainingProgramLoader
 
 
 class AutomaticWorkoutConfirmationTests(unittest.TestCase):
+
+    def test_equally_plausible_workouts_suspend_automatic_association(self):
+        def candidate(identifier, execution_score, target_score):
+            return SimpleNamespace(
+                workout_id=identifier,
+                matched=True,
+                match_confidence_score=100,
+                target_compliance_score=target_score,
+                execution=SimpleNamespace(execution_score=execution_score),
+            )
+
+        selected, ambiguous = select_workout_match([
+            candidate("vo2-a", 91, 88),
+            candidate("vo2-b", 90, 87),
+        ])
+
+        self.assertEqual(selected.workout_id, "vo2-a")
+        self.assertTrue(ambiguous)
+
+    def test_clear_execution_difference_selects_one_workout(self):
+        first = SimpleNamespace(
+            workout_id="easy", matched=True, match_confidence_score=100,
+            target_compliance_score=55,
+            execution=SimpleNamespace(execution_score=62),
+        )
+        second = SimpleNamespace(
+            workout_id="vo2", matched=True, match_confidence_score=100,
+            target_compliance_score=91,
+            execution=SimpleNamespace(execution_score=90),
+        )
+
+        selected, ambiguous = select_workout_match([first, second])
+
+        self.assertEqual(selected.workout_id, "vo2")
+        self.assertFalse(ambiguous)
 
     def test_activity_calendar_day_prefers_valid_health_connect_local_day(self):
         normalized = SimpleNamespace(raw_metadata={

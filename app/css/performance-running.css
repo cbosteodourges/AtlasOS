@@ -6230,6 +6230,8 @@ body[data-coach-section]
 .source-quality-grid div{padding:10px 12px;border-radius:10px;background:rgba(11,43,62,.7)}
 .source-quality-grid dt{color:#8fb1c4;font-size:.78rem}
 .source-quality-grid dd{margin:3px 0 0;color:#effaff;font-weight:800}
+.metric-status-grid{margin-top:8px}
+.metric-status-grid dd{text-transform:capitalize}
 .source-quality-empty{grid-column:1/-1;color:#9eb7c5}
 .source-quality-note{margin:12px 0 0;color:#86a8ba;font-size:.82rem}
 .score-audit-title{margin:18px 0 10px;padding-top:16px;border-top:1px solid rgba(69,232,240,.16);color:#dff7ff;font-size:.94rem}

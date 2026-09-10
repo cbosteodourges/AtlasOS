@@ -39,6 +39,16 @@ class AtlasWebServerExecutionSummaryTests(unittest.TestCase):
         self.assertTrue(summary["report_integrity"]["safe_for_interpretation"])
         self.assertIn("interval_physiology", summary)
 
+    def test_exposes_ambiguous_association_without_private_details(self):
+        summary = execution_summary({
+            "activity_id": "health_connect:ambiguous",
+            "association_ambiguous": True,
+            "automatic_learning_allowed": False,
+        })
+
+        self.assertTrue(summary["association_ambiguous"])
+        self.assertFalse(summary["automatic_learning_allowed"])
+
     def test_exposes_global_activity_metrics_instead_of_micro_block_metrics(self):
         summary = execution_summary({
             "activity_id": "health_connect:family-run",
@@ -83,6 +93,11 @@ class AtlasWebServerExecutionSummaryTests(unittest.TestCase):
                     "heart_rate_samples": 120,
                     "speed_samples": 90,
                 },
+                "metric_status": {
+                    "heart_rate": "measured",
+                    "speed": "measured",
+                    "interval_structure": "reconstructed",
+                },
                 "private_path": "must-not-leak",
             },
             "atlas_workout_match": {
@@ -112,6 +127,10 @@ class AtlasWebServerExecutionSummaryTests(unittest.TestCase):
             90,
         )
         self.assertNotIn("private_path", summary["data_sources"])
+        self.assertEqual(
+            summary["data_sources"]["metric_status"]["interval_structure"],
+            "reconstructed",
+        )
         self.assertEqual(
             summary["workout_match"]["score_audit"]["execution"]["score"],
             95,

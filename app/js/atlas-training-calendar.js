@@ -3442,6 +3442,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         : "données d’activité";
     const dataSources = report.data_sources || {};
     const healthCoverage = dataSources.health_connect_coverage || {};
+    const metricStatus = dataSources.metric_status || {};
+    const metricStatusLabel = value => ({
+      measured: "mesuré",
+      reconstructed: "reconstruit",
+      unavailable: "indisponible"
+    }[String(value || "")] || "non documenté");
     const healthConnectKnown = Object.prototype.hasOwnProperty.call(
       dataSources,
       "health_connect_present"
@@ -3485,6 +3491,12 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           </div>
         `).join("")}</dl>`
       : "";
+    const analysisMetricDetail = `
+      <dl class="source-quality-grid metric-status-grid">
+        <div><dt>Fréquence cardiaque</dt><dd>${metricStatusLabel(metricStatus.heart_rate)}</dd></div>
+        <div><dt>Vitesse</dt><dd>${metricStatusLabel(metricStatus.speed)}</dd></div>
+        <div><dt>Structure des fractions</dt><dd>${metricStatusLabel(metricStatus.interval_structure)}</dd></div>
+      </dl>`;
     const durationDelta = actualDuration - plannedDuration;
     const distanceDelta = actualDistance - plannedDistance;
     const matchedWorkout = match.matched === true;
@@ -3504,6 +3516,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     const hillSamples = Number(drift.excluded_hill_sample_count);
     const learningAllowed =
       report.automatic_learning_allowed === true;
+    const associationAmbiguous = report.association_ambiguous === true;
     const contextInterpretation = userContext?.atlas_interpretation || null;
     const contextActionLabels = {
       maintain: "Maintien proposé",
@@ -3513,7 +3526,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     };
 
     const executionConclusion = !matchedWorkout
-      ? "Activit\u00e9 libre analys\u00e9e \u00e0 partir des donn\u00e9es r\u00e9ellement enregistr\u00e9es."
+      ? associationAmbiguous
+        ? "Deux s\u00e9ances planifi\u00e9es sont aussi compatibles : l\u2019association automatique est suspendue."
+        : "Activit\u00e9 libre analys\u00e9e \u00e0 partir des donn\u00e9es r\u00e9ellement enregistr\u00e9es."
       : executionScore >= 80
         ? "La s\u00e9ance est globalement bien ex\u00e9cut\u00e9e."
         : executionScore >= 60
@@ -3521,7 +3536,9 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           : "La s\u00e9ance pr\u00e9sente des \u00e9carts importants par rapport au plan.";
 
     const targetConclusion = !matchedWorkout
-      ? "Aucune cible prescrite : Atlas d\u00e9crit uniquement l\u2019effort observ\u00e9."
+      ? associationAmbiguous
+        ? "Les cibles ne sont pas not\u00e9es tant que la s\u00e9ance correspondante n\u2019est pas confirm\u00e9e."
+        : "Aucune cible prescrite : Atlas d\u00e9crit uniquement l\u2019effort observ\u00e9."
       : targetScore >= 85
         ? "Les cibles physiologiques ont \u00e9t\u00e9 bien respect\u00e9es."
         : targetScore >= 65
@@ -3861,6 +3878,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
             </span>
           </div>
           ${healthConnectDetail}
+          ${analysisMetricDetail}
           ${matchedWorkout ? `
           <h4 class="score-audit-title">Calcul des quatre scores</h4>
           <div class="score-audit-grid">

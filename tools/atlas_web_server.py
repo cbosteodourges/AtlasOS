@@ -840,6 +840,7 @@ def execution_summary(item):
                 "selected_activity_source",
                 "selected_samples_source",
                 "health_connect_coverage",
+                "metric_status",
             ),
         ),
         "start_time": item.get("start_time"),
@@ -847,6 +848,7 @@ def execution_summary(item):
         "automatic_learning_allowed": item.get(
             "automatic_learning_allowed"
         ),
+        "association_ambiguous": item.get("association_ambiguous") is True,
         "activity_charts": {
             "duration_seconds": charts.get("duration_seconds"),
             "source": charts.get("source"),

@@ -617,6 +617,37 @@ def activity_calendar_day(normalized_activity, longitudinal) -> date:
             return declared_day
     return utc_day
 
+
+def select_workout_match(matches):
+    """Choisit un candidat et bloque l'automatisme en cas d'ex aequo réel."""
+    ranked = sorted(
+        matches,
+        key=lambda item: (
+            item.match_confidence_score,
+            item.execution.execution_score,
+            item.target_compliance_score or 0,
+        ),
+        reverse=True,
+    )
+    if not ranked:
+        return None, False
+    ambiguous = False
+    if len(ranked) > 1 and ranked[0].matched and ranked[1].matched:
+        first = ranked[0]
+        second = ranked[1]
+        ambiguous = (
+            abs(first.match_confidence_score - second.match_confidence_score) <= 2
+            and abs(
+                first.execution.execution_score
+                - second.execution.execution_score
+            ) <= 3
+            and abs(
+                (first.target_compliance_score or 0)
+                - (second.target_compliance_score or 0)
+            ) <= 3
+        )
+    return ranked[0], ambiguous
+
 def build_record(
     normalized_activity,
     workouts,
@@ -671,20 +702,10 @@ def build_record(
         )
         for candidate in candidates
     ]
-    best_match = (
-        max(
-            matches,
-            key=lambda item: (
-                item.match_confidence_score,
-                item.execution.execution_score,
-            ),
-        )
-        if matches
-        else None
-    )
+    best_match, association_ambiguous = select_workout_match(matches)
 
     restored = None
-    if best_match is None or not best_match.matched:
+    if best_match is None or (not best_match.matched and not association_ambiguous):
         restored = detected_optional_threshold_workout(
             longitudinal,
             analysis,
@@ -707,11 +728,14 @@ def build_record(
                 best_match = restored_match
 
     serialized_match = best_match.to_dict() if best_match is not None else None
-    if serialized_match is not None and not best_match.matched:
+    if serialized_match is not None and (
+        not best_match.matched or association_ambiguous
+    ):
         # Le matcher peut calculer plusieurs scores pour départager ses candidats.
         # Ils restent un détail interne de sélection et ne décrivent pas
         # l'exécution d'une prescription lorsque le candidat est rejeté.
         serialized_match.update({
+            "matched": False,
             "workout_id": None,
             "match_confidence_score": None,
             "duration_compliance_score": None,
@@ -731,9 +755,11 @@ def build_record(
                 "target_compliance_score": None,
                 "recovery_compliance_score": None,
                 "execution_score": None,
-                "observations": [
-                    "Activité libre : aucune prescription Atlas associée."
-                ],
+                "observations": [(
+                    "Association automatique suspendue : deux séances Atlas sont également compatibles."
+                    if association_ambiguous
+                    else "Activité libre : aucune prescription Atlas associée."
+                )],
                 "interval_details": [],
             },
         })
@@ -764,6 +790,29 @@ def build_record(
                 )
                 or {}
             ),
+            "metric_status": {
+                "heart_rate": (
+                    "measured"
+                    if analysis.data_integrity.heart_rate_available
+                    else "unavailable"
+                ),
+                "speed": (
+                    "measured"
+                    if analysis.data_integrity.speed_available
+                    else "unavailable"
+                ),
+                "interval_structure": (
+                    "measured"
+                    if normalized_activity.raw_metadata.get("laps")
+                    or normalized_activity.raw_metadata.get("workout_steps")
+                    else "reconstructed"
+                    if serialized_match
+                    and (serialized_match.get("execution") or {}).get(
+                        "interval_details"
+                    )
+                    else "unavailable"
+                ),
+            },
         },
         "start_time": longitudinal.start_time,
         "processed_at": datetime.now(timezone.utc),
@@ -778,7 +827,9 @@ def build_record(
         "automatic_learning_allowed": bool(
             best_match is not None
             and best_match.matched
+            and not association_ambiguous
         ),
+        "association_ambiguous": association_ambiguous,
         "restored_optional_workout": (
             restored.to_dict()
             if restored is not None
