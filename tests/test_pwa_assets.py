@@ -93,7 +93,7 @@ class PwaAssetsTests(unittest.TestCase):
             'planPanel.dataset.calendarRenderer !== "premium"',
             legacy,
         )
-        self.assertIn('performance-running.js?v=22', page)
+        self.assertIn('performance-running.js?v=23', page)
         self.assertIn('atlas-training-calendar.js?v=123', page)
 
     def test_execution_report_has_a_grabbable_scrollbar_without_redundant_recovery_story(self):

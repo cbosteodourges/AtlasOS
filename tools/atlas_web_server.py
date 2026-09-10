@@ -1268,6 +1268,39 @@ def load_physiological_reference():
     }
 
 
+def synchronized_physiology_payload():
+    """Expose une seule définition des valeurs physiologiques courantes."""
+
+    path = ROOT / "atlas-data" / "private" / "physiology-longitudinal.json"
+    longitudinal = _read_private_json(path, {})
+    if not isinstance(longitudinal, dict):
+        longitudinal = {}
+    reference = load_physiological_reference()
+    current = dict(longitudinal.get("current") or {})
+    current.update({
+        "vo2_max": reference.get("vo2_max"),
+        "vma_kmh": reference.get("vma_kmh"),
+        "vma_training_reference_kmh": reference.get(
+            "vma_training_reference_kmh"
+        ),
+        "maximum_heart_rate_bpm": reference.get("maximum_heart_rate_bpm"),
+        "resting_heart_rate_bpm": reference.get("resting_heart_rate_bpm"),
+        "sv1": {
+            **(current.get("sv1") or {}),
+            "speed_kmh": reference.get("sv1_speed_kmh"),
+            "heart_rate_bpm": reference.get("sv1_heart_rate_bpm"),
+            "status": reference.get("sv1_status"),
+        },
+        "sv2": {
+            **(current.get("sv2") or {}),
+            "speed_kmh": reference.get("sv2_speed_kmh"),
+            "heart_rate_bpm": reference.get("sv2_heart_rate_bpm"),
+            "status": reference.get("sv2_status"),
+        },
+    })
+    return {**longitudinal, "current": current}
+
+
 def load_physiology_history():
     """Normalise les mesures physiologiques datées pour les courbes du profil."""
 
@@ -3609,7 +3642,7 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             self.send_json(200, {
                 "ok": True,
                 "recovery": _read_private_json(private_dir / "atlas-recovery-index.json", {}),
-                "physiology": _read_private_json(private_dir / "physiology-longitudinal.json", {}),
+                "physiology": synchronized_physiology_payload(),
                 "daily_assessment": _read_private_json(private_dir / "daily-sync-assessment.json", {}),
             })
             return

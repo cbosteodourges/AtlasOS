@@ -8593,6 +8593,14 @@ html.atlas-session-open body {
   overflow: hidden !important;
 }
 
+.profile-field-source {
+  display: block;
+  margin-top: 6px;
+  color: #789aad;
+  font-size: .72rem;
+  line-height: 1.35;
+}
+
 #atlasSessionDialog.atlas-session-dialog .session-dialog-shell {
   overflow: hidden !important;
 }

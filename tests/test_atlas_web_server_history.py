@@ -9,6 +9,7 @@ from tools.atlas_web_server import (
     load_historical_workouts,
     load_physiology_history,
     load_physiological_reference,
+    synchronized_physiology_payload,
     load_user_objectives,
     load_user_profile,
     save_user_objectives,
@@ -105,6 +106,37 @@ class AtlasWebServerHistoryTests(unittest.TestCase):
             self.assertEqual(physiology["vo2_max"], 51)
             self.assertEqual(physiology["sv2_speed_kmh"], 12.9)
             self.assertEqual(physiology["sv2_heart_rate_bpm"], 160)
+
+    def test_sync_insights_exposes_estimated_vma_and_keeps_training_reference(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            private = root / "atlas-data" / "private"
+            private.mkdir(parents=True)
+            program_path = private / "training-program.json"
+            program_path.write_text(json.dumps({
+                "athlete_snapshot": {
+                    "vma_kmh": 13.8,
+                    "vma_training_reference_kmh": 13.8,
+                }
+            }), encoding="utf-8")
+            (private / "physiology-longitudinal.json").write_text(json.dumps({
+                "current": {
+                    "vma_kmh": 13.8,
+                    "vma_estimated_from_vo2_kmh": 14.57,
+                }
+            }), encoding="utf-8")
+
+            with (
+                patch("tools.atlas_web_server.ROOT", root),
+                patch("tools.atlas_web_server.PROGRAM_PATH", program_path),
+            ):
+                payload = synchronized_physiology_payload()
+
+            self.assertEqual(payload["current"]["vma_kmh"], 14.57)
+            self.assertEqual(
+                payload["current"]["vma_training_reference_kmh"],
+                13.8,
+            )
 
     def test_profile_is_persisted_outside_browser_storage(self):
         with tempfile.TemporaryDirectory() as directory:

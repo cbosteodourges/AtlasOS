@@ -256,10 +256,10 @@
     <section class="profile-subsection">
       <header><span>1</span><div><h2>Références physiologiques</h2><p>Chaque valeur peut provenir d’une montre, d’un test ou d’une estimation Atlas.</p></div></header>
       <div class="setup-grid">
-        <label><span>VMA</span><div class="unit-input"><input id="vma" type="number" min="6" max="30" step="0.1" value="14"><em>km/h</em></div></label>
+        <label><span>VMA actuelle estimée</span><div class="unit-input"><input id="vma" type="number" min="6" max="30" step="0.01" value="14"><em>km/h</em></div><small class="profile-field-source" id="vmaTrainingReference">Référence d’entraînement à synchroniser</small></label>
         <label><span>VO₂max</span><div class="unit-input"><input id="vo2MaxProfile" type="number" min="15" max="90" step="0.1" placeholder="À déterminer"><em>ml/kg/min</em></div></label>
         <label><span>Fréquence cardiaque maximale</span><div class="unit-input"><input id="hrMax" type="number" min="120" max="230" step="1" placeholder="À déterminer"><em>bpm</em></div></label>
-        <label><span>Fréquence cardiaque de repos</span><div class="unit-input"><input id="hrRest" type="number" min="30" max="120" step="1" placeholder="À déterminer"><em>bpm</em></div></label>
+        <label><span>FC de repos de référence</span><div class="unit-input"><input id="hrRest" type="number" min="30" max="120" step="1" placeholder="À déterminer"><em>bpm</em></div><small class="profile-field-source">Distincte du minimum nocturne utilisé pour la récupération</small></label>
         <label><span>Mode de suivi préféré</span><select id="displayMode"><option value="hybrid" selected>Hybride : FC + VMA</option><option value="hr">Fréquence cardiaque</option><option value="speed">Vitesse / VMA</option></select></label>
         <label><span>Origine des seuils</span><select id="thresholdSource"><option value="estimated">Estimation initiale Atlas</option><option value="atlas_profile" selected>Profil Atlas évolutif</option><option value="measured">Mesurés par test</option></select></label>
       </div>
@@ -458,7 +458,7 @@
 <script src="./js/atlas-conversation.js?v=9"></script>
 <script src="./js/atlas-pwa.js?v=3"></script>
 <script src="./js/atlas-global-nav.js?v=23"></script>
-<script src="./js/performance-running.js?v=22"></script>
+  <script src="./js/performance-running.js?v=23"></script>
   <script src="./js/atlas-training-calendar.js?v=123"></script>
 <script src="./js/atlas-training-history.js?v=8"></script>
 </body>

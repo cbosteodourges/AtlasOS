@@ -117,6 +117,7 @@
     eventType: document.getElementById("eventType"),
     eventDate: document.getElementById("eventDate"),
     vma: document.getElementById("vma"),
+    vmaTrainingReference: document.getElementById("vmaTrainingReference"),
     hrMax: document.getElementById("hrMax"),
     hrRest: document.getElementById("hrRest"),
     vo2MaxProfile: document.getElementById("vo2MaxProfile"),
@@ -1114,6 +1115,14 @@
           elements.vma,
           physiology.vma_kmh
         );
+        if (elements.vmaTrainingReference) {
+          const trainingVma = Number(
+            physiology.vma_training_reference_kmh
+          );
+          elements.vmaTrainingReference.textContent = Number.isFinite(trainingVma)
+            ? `Référence utilisée pour les séances : ${String(trainingVma).replace(".", ",")} km/h`
+            : "Référence d’entraînement à synchroniser";
+        }
         setAtlasNumberField(
           elements.vo2MaxProfile,
           physiology.vo2_max
@@ -1190,12 +1199,8 @@
       const restingHeartRate = observations.find(
         item => Number.isFinite(Number(item.resting_heart_rate_bpm))
       )?.resting_heart_rate_bpm;
-      const wellnessVo2 = observations.find(
-        item => Number.isFinite(Number(item.vo2_max))
-      )?.vo2_max;
 
       setAtlasNumberField(elements.hrRest, restingHeartRate);
-      setAtlasNumberField(elements.vo2MaxProfile, wellnessVo2);
     } catch (error) {
       console.debug("Références Wellness indisponibles.", error);
     }
