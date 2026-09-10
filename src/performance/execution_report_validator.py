@@ -94,6 +94,8 @@ def validate_execution_report(report: dict[str, Any]) -> dict[str, Any]:
         for item in intervals[:-1]
     )
     integrity = analysis.get("data_integrity") or {}
+    heart_rate_available = integrity.get("heart_rate_available") is not False
+    speed_available = integrity.get("speed_available") is not False
     heart_rate_reliable = integrity.get("heart_rate_reliable") is not False
     if heart_rate_complete and not heart_rate_reliable:
         warnings.append(
@@ -106,9 +108,13 @@ def validate_execution_report(report: dict[str, Any]) -> dict[str, Any]:
             "chronologie" in item.lower() or "phases se chevauchent" in item.lower()
             for item in errors
         ),
-        "speed_regularity": speed_complete,
-        "heart_rate_evolution": heart_rate_complete and heart_rate_reliable,
-        "recovery_interpretation": recoveries_measured and heart_rate_reliable,
+        "speed_regularity": speed_complete and speed_available,
+        "heart_rate_evolution": (
+            heart_rate_complete and heart_rate_available and heart_rate_reliable
+        ),
+        "recovery_interpretation": (
+            recoveries_measured and heart_rate_available and heart_rate_reliable
+        ),
     }
     status = "error" if errors else "warning" if warnings else "valid"
     return {

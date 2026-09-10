@@ -1354,5 +1354,31 @@ class DetailedSessionAnalyzerTests(unittest.TestCase):
             "exclude_heart_rate",
         )
 
+    def test_marks_missing_heart_rate_as_unavailable_not_interpretable(self):
+        activity = LongitudinalActivity(
+            atlas_id="health-connect-no-heart-rate",
+            start_time=self.start,
+            activity_type="running",
+            distance_km=1,
+            duration_minutes=5,
+            average_speed_kmh=12,
+            samples=[
+                self._sample(0, 3.3, 0, None),
+                self._sample(300, 3.3, 1000, None),
+            ],
+        )
+
+        result = self.analyzer.analyze(activity, self.profile)
+
+        self.assertFalse(result.data_integrity.heart_rate_available)
+        self.assertFalse(result.data_integrity.heart_rate_reliable)
+        self.assertFalse(result.data_integrity.physiological_data_usable)
+        self.assertTrue(result.data_integrity.speed_available)
+        self.assertEqual(result.data_integrity.heart_rate_coverage_percent, 0)
+        self.assertEqual(
+            result.data_integrity.recommended_action,
+            "exclude_heart_rate",
+        )
+
 if __name__ == "__main__":
     unittest.main()

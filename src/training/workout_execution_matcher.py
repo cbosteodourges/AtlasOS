@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 import re
+from datetime import date
 from types import SimpleNamespace
 from typing import Optional
 
@@ -58,13 +59,15 @@ class AtlasWorkoutExecutionMatcher:
         planned_workout: AdaptiveWorkout,
         activity: LongitudinalActivity,
         analysis: DetailedSessionAnalysis,
+        *,
+        activity_date: date | None = None,
     ) -> AtlasWorkoutExecutionMatch:
         """Rapproche une activité et une séance du calendrier."""
         planned_workout.validate()
 
         date_difference = abs(
             (
-                activity.start_time.date()
+                (activity_date or activity.start_time.date())
                 - planned_workout.workout_date
             ).days
         )

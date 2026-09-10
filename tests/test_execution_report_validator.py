@@ -68,6 +68,20 @@ class ExecutionReportValidatorTests(unittest.TestCase):
         self.assertTrue(result["capabilities"]["speed_regularity"])
         self.assertFalse(result["capabilities"]["heart_rate_evolution"])
 
+    def test_declared_missing_heart_rate_overrides_stale_interval_values(self):
+        payload = report()
+        payload["analysis"]["data_integrity"].update({
+            "heart_rate_available": False,
+            "heart_rate_reliable": False,
+        })
+
+        result = validate_execution_report(payload)
+
+        self.assertTrue(result["safe_for_interpretation"])
+        self.assertTrue(result["capabilities"]["speed_regularity"])
+        self.assertFalse(result["capabilities"]["heart_rate_evolution"])
+        self.assertFalse(result["capabilities"]["recovery_interpretation"])
+
 
 if __name__ == "__main__":
     unittest.main()

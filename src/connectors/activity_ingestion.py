@@ -10,6 +10,35 @@ from typing import Iterable
 from .activity_schema import ActivitySample, NormalizedActivity
 
 
+def _merged_samples(
+    current: list[ActivitySample],
+    incoming: list[ActivitySample],
+) -> list[ActivitySample]:
+    """Fusionne un delta de mesures sans dupliquer ses horodatages."""
+    sample_fields = [item.name for item in fields(ActivitySample)]
+    indexed: dict[str, ActivitySample] = {}
+    for sample in [*current, *incoming]:
+        if not isinstance(sample, ActivitySample):
+            continue
+        key = str(sample.timestamp)
+        previous = indexed.get(key)
+        if previous is None:
+            indexed[key] = ActivitySample(**{
+                name: getattr(sample, name) for name in sample_fields
+            })
+            continue
+        payload = {
+            name: (
+                getattr(sample, name)
+                if getattr(sample, name) is not None
+                else getattr(previous, name)
+            )
+            for name in sample_fields
+        }
+        indexed[key] = ActivitySample(**payload)
+    return [indexed[key] for key in sorted(indexed)]
+
+
 def activity_fingerprint(activity: NormalizedActivity) -> str:
     start = datetime.fromisoformat(activity.start_time.replace("Z", "+00:00"))
     start = start.astimezone(timezone.utc).replace(second=0, microsecond=0)
@@ -105,6 +134,14 @@ def merge_activities(current: NormalizedActivity, incoming: NormalizedActivity) 
         **winner.raw_metadata,
     }
 
+    same_source_activity = (
+        current.provider == incoming.provider
+        and current.external_id == incoming.external_id
+    )
+    if same_source_activity:
+        merged.samples = _merged_samples(current.samples, incoming.samples)
+        provenance["samples"] = winner_source
+
     # Un ancien schéma Android transformait une altitude absente en 0 m.
     # Lors d'un réimport Health Connect, la couverture explicite du nouveau
     # schéma doit pouvoir effacer ce faux zéro au lieu de le reprendre comme
@@ -140,7 +177,7 @@ def merge_activities(current: NormalizedActivity, incoming: NormalizedActivity) 
     ):
         merged.samples = list(fallback.samples)
         provenance["samples"] = enrichment_source
-    else:
+    elif not same_source_activity:
         provenance.setdefault("samples", winner_source)
 
     merged.field_provenance = provenance

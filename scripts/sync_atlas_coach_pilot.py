@@ -667,6 +667,7 @@ def build_record(
             candidate,
             longitudinal,
             analysis,
+            activity_date=activity_day,
         )
         for candidate in candidates
     ]
@@ -696,6 +697,7 @@ def build_record(
                 restored,
                 longitudinal,
                 analysis,
+                activity_date=activity_day,
             )
             if (
                 best_match is None

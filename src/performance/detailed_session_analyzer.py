@@ -771,9 +771,42 @@ class DetailedSessionAnalyzer:
         """Signale les données douteuses sans supprimer l'activité."""
         anomalies = []
         warnings = []
-        heart_rate_reliable = True
+        sample_count = len(activity.samples)
+        heart_rate_count = sum(
+            sample.heart_rate_bpm is not None for sample in activity.samples
+        )
+        speed_count = sum(
+            sample.speed_mps is not None for sample in activity.samples
+        )
+        heart_rate_available = bool(
+            heart_rate_count or activity.average_heart_rate_bpm is not None
+        )
+        speed_available = bool(
+            speed_count or activity.average_speed_kmh is not None
+        )
+        heart_rate_coverage = (
+            round(heart_rate_count / sample_count * 100) if sample_count else 0
+        )
+        speed_coverage = (
+            round(speed_count / sample_count * 100) if sample_count else 0
+        )
+        heart_rate_reliable = heart_rate_available
         sensor_quality = 100
         identity_confidence = 100
+
+        if not heart_rate_available:
+            warnings.append(
+                "Fréquence cardiaque non transmise ; les conclusions cardiaques sont indisponibles."
+            )
+        elif sample_count and heart_rate_coverage < 50:
+            warnings.append(
+                "Couverture cardiaque partielle ; seules les fractions mesurées sont décrites."
+            )
+            sensor_quality -= 10
+        if not speed_available:
+            warnings.append(
+                "Vitesse non transmise ; les conclusions d’allure sont indisponibles."
+            )
 
         declared_maximum = (
             profile.physiological.maximum_heart_rate_bpm
@@ -850,6 +883,10 @@ class DetailedSessionAnalyzer:
 
         return DataIntegrityAssessment(
             heart_rate_reliable=heart_rate_reliable,
+            heart_rate_available=heart_rate_available,
+            speed_available=speed_available,
+            heart_rate_coverage_percent=heart_rate_coverage,
+            speed_coverage_percent=speed_coverage,
             physiological_data_usable=(
                 physiological_usable
             ),

@@ -166,6 +166,58 @@ class ActivityIngestionTests(unittest.TestCase):
             store.ingest([activity()])
             self.assertEqual(len(store.ingest([activity()])), 1)
 
+    def test_health_connect_delta_extends_samples_without_duplicates(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = ActivityStore(Path(directory) / "activities.json")
+            first = activity("health_connect", "exercise-1", samples=[
+                ActivitySample(
+                    timestamp="2026-08-25T18:00:00Z",
+                    speed_mps=3.0,
+                    heart_rate_bpm=140,
+                ),
+                ActivitySample(
+                    timestamp="2026-08-25T18:00:10Z",
+                    speed_mps=3.1,
+                ),
+            ])
+            delta = activity("health_connect", "exercise-1", samples=[
+                ActivitySample(
+                    timestamp="2026-08-25T18:00:10Z",
+                    speed_mps=3.2,
+                    heart_rate_bpm=145,
+                ),
+                ActivitySample(
+                    timestamp="2026-08-25T18:00:20Z",
+                    speed_mps=3.3,
+                ),
+            ])
+
+            store.ingest([first])
+            result = store.ingest([delta])
+
+            self.assertEqual(len(result), 1)
+            self.assertEqual(len(result[0].samples), 3)
+            self.assertEqual(result[0].samples[1].speed_mps, 3.2)
+            self.assertEqual(result[0].samples[1].heart_rate_bpm, 145)
+
+    def test_identical_health_connect_delta_remains_sample_idempotent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = ActivityStore(Path(directory) / "activities.json")
+            point = ActivitySample(
+                timestamp="2026-08-25T18:00:10Z",
+                speed_mps=3.2,
+            )
+            update = activity(
+                "health_connect", "exercise-1", samples=[point]
+            )
+
+            store.ingest([update])
+            store.ingest([update])
+            result = store.ingest([update])
+
+            self.assertEqual(len(result), 1)
+            self.assertEqual(len(result[0].samples), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
