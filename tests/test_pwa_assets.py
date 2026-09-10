@@ -96,6 +96,23 @@ class PwaAssetsTests(unittest.TestCase):
         self.assertIn('performance-running.js?v=22', page)
         self.assertIn('atlas-training-calendar.js?v=121', page)
 
+    def test_execution_report_has_a_grabbable_scrollbar_without_redundant_recovery_story(self):
+        page = (APP_ROOT / "performance-running.html").read_text(encoding="utf-8")
+        styles = (APP_ROOT / "css" / "performance-running.css").read_text(
+            encoding="utf-8"
+        )
+        calendar = (APP_ROOT / "js" / "atlas-training-calendar.js").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn('performance-running.css?v=99', page)
+        self.assertIn('width: 16px', styles)
+        self.assertIn('scrollbar-gutter: stable', styles)
+        self.assertNotIn(
+            "La récupération confirmera cette interprétation",
+            calendar,
+        )
+
     def test_legacy_execution_timeline_is_rebased_on_planned_warmup(self):
         calendar = (APP_ROOT / "js" / "atlas-training-calendar.js").read_text(
             encoding="utf-8"

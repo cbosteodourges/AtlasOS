@@ -4258,22 +4258,6 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
           </aside>
         </div>
 
-        <section class="recovery-story">
-          <div class="report-heading">
-            <span class="report-kicker">APRÈS LA SÉANCE</span>
-            <h3>La récupération confirmera cette interprétation</h3>
-            <p>
-              Les données Wellness et votre ressenti à 24, 48 et 72 heures
-              permettront de vérifier si la charge a été réellement bien
-              tolérée avant toute adaptation.
-            </p>
-          </div>
-          <div class="recovery-timeline">
-            <span><b>24 h</b> Première réponse</span>
-            <span><b>48 h</b> Retour vers la référence</span>
-            <span><b>72 h</b> Tolérance confirmée</span>
-          </div>
-        </section>
         </details>
       </section>
     `;
