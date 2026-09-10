@@ -1689,6 +1689,9 @@ const target = compactTarget(workout, zone);
       "click",
       () => dialog.close()
     );
+    dialog.addEventListener("close", () => {
+      document.documentElement.classList.remove("atlas-session-open");
+    });
     return dialog;
   }
 
@@ -5213,6 +5216,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
       }
     };
 
+    document.documentElement.classList.add("atlas-session-open");
     dialog.showModal();
     dialog.scrollTop = 0;
     content.scrollTop = 0;
@@ -5607,6 +5611,7 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
         };
       }
     );
+    document.documentElement.classList.add("atlas-session-open");
     dialog.showModal();
     dialog.scrollTop = 0;
     content.scrollTop = 0;

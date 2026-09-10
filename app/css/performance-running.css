@@ -8583,6 +8583,88 @@ button.history-session-card:focus-visible {
   box-shadow: none;
 }
 
+/* Fiche d'activité : un seul défilement natif, au bord de l'écran.
+   La page arrière est immobile et les panneaux ne créent plus de
+   barres concurrentes. Cette structure fonctionne à la souris comme
+   au toucher sur Android, iOS et iPadOS. */
+html.atlas-session-open,
+html.atlas-session-open body {
+  height: 100%;
+  overflow: hidden !important;
+}
+
+#atlasSessionDialog.atlas-session-dialog .session-dialog-shell {
+  overflow: hidden !important;
+}
+
+#atlasSessionDialog.atlas-session-dialog .dialog-content {
+  display: flex;
+  min-height: 0;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: rgba(74,216,244,.78) rgba(5,25,39,.72);
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#atlasSessionDialog.atlas-session-dialog .dialog-content::-webkit-scrollbar {
+  width: 16px;
+}
+
+#atlasSessionDialog.atlas-session-dialog .dialog-content::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(5,25,39,.72);
+}
+
+#atlasSessionDialog.atlas-session-dialog .dialog-content::-webkit-scrollbar-thumb {
+  min-height: 52px;
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: rgba(74,216,244,.78);
+  background-clip: padding-box;
+}
+
+#atlasSessionDialog.atlas-session-dialog .dialog-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(102,233,250,.96);
+  background-clip: padding-box;
+}
+
+#atlasSessionDialog.atlas-session-dialog .session-dialog-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 35;
+  flex: 0 0 auto;
+}
+
+#atlasSessionDialog.atlas-session-dialog .session-tab-panel {
+  flex: 0 0 auto;
+  width: 100% !important;
+  max-width: none !important;
+  min-height: auto;
+  margin-inline: 0 !important;
+  overflow: visible !important;
+  scrollbar-width: none;
+}
+
+#atlasSessionDialog.atlas-session-dialog
+[data-session-panel="planned"] > * {
+  width: min(100%, 820px);
+  margin-inline: auto;
+}
+
+@media (max-width: 760px) {
+  #atlasSessionDialog.atlas-session-dialog .dialog-content {
+    scrollbar-gutter: auto;
+  }
+
+  #atlasSessionDialog.atlas-session-dialog .dialog-content::-webkit-scrollbar {
+    width: 6px;
+  }
+}
+
 @media (max-width: 760px) {
   #atlasSessionDialog.atlas-session-dialog {
     inset: 0 !important;
