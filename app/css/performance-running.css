@@ -6479,6 +6479,43 @@ body[data-coach-section]
   margin-top: 30px;
 }
 
+.watch-export-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 20px;
+  align-items: center;
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px solid rgba(53, 204, 255, .34);
+  border-radius: 13px;
+  background: rgba(25, 112, 163, .12);
+}
+
+.watch-export-card span,
+.watch-export-card strong,
+.watch-export-card p,
+.watch-export-card small { display: block; }
+.watch-export-card span { color: #35ccff; font-size: .7rem; letter-spacing: .12em; }
+.watch-export-card strong { margin-top: 4px; }
+.watch-export-card p,
+.watch-export-card small { color: #9db1be; }
+.watch-export-card p { margin: 5px 0 0; font-size: .82rem; }
+.watch-export-card small { grid-column: 1 / -1; font-size: .73rem; }
+.watch-export-button {
+  padding: 11px 15px;
+  color: #03101b;
+  text-decoration: none;
+  font-weight: 800;
+  border-radius: 9px;
+  background: #35ccff;
+}
+
+@media (max-width: 620px) {
+  .watch-export-card { grid-template-columns: 1fr; }
+  .watch-export-card small { grid-column: auto; }
+  .watch-export-button { text-align: center; }
+}
+
 .session-notes p {
   margin: 0;
   color: #9db1be;

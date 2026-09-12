@@ -94,7 +94,7 @@ class PwaAssetsTests(unittest.TestCase):
             legacy,
         )
         self.assertIn('performance-running.js?v=23', page)
-        self.assertIn('atlas-training-calendar.js?v=123', page)
+        self.assertIn('atlas-training-calendar.js?v=124', page)
 
     def test_execution_report_has_a_grabbable_scrollbar_without_redundant_recovery_story(self):
         page = (APP_ROOT / "performance-running.html").read_text(encoding="utf-8")
@@ -105,7 +105,7 @@ class PwaAssetsTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn('performance-running.css?v=101', page)
+        self.assertIn('performance-running.css?v=102', page)
         self.assertIn('width: 16px', styles)
         self.assertIn('scrollbar-gutter: stable', styles)
         self.assertIn('html.atlas-session-open', styles)

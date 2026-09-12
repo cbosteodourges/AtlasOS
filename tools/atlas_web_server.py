@@ -53,6 +53,11 @@ from src.training.subscription_access import (
 )
 from src.training.schedule_rescheduler import reschedule_workout
 from src.physiology.atlas_recovery_index import apply_intraday_rest_adjustments
+from src.integrations.garmin_workout import (
+    encode_garmin_fit,
+    safe_filename,
+    universal_workout,
+)
 
 
 def calculate_age(birth_date):
@@ -103,6 +108,35 @@ ACTIVITIES_PATH = ROOT / "atlas-data" / "private" / "activities-unified.json"
 NUTRITION_PATH = ROOT / "atlas-data" / "private" / "nutrition-hydration-manual.json"
 REST_PERIODS_PATH = ROOT / "atlas-data" / "private" / "atlas-recovery-rest-periods.json"
 READINESS_CHECKPOINTS_PATH = ROOT / "atlas-data" / "private" / "atlas-coach-readiness-checkpoints.json"
+
+
+def workout_for_export(workout_id):
+    """Résout la séance choisie, y compris une adaptation validée."""
+    program = load_authorized_training_program()
+    workouts = [
+        item
+        for week in program.get("weeks", [])
+        for item in week.get("workouts", [])
+        if isinstance(item, dict)
+    ]
+    optional = _read_private_json(OPTIONAL_WORKOUTS_PATH, [])
+    if isinstance(optional, list):
+        workouts.extend(item for item in optional if isinstance(item, dict))
+    workout = next(
+        (item for item in workouts if str(item.get("workout_id")) == workout_id),
+        None,
+    )
+    if workout is None:
+        raise ValueError("Séance Atlas introuvable.")
+
+    selection = DailyPreparationService(ROOT).latest_selection(workout_id)
+    if (
+        isinstance(selection, dict)
+        and selection.get("user_selection") == "accept_adaptation"
+        and isinstance(selection.get("adapted_workout"), dict)
+    ):
+        return selection["adapted_workout"], "adapted"
+    return workout, "original"
 
 
 def load_recovery_rest(day=None):
@@ -3490,6 +3524,18 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(content)
 
+    def send_download(self, content, filename, content_type):
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(content)))
+        self.send_header(
+            "Content-Disposition",
+            f'attachment; filename="{filename}"',
+        )
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(content)
+
     def do_GET(self):
         parsed = urlparse(self.path)
 
@@ -3540,6 +3586,34 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
                     404,
                     {"ok": False, "error": str(error)},
                 )
+            return
+
+        if parsed.path == "/api/atlas-coach/workout-export":
+            try:
+                workout_id = str((query.get("workout_id") or [""])[0]).strip()
+                export_format = str((query.get("format") or ["fit"])[0]).lower()
+                if not workout_id:
+                    raise ValueError("workout_id est obligatoire.")
+                workout, selected_version = workout_for_export(workout_id)
+                if export_format == "json":
+                    self.send_json(200, {
+                        "ok": True,
+                        "selected_version": selected_version,
+                        "workout": universal_workout(workout),
+                    })
+                elif export_format == "fit":
+                    fit_data, _ = encode_garmin_fit(workout)
+                    self.send_download(
+                        fit_data,
+                        safe_filename(workout),
+                        "application/vnd.ant.fit",
+                    )
+                else:
+                    raise ValueError("Format d'export non pris en charge.")
+            except ValueError as error:
+                self.send_json(400, {"ok": False, "error": str(error)})
+            except (OSError, json.JSONDecodeError) as error:
+                self.send_json(500, {"ok": False, "error": str(error)})
             return
 
         if parsed.path == "/api/atlas-user/profile":

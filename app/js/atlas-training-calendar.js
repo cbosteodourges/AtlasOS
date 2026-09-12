@@ -2394,6 +2394,21 @@ const target = compactTarget(workout, zone);
           </div>
         </section>
 
+        <section class="watch-export-card">
+          <div>
+            <span>MONTRE GPS</span>
+            <strong>Exporter cette séance vers Garmin</strong>
+            <p>Atlas prépare les étapes, répétitions, récupérations et cibles dans un fichier FIT. Si vous avez validé une adaptation du jour, c’est cette version qui sera exportée.</p>
+          </div>
+          <a
+            class="watch-export-button"
+            data-garmin-fit-export
+            href="/api/atlas-coach/workout-export?format=fit&amp;workout_id=${encodeURIComponent(workout.workout_id)}"
+            download
+          >Télécharger la séance FIT</a>
+          <small>Version pilote indépendante de l’API Garmin : téléchargez depuis le PC, puis copiez le fichier par USB dans GARMIN/NEWFILES. L’envoi direct via Garmin Connect sera ajouté après validation de la Training API.</small>
+        </section>
+
         <section class="session-notes">
           <h3>Notes</h3>
           <p>${escapeHtml(workout.objective)}</p>
@@ -4829,6 +4844,15 @@ ${RESEARCH_TYPES.has(workout.workout_type) ? `
     `;
 
     content.onclick = async event => {
+      const fitExport = event.target.closest("[data-garmin-fit-export]");
+      if (fitExport) {
+        fitExport.textContent = "Téléchargement en cours…";
+        window.setTimeout(() => {
+          fitExport.textContent = "Télécharger à nouveau";
+        }, 1800);
+        return;
+      }
+
       const cyclingChart = event.target.closest("[data-cycling-chart]");
       if (cyclingChart) {
         openCyclingChartDetail(cyclingChart);
